@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 // Keep the microphone constraints shared by Silero VAD and the private-ASR
 // adapter. The browser owns acoustic processing; the same physical capture is
 // cloned for VAD while Agora publishes the original track.
@@ -63,9 +64,9 @@ export function ensureNativeMicrophonePermission(): Promise<void> {
     };
     const onResult = (event: Event) => {
       const { granted } = (event as CustomEvent<{ granted: boolean }>).detail;
-      finish(granted ? undefined : new Error("请在系统权限中允许 Octos Learn 使用麦克风"));
+      finish(granted ? undefined : new Error(tr("请在系统权限中允许 Octos Learn 使用麦克风")));
     };
-    const timer = setTimeout(() => finish(new Error("麦克风授权等待超时，请重试")), 120_000);
+    const timer = setTimeout(() => finish(new Error(tr("麦克风授权等待超时，请重试"))), 120_000);
     window.addEventListener(NATIVE_MICROPHONE_PERMISSION_EVENT, onResult);
     try {
       bridge.requestMicrophonePermission!();
@@ -137,7 +138,7 @@ function parseNativePrivateAsrResult(raw: string): NativePrivateAsrResult {
       : {
           ...result,
           ok: false,
-          error: result.error || "Android Agora 原生音频不可用",
+          error: result.error || tr("Android Agora 原生音频不可用"),
         };
   } catch (error) {
     return { ok: false, error: microphoneErrorMessage(error) };
@@ -149,7 +150,7 @@ export function startNativePrivateAsr(
 ): NativePrivateAsrResult {
   const bridge = nativeAudioBridge();
   if (!nativePrivateAsrAvailable() || !bridge?.startPrivateAsr) {
-    return { ok: false, error: "Android Agora 原生音频接口不可用" };
+    return { ok: false, error: tr("Android Agora 原生音频接口不可用") };
   }
   try {
     return parseNativePrivateAsrResult(bridge.startPrivateAsr(
@@ -168,7 +169,7 @@ export function setNativePrivateAsrListening(
 ): NativePrivateAsrResult {
   const bridge = nativeAudioBridge();
   if (!nativePrivateAsrAvailable() || !bridge?.setPrivateAsrListening) {
-    return { ok: false, error: "Android Agora 原生音频接口不可用" };
+    return { ok: false, error: tr("Android Agora 原生音频接口不可用") };
   }
   try {
     return parseNativePrivateAsrResult(
@@ -194,14 +195,14 @@ export function prepareNativeAudioCapture(): void {
 export function startNativeAudioCapture(): NativeCaptureResult {
   const bridge = nativeAudioBridge();
   if (!bridge?.startVoiceCapture) {
-    return { ok: false, error: "Android 原生麦克风接口不可用" };
+    return { ok: false, error: tr("Android 原生麦克风接口不可用") };
   }
   try {
     const raw = bridge.startVoiceCapture();
     const result = JSON.parse(raw) as NativeCaptureResult;
     return result.ok
       ? result
-      : { ...result, ok: false, error: result.error || "Android 原生麦克风无法启动" };
+      : { ...result, ok: false, error: result.error || tr("Android 原生麦克风无法启动") };
   } catch (error) {
     return { ok: false, error: microphoneErrorMessage(error) };
   }
@@ -412,12 +413,12 @@ export async function getEchoCancelledMicStream(): Promise<MediaStream> {
   }
 
   const webviewDevices = inputs.length > 0
-    ? inputs.map((input) => input.label || "未命名输入设备").join("、")
-    : "WebView 未列出音频输入";
+    ? inputs.map((input) => input.label || tr("未命名输入设备")).join("、")
+    : tr("WebView 未列出音频输入");
   const nativeDetail = androidDevices
-    ? `；Android 设备：${androidDevices}`
+    ? tr("；Android 设备：{{v0}}", { v0: androidDevices })
     : "";
   throw new Error(
-    `无法启动麦克风（${microphoneErrorMessage(lastError)}）；WebView 设备：${webviewDevices}${nativeDetail}`,
+    tr("无法启动麦克风（{{v0}}）；WebView 设备：{{v1}}{{v2}}", { v0: microphoneErrorMessage(lastError), v1: webviewDevices, v2: nativeDetail }),
   );
 }

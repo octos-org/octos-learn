@@ -9,4 +9,4 @@ Write 1 to 3 sentences of Simplified Chinese, at most 120 characters, addressed 
 Return only JSON: {"schema":1,"input_sha256":"the supplied input hash","comment":"the comment"}.`;
 
 export const buildReportCommentPrompt = (input, teacherProfile) =>
-  `${REPORT_COMMENT_INSTRUCTIONS}\n\nTeacher:\n${teacherProfile}\n\nWeekly report (JSON):\n${JSON.stringify(input)}`;
+  `${input?.language === "en-US" ? REPORT_COMMENT_INSTRUCTIONS.replace("Write 1 to 3 sentences of Simplified Chinese, at most 120 characters", "Write 1 to 3 sentences in English, at most 75 words and 480 characters") : REPORT_COMMENT_INSTRUCTIONS}\n\nTeacher:\n${teacherProfile}\n\nWeekly report (JSON):\n${JSON.stringify(input)}`;

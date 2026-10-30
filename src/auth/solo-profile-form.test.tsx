@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -97,7 +98,7 @@ describe("SoloProfileForm", () => {
       el.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
     });
     setInput(container, "solo-name", "x".repeat(129));
-    expect(container.textContent).toContain("128 characters");
+    expect(container.textContent).toContain(tr("Keep it under 128 characters."));
     expect(submitBtn(container).disabled).toBe(true);
   });
 
@@ -125,6 +126,6 @@ describe("SoloProfileForm", () => {
     const el = container.querySelector(
       '[data-testid="solo-name"]',
     ) as HTMLInputElement;
-    expect(el.getAttribute("aria-label")).toBe("What should we call you?");
+    expect(el.getAttribute("aria-label")).toBe(tr("What should we call you?"));
   });
 });

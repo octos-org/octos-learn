@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
@@ -46,18 +48,19 @@ const EMPTY_FORM: FormState = {
 };
 
 function validateSettings(form: FormState): string | null {
-  if (!form.host.trim()) return "SMTP host is required.";
+  if (!form.host.trim()) return tr("SMTP host is required.");
   const port = Number(form.port);
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    return "SMTP port must be an integer between 1 and 65535.";
+    return tr("SMTP port must be an integer between 1 and 65535.");
   }
   if (!form.fromAddress.includes("@")) {
-    return "From address must contain an email address.";
+    return tr("From address must contain an email address.");
   }
   return null;
 }
 
 export function AuthenticationTab() {
+  useLocale();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -96,7 +99,7 @@ export function AuthenticationTab() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setLoadError(
-            formatSettingsError(err, "Failed to load authentication settings."),
+            formatSettingsError(err, tr("Failed to load authentication settings.")),
           );
         }
       })
@@ -122,7 +125,7 @@ export function AuthenticationTab() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setAllowedEmailsError(
-            formatSettingsError(err, "Failed to load allowed emails."),
+            formatSettingsError(err, tr("Failed to load allowed emails.")),
           );
         }
       })
@@ -167,10 +170,10 @@ export function AuthenticationTab() {
         password: "",
         passwordConfigured: current.passwordConfigured || Boolean(password),
       }));
-      setSaveMessage("Authentication settings saved and applied.");
+      setSaveMessage(tr("Authentication settings saved and applied."));
     } catch (err) {
       setSaveError(
-        formatSettingsError(err, "Failed to save authentication settings."),
+        formatSettingsError(err, tr("Failed to save authentication settings.")),
       );
     } finally {
       setSaving(false);
@@ -181,7 +184,7 @@ export function AuthenticationTab() {
     event.preventDefault();
     const recipient = testRecipient.trim();
     if (!recipient.includes("@")) {
-      setTestError("Enter a valid test recipient email address.");
+      setTestError(tr("Enter a valid test recipient email address."));
       setTestMessage(null);
       return;
     }
@@ -192,12 +195,12 @@ export function AuthenticationTab() {
     try {
       const result = await sendAuthenticationTestEmail(recipient);
       if (result.ok) {
-        setTestMessage(result.message ?? `Test email sent to ${recipient}.`);
+        setTestMessage(result.message ?? tr("Test email sent to {{v0}}.", { v0: recipient }));
       } else {
-        setTestError(result.error ?? "The server could not send the test email.");
+        setTestError(result.error ?? tr("The server could not send the test email."));
       }
     } catch (err) {
-      setTestError(formatSettingsError(err, "Failed to send the test email."));
+      setTestError(formatSettingsError(err, tr("Failed to send the test email.")));
     } finally {
       setTesting(false);
     }
@@ -207,7 +210,7 @@ export function AuthenticationTab() {
     event.preventDefault();
     const email = allowedEmail.trim().toLowerCase();
     if (!email.includes("@")) {
-      setAllowedEmailsError("Enter a valid allowed email address.");
+      setAllowedEmailsError(tr("Enter a valid allowed email address."));
       return;
     }
 
@@ -220,7 +223,7 @@ export function AuthenticationTab() {
       setAllowedEmailNote("");
     } catch (err) {
       setAllowedEmailsError(
-        formatSettingsError(err, "Failed to add the allowed email."),
+        formatSettingsError(err, tr("Failed to add the allowed email.")),
       );
     } finally {
       setAllowedEmailSaving(false);
@@ -235,7 +238,7 @@ export function AuthenticationTab() {
       await reloadAllowedEmails();
     } catch (err) {
       setAllowedEmailsError(
-        formatSettingsError(err, "Failed to remove the allowed email."),
+        formatSettingsError(err, tr("Failed to remove the allowed email.")),
       );
     } finally {
       setRemovingAllowedEmail(null);
@@ -258,7 +261,7 @@ export function AuthenticationTab() {
       >
         <div className="flex items-center gap-2">
           <AlertCircle size={18} />
-          {loadError}
+          {translateStatus(loadError)}
         </div>
       </div>
     );
@@ -274,11 +277,9 @@ export function AuthenticationTab() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-text-strong">
-                Registration Access
-              </h3>
+                {tr("Registration Access")}</h3>
               <p className="text-xs text-muted">
-                Choose who can create a user through email verification
-              </p>
+                {tr("Choose who can create a user through email verification")}</p>
             </div>
           </div>
 
@@ -302,11 +303,9 @@ export function AuthenticationTab() {
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-text-strong">
                     <UserPlus size={16} />
-                    Open registration
-                  </div>
+                    {tr("Open registration")}</div>
                   <p className="mt-1 text-xs leading-relaxed text-muted">
-                    Anyone who verifies an email OTP can create their own user and profile.
-                  </p>
+                    {tr("Anyone who verifies an email OTP can create their own user and profile.")}</p>
                 </div>
               </div>
             </label>
@@ -330,11 +329,9 @@ export function AuthenticationTab() {
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-text-strong">
                     <KeyRound size={16} />
-                    Restricted registration
-                  </div>
+                    {tr("Restricted registration")}</div>
                   <p className="mt-1 text-xs leading-relaxed text-muted">
-                    Only existing users and addresses listed under Users → Allowed Emails can sign in.
-                  </p>
+                    {tr("Only existing users and addresses listed under Users → Allowed Emails can sign in.")}</p>
                 </div>
               </div>
             </label>
@@ -343,18 +340,15 @@ export function AuthenticationTab() {
           {form.registrationMode === "open" && (
             <div
               role="note"
-              aria-label="Open registration warning"
+              aria-label={tr("Open registration warning")}
               className="mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-xs [background:var(--workbench-warning-bg)] [border-color:var(--workbench-warning-border)] [color:var(--workbench-warning-text)]"
             >
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">
-                  Anyone with an email address can register
-                </p>
+                  {tr("Anyone with an email address can register")}</p>
                 <p className="mt-1 leading-relaxed">
-                  Use open registration for local testing. On an internet-facing server,
-                  each verified email can create a profile and consume resources.
-                </p>
+                  {tr("Use open registration for local testing. On an internet-facing server, each verified email can create a profile and consume resources.")}</p>
               </div>
             </div>
           )}
@@ -367,19 +361,16 @@ export function AuthenticationTab() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-text-strong">
-                Email OTP Delivery
-              </h3>
+                {tr("Email OTP Delivery")}</h3>
               <p className="text-xs text-muted">
-                SMTP used to send login verification codes
-              </p>
+                {tr("SMTP used to send login verification codes")}</p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1.5 text-xs text-muted">
-              SMTP host
-              <input
-                aria-label="SMTP host"
+              {tr("SMTP host")}<input
+                aria-label={tr("SMTP host")}
                 value={form.host}
                 onChange={(event) => updateForm("host", event.target.value)}
                 placeholder="smtp.example.com"
@@ -388,9 +379,8 @@ export function AuthenticationTab() {
               />
             </label>
             <label className="space-y-1.5 text-xs text-muted">
-              SMTP port
-              <input
-                aria-label="SMTP port"
+              {tr("SMTP port")}<input
+                aria-label={tr("SMTP port")}
                 type="number"
                 min={1}
                 max={65_535}
@@ -400,9 +390,8 @@ export function AuthenticationTab() {
               />
             </label>
             <label className="space-y-1.5 text-xs text-muted">
-              SMTP username
-              <input
-                aria-label="SMTP username"
+              {tr("SMTP username")}<input
+                aria-label={tr("SMTP username")}
                 value={form.username}
                 onChange={(event) => updateForm("username", event.target.value)}
                 autoComplete="username"
@@ -410,16 +399,15 @@ export function AuthenticationTab() {
               />
             </label>
             <label className="space-y-1.5 text-xs text-muted">
-              SMTP password
-              <input
-                aria-label="SMTP password"
+              {tr("SMTP password")}<input
+                aria-label={tr("SMTP password")}
                 type="password"
                 value={form.password}
                 onChange={(event) => updateForm("password", event.target.value)}
                 placeholder={
                   form.passwordConfigured
-                    ? "Leave blank to keep the saved password"
-                    : "Enter SMTP password"
+                    ? tr("Leave blank to keep the saved password")
+                    : tr("Enter SMTP password")
                 }
                 autoComplete="new-password"
                 className="workbench-input w-full px-3 py-2.5 text-sm text-text-strong"
@@ -427,20 +415,16 @@ export function AuthenticationTab() {
               {form.passwordConfigured && (
                 <span className="flex items-center gap-1 text-[11px] [color:var(--workbench-success-text)]">
                   <CheckCircle2 size={11} />
-                  A password is already configured. It is never returned to the browser.
-                </span>
+                  {tr("A password is already configured. It is never returned to the browser.")}</span>
               )}
               {!form.passwordConfigured && (
                 <span className="text-[11px] text-muted/70">
-                  Leave blank only when the server already provides SMTP credentials,
-                  such as through SMTP_PASSWORD.
-                </span>
+                  {tr("Leave blank only when the server already provides SMTP credentials, such as through SMTP_PASSWORD.")}</span>
               )}
             </label>
             <label className="space-y-1.5 text-xs text-muted sm:col-span-2">
-              From address
-              <input
-                aria-label="From address"
+              {tr("From address")}<input
+                aria-label={tr("From address")}
                 value={form.fromAddress}
                 onChange={(event) => updateForm("fromAddress", event.target.value)}
                 placeholder="Octos <login@example.com>"
@@ -470,8 +454,7 @@ export function AuthenticationTab() {
               className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
-              Save authentication settings
-            </button>
+              {tr("Save authentication settings")}</button>
           </div>
         </section>
       </form>
@@ -483,11 +466,9 @@ export function AuthenticationTab() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Allowed Emails
-            </h3>
+              {tr("Allowed Emails")}</h3>
             <p className="text-xs text-muted">
-              Invite specific people when registration is restricted
-            </p>
+              {tr("Invite specific people when registration is restricted")}</p>
           </div>
         </div>
 
@@ -496,9 +477,8 @@ export function AuthenticationTab() {
           className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
         >
           <label className="space-y-1.5 text-xs text-muted">
-            Allowed email
-            <input
-              aria-label="Allowed email"
+            {tr("Allowed email")}<input
+              aria-label={tr("Allowed email")}
               type="email"
               value={allowedEmail}
               onChange={(event) => setAllowedEmail(event.target.value)}
@@ -507,12 +487,11 @@ export function AuthenticationTab() {
             />
           </label>
           <label className="space-y-1.5 text-xs text-muted">
-            Invitation note
-            <input
-              aria-label="Invitation note"
+            {tr("Invitation note")}<input
+              aria-label={tr("Invitation note")}
               value={allowedEmailNote}
               onChange={(event) => setAllowedEmailNote(event.target.value)}
-              placeholder="Optional context"
+              placeholder={tr("Optional context")}
               className="workbench-input w-full px-3 py-2.5 text-sm text-text-strong"
             />
           </label>
@@ -526,8 +505,7 @@ export function AuthenticationTab() {
             ) : (
               <UserPlus size={15} />
             )}
-            Add allowed email
-          </button>
+            {tr("Add allowed email")}</button>
         </form>
 
         {allowedEmailsError && (
@@ -536,7 +514,7 @@ export function AuthenticationTab() {
             className="mt-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs [background:var(--workbench-danger-bg)] [border-color:var(--workbench-danger-border)] [color:var(--workbench-danger-text)]"
           >
             <AlertCircle size={15} />
-            {allowedEmailsError}
+            {translateStatus(allowedEmailsError)}
           </div>
         )}
 
@@ -544,12 +522,10 @@ export function AuthenticationTab() {
           {allowedEmailsLoading ? (
             <div className="flex items-center justify-center gap-2 px-4 py-8 text-xs text-muted">
               <Loader2 size={14} className="animate-spin" />
-              Loading allowed emails...
-            </div>
+              {tr("Loading allowed emails...")}</div>
           ) : allowedEmails.length === 0 ? (
             <div className="px-4 py-8 text-center text-xs text-muted">
-              No email addresses have been invited yet.
-            </div>
+              {tr("No email addresses have been invited yet.")}</div>
           ) : (
             <div className="divide-y divide-border/50">
               {allowedEmails.map((entry) => {
@@ -565,19 +541,18 @@ export function AuthenticationTab() {
                       </div>
                       <div className="mt-0.5 text-xs text-muted">
                         {registered
-                          ? `Registered${entry.registered_name ? ` as ${entry.registered_name}` : ""}`
-                          : entry.note || "Invitation not claimed"}
+                          ? entry.registered_name ? tr("Registered as {{v0}}", { v0: entry.registered_name }) : tr("Registered")
+                          : entry.note || tr("Invitation not claimed")}
                       </div>
                     </div>
                     {registered ? (
                       <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
-                        Registered
-                      </span>
+                        {tr("Registered")}</span>
                     ) : (
                       <button
                         type="button"
-                        aria-label={`Remove ${entry.email}`}
-                        title={`Remove ${entry.email}`}
+                        aria-label={tr("Remove {{v0}}", { v0: entry.email })}
+                        title={tr("Remove {{v0}}", { v0: entry.email })}
                         disabled={removingAllowedEmail === entry.email}
                         onClick={() => void handleRemoveAllowedEmail(entry.email)}
                         className="glass-icon-button p-2 text-muted hover:text-red-400 disabled:opacity-50"
@@ -604,11 +579,9 @@ export function AuthenticationTab() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Test Login Email
-            </h3>
+              {tr("Test Login Email")}</h3>
             <p className="text-xs text-muted">
-              Uses the currently saved SMTP configuration
-            </p>
+              {tr("Uses the currently saved SMTP configuration")}</p>
           </div>
         </div>
 
@@ -617,9 +590,8 @@ export function AuthenticationTab() {
           className="flex flex-col gap-3 sm:flex-row sm:items-end"
         >
           <label className="flex-1 space-y-1.5 text-xs text-muted">
-            Test recipient
-            <input
-              aria-label="Test recipient"
+            {tr("Test recipient")}<input
+              aria-label={tr("Test recipient")}
               type="email"
               value={testRecipient}
               onChange={(event) => {
@@ -637,8 +609,7 @@ export function AuthenticationTab() {
             className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {testing ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-            Send test email
-          </button>
+            {tr("Send test email")}</button>
         </form>
 
         {(testError || testMessage) && (

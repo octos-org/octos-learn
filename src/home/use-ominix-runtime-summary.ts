@@ -1,3 +1,5 @@
+import { tr, translateStatus } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { subscribeServices } from "@/byok/services";
 import { useEffect, useState } from "react";
 import type { VoiceReadiness } from "@/settings/settings-api";
@@ -145,7 +147,7 @@ export function refreshOminixRuntimeSummary(): Promise<void> {
         inputReady: routing.asr !== "unavailable",
         ttsReady: routing.tts !== "unavailable",
         ...(routing.readinessKnown === false ? {
-          ready: false, llmReady: undefined, label: "模型配置状态暂时无法确认。", state: "llm_unknown", canRepair: false,
+          ready: false, llmReady: undefined, label: tr("模型配置状态暂时无法确认。"), state: "llm_unknown", canRepair: false,
         } : {}),
       });
     })
@@ -168,6 +170,7 @@ export function refreshOminixRuntimeSummary(): Promise<void> {
 }
 
 export function useOminixRuntimeSummary() {
+  useLocale();
   const [summary, setSummary] = useState<OminixRuntimeSnapshot>(cachedSummary);
 
   useEffect(() => {
@@ -199,6 +202,7 @@ export function useOminixRuntimeSummary() {
 
   return {
     ...summary,
+    label: translateStatus(summary.label),
     needsAttention: summary.tone === "warning" || summary.tone === "danger",
     refresh: refreshOminixRuntimeSummary,
   };

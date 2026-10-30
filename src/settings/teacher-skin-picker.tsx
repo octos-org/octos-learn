@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Check } from "lucide-react";
 
 import { OctosSkinArt } from "@/components/octos-skin-art";
@@ -10,6 +12,7 @@ export function TeacherSkinPicker({
 }: {
   compact?: boolean;
 }) {
+  useLocale();
   const { skin: teacherSkin, setSkin: setTeacherSkin } = useTeacherSkin();
 
   return (
@@ -49,7 +52,7 @@ export function TeacherSkinPicker({
             </span>
             <span className="teacher-skin-status flex w-full items-center justify-between gap-2">
               <span className="workbench-status-pill" data-tone="neutral">
-                {option.kind === "model" ? "3D · Animated" : option.kind === "portrait" ? "Illustrated" : "2D · SVG"}
+                {option.kind === "model" ? tr("3D · Animated") : option.kind === "portrait" ? tr("Illustrated") : tr("2D · SVG")}
               </span>
               <span
                 className={`workbench-status-pill shrink-0 ${active ? "" : "invisible"}`}
@@ -58,8 +61,7 @@ export function TeacherSkinPicker({
                 aria-hidden={!active}
               >
                 <Check size={13} />
-                Active
-              </span>
+                {tr("Active")}</span>
             </span>
           </button>
         );

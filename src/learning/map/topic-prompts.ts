@@ -1,3 +1,5 @@
+import { getLocale, localizedCatalog, tr, type Locale } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useState } from "react";
 
 import type { MapState } from "../history/history-api";
@@ -8,26 +10,30 @@ export interface TopicPrompt { kind: PromptKind; label: string; text: string; re
 export type PromptBank = Readonly<Record<string, readonly string[]>>;
 
 const KINDS: readonly PromptKind[] = ["hook", "try", "stretch"];
-const LABEL: Record<PromptKind, string> = { hook: "从生活里问起", try: "试一道题", stretch: "挑战一下" };
+const LABEL: Record<PromptKind, string> = localizedCatalog({ hook: "从生活里问起", try: "试一道题", stretch: "挑战一下" });
 
 // About 185 KB of question text, loaded only where questions are shown.
-let loading: Promise<PromptBank> | null = null;
-export function loadPromptBank(): Promise<PromptBank> {
-  loading ??= import("./topic-prompts-zh.json").then((module) => module.default.prompts as PromptBank)
+const loading = new Map<Locale, Promise<PromptBank>>();
+export function loadPromptBank(locale = getLocale()): Promise<PromptBank> {
+  if (loading.has(locale)) return loading.get(locale)!;
+  const request = (locale === "zh-CN" ? import("./topic-prompts-zh.json") : import("./topic-prompts-en.json"))
+    .then((module) => module.default.prompts as PromptBank)
     // A failed download is tried again next time instead of being remembered.
-    .catch((error: unknown) => { loading = null; throw error; });
-  return loading;
+    .catch((error: unknown) => { loading.delete(locale); throw error; });
+  loading.set(locale, request);
+  return request;
 }
 /** The bank once loaded (null until then, or when `enabled` is false). */
 export function usePromptBank(enabled = true): PromptBank | null {
-  const [bank, setBank] = useState<PromptBank | null>(null);
+  const locale = useLocale();
+  const [loaded, setLoaded] = useState<{ locale: Locale; bank: PromptBank } | null>(null);
   useEffect(() => {
     if (!enabled) return;
     let live = true;
-    void loadPromptBank().then((loaded) => { if (live) setBank(loaded); }, () => undefined);
+    void loadPromptBank(locale).then((bank) => { if (live) setLoaded({ locale, bank }); }, () => undefined);
     return () => { live = false; };
-  }, [enabled]);
-  return bank;
+  }, [enabled, locale]);
+  return enabled && loaded?.locale === locale ? loaded.bank : null;
 }
 
 /** Where the learner is decides which question comes first: a real-life hook
@@ -40,20 +46,21 @@ export function recommendedPrompt(state: MapState | undefined): PromptKind {
 /** A topic's starter questions, the recommended one first (`name` is the
  * label shown). Each is what the learner would ask the teacher; it fills a new
  * board's input box and the learner decides to send it. */
-export function topicPrompts(bank: PromptBank | null, topicId: string, name: string, first: PromptKind = "hook"): TopicPrompt[] {
+export function topicPrompts(bank: PromptBank | null, topicId: string, name: string, first: PromptKind = "hook", locale = getLocale()): TopicPrompt[] {
   const texts = bank?.[topicId];
-  if (texts?.length !== 3) return [{ kind: "hook", label: LABEL.hook, text: `${name}是什么？生活里哪里会用到它？`, recommended: true }];
+  if (texts?.length !== 3) return [{ kind: "hook", label: tr(LABEL.hook, {}, locale), text: tr("{{v0}}是什么？生活里哪里会用到它？", { v0: name }, locale), recommended: true }];
   return [first, ...KINDS.filter((kind) => kind !== first)]
-    .map((kind) => ({ kind, label: LABEL[kind], text: texts[KINDS.indexOf(kind)]!, recommended: kind === first }));
+    .map((kind) => ({ kind, label: tr(LABEL[kind], {}, locale), text: texts[KINDS.indexOf(kind)]!, recommended: kind === first }));
 }
 
 /** A suggestion's question: a new topic starts from its real-life question; a
  * topic to continue or revisit gets a problem to try. Topics without starter
  * questions (other subjects) keep the plain request. */
 export async function topicDraft(topicId: string, name: string, kind: "hook" | "try"): Promise<string> {
-  const bank = await loadPromptBank().catch(() => null);
-  const label = topicLabel(topicId, name);
-  const [first] = topicPrompts(bank, topicId, label, kind);
+  const locale = getLocale();
+  const bank = await loadPromptBank(locale).catch(() => null);
+  const label = topicLabel(topicId, name, locale);
+  const [first] = topicPrompts(bank, topicId, label, kind, locale);
   // Without starter questions, continuing a topic keeps the plain request.
-  return first!.kind === kind || kind === "hook" ? first!.text : `我想再学一下${label}`;
+  return first!.kind === kind || kind === "hook" ? first!.text : tr("我想再学一下{{v0}}", { v0: label }, locale);
 }

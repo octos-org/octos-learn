@@ -1,3 +1,5 @@
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import type { LearnTraceEvent, LearnTraceRecorder } from "./learn-trace";
 
@@ -8,6 +10,7 @@ function TraceIdentifier({
   field: "trace_id" | "turn_id";
   value: string;
 }) {
+  useLocale();
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const copyIdentifier = async () => {
     try {
@@ -25,11 +28,11 @@ function TraceIdentifier({
         <code>{value}</code>
         <button
           type="button"
-          aria-label={`复制 ${field} ${value}`}
+          aria-label={tr("复制 {{v0}} {{v1}}", { v0: field, v1: value })}
           onClick={() => void copyIdentifier()}
         >
           <span aria-live="polite">
-            {copyState === "copied" ? "已复制" : copyState === "failed" ? "复制失败" : "复制"}
+            {copyState === "copied" ? tr("已复制") : copyState === "failed" ? tr("复制失败") : tr("复制")}
           </span>
         </button>
       </dd>
@@ -50,6 +53,7 @@ export function LearningTraceInspector({
 }: {
   recorder: LearnTraceRecorder;
 }) {
+  useLocale();
   const [open, setOpen] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const subscribe = useCallback(
@@ -108,23 +112,23 @@ export function LearningTraceInspector({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        Trace <span>{events.length}</span>
+        {tr("Trace")}<span>{events.length}</span>
       </button>
       {open ? (
-        <section className="learning-trace-panel" aria-label="Learn Trace Inspector">
+        <section className="learning-trace-panel" aria-label={tr("Learn Trace Inspector")}>
           <header>
             <div>
-              <strong>Learn Trace</strong>
+              <strong>{tr("Learn Trace")}</strong>
               <small title={recorder.sessionId}>session_id: {recorder.sessionId}</small>
             </div>
             <div>
               <button type="button" onClick={() => void copyTrace()}>
-                {copyState === "copied" ? "已复制" : copyState === "failed" ? "复制失败" : "复制 JSONL"}
+                {copyState === "copied" ? tr("已复制") : copyState === "failed" ? tr("复制失败") : tr("复制 JSONL")}
               </button>
-              <button type="button" onClick={() => recorder.clear()}>清空</button>
+              <button type="button" onClick={() => recorder.clear()}>{tr("清空")}</button>
             </div>
           </header>
-          <p className="learning-trace-grouping-hint">按 turn 分组 · 最新事件优先</p>
+          <p className="learning-trace-grouping-hint">{tr("按 turn 分组 · 最新事件优先")}</p>
           <ol className="learning-trace-turns">
             {turns.map(([key, turn]) => (
               <li key={key}>
@@ -134,7 +138,7 @@ export function LearningTraceInspector({
                       <TraceIdentifier field="trace_id" value={turn.traceId} />
                       <TraceIdentifier field="turn_id" value={turn.turnId} />
                     </dl>
-                    <small>{turn.events.length} 条事件</small>
+                    <small>{turn.events.length} {tr("条事件")}</small>
                   </header>
                   <ol className="learning-trace-events">
                     {turn.events.map((event) => (
@@ -149,7 +153,7 @@ export function LearningTraceInspector({
                             <code className="learning-trace-data-preview">{JSON.stringify(event.data)}</code>
                           ) : null}
                           <details className="learning-trace-event-details">
-                            <summary>完整事件 JSON</summary>
+                            <summary>{tr("完整事件 JSON")}</summary>
                             <pre>{JSON.stringify(event, null, 2)}</pre>
                           </details>
                         </div>

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { hasStoredSessionInk } from "./learning-document-store";
 import { hasSavedWhiteboardQuestion } from "./whiteboard-questions";
 import {
@@ -209,7 +210,7 @@ export function createProvisionalLearningSession(
   const record: LearningSessionRecord = {
     id: generateSessionId(now),
     status: "provisional",
-    title: "新的学习",
+    title: tr("新的学习"),
     createdAt: now,
     updatedAt: now,
   };
@@ -222,7 +223,7 @@ export function createProvisionalLearningSession(
 /** A pack preview gets an ephemeral board and never enters the session index. */
 export function resolveCoursePackPreviewSession(
   source: Omit<CoursePackSessionSource, "kind" | "mode">,
-  title = "课程预览",
+  title = tr("课程预览"),
   now = Date.now(),
 ): LearningSessionRecord {
   return {
@@ -243,7 +244,7 @@ export function createCoursePackLearningInstance(
   const record: LearningSessionRecord = {
     id: generateSessionId(now),
     status: "active",
-    title: title.trim() || "预制课程",
+    title: title.trim() || tr("预制课程"),
     createdAt: now,
     updatedAt: now,
     source: { kind: "course-pack", mode: "instance", ...source },
@@ -391,8 +392,7 @@ export function adoptLearningSession(
           ? record.status
           : existing.status,
       title:
-        existing.status === "provisional" || existing.title === "新的学习"
-          || existing.title === "已保存的学习" || existing.title.startsWith("[[LEARNING_")
+        existing.status === "provisional" || ["新的学习", "已保存的学习"].some(title => [tr(title, {}, "zh-CN"), tr(title, {}, "en-US")].includes(existing.title)) || existing.title.startsWith("[[LEARNING_")
           ? record.title
           : existing.title,
       createdAt: Math.min(existing.createdAt, record.createdAt),

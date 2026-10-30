@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -65,9 +66,9 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /authentication/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
     });
-    const button = screen.getByRole("button", { name: /authentication/i });
+    const button = screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
     const icon = button.querySelector("svg");
 
     expect(icon?.classList.contains("shrink-0")).toBe(true);
@@ -82,13 +83,13 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/no profile available/i)).toBeTruthy();
+      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     });
     expect(
-      screen.getByRole("button", { name: "Profile" }).getAttribute("data-active"),
+      screen.getByRole("button", { name: tr("Profile") }).getAttribute("data-active"),
     ).toBe("true");
     expect(
-      screen.queryByRole("button", { name: /authentication/i }),
+      screen.queryByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }),
     ).toBeNull();
   });
 
@@ -100,19 +101,19 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Personal")).toBeTruthy();
+      expect(screen.getByText(tr("Personal"))).toBeTruthy();
     });
-    expect(screen.getByText("Learning")).toBeTruthy();
-    expect(screen.getByText("Access")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
+    expect(screen.getByText(tr("Learning"))).toBeTruthy();
+    expect(screen.getByText(tr("Access"))).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("Voice") })).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "我的老师" }),
+      screen.getByRole("button", { name: tr("我的老师") }),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "API Keys" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("LLM") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("API Keys") })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Skills" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Smart Home" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Channels" })).toBeNull();
+    expect(screen.queryByRole("button", { name: tr("Channels") })).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
   });
 
@@ -124,10 +125,10 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/no profile available/i)).toBeTruthy();
+      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     });
     expect(
-      screen.getByRole("button", { name: "Profile" }).getAttribute("data-active"),
+      screen.getByRole("button", { name: tr("Profile") }).getAttribute("data-active"),
     ).toBe("true");
     expect(screen.queryByRole("button", { name: "Skills" })).toBeNull();
   });
@@ -140,21 +141,21 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 3, name: "我的老师" })).toBeTruthy();
+      expect(screen.getByRole("heading", { level: 3, name: tr("我的老师") })).toBeTruthy();
     });
     for (const name of ["阿澜", "窦鸢", "苏绯"]) expect(screen.getByRole("heading", { level: 2, name })).toBeTruthy();
     expect(screen.queryByTestId("teacher-skin-ocean")).toBeNull();
     expect(screen.queryByTestId("teacher-skin-bee-3d")).toBeNull();
 
     fireEvent.click(screen.getByTestId("teacher-sufei"));
-    expect(screen.getByTestId("teacher-sufei").textContent).toContain("正在陪你上课");
+    expect(screen.getByTestId("teacher-sufei").textContent).toContain(tr("正在陪你上课"));
     expect(localStorage.getItem("octos-teacher-skin")).toBe("portrait");
 
     // The learning-record switches sit under 高级选项, collapsed at first.
-    const advanced = screen.getByText("高级选项").closest("details");
+    const advanced = screen.getByText(tr("高级选项")).closest("details");
     expect(advanced?.open).toBe(false);
     expect(advanced?.querySelectorAll("input[type=checkbox]")).toHaveLength(5);
-    fireEvent.click(screen.getByText("高级选项"));
+    fireEvent.click(screen.getByText(tr("高级选项")));
     expect(advanced?.open).toBe(true);
   });
 
@@ -166,26 +167,26 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: tr("LLM") })).toBeTruthy();
     });
     fireEvent.change(screen.getByTestId("settings-tab-search"), {
       target: { value: "llm" },
     });
 
-    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
+    expect(screen.getByRole("button", { name: tr("LLM") })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("Profile") })).toBeNull();
     // Group headers disappear while searching.
-    expect(screen.queryByText("Personal")).toBeNull();
+    expect(screen.queryByText(tr("Personal"))).toBeNull();
   });
 
   it("groups Voice with LLM under Learning rather than Personal", async () => {
     render(<MemoryRouter><AdminSettingsPage /></MemoryRouter>);
-    await screen.findByRole("button", { name: "Voice" });
+    await screen.findByRole("button", { name: tr("Voice") });
     fireEvent.change(screen.getByTestId("settings-tab-search"), { target: { value: "learning" } });
-    expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("Voice") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("LLM") })).toBeTruthy();
     fireEvent.change(screen.getByTestId("settings-tab-search"), { target: { value: "personal" } });
-    expect(screen.queryByRole("button", { name: "Voice" })).toBeNull();
+    expect(screen.queryByRole("button", { name: tr("Voice") })).toBeNull();
   });
 
   it("shows an empty state when the search matches nothing", async () => {
@@ -202,8 +203,8 @@ describe("AdminSettingsPage", () => {
       target: { value: "zzz-nothing" },
     });
 
-    expect(screen.getByText(/no settings match/i)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
+    expect(screen.getByText(new RegExp(tr("No settings match \"").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("Profile") })).toBeNull();
   });
 
   it("renders Developer Options tab via direct link and toggles debug mode", async () => {
@@ -214,7 +215,7 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /Developer Options/i })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
     });
 
     const toggle = screen.getByTestId("toggle-debug-mode");
@@ -241,7 +242,7 @@ describe("AdminSettingsPage", () => {
       target: { value: "debug" },
     });
 
-    expect(screen.getByRole("button", { name: /Developer Options/i })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
+    expect(screen.getByRole("button", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("Profile") })).toBeNull();
   });
 });

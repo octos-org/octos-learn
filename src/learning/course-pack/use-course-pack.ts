@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   loadCoursePack,
@@ -37,7 +38,7 @@ export function useCoursePack(
           state: {
             source: null,
             loading: false,
-            error: cause instanceof Error ? cause.message : "课程包无法打开",
+            error: cause instanceof Error ? cause.message : tr("课程包无法打开"),
           },
         });
       });

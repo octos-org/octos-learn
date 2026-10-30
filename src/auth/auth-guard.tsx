@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "./auth-context";
@@ -10,6 +12,7 @@ import {
 const skipAuth = import.meta.env.VITE_SKIP_AUTH === "true";
 
 export function AuthGuard() {
+  useLocale();
   const { token, loading } = useAuth();
   const location = useLocation();
   const isCoursePackRoute =
@@ -47,7 +50,7 @@ export function AuthGuard() {
           alt="Octos"
           className="h-10 w-auto animate-pulse select-none"
         />
-        <span className="text-sm text-muted">Loading…</span>
+        <span className="text-sm text-muted">{tr("Loading…")}</span>
       </div>
     );
   }

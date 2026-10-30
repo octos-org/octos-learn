@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr, translateStatus } from "@/i18n";
 import { Minimize2, Trash2 } from "lucide-react";
 import {
   useEffect,
@@ -151,6 +153,7 @@ function SelectionSourceLink({
   cardWidth: number;
   cardHeight: number;
 }) {
+  useLocale();
   const markerId = `selection-source-arrow-${useId().replaceAll(":", "")}`;
   const anchors = selectionLinkAnchors(sourceBounds, {
     x: cardLeft,
@@ -252,22 +255,23 @@ function SelectionQuestionSection({
   question: WhiteboardQuestionRecord;
   onDelete?: () => void;
 }) {
+  useLocale();
   return (
     <section className="learning-selection-enhancement-question">
       <div>
-        <strong>我的问题</strong>
+        <strong>{tr("我的问题")}</strong>
         <span>{question.status === "answered"
-          ? "已回答"
+          ? tr("已回答")
           : question.status === "pending"
-            ? "正在准备回答"
-            : "没有生成成功"}</span>
+            ? tr("正在准备回答")
+            : tr("没有生成成功")}</span>
         {onDelete ? (
           <button
             type="button"
             className="learning-selection-enhancement-question-delete"
             onClick={onDelete}
-            aria-label="删除这条辅助内容"
-            title="删除"
+            aria-label={tr("删除这条辅助内容")}
+            title={tr("删除")}
           >
             <Trash2 size={14} />
           </button>
@@ -292,6 +296,7 @@ function SelectionPlot({
     >;
   };
 }) {
+  useLocale();
   const { expression, x_range: xRange, y_range: yRange } = artifact.response;
   const left = 24;
   const top = 12;
@@ -315,14 +320,14 @@ function SelectionPlot({
       mapY,
     );
   } catch (cause) {
-    error = cause instanceof Error ? cause.message : "函数表达式无法绘制";
+    error = cause instanceof Error ? cause.message : tr("函数表达式无法绘制");
   }
   const xAxis = Math.min(bottom, Math.max(top, mapY(0)));
   const yAxis = Math.min(right, Math.max(left, mapX(0)));
   return (
     <div className="learning-selection-plot">
       {error ? (
-        <span role="alert">{error}</span>
+        <span role="alert">{translateStatus(error)}</span>
       ) : (
         <svg viewBox="0 0 300 164" aria-label={artifact.response.title}>
           <line x1={left} y1={xAxis} x2={right} y2={xAxis} />
@@ -370,7 +375,7 @@ function SelectionScene3d({
       message.setAttribute("role", "alert");
       message.textContent = cause instanceof Error
         ? cause.message
-        : "三维函数图无法显示";
+        : tr("三维函数图无法显示");
       container.replaceChildren(message);
     }
     return () => container.replaceChildren();
@@ -412,6 +417,7 @@ export function SelectionEnhancementLayer({
   ) => void;
   onDelete: (turnId: string) => void;
 }) {
+  useLocale();
   const androidRuntime = document.documentElement.dataset.runtimePlatform === "android";
   const defaultCardScale = androidRuntime
     ? ANDROID_DEFAULT_CARD_SCALE
@@ -953,8 +959,8 @@ export function SelectionEnhancementLayer({
                 <>
                   <header>
                     <div>
-                      <span>小章鱼辅助</span>
-                      <small>来自当前选区</small>
+                      <span>{tr("小章鱼辅助")}</span>
+                      <small>{tr("来自当前选区")}</small>
                     </div>
                   </header>
                   <div
@@ -963,11 +969,11 @@ export function SelectionEnhancementLayer({
                     aria-live="polite"
                   >
                     <strong>{failed
-                      ? "回答生成失败"
-                      : "正在生成小章鱼辅助"}</strong>
+                      ? tr("回答生成失败")
+                      : tr("正在生成小章鱼辅助")}</strong>
                     <p>{failed
-                      ? item.question.error ?? "选区辅助内容生成失败，请重试"
-                      : "正在理解这部分内容，完成后会在这里展示。"}</p>
+                      ? item.question.error ?? tr("选区辅助内容生成失败，请重试")
+                      : tr("正在理解这部分内容，完成后会在这里展示。")}</p>
                     {!failed ? <span aria-hidden="true" /> : null}
                   </div>
                 </>
@@ -1005,9 +1011,9 @@ export function SelectionEnhancementLayer({
                 });
               }}
               aria-label={question
-                ? `展开问题和小章鱼辅助：${artifact.response.title}`
-                : `展开小章鱼辅助：${artifact.response.title}`}
-              title={`展开：${artifact.response.title}`}
+                ? tr("展开问题和小章鱼辅助：{{v0}}", { v0: artifact.response.title })
+                : tr("展开小章鱼辅助：{{v0}}", { v0: artifact.response.title })}
+              title={tr("展开：{{v0}}", { v0: artifact.response.title })}
             >
               {item.sourceConnected ? (
                 <SelectionSourceLink
@@ -1070,15 +1076,15 @@ export function SelectionEnhancementLayer({
             {question ? <SelectionQuestionSection question={question} /> : null}
             <header>
               <div>
-                <span>小章鱼辅助</span>
+                <span>{tr("小章鱼辅助")}</span>
                 <small>
                   {targetInvalid
-                    ? "引用的白板对象已失效，请重新选择"
+                    ? tr("引用的白板对象已失效，请重新选择")
                     : sourceMissing
-                      ? "原选区快照已不在本浏览器，保留生成结果"
+                      ? tr("原选区快照已不在本浏览器，保留生成结果")
                     : stale
-                      ? "基于较早版本的原稿"
-                      : "来自当前选区"}
+                      ? tr("基于较早版本的原稿")
+                      : tr("来自当前选区")}
                 </small>
               </div>
               <div className="learning-selection-enhancement-actions">
@@ -1091,17 +1097,17 @@ export function SelectionEnhancementLayer({
                     });
                   }}
                   aria-label={question
-                    ? "最小化问题和辅助内容"
-                    : "最小化这条辅助内容"}
-                  title="最小化"
+                    ? tr("最小化问题和辅助内容")
+                    : tr("最小化这条辅助内容")}
+                  title={tr("最小化")}
                 >
                   <Minimize2 size={15} />
                 </button>
                 <button
                   type="button"
                   onClick={() => onDelete(artifact.turn_id)}
-                  aria-label="删除这条辅助内容"
-                  title="删除"
+                  aria-label={tr("删除这条辅助内容")}
+                  title={tr("删除")}
                 >
                   <Trash2 size={15} />
                 </button>
@@ -1154,7 +1160,7 @@ export function SelectionEnhancementLayer({
                   className="learning-selection-unsupported"
                   role="alert"
                 >
-                  <strong>当前无法生成这个图像</strong>
+                  <strong>{tr("当前无法生成这个图像")}</strong>
                   {artifact.response.alternatives?.length ? (
                     <ul>
                       {artifact.response.alternatives.map((alternative) => (
@@ -1170,9 +1176,9 @@ export function SelectionEnhancementLayer({
                 </div>
               ) : null}
               <footer>
-                <span>系统理解：</span>
+                <span>{tr("系统理解：")}</span>
                 <MarkdownContent
-                  text={artifact.interpretation.content || "未能可靠识别"}
+                  text={artifact.interpretation.content || tr("未能可靠识别")}
                   className="learning-selection-markdown"
                 />
               </footer>
@@ -1203,8 +1209,8 @@ export function SelectionEnhancementLayer({
                 artifact.turn_id,
                 item.layout,
               )}
-              aria-label={`调整辅助卡片大小，当前 ${Math.round(cardScale * 100)}%`}
-              title="拖动放大或缩小；双击恢复原始大小"
+              aria-label={tr("调整辅助卡片大小，当前 {{v0}}%", { v0: Math.round(cardScale * 100) })}
+              title={tr("拖动放大或缩小；双击恢复原始大小")}
             >
               <span aria-hidden="true" />
             </button>

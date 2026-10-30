@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { findProvider, isLessonCapable } from "@/settings/llm-providers";
 import { createContext } from "react";
 import type { Profile } from "@/settings/settings-api";
@@ -29,8 +30,8 @@ export function learningModelIssue(profile: Profile): string | null {
   const capable = isLessonCapable(primary.family_id, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true");
   if (capable && primary.model_id.trim() && learningModelCredentialMissing(profile)) {
     const provider = findProvider(primary.family_id);
-    const credential = provider?.credentialKind === "json" ? "凭据" : "API Key";
-    return `请在设置中填写你的 ${provider?.name ?? primary.family_id} ${credential}，笔迹和已有课程仍可使用。`;
+    const credential = provider?.credentialKind === "json" ? tr("凭据") : "API Key";
+    return tr("请在设置中填写你的 {{v0}} {{v1}}，笔迹和已有课程仍可使用。", { v0: provider?.name ?? primary.family_id, v1: credential });
   }
   return null;
 }

@@ -1,3 +1,5 @@
+import { getLocale, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { flushLearningDocumentWrites } from "./learning-document-store";
 import {
   useCallback,
@@ -94,14 +96,14 @@ function detectLearningMediaCapability(): LearningMediaCapability {
     return {
       available: false,
       message:
-        "当前页面不是安全连接，浏览器已停用麦克风和摄像头。请使用 HTTPS 地址；同一台电脑也可以使用 http://localhost:5173/learn。",
+        tr("当前页面不是安全连接，浏览器已停用麦克风和摄像头。请使用 HTTPS 地址；同一台电脑也可以使用 http://localhost:5173/learn。"),
     };
   }
   if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
     return {
       available: false,
       message:
-        "当前浏览器无法访问麦克风和摄像头。请确认浏览器支持媒体设备，并检查系统或浏览器权限设置。",
+        tr("当前浏览器无法访问麦克风和摄像头。请确认浏览器支持媒体设备，并检查系统或浏览器权限设置。"),
     };
   }
   return { available: true };
@@ -120,7 +122,7 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
 }> {
   if (!availableService("asr")) {
     openCapabilitySettings("asr");
-    throw new Error("请先连接自己的语音输入服务；可以继续打字。");
+    throw new Error(tr("请先连接自己的语音输入服务；可以继续打字。"));
   }
   const capability = detectLearningMediaCapability();
   if (!capability.available) throw new Error(capability.message);
@@ -165,6 +167,7 @@ function LearningSessionScope({
   record: LearningSessionRecord;
   children: ReactNode;
 }) {
+  useLocale();
   const { queueMode, adaptiveMode } = useModeState(record.id);
   const [activeTask, setActiveTask] = useState(false);
   const setServerTaskActive = useCallback(
@@ -219,6 +222,7 @@ function LearningServerSync({
     authoritative: boolean,
   ) => void;
 }) {
+  useLocale();
   useEffect(() => {
     let cancelled = false;
     let timer: number | undefined;
@@ -250,6 +254,7 @@ function LearningServerSync({
 }
 
 export function LearningPage() {
+  useLocale();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
   // Keep the screen on during lessons (long narration + no interaction;
@@ -299,7 +304,7 @@ export function LearningPage() {
   const returnDestination = coursePackId && collectionId
     ? `/?collection=${encodeURIComponent(collectionId)}`
     : "/";
-  const returnLabel = returnToCollection ? "返回" : "返回首页";
+  const returnLabel = returnToCollection ? tr("返回") : tr("返回首页");
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
     // Never retain credentials distributed by the old platform sidecar.
@@ -330,7 +335,7 @@ export function LearningPage() {
         record: {
           id: "learn-blocked",
           status: "provisional" as const,
-          title: "学习助手已在另一个标签页中打开",
+          title: tr("学习助手已在另一个标签页中打开"),
           createdAt: 0,
           updatedAt: 0,
         },
@@ -354,11 +359,11 @@ export function LearningPage() {
       ? requestedCourseMode === "instance"
         ? requestedInstance ?? createCoursePackLearningInstance(
             packSource,
-            requestedCourseTitle ?? `课程：${coursePackId}`,
+            requestedCourseTitle ?? tr("课程：{{v0}}", { v0: coursePackId }),
           )
         : resolveCoursePackPreviewSession(
             packSource,
-            requestedCourseTitle ?? `预览：${coursePackId}`,
+            requestedCourseTitle ?? tr("预览：{{v0}}", { v0: coursePackId }),
           )
       : newBoardRequested
       ? createProvisionalLearningSession()
@@ -513,6 +518,7 @@ export function LearningPage() {
   const buildTurnText = useCallback<NonNullable<VoiceConversationOptions["buildTurnText"]>>(
     (context) => {
       const turnContext = buildLearningTurnContext({
+        preferredLanguage: getLocale(),
         sessionId: record.id,
         turnId: context.turnId,
         provisional:
@@ -524,6 +530,7 @@ export function LearningPage() {
       if (!markerSentRef.current) {
         markerSentRef.current = true;
         const sessionContext = buildLearningSessionContext({
+          preferredLanguage: getLocale(),
           sessionId: record.id,
           entry:
             wakeSessionId === record.id ? "wake-word" : "direct",
@@ -583,7 +590,7 @@ export function LearningPage() {
       let promoted: LearningSessionRecord | null = null;
       if (currentRecord.status === "provisional") {
         promoted = promoteLearningSession(currentRecord.id, text);
-      } else if (currentRecord.title === "手写白板") {
+      } else if ([tr("手写白板", {}, "zh-CN"), tr("手写白板", {}, "en-US")].includes(currentRecord.title)) {
         promoted = updateLearningSession(currentRecord.id, {
           title: titleFromLearningText(text),
         });
@@ -611,7 +618,7 @@ export function LearningPage() {
       return;
     }
     if (currentRecord.status !== "provisional") return;
-    const promoted = promoteLearningSession(currentRecord.id, "手写白板");
+    const promoted = promoteLearningSession(currentRecord.id, tr("手写白板"));
     if (!promoted) return;
     recordRef.current = promoted;
     setRecord(promoted);
@@ -677,7 +684,7 @@ export function LearningPage() {
       await flushLearningDocumentWrites();
     } catch {
       leavingRef.current = false;
-      window.alert("学习进度或笔迹尚未保存成功，请重试保存后再离开。");
+      window.alert(tr("学习进度或笔迹尚未保存成功，请重试保存后再离开。"));
       return;
     }
     const current = recordRef.current;
@@ -695,7 +702,7 @@ export function LearningPage() {
       await flushLearningDocumentWrites();
     } catch {
       leavingRef.current = false;
-      window.alert("学习进度或笔迹尚未保存成功，请重试保存后再离开。");
+      window.alert(tr("学习进度或笔迹尚未保存成功，请重试保存后再离开。"));
       return;
     }
     const completed = updateLearningSession(record.id, { status: "completed" });
@@ -718,10 +725,9 @@ export function LearningPage() {
           {returnLabel}
         </button>
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold">学习助手已在另一个标签页中使用</h1>
+          <h1 className="text-xl font-semibold">{tr("学习助手已在另一个标签页中使用")}</h1>
           <p className="mt-3 text-sm leading-6 text-white/55">
-            为避免两个页面同时占用麦克风，请先关闭另一个学习页。关闭后本页会在数秒内自动恢复。
-          </p>
+            {tr("为避免两个页面同时占用麦克风，请先关闭另一个学习页。关闭后本页会在数秒内自动恢复。")}</p>
         </div>
       </div>
     );
@@ -744,7 +750,7 @@ export function LearningPage() {
           <button
             type="button"
             aria-label={returnLabel}
-            title={returnToCollection ? "返回课程集" : returnLabel}
+            title={returnToCollection ? tr("返回课程集") : returnLabel}
             onClick={() => void leaveTo(returnDestination)}
             className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
@@ -752,8 +758,8 @@ export function LearningPage() {
           </button>
           <button
             type="button"
-            aria-label="打开学习记录"
-            title="学习记录"
+            aria-label={tr("打开学习记录")}
+            title={tr("学习记录")}
             onClick={() => setHistoryOpen(true)}
             className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
@@ -764,7 +770,7 @@ export function LearningPage() {
           {!staticPlayback && <LearningServerSync onDone={handleServerSync} />}
           {requestedCoursePack && !coursePackId ? (
             <div className="flex h-full items-center justify-center text-sm text-red-200">
-              无法识别课程包“{requestedCoursePack}”
+              {tr("无法识别课程包“")}{requestedCoursePack}”
             </div>
           ) : coursePackLoad.error ? (
             <div className="flex h-full items-center justify-center text-sm text-red-200">
@@ -801,7 +807,7 @@ export function LearningPage() {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/45">
-              {coursePackLoad.loading ? "正在准备课程包…" : "正在恢复学习会话…"}
+              {coursePackLoad.loading ? tr("正在准备课程包…") : tr("正在恢复学习会话…")}
             </div>
           )}
           <UiProtocolQuestionHost />

@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Activity, Bug, Layers, RotateCcw, Sparkles } from "lucide-react";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 
@@ -18,6 +20,7 @@ function ToggleSwitch({
   label,
   testId,
 }: ToggleSwitchProps) {
+  useLocale();
   return (
     <button
       id={id}
@@ -44,6 +47,7 @@ function ToggleSwitch({
 }
 
 export function DeveloperTab() {
+  useLocale();
   const {
     settings,
     updateDebugSettings,
@@ -62,11 +66,9 @@ export function DeveloperTab() {
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-text-strong">
-              Developer Options / 开发者与调试选项
-            </h2>
+              {tr("Developer Options / 开发者与调试选项")}</h2>
             <p className="mt-1 text-sm text-muted">
-              控制全局调试模式、TypeSafe Jev System One 实时准入监控浮窗及白板实验性诊断工具。
-            </p>
+              {tr("控制全局调试模式、TypeSafe Jev System One 实时准入监控浮窗及白板实验性诊断工具。")}</p>
           </div>
         </div>
       </section>
@@ -77,19 +79,17 @@ export function DeveloperTab() {
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-text-strong">
-                调试模式 (Debug Mode)
-              </span>
+                {tr("调试模式 (Debug Mode)")}</span>
               <span
                 className="workbench-status-pill text-xs"
                 data-tone={settings.debugMode ? "accent" : "neutral"}
                 data-testid="debug-mode-status-pill"
               >
-                {settings.debugMode ? "已开启 · Active" : "已停用 · Inactive"}
+                {settings.debugMode ? tr("已开启 · Active") : tr("已停用 · Inactive")}
               </span>
             </div>
             <p className="text-xs leading-5 text-muted">
-              全站调试总开关。关闭时将隐藏白板上的所有调试浮层与测试探针；开启后可在下方按需启用各项具体调试工具。
-            </p>
+              {tr("全站调试总开关。关闭时将隐藏白板上的所有调试浮层与测试探针；开启后可在下方按需启用各项具体调试工具。")}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export function DeveloperTab() {
               id="master-debug-mode-switch"
               checked={settings.debugMode}
               onChange={(next) => updateDebugSettings({ debugMode: next })}
-              label="调试模式 (Debug Mode)"
+              label={tr("调试模式 (Debug Mode)")}
               testId="toggle-debug-mode"
             />
           </div>
@@ -108,12 +108,11 @@ export function DeveloperTab() {
       <section className="glass-section p-5">
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-text-strong">
-            调试功能清单 (Debug Features)
-          </h3>
+            {tr("调试功能清单 (Debug Features)")}</h3>
           <p className="mt-0.5 text-xs text-muted">
             {settings.debugMode
-              ? "调试模式已就绪，可针对各项功能单独启用或隐藏："
-              : "调试模式当前处于停用状态。开启总开关后，以下配置将实时生效。"}
+              ? tr("调试模式已就绪，可针对各项功能单独启用或隐藏：")
+              : tr("调试模式当前处于停用状态。开启总开关后，以下配置将实时生效。")}
           </p>
         </div>
 
@@ -127,19 +126,17 @@ export function DeveloperTab() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-text-strong">
-                    TypeSafe Jev 准入监视浮窗
-                  </span>
+                    {tr("TypeSafe Jev 准入监视浮窗")}</span>
                   <span
                     className="workbench-status-pill text-[10px]"
                     data-tone={isJevDebuggerVisible ? "accent" : "neutral"}
                     data-testid="jev-debugger-status-pill"
                   >
-                    {isJevDebuggerVisible ? "已在白板显示" : "已隐藏"}
+                    {isJevDebuggerVisible ? tr("已在白板显示") : tr("已隐藏")}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  在学习白板右下角显示 Jev System One 快速门禁决策（准入排课 / 静默拦截 / 追问）、时延置信度监控与真机快速注入测试工具。
-                </p>
+                  {tr("在学习白板右下角显示 Jev System One 快速门禁决策（准入排课 / 静默拦截 / 追问）、时延置信度监控与真机快速注入测试工具。")}</p>
               </div>
             </div>
 
@@ -151,7 +148,7 @@ export function DeveloperTab() {
                 onChange={(next) =>
                   updateDebugSettings({ showJevAdmissionDebugger: next })
                 }
-                label="TypeSafe Jev 准入监视浮窗"
+                label={tr("TypeSafe Jev 准入监视浮窗")}
                 testId="toggle-jev-debugger"
               />
             </div>
@@ -166,19 +163,17 @@ export function DeveloperTab() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-text-strong">
-                    白板学习链路追踪探针 (Learn Trace)
-                  </span>
+                    {tr("白板学习链路追踪探针 (Learn Trace)")}</span>
                   <span
                     className="workbench-status-pill text-[10px]"
                     data-tone={isTraceInspectorVisible ? "accent" : "neutral"}
                     data-testid="trace-inspector-status-pill"
                   >
-                    {isTraceInspectorVisible ? "已在白板显示" : "已隐藏"}
+                    {isTraceInspectorVisible ? tr("已在白板显示") : tr("已隐藏")}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  在白板侧边记录提问、手写框选、LLM 课时生成全链路事件与关键时序数据。
-                </p>
+                  {tr("在白板侧边记录提问、手写框选、LLM 课时生成全链路事件与关键时序数据。")}</p>
               </div>
             </div>
 
@@ -190,7 +185,7 @@ export function DeveloperTab() {
                 onChange={(next) =>
                   updateDebugSettings({ showLearningTraceInspector: next })
                 }
-                label="学习链路追踪探针"
+                label={tr("学习链路追踪探针")}
                 testId="toggle-trace-inspector"
               />
             </div>
@@ -203,11 +198,9 @@ export function DeveloperTab() {
             </div>
             <div className="min-w-0">
               <span className="text-sm font-medium text-text-strong">
-                预留调试扩展槽 (Extensible Debug Slots)
-              </span>
+                {tr("预留调试扩展槽 (Extensible Debug Slots)")}</span>
               <p className="mt-1 text-xs text-muted">
-                调试设置已采用统一的键值扩展模型。未来新增的实验性功能（如 ACS 多模态视觉诊断、弱网/丢包时延模拟、笔迹实时渲染 FPS 监控等）将在此无缝挂载。
-              </p>
+                {tr("调试设置已采用统一的键值扩展模型。未来新增的实验性功能（如 ACS 多模态视觉诊断、弱网/丢包时延模拟、笔迹实时渲染 FPS 监控等）将在此无缝挂载。")}</p>
             </div>
           </div>
         </div>
@@ -215,7 +208,7 @@ export function DeveloperTab() {
 
       {/* Footer Actions */}
       <section className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
-        <span>设置修改后通过内部事件总线实时生效，无需刷新页面。</span>
+        <span>{tr("设置修改后通过内部事件总线实时生效，无需刷新页面。")}</span>
         <button
           type="button"
           data-testid="reset-debug-settings"
@@ -223,8 +216,7 @@ export function DeveloperTab() {
           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-medium text-muted transition hover:border-accent hover:text-text active:scale-95"
         >
           <RotateCcw size={13} />
-          重置调试选项
-        </button>
+          {tr("重置调试选项")}</button>
       </section>
     </div>
   );

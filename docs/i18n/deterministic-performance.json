@@ -1,0 +1,621 @@
+{
+  "scope": "50 interleaved deterministic model-response pairs; includes generation lowering, validation and playable-prefix compilation; excludes supplier/network latency and speech",
+  "summary": {
+    "baseline": {
+      "samples": 50,
+      "p50_first_playable_ms": 0.6882499999999254,
+      "model_calls": [
+        3
+      ]
+    },
+    "candidate": {
+      "samples": 50,
+      "p50_first_playable_ms": 0.7590000000000146,
+      "model_calls": [
+        3
+      ]
+    }
+  },
+  "rows": [
+    {
+      "version": "baseline",
+      "iteration": 0,
+      "first_playable_ms": 0.8471250000000055,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 0,
+      "first_playable_ms": 0.7652080000000296,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 1,
+      "first_playable_ms": 1.6866249999999354,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 1,
+      "first_playable_ms": 2.027290999999991,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 2,
+      "first_playable_ms": 1.902541000000042,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 2,
+      "first_playable_ms": 0.7864999999999327,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 3,
+      "first_playable_ms": 0.6621660000000702,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 3,
+      "first_playable_ms": 0.8357079999999542,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 4,
+      "first_playable_ms": 0.5630419999999958,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 4,
+      "first_playable_ms": 1.5274580000000242,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 5,
+      "first_playable_ms": 0.5811669999999367,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 5,
+      "first_playable_ms": 1.2778339999999844,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 6,
+      "first_playable_ms": 0.6289170000000013,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 6,
+      "first_playable_ms": 1.7517080000000078,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 7,
+      "first_playable_ms": 0.6083750000000236,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 7,
+      "first_playable_ms": 4.371833999999922,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 8,
+      "first_playable_ms": 0.5909159999999929,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 8,
+      "first_playable_ms": 0.6660410000000638,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 9,
+      "first_playable_ms": 0.5909580000000005,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 9,
+      "first_playable_ms": 0.6196669999999358,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 10,
+      "first_playable_ms": 1.3487079999999878,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 10,
+      "first_playable_ms": 0.7590000000000146,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 11,
+      "first_playable_ms": 2.808499999999981,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 11,
+      "first_playable_ms": 0.7793749999999591,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 12,
+      "first_playable_ms": 0.5478340000000799,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 12,
+      "first_playable_ms": 3.6739169999999604,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 13,
+      "first_playable_ms": 0.82162500000004,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 13,
+      "first_playable_ms": 0.6803340000000162,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 14,
+      "first_playable_ms": 0.6756250000000819,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 14,
+      "first_playable_ms": 0.7081660000000056,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 15,
+      "first_playable_ms": 1.206625000000031,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 15,
+      "first_playable_ms": 1.5257500000000164,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 16,
+      "first_playable_ms": 0.6003749999999854,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 16,
+      "first_playable_ms": 8.170166999999992,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 17,
+      "first_playable_ms": 0.7618330000000242,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 17,
+      "first_playable_ms": 0.7675419999998212,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 18,
+      "first_playable_ms": 0.556041999999934,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 18,
+      "first_playable_ms": 0.7382080000002134,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 19,
+      "first_playable_ms": 1.793749999999818,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 19,
+      "first_playable_ms": 0.6748749999999291,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 20,
+      "first_playable_ms": 0.6345830000000205,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 20,
+      "first_playable_ms": 1.674209000000019,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 21,
+      "first_playable_ms": 4.440165999999863,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 21,
+      "first_playable_ms": 0.797458000000006,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 22,
+      "first_playable_ms": 0.5986250000000837,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 22,
+      "first_playable_ms": 0.7377089999999953,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 23,
+      "first_playable_ms": 0.5358340000000226,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 23,
+      "first_playable_ms": 2.0885829999999714,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 24,
+      "first_playable_ms": 0.5608750000001237,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 24,
+      "first_playable_ms": 0.6780830000000151,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 25,
+      "first_playable_ms": 0.560457999999926,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 25,
+      "first_playable_ms": 0.6110410000001139,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 26,
+      "first_playable_ms": 0.4975839999999607,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 26,
+      "first_playable_ms": 23.033125000000155,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 27,
+      "first_playable_ms": 3.5771669999999176,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 27,
+      "first_playable_ms": 0.721458999999868,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 28,
+      "first_playable_ms": 0.7586669999998321,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 28,
+      "first_playable_ms": 4.542500000000018,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 29,
+      "first_playable_ms": 1.2337079999999787,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 29,
+      "first_playable_ms": 0.72524999999996,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 30,
+      "first_playable_ms": 0.713083000000097,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 30,
+      "first_playable_ms": 0.7323750000000473,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 31,
+      "first_playable_ms": 1.239667000000054,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 31,
+      "first_playable_ms": 0.6683330000000751,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 32,
+      "first_playable_ms": 11.00629099999992,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 32,
+      "first_playable_ms": 0.6630420000001322,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 33,
+      "first_playable_ms": 1.5386660000001484,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 33,
+      "first_playable_ms": 0.6882499999999254,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 34,
+      "first_playable_ms": 0.5167500000000018,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 34,
+      "first_playable_ms": 0.6468330000000151,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 35,
+      "first_playable_ms": 0.5133339999999862,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 35,
+      "first_playable_ms": 0.7644999999999982,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 36,
+      "first_playable_ms": 0.5698749999999109,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 36,
+      "first_playable_ms": 2.1941249999999854,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 37,
+      "first_playable_ms": 0.567459000000099,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 37,
+      "first_playable_ms": 1.625,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 38,
+      "first_playable_ms": 1.25,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 38,
+      "first_playable_ms": 0.722332999999935,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 39,
+      "first_playable_ms": 1.2509999999999764,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 39,
+      "first_playable_ms": 0.7214579999999842,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 40,
+      "first_playable_ms": 2.05925000000002,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 40,
+      "first_playable_ms": 0.6783750000001874,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 41,
+      "first_playable_ms": 0.5223329999998896,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 41,
+      "first_playable_ms": 0.5942079999999805,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 42,
+      "first_playable_ms": 1.4857919999999467,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 42,
+      "first_playable_ms": 1.8214999999997872,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 43,
+      "first_playable_ms": 0.6837500000001455,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 43,
+      "first_playable_ms": 0.653374999999869,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 44,
+      "first_playable_ms": 0.5116669999999885,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 44,
+      "first_playable_ms": 0.5747080000001006,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 45,
+      "first_playable_ms": 11.047874999999976,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 45,
+      "first_playable_ms": 0.6660829999998441,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 46,
+      "first_playable_ms": 0.5152499999999236,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 46,
+      "first_playable_ms": 0.7347500000000764,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 47,
+      "first_playable_ms": 0.5178330000001097,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 47,
+      "first_playable_ms": 0.6148339999999735,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 48,
+      "first_playable_ms": 0.4962919999998121,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 48,
+      "first_playable_ms": 0.5451249999998709,
+      "model_calls": 3
+    },
+    {
+      "version": "candidate",
+      "iteration": 49,
+      "first_playable_ms": 0.6756249999998545,
+      "model_calls": 3
+    },
+    {
+      "version": "baseline",
+      "iteration": 49,
+      "first_playable_ms": 1.6354579999999714,
+      "model_calls": 3
+    }
+  ]
+}

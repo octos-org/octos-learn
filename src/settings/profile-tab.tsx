@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { getLocale, localizedCatalog, tr, translateStatus } from "@/i18n";
 import { useState, useCallback } from "react";
 import {
   User,
@@ -28,7 +30,7 @@ import { ConfirmDialog } from "./confirm-dialog";
 
 // ── Labels (no hardcoded user-visible strings in JSX) ──
 
-const LABELS = {
+const LABELS = localizedCatalog({
   profileInfo: "Profile Information",
   profileInfoDesc: "Manage your profile details",
   profileId: "Profile ID",
@@ -85,7 +87,7 @@ const LABELS = {
     "This will permanently delete the profile, user account, and all associated data. This action cannot be undone.",
   deleteProfileConfirm: "Delete Profile",
   deleteProfileFailed: "Failed to delete profile.",
-} as const;
+} as const);
 
 // ── Helpers ──
 
@@ -126,6 +128,7 @@ export function ProfileTab({
   onNavigateBack,
   canDeleteProfile = false,
 }: ProfileTabProps) {
+  useLocale();
   // Profile name + editable fields
   const [name, setName] = useState(profile.name);
   const [autoStart, setAutoStart] = useState(profile.enabled);
@@ -217,10 +220,10 @@ export function ProfileTab({
       try {
         const result = await fn();
         if (!result.ok) {
-          setGatewayError(result.message ?? `Failed to ${action} gateway.`);
+          setGatewayError(result.message ?? tr("Failed to {{v0}} gateway.", { v0: action }));
         }
       } catch (err) {
-        setGatewayError(formatSettingsError(err, `Failed to ${action} gateway.`));
+        setGatewayError(formatSettingsError(err, tr("Failed to {{v0}} gateway.", { v0: action })));
       } finally {
         await refreshProfile();
         setGatewayLoading(null);
@@ -411,7 +414,7 @@ export function ProfileTab({
                 {LABELS.created}
               </label>
               <div className="rounded-xl bg-surface-dark/50 px-4 py-3 text-sm text-muted">
-                {new Date(profile.created_at).toLocaleDateString(undefined, {
+                {new Date(profile.created_at).toLocaleDateString(getLocale(), {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -445,7 +448,7 @@ export function ProfileTab({
             {saved ? LABELS.saved : LABELS.saveChanges}
           </button>
           {error && (
-            <span role="alert" className="text-xs text-red-400">{error}</span>
+            <span role="alert" className="text-xs text-red-400">{translateStatus(error)}</span>
           )}
         </div>
       </div>
@@ -543,7 +546,7 @@ export function ProfileTab({
         </div>
 
         {gatewayError && (
-          <p className="mt-3 text-xs text-red-400">{gatewayError}</p>
+          <p className="mt-3 text-xs text-red-400">{translateStatus(gatewayError)}</p>
         )}
       </div>
 
@@ -625,7 +628,7 @@ export function ProfileTab({
                     <button
                       onClick={() => handleEditVar(idx)}
                       className="rounded-lg p-1.5 text-muted hover:text-accent hover:bg-surface-dark/50 transition"
-                      title="Edit"
+                      title={tr("Edit")}
                     >
                       <Pencil size={13} />
                     </button>
@@ -633,7 +636,7 @@ export function ProfileTab({
                   <button
                     onClick={() => setDeleteIdx(idx)}
                     className="rounded-lg p-1.5 text-muted hover:text-red-400 hover:bg-surface-dark/50 transition"
-                    title="Delete"
+                    title={tr("Delete")}
                   >
                     <Trash2 size={13} />
                   </button>
@@ -661,7 +664,7 @@ export function ProfileTab({
               {envSaved ? LABELS.envSaved : LABELS.saveEnvVars}
             </button>
             {envError && (
-              <span className="text-xs text-red-400">{envError}</span>
+              <span className="text-xs text-red-400">{translateStatus(envError)}</span>
             )}
           </div>
         )}
@@ -702,7 +705,7 @@ export function ProfileTab({
             </div>
 
             {deleteProfileError && (
-              <p className="mt-3 text-xs text-red-400">{deleteProfileError}</p>
+              <p className="mt-3 text-xs text-red-400">{translateStatus(deleteProfileError)}</p>
             )}
           </div>
         </div>
@@ -732,7 +735,7 @@ export function ProfileTab({
         title={LABELS.deleteVarTitle}
         body={
           deleteIdx != null && envRows[deleteIdx]
-            ? `Remove "${envRows[deleteIdx].key || "this variable"}" from environment variables?`
+            ? tr("Remove \"{{v0}}\" from environment variables?", { v0: envRows[deleteIdx].key || "this variable" })
             : ""
         }
         confirmLabel={LABELS.deleteVarConfirm}
@@ -752,8 +755,8 @@ export function ProfileTab({
       <ConfirmDialog
         open={confirmAdminOff}
         title={LABELS.adminMode}
-        body="Turning off Admin Mode removes the restricted shell, file, and web access for this profile. Continue?"
-        confirmLabel="Turn off Admin Mode"
+        body={tr("Turning off Admin Mode removes the restricted shell, file, and web access for this profile. Continue?")}
+        confirmLabel={tr("Turn off Admin Mode")}
         variant="danger"
         onConfirm={() => {
           setAdminMode(false);

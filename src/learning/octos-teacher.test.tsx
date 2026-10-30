@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OctosTeacher, teacherArtUsesStaticPreview } from "./octos-teacher";
@@ -38,9 +39,9 @@ describe("OctosTeacher", () => {
 
   it("labels a course pack's recorded narration as the course's own voice", () => {
     const { rerender } = render(<OctosTeacher state="speaking" speech="先看这条直线。" onClick={vi.fn()} recordedVoice />);
-    expect(screen.getByText("课程原声").getAttribute("title")).toContain("不是老师的声音");
+    expect(screen.getByText(tr("课程原声")).getAttribute("title")).toContain("不是老师的声音");
     rerender(<OctosTeacher state="speaking" speech="先看这条直线。" onClick={vi.fn()} />);
-    expect(screen.queryByText("课程原声")).toBeNull();
+    expect(screen.queryByText(tr("课程原声"))).toBeNull();
   });
 
   it("keeps completion captions out of camera occlusions while retaining the avatar", () => {
@@ -68,11 +69,11 @@ describe("OctosTeacher", () => {
     );
 
     const avatar = screen.getByRole("button", {
-      name: "Octos 正在准备下一步",
+      name: tr("Octos 正在准备下一步"),
     });
     expect(avatar.getAttribute("aria-busy")).toBe("true");
     expect(avatar.getAttribute("data-preparing")).toBe("true");
-    expect(screen.getByText("稍等一下")).toBeTruthy();
+    expect(screen.getByText(tr("稍等一下"))).toBeTruthy();
     expect(screen.queryByText(/TTS|语音生成/i)).toBeNull();
     expect(screen.getByTestId("teacher-art").getAttribute("data-activity"))
       .toBe("thinking");
@@ -91,8 +92,8 @@ describe("OctosTeacher", () => {
       />,
     );
 
-    expect(screen.getByText("课程播放中")).toBeTruthy();
-    expect(screen.queryByText("轻触开始")).toBeNull();
+    expect(screen.getByText(tr("课程播放中"))).toBeTruthy();
+    expect(screen.queryByText(tr("轻触开始"))).toBeNull();
     expect(screen.getByTestId("teacher-art").getAttribute("data-activity"))
       .toBe("speaking");
   });

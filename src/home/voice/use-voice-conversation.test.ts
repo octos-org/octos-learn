@@ -1,3 +1,5 @@
+import { setLocale } from "@/i18n";
+import { isPrivateAsrBusy } from "./use-voice-conversation";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import {
@@ -875,4 +877,13 @@ describe("shouldHandleNoSpeechEvent", () => {
       ),
     ).toBe(false);
   });
+});
+
+it("keeps the private ASR capacity gate independent of translated error text", () => {
+  for (const locale of ["zh-CN", "en-US"] as const) {
+    setLocale(locale, false);
+    for (const reason of ["busy", "single-session capacity", "语音服务正在使用中，你可以继续打字"]) expect(isPrivateAsrBusy(new Error(reason))).toBe(true);
+    expect(isPrivateAsrBusy(new Error("bridge offline"))).toBe(false);
+  }
+  setLocale("zh-CN", false);
 });

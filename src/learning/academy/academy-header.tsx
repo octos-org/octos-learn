@@ -1,41 +1,46 @@
+import { useLocale } from "@/i18n/use-locale";
+import { localizedCatalog, tr } from "@/i18n";
 import { Award, Landmark, LogOut, ScrollText, Settings, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { useAuth } from "@/auth/auth-context";
+import { LanguageSwitch } from "@/i18n/language-switch";
 
 import "../course-launcher.css";
 import "./academy.css";
 
 /** The academy's places. The hall is the home page; each other place is its
  * own page so it can be opened, bookmarked and shown on a large screen. */
-export const ACADEMY_PLACES = [
+export const ACADEMY_PLACES = localizedCatalog([
   { to: "/", label: "大厅", end: true, icon: Landmark },
   { to: "/atlas", label: "星图", end: false, icon: Sparkles },
   { to: "/achievements", label: "成就", end: false, icon: Award },
   { to: "/records", label: "记录", end: false, icon: ScrollText },
-] as const;
+] as const);
 
 export function AcademyHeader() {
+  useLocale();
   const { token, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   return (
     <header className="academy-header">
-      <Link to="/" className="academy-brand" aria-label="Octos Learn，回到大厅">
+      <Link to="/" className="academy-brand" aria-label={tr("Octos Learn，回到大厅")}>
         <img src="/images/octos-logo-color.svg" alt="" />
         <span>Octos Learn</span>
       </Link>
       {token && (
-        <nav className="academy-places" aria-label="学院">
+        <nav className="academy-places" aria-label={tr("学院")}>
           {ACADEMY_PLACES.map((place) => (
             <NavLink key={place.to} to={place.to} end={place.end}><place.icon size={17} aria-hidden="true" />{place.label}</NavLink>
           ))}
         </nav>
       )}
-      <nav className="academy-account" aria-label="账户">
+      <nav className="academy-account" aria-label={tr("账户")}>
+        <LanguageSwitch />
         {token ? (
           <>
-            <Link to="/settings"><Settings size={17} aria-hidden="true" /> 设置</Link>
+            <Link to="/settings"><Settings size={17} aria-hidden="true" /> {tr("设置")}</Link>
             <button
               type="button"
               disabled={loggingOut}
@@ -45,11 +50,11 @@ export function AcademyHeader() {
               }}
             >
               <LogOut size={17} aria-hidden="true" />
-              {loggingOut ? "正在退出…" : "退出"}
+              {loggingOut ? tr("正在退出…") : tr("退出")}
             </button>
           </>
         ) : (
-          <Link to="/login">登录</Link>
+          <Link to="/login">{tr("登录")}</Link>
         )}
       </nav>
     </header>

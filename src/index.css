@@ -4873,3 +4873,7 @@ button, a, input, textarea {
     opacity: 1;
   }
 }
+.language-switch { display: inline-flex; align-items: center; gap: .35rem; flex-shrink: 0; font-size: .8rem; }
+.language-switch button { padding: .4rem .5rem; border-radius: .5rem; color: inherit; opacity: .65; }
+.language-switch button[aria-pressed="true"] { opacity: 1; font-weight: 700; background: var(--color-surface-container, rgba(128,128,128,.12)); }
+.language-switch button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

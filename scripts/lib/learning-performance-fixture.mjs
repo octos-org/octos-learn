@@ -10,7 +10,7 @@ import { createByokHandler } from '../../services/byok/server.mjs';
 import { createModelBudgetGateway } from './learning-performance-control.mjs';
 const { WebSocketServer } = createRequire(import.meta.resolve('jsdom'))('ws');
 
-export async function createLiveTrialFixture({ plan, ledger, directory, scenario = 'success' }) {
+export async function createLiveTrialFixture({ plan, ledger, directory, scenario = 'success', languageAware = false }) {
   const metrics = { model_supplier_calls: 0, speech_supplier_calls: 0, actions: 0 };
   const gateway = createModelBudgetGateway({ ledger, activeSample: () => ledger.activeSampleId(), upstreamFetch: async url => {
     assert.ok(url.startsWith('https://generativelanguage.googleapis.com/v1beta/'));
@@ -47,6 +47,20 @@ export async function createLiveTrialFixture({ plan, ledger, directory, scenario
       { key: 'second', say: '这是第二段旁白，应该被拦截。', actions: [{ do: 'write', as: 'second-card', kind: 'note', role: 'concept', content: { text: '第二段画面' }, place: { relation: 'below', anchor: 'first-card' } }] },
     ] }], close: { summary: '结束', focus: ['first-card'] },
   };
+  const courseFor = s => {
+    if (!languageAware) return lesson;
+    const course = structuredClone(lesson), en = s.language === 'en-US';
+    course.lesson.language = s.language;
+    course.lesson.title = en ? 'Slope and intercept' : '斜率与截距';
+    course.lesson.goals = [en ? 'Understand y=2x+1' : '理解 y=2x+1'];
+    course.steps[0].purpose = en ? 'Observe' : '观察';
+    course.steps[0].beats[0].say = en ? 'The slope is two.' : '斜率是二。';
+    course.steps[0].beats[1].say = en ? 'This next sentence must be blocked.' : '这一句应该被拦截。';
+    course.steps[0].beats[0].actions[0].content.text = 'y=2x+1';
+    course.steps[0].beats[1].actions[0].content.text = en ? 'Intercept' : '截距';
+    course.close.summary = en ? 'Finished' : '结束';
+    return course;
+  };
   const traces = () => [0, 1].map(i => ({ stage: 'model-call', status: 'completed', model: plan.model, label: i ? 'lesson-plan-section' : 'lesson-plan-bootstrap', lesson_plan_part: i ? 'section' : 'bootstrap', request_attempts: 1 }));
   const files = s => s?.ready ? [
     { filename: file(s).split('/').at(-1), path: file(s), size_bytes: 100, modified_at: '2026-10-21T00:00:00Z' },
@@ -79,18 +93,24 @@ export async function createLiveTrialFixture({ plan, ledger, directory, scenario
         const s = [...sessions.values()].find(s => s.turn && path.includes(s.turn));
         assert.ok(s?.ready);
         if (path.endsWith('.generation-trace.jsonl')) { res.writeHead(200); res.end(traces(s).map(x => JSON.stringify(x)).join('\n')); return; }
-        return json(lesson);
+        return json(courseFor(s));
       }
       res.writeHead(503, { 'content-type': 'application/json' }); res.end('{}');
     };
     void handle().catch(() => { res.writeHead(500); res.end('{}'); });
   });
   const wss = new WebSocketServer({ server });
-  wss.on('connection', socket => {
+  wss.on('connection', (socket, request) => {
+    const features = new URL(request.url, origin).searchParams.getAll('ui_feature');
     sockets.add(socket); socket.on('close', () => sockets.delete(socket));
     socket.on('message', data => {
       const q = JSON.parse(String(data)), p = q.params ?? {}; let result = {};
       if (!q.id) return;
+      // Match the real server's opt-in gate, including on the independent
+      // read-only job monitor. Otherwise a missing negotiation passes fixtures.
+      if (languageAware && q.method === 'session/files.list' && !features.includes('auxiliary.rest_to_ws.v1')) {
+        socket.send(JSON.stringify({jsonrpc:'2.0',id:q.id,error:{code:-32601,message:'Missing auxiliary.rest_to_ws.v1'}}));return;
+      }
       switch (q.method) {
         case 'session/open': result = { opened: { session_id: p.session_id, active_profile_id: plan.owner, capabilities: { supported_features: ['projection.envelope.v2', 'skill.actions.v1', 'skill.action_jobs.v1', 'state.session_hydrate.v1'] } } }; break;
         case 'session/hydrate': result = { session_id: p.session_id, cursor: { stream: 'fixture', seq: 0 }, messages: [], envelopes: [] }; break;
@@ -99,11 +119,11 @@ export async function createLiveTrialFixture({ plan, ledger, directory, scenario
         case 'loop/list': result = { loops: [] }; break;
         case 'session/goal/get': result = { goal: null }; break;
         case 'session/title.set': result = { ok: true }; break;
-        case 'skill/action/list': result = { actions: [] }; break;
+        case 'skill/action/list': result = { actions: languageAware ? [{ id: 'learning.lesson.generate', skill_id: 'learning-coach', available: true, surfaces: ['learning.composer'], tags: [], label: 'Generate lesson', execution: 'background', input_schema: { type: 'object', properties: { turn_id: {}, learner_request: {}, request_source: {}, language: {}, input_modality: {}, client_timing: {}, teacher_profile: {} } } }] : [] }; break;
         case 'skill/action/job/list': result = { jobs: sessions.has(p.session_id) ? [job(sessions.get(p.session_id))] : [] }; break;
         case 'skill/action/invoke': {
           metrics.actions++;
-          const s = { id: p.session_id, job: `fixture-${metrics.actions}`, turn: p.arguments.turn_id, status: 'running', ready: false };
+          const s = { language: p.arguments.language, id: p.session_id, job: `fixture-${metrics.actions}`, turn: p.arguments.turn_id, status: 'running', ready: false };
           sessions.set(s.id, s); result = { ok: true, action_id: p.action_id, queued: 1, jobs: [job(s)] };
           const work = new Promise(done => setTimeout(done, 100)).then(() => generate(s)).catch(() => { s.status = 'failed'; notify('skill/action/job/updated', job(s)); });
           pending.add(work); void work.finally(() => pending.delete(work));

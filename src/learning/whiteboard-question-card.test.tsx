@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TOKEN_KEY } from "@/lib/constants";
@@ -46,8 +47,8 @@ describe("WhiteboardQuestionCard", () => {
       ...cameraQuestion, imagePath: undefined, status: "failed",
       errorCode: "LESSON_CREDENTIAL_MISSING",
     }} left={0} top={0} />);
-    expect(screen.getByText(/请在设置中填写你的 Gemini API Key/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: "前往设置" }).getAttribute("href")).toBe("/settings?tab=llm");
+    expect(screen.getByText(new RegExp(tr("请在设置中填写你的 Gemini API Key").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.getByRole("link", { name: tr("前往设置") }).getAttribute("href")).toBe("/settings?tab=llm");
   });
   it("loads the camera frame with profile-aware headers and opens it", async () => {
     render(
@@ -59,7 +60,7 @@ describe("WhiteboardQuestionCard", () => {
     );
 
     const trigger = await screen.findByRole("button", {
-      name: "放大查看本次问题图片",
+      name: tr("放大查看本次问题图片"),
     });
     expect(fetch).toHaveBeenCalledWith(
       "/api/files?path=uploads%2Fcamera-question.jpg&session=learn-camera-question",
@@ -73,17 +74,17 @@ describe("WhiteboardQuestionCard", () => {
     fireEvent.click(trigger);
 
     const dialog = screen.getByRole("dialog", {
-      name: "本次问题图片预览",
+      name: tr("本次问题图片预览"),
     });
     const preview = screen.getByRole("img", {
-      name: "放大的本次问题随附摄像头画面",
+      name: tr("放大的本次问题随附摄像头画面"),
     });
     expect(dialog.contains(preview)).toBe(true);
     expect(preview.getAttribute("src")).toBe("blob:camera-frame");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", {
-      name: "本次问题图片预览",
+      name: tr("本次问题图片预览"),
     })).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
@@ -98,14 +99,14 @@ describe("WhiteboardQuestionCard", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", {
-      name: "放大查看本次问题图片",
+      name: tr("放大查看本次问题图片"),
     }));
     fireEvent.click(screen.getByRole("button", {
-      name: "关闭图片预览",
+      name: tr("关闭图片预览"),
     }));
 
     expect(screen.queryByRole("dialog", {
-      name: "本次问题图片预览",
+      name: tr("本次问题图片预览"),
     })).toBeNull();
   });
 
@@ -127,9 +128,9 @@ describe("WhiteboardQuestionCard", () => {
       />,
     );
 
-    const label = await screen.findByText("引用的白板选区");
+    const label = await screen.findByText(tr("引用的白板选区"));
     const image = screen.getByRole("img", {
-      name: "本次问题引用的白板选区",
+      name: tr("本次问题引用的白板选区"),
     });
     const preview = image.closest(
       ".learning-whiteboard-question-camera-preview",
@@ -138,7 +139,7 @@ describe("WhiteboardQuestionCard", () => {
       ".learning-whiteboard-question-context-header",
     );
     const expand = screen.getByRole("button", {
-      name: "放大查看本次问题图片",
+      name: tr("放大查看本次问题图片"),
     });
     const camera = label.closest(".learning-whiteboard-question-camera");
     expect(preview).toBeTruthy();

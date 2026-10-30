@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { StudentInputDock } from "./student-input-dock";
@@ -18,7 +19,7 @@ describe("StudentInputDock board references", () => {
       />,
     );
 
-    expect(screen.getByLabelText("已引用的白板内容").textContent)
+    expect(screen.getByLabelText(tr("已引用的白板内容")).textContent)
       .toContain("已引用：截面公式");
     fireEvent.click(screen.getByRole("button", { name: "移除引用：截面公式" }));
     expect(remove).toHaveBeenCalledWith("ref-1");
@@ -39,12 +40,12 @@ describe("StudentInputDock board references", () => {
     );
 
     const dock = within(view.container);
-    fireEvent.click(dock.getByRole("button", { name: "斜率是什么？" }));
+    fireEvent.click(dock.getByRole("button", { name: tr("斜率是什么？") }));
 
-    expect((dock.getByRole("textbox", { name: "输入学习问题" }) as HTMLInputElement).value)
-      .toBe("斜率是什么？");
+    expect((dock.getByRole("textbox", { name: tr("输入学习问题") }) as HTMLInputElement).value)
+      .toBe(tr("斜率是什么？"));
     expect(send).not.toHaveBeenCalled();
-    expect(dock.queryByLabelText("试着从一个主题开始")).toBeNull();
+    expect(dock.queryByLabelText(tr("试着从一个主题开始"))).toBeNull();
   });
 
   it("starts with a suggested next-step question in the box, unsent", () => {
@@ -53,7 +54,7 @@ describe("StudentInputDock board references", () => {
       <StudentInputDock voiceState="idle" cameraActive={false} onMic={vi.fn()} onToggleCamera={vi.fn()}
         onSendText={send} onSendImage={vi.fn()} initialText="坐标是什么？" />,
     );
-    expect((within(view.container).getByRole("textbox", { name: "输入学习问题" }) as HTMLInputElement).value).toBe("坐标是什么？");
+    expect((within(view.container).getByRole("textbox", { name: tr("输入学习问题") }) as HTMLInputElement).value).toBe("坐标是什么？");
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -71,10 +72,10 @@ describe("StudentInputDock board references", () => {
     );
 
     const dock = within(view.container);
-    expect(dock.queryByRole("button", { name: "上传题目图片" })).toBeNull();
-    expect(dock.queryByRole("button", { name: "打开摄像头" })).toBeNull();
-    expect(dock.queryByRole("button", { name: "语音提问" })).toBeNull();
-    expect(dock.getByRole("textbox", { name: "输入学习问题" })).toBeTruthy();
-    expect(dock.getByRole("button", { name: "发送问题" })).toBeTruthy();
+    expect(dock.queryByRole("button", { name: tr("上传题目图片") })).toBeNull();
+    expect(dock.queryByRole("button", { name: tr("打开摄像头") })).toBeNull();
+    expect(dock.queryByRole("button", { name: tr("语音提问") })).toBeNull();
+    expect(dock.getByRole("textbox", { name: tr("输入学习问题") })).toBeTruthy();
+    expect(dock.getByRole("button", { name: tr("发送问题") })).toBeTruthy();
   });
 });

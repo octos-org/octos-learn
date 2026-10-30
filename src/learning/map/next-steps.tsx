@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 
 import { getSelectedProfileId, getToken } from "../../api/client";
@@ -11,6 +13,7 @@ import { loadPromptBank } from "./topic-prompts";
  * board; other steps only fill a new board's input box, so nothing is sent
  * (or paid for) until the learner sends it. */
 export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSessionRecord) => void; onNew?: (draft: string) => void }) {
+  useLocale();
   const [shown] = useState(nextStepsShown);
   const [api, setApi] = useState<HistoryApi>();
   const [steps, setSteps] = useState<NextStep[]>();
@@ -41,8 +44,8 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
     setSteps(steps.filter(item => item.id !== step.id));
     void api?.dismissSuggestion(step.id).catch(() => undefined);
   };
-  return <section className="next-steps" aria-label="下一步可以做什么">
-    <h4>下一步可以做什么</h4>
+  return <section className="next-steps" aria-label={tr("下一步可以做什么")}>
+    <h4>{tr("下一步可以做什么")}</h4>
     {steps.map(step => {
       const line = nextStepLine(step);
       // Only this device's own boards of the same account can be reopened.
@@ -50,9 +53,9 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
       return <article key={step.id} className="next-step">
         <p>{line.speaker ? `${line.speaker}：` : ""}{line.text}</p>
         <div className="next-step-actions">
-          {local && onSelect ? <button type="button" onClick={() => onSelect(local)}>回到那节课</button>
-            : onNew && <button type="button" onClick={() => open(step)}>在新白板上问问</button>}
-          <button type="button" onClick={() => dismiss(step)}>不感兴趣</button>
+          {local && onSelect ? <button type="button" onClick={() => onSelect(local)}>{tr("回到那节课")}</button>
+            : onNew && <button type="button" onClick={() => open(step)}>{tr("在新白板上问问")}</button>}
+          <button type="button" onClick={() => dismiss(step)}>{tr("不感兴趣")}</button>
         </div>
       </article>;
     })}

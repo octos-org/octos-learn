@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { historyRequestTimeout } from './request-timeout';
 import { finishSessionDeletions } from "./delete-session-copies";
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -91,13 +92,13 @@ export class LearningHistoryCoordinator {
       const remaining = await this.queue.list(identity.owner);
       // New facts reached the account: rules such as achievements can be checked.
       if (remaining.length < before) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: before - remaining.length } }));
-      this.update({ pending: remaining.length, error: remaining.some(row => row.state === 'conflict') ? '有学习记录内容冲突，原记录已保留，等待核对。' : '' });
+      this.update({ pending: remaining.length, error: remaining.some(row => row.state === 'conflict') ? tr("有学习记录内容冲突，原记录已保留，等待核对。") : '' });
       if (!this.canMaintain()) return;
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };
       const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: historyRequestTimeout(10000) });
-      if (!pending.ok) throw new Error('问答交付状态暂不可用');
+      if (!pending.ok) throw new Error(tr("问答交付状态暂不可用"));
       const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[]; pending_session_deletions: number; probe_session_id: string | null };
-      if (payload.profile_id !== identity.owner || !Array.isArray(payload.states)) throw new Error('无法确认问答交付账号');
+      if (payload.profile_id !== identity.owner || !Array.isArray(payload.states)) throw new Error(tr("无法确认问答交付账号"));
       const cleanup = Number(payload.pending_session_deletions) || 0;
       this.update({ cleanupPending: cleanup });
       if (cleanup && this.current() && !this.busy.size) {
@@ -127,7 +128,7 @@ export class LearningHistoryCoordinator {
           // A started analysis usually reports within half a minute; look then.
           if (analysis.dispatched) this.retryDelay = 30000;
         } catch {
-          this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
+          this.update({ analysisPending: 1, analysisError: tr("知识点分析尚未完成，原始学习记录已保留。") });
         }
       }
       if (this.canMaintain()) {
@@ -137,7 +138,7 @@ export class LearningHistoryCoordinator {
         await commentWeeklyReport(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain }).catch(() => undefined);
       }
     } catch {
-      this.update({ error: '学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。' });
+      this.update({ error: tr("学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。") });
     } finally {
       this.update({ syncing: false });
       // Lost HTTP/RPC replies leave durable tasks behind. Retry while this

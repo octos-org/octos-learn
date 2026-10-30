@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import type {
   IAgoraRTCClient,
   ILocalAudioTrack,
@@ -188,7 +189,7 @@ export async function responseError(response: Response): Promise<Error> {
     | { error?: { code?: string; message?: string } }
     | null;
   if (body?.error?.code === "session_busy") {
-    return new Error("语音服务正在使用中，你可以继续打字");
+    return new Error(tr("语音服务正在使用中，你可以继续打字"));
   }
   return new Error(
     body?.error?.message || `Private ASR request failed (${response.status})`,
@@ -302,7 +303,7 @@ export class PrivateAsrClient {
     if (this.nativeRtcActive) {
       const result = setNativePrivateAsrListening(listening);
       if (!result.ok) {
-        throw new Error(result.error || "Android Agora 原生音频状态切换失败");
+        throw new Error(result.error || tr("Android Agora 原生音频状态切换失败"));
       }
       return;
     }
@@ -556,7 +557,7 @@ export class PrivateAsrClient {
     if (this.closed) throw new Error("Private ASR stopped during microphone permission");
     const result = startNativePrivateAsr(session.agora);
     if (!result.ok || !result.joined) {
-      throw new Error(result.error || "Android Agora 原生音频频道未连接");
+      throw new Error(result.error || tr("Android Agora 原生音频频道未连接"));
     }
     this.nativeRtcActive = true;
     window.addEventListener(NATIVE_AUDIO_EVENT, this.onNativeAudioEvent);
@@ -565,7 +566,7 @@ export class PrivateAsrClient {
   private readonly onNativeAudioEvent = (event: Event): void => {
     const detail = (event as CustomEvent<NativeAudioEventDetail>).detail;
     if (detail?.type !== "private-asr-error") return;
-    const error = new Error(detail.message || "Android Agora 原生音频推送失败");
+    const error = new Error(detail.message || tr("Android Agora 原生音频推送失败"));
     this.rejectWaiter(error);
     this.onConnectionError?.(error);
   };

@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
@@ -41,13 +43,14 @@ export function ConfirmDialog({
   title,
   body,
   children,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel = tr("Confirm"),
+  cancelLabel = tr("Cancel"),
   confirmDisabled = false,
   variant = "default",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  useLocale();
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -115,7 +118,7 @@ export function ConfirmDialog({
           </h3>
           <button
             onClick={onCancel}
-            aria-label="Close dialog"
+            aria-label={tr("Close dialog")}
             className="rounded-lg p-1 text-muted hover:text-text-strong hover:bg-surface-container transition"
           >
             <X size={16} />

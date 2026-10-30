@@ -60,7 +60,7 @@ export function createInkCameraGate<Board extends InkCameraBoard>(
   let suspended = false;
   let editorDeferred = false;
   let pendingEditorCamera: InkCameraState | null = null;
-  let editorTimer: ReturnType<typeof setTimeout> | undefined;
+  let editorTimer: number | undefined;
   let editorSettleFrame: number | undefined;
   let destroyed = false;
 

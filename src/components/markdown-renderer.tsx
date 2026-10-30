@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Component, memo, useEffect, useRef, useState, type ComponentProps, type ReactNode, type ErrorInfo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -27,6 +29,7 @@ function loadMermaid(): Promise<MermaidApi> {
 let mermaidCounter = 0;
 
 function MermaidBlock({ content }: { content: string }) {
+  useLocale();
   const [svg, setSvg] = useState("");
   useEffect(() => {
     const id = `mermaid-${++mermaidCounter}`;
@@ -49,6 +52,7 @@ function MermaidBlock({ content }: { content: string }) {
 }
 
 function CodeBlock({ children, className }: { children?: ReactNode; className?: string }) {
+  useLocale();
   const codeRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const lang = className?.replace("language-", "") || "";
@@ -69,7 +73,7 @@ function CodeBlock({ children, className }: { children?: ReactNode; className?: 
             }}
             className="rounded-lg px-2 py-0.5 opacity-0 group-hover:opacity-100 text-code-text/50 hover:text-white hover:bg-white/10"
           >
-            {copied ? "Copied!" : "Copy"}
+            {copied ? tr("Copied!") : tr("Copy")}
           </button>
         </div>
       )}
@@ -108,7 +112,7 @@ const mdComponents: Components = {
     if (!src) return null;
     return (
       <a href={src} target="_blank" rel="noopener noreferrer" className="block my-2">
-        <img src={src} alt={alt || "image"} className="max-w-full max-h-96 rounded-lg border border-border" loading="lazy" />
+        <img src={src} alt={alt || tr("image")} className="max-w-full max-h-96 rounded-lg border border-border" loading="lazy" />
       </a>
     );
   },
@@ -158,6 +162,7 @@ const mdComponents: Components = {
 };
 
 const MemoizedMarkdown = memo(function MemoizedMarkdown({ text, className }: { text: string; className?: string }) {
+  useLocale();
   return (
     <div className={className}>
       <ReactMarkdown
@@ -173,6 +178,7 @@ const MemoizedMarkdown = memo(function MemoizedMarkdown({ text, className }: { t
 
 /** Standalone markdown renderer — no assistant-ui dependency. */
 export function MarkdownContent({ text, className }: { text: string; className?: string }) {
+  useLocale();
   return (
     <MarkdownErrorBoundary fallback={text}>
       <MemoizedMarkdown text={text} className={className} />
@@ -185,6 +191,7 @@ export function MarkdownContent({ text, className }: { text: string; className?:
  * with any code that still imports RichMarkdown.
  */
 export function RichMarkdown({ className, text }: { className?: string; text?: string }) {
+  useLocale();
   const content = text ?? "";
   return (
     <MarkdownErrorBoundary fallback={content}>

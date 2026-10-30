@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { localizedCatalog, tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   Save,
@@ -49,10 +51,10 @@ const LLM_KEY_FIELDS: KeyField[] = LLM_PROVIDERS.filter(
 ).map((p) => ({
   key: p.envKey,
   name: p.name,
-  description: `API key for ${p.name} models`,
+  description: tr("API key for {{v0}} models", { v0: p.name }),
 }));
 
-const GROUPS: KeyGroup[] = [
+const GROUPS: KeyGroup[] = localizedCatalog([
   {
     id: "llm_providers",
     title: "LLM Providers",
@@ -112,7 +114,7 @@ const GROUPS: KeyGroup[] = [
       },
     ],
   },
-];
+]);
 
 const ALL_FIELDS = GROUPS.flatMap((g) => g.fields);
 
@@ -138,6 +140,7 @@ function KeyFieldRow({
   showIdentifier?: boolean;
   disabled?: boolean;
 }) {
+  useLocale();
   const configured = Boolean(value.trim());
 
   return (
@@ -155,7 +158,7 @@ function KeyFieldRow({
             }`}
           />
           <span className="text-[10px] font-medium text-muted">
-            {configured ? "Configured" : "Not set"}
+            {configured ? tr("Configured") : tr("Not set")}
           </span>
         </div>
       </div>
@@ -166,7 +169,7 @@ function KeyFieldRow({
         aria-label={field.key}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={`Enter ${field.name}`}
+        placeholder={tr("Enter {{v0}}", { v0: field.name })}
         spellCheck={false}
         autoComplete="off"
         className="w-full rounded-xl bg-surface-dark/50 px-4 py-2.5 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 transition font-mono"
@@ -176,6 +179,7 @@ function KeyFieldRow({
 }
 
 export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
+  useLocale();
   const [values, setValues] = useState<Record<string, string>>(() =>
     profileToValues(profile),
   );
@@ -238,13 +242,13 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
           enabled: !!key,
           params: serviceParams(capability, current), key,
         }, current?.revision);
-        if (!next) throw new Error(`Reload ${SERVICE_DEFINITIONS[capability].title} before saving again.`);
+        if (!next) throw new Error(tr("Reload {{v0}} before saving again.", { v0: SERVICE_DEFINITIONS[capability].title }));
         services.setMetadata(previous => ({ ...previous, [capability]: next }));
         setServiceValues(previous => { const remaining = { ...previous }; delete remaining[capability]; return remaining; });
       }
       setSaved(true);
     } catch (err) {
-      setError(formatSettingsError(err, "Failed to save API keys."));
+      setError(formatSettingsError(err, tr("Failed to save API keys.")));
     } finally {
       setSaving(false);
     }
@@ -289,13 +293,13 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
               ))}
             </div>
           </div>
-          {group.id === "llm_providers" && <section id="speech-services" aria-label="Speech & Learning" className="glass-section rounded-lg p-6">
+          {group.id === "llm_providers" && <section id="speech-services" aria-label={tr("Speech & Learning")} className="glass-section rounded-lg p-6">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Volume2 size={20} /></div>
-              <div><h3 className="text-sm font-semibold text-text-strong">Speech & Learning</h3><p className="text-xs text-muted">Your provider keys for Voice. Configure resources and enable services in the Voice tab.</p></div>
+              <div><h3 className="text-sm font-semibold text-text-strong">{tr("Speech & Learning")}</h3><p className="text-xs text-muted">{tr("Your provider keys for Voice. Configure resources and enable services in the Voice tab.")}</p></div>
             </div>
-            {services.loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted"><Loader2 size={14} className="animate-spin" /> Loading service keys…</p>
-              : services.error ? <div role="alert" className="text-sm text-red-400">{services.error} <button onClick={services.reload} className="text-accent underline">Reload services</button></div>
+            {services.loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted"><Loader2 size={14} className="animate-spin" /> {tr("Loading service keys…")}</p>
+              : services.error ? <div role="alert" className="text-sm text-red-400">{services.error} <button onClick={services.reload} className="text-accent underline">{tr("Reload services")}</button></div>
               : <div className="space-y-3">{SERVICE_CAPABILITIES.map(capability => {
                 const definition = SERVICE_DEFINITIONS[capability];
                 const current = services.metadata[capability];
@@ -303,10 +307,10 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
                   <KeyFieldRow field={{ key: definition.keyLabel, name: capability === "admission" ? definition.providerName : `${definition.providerName} · ${capability === "tts" ? "TTS" : "ASR"}`, description: definition.description }}
                     value={serviceValues[capability] ?? originalKey(capability)} disabled={saving} showIdentifier={false}
                     onChange={value => { setServiceValues(previous => ({ ...previous, [capability]: value })); setSaved(false); setError(null); }} />
-                  {capability !== "admission" && <p className="mt-2 px-1 text-xs leading-5 text-muted">Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.</p>}
+                  {capability !== "admission" && <p className="mt-2 px-1 text-xs leading-5 text-muted">{tr("Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.")}</p>}
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted">
-                    <span>{!supportsService(capability, current) ? "Replace the previous credential with a new Volcano API Key." : current?.local_storage_error ? "The encrypted local key could not be read. Enter it again on this TV; your account key has not been removed." : current?.local_credential === false ? "Account key saved. Enter it once on this TV to enable direct calls; keys are not downloaded from the server." : current?.account_synced === false ? "Saved on this TV. Account sync failed; enter and save again to retry." : "Save a key to connect automatically. Leave unchanged to keep. Clear and save to disconnect."}</span>
-                    <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">Get API Key <ExternalLink size={11} /></a>
+                    <span>{!supportsService(capability, current) ? tr("Replace the previous credential with a new Volcano API Key.") : current?.local_storage_error ? tr("The encrypted local key could not be read. Enter it again on this TV; your account key has not been removed.") : current?.local_credential === false ? tr("Account key saved. Enter it once on this TV to enable direct calls; keys are not downloaded from the server.") : current?.account_synced === false ? tr("Saved on this TV. Account sync failed; enter and save again to retry.") : tr("Save a key to connect automatically. Leave unchanged to keep. Clear and save to disconnect.")}</span>
+                    <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">{tr("Get API Key") + " "}<ExternalLink size={11} /></a>
                   </div>
                 </div>;
               })}</div>}
@@ -318,10 +322,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
       <div className="flex items-start gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
         <KeyRound size={14} className="mt-0.5 shrink-0 text-muted" />
         <p className="text-xs text-muted">
-          Keys are stored per profile on the server and never shown in plain
-          text. Saving keeps unchanged keys as-is; clearing a field and saving
-          removes that key.
-        </p>
+          {tr("Keys are stored per profile on the server and never shown in plain text. Saving keeps unchanged keys as-is; clearing a field and saving removes that key.")}</p>
       </div>
 
       {/* Save actions */}
@@ -339,7 +340,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
           ) : (
             <Save size={14} />
           )}
-          {saved ? "Saved" : "Save Changes"}
+          {saved ? tr("Saved") : tr("Save Changes")}
         </button>
         {isDirty && (
           <button
@@ -348,11 +349,10 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
             className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"
           >
             <RotateCcw size={14} />
-            Reset
-          </button>
+            {tr("Reset")}</button>
         )}
         {error && (
-          <span role="alert" className="text-xs text-red-400">{error}</span>
+          <span role="alert" className="text-xs text-red-400">{translateStatus(error)}</span>
         )}
       </div>
     </div>

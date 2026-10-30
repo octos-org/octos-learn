@@ -1,0 +1,96 @@
+{
+  "scope": "Existing local yy profile; normal HTTPS 5173 and backend 50080; read-only page navigation and language switching. No course/model/TTS request was submitted.",
+  "routes": [
+    {
+      "route": "/",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": true
+    },
+    {
+      "route": "/atlas",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/achievements",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/records",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": true
+    },
+    {
+      "route": "/records?tab=week",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/records?tab=month",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=profile",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=teachers",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=memory",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=llm",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=voice",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=api-keys",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=authentication",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/settings?tab=developer",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    },
+    {
+      "route": "/setup",
+      "horizontal_overflow": false,
+      "untranslated_control_labels": [],
+      "preserved_historical_content": false
+    }
+  ],
+  "page_errors": []
+}

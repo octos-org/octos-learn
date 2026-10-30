@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import type { ReflectionSnapshot, StudentTaskSnapshot } from "octos-lesson-language/web-runtime";
 
 import type { OllLessonOutlineTopic } from "./oll/use-oll-lesson-runtime";
@@ -33,20 +34,20 @@ export function buildCurrentLessonContext({ outline, reflections, studentTasks, 
   });
   if (!seen.length) return undefined;
   const shown = visibleReflections(reflections, outline, cursor, settled);
-  const header = "本白板刚讲过的内容（学生看得到）：";
+  const header = tr("本白板刚讲过的内容（学生看得到）：");
   let text = header;
   for (const [index, topic] of seen.slice(-MAX_TOPICS).reverse().entries()) {
-    const lines = [`${index === 0 ? "最近一节课" : "更早的课"}：${clip(topic.title, 80)}`];
+    const lines = [`${index === 0 ? tr("最近一节课") : tr("更早的课")}：${clip(topic.title, 80)}`];
     // Thinking questions and practice first, so a long step list cannot push them out.
     const own = shown.filter((reflection) => reflection.topic.id === topic.id);
-    own.forEach((reflection, n) => lines.push(`课后思考题${own.length > 1 ? ` ${n + 1}` : ""}：${clip(reflection.prompt, 240)}（参考答案：${clip(reflection.answer, 240)}）`));
+    own.forEach((reflection, n) => lines.push(tr("课后思考题{{v0}}：{{v1}}（参考答案：{{v2}}）", { v0: own.length > 1 ? ` ${n + 1}` : "", v1: clip(reflection.prompt, 240), v2: clip(reflection.answer, 240) })));
     // A board with one lesson owns every task; otherwise a task belongs to the
     // lesson that declared it. Practice already begun stays listed.
     const tasks = studentTasks.filter((task) => (task.available || task.status !== "not_started") && task.prompt.trim()
       && (outline.length === 1 || topic.taskAliases?.includes(task.task_id)));
-    if (tasks.length) lines.push(`练习：${tasks.map((task) => `${clip(task.prompt, 120)}（${task.status === "succeeded" ? "已做对" : "未完成"}）`).join("；")}`);
+    if (tasks.length) lines.push(tr("练习：{{v0}}", { v0: tasks.map((task) => `${clip(task.prompt, 120)}（${task.status === "succeeded" ? "已做对" : "未完成"}）`).join("；") }));
     const steps = topic.steps.map((step) => clip(step.title, 40)).filter(Boolean);
-    if (steps.length) lines.push(`讲过：${steps.join("；")}`);
+    if (steps.length) lines.push(tr("讲过：{{v0}}", { v0: steps.join("；") }));
     const block = `\n${index === 0 ? "" : "\n"}${lines.join("\n")}`;
     if (index > 0 && text.length + block.length > MAX_CHARS) break;
     text += block;

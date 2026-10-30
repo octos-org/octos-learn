@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useRef } from "react";
 import { ArrowRight, X } from "lucide-react";
 import { SessionList } from "./history/session-list";
@@ -20,6 +22,7 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew, onOpenRec
   /** Leaves for the records page the way the board leaves anywhere, saving ink first. */
   onOpenRecords: () => void;
 }) {
+  useLocale();
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -27,7 +30,7 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew, onOpenRec
     return () => { previous?.focus(); };
   }, []);
   return <div className="learning-history-overlay" onClick={onClose}>
-    <aside ref={panel} className="learning-history-panel" role="dialog" aria-modal="true" aria-label="学习记录" onClick={e => e.stopPropagation()} onKeyDown={e => {
+    <aside ref={panel} className="learning-history-panel" role="dialog" aria-modal="true" aria-label={tr("学习记录")} onClick={e => e.stopPropagation()} onKeyDown={e => {
       if (e.key === "Escape") { e.stopPropagation(); onClose(); }
       if (e.key === "Tab") {
         const elements = panel.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input, a[href], summary');
@@ -36,9 +39,9 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew, onOpenRec
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
       }
     }}>
-      <header><div><h2>学习记录</h2><p>继续之前的白板与课程</p></div><button onClick={onClose} aria-label="关闭学习记录"><X size={20} /></button></header>
+      <header><div><h2>{tr("学习记录")}</h2><p>{tr("继续之前的白板与课程")}</p></div><button onClick={onClose} aria-label={tr("关闭学习记录")}><X size={20} /></button></header>
       <SessionList currentId={currentId} onSelect={onSelect} onNew={() => onNew()} />
-      <button type="button" className="learning-history-more" onClick={onOpenRecords}>每次学习的经过与删除 <ArrowRight size={15} aria-hidden="true" /></button>
+      <button type="button" className="learning-history-more" onClick={onOpenRecords}>{tr("每次学习的经过与删除") + " "}<ArrowRight size={15} aria-hidden="true" /></button>
     </aside>
   </div>;
 }

@@ -1,3 +1,5 @@
+import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
 import { NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
 import { announceTeacherApproval } from "../teachers/teacher-portrait-state";
@@ -206,7 +208,7 @@ function degradedVisualStatuses(
       purpose: degradation.purpose,
       title: typeof node.content.title === "string"
         ? node.content.title
-        : "互动画面暂时不可用",
+        : tr("互动画面暂时不可用"),
     }];
   }).sort((left, right) => left.nodeId.localeCompare(right.nodeId));
 }
@@ -230,7 +232,7 @@ function visibleBoardTargetCandidates(
   return result;
 }
 
-const boardTargetKindLabels: Record<string, string> = {
+const boardTargetKindLabels: Record<string, string> = localizedCatalog({
   node: "整个内容块",
   plot: "整个函数图",
   geometry: "整个几何图",
@@ -241,15 +243,15 @@ const boardTargetKindLabels: Record<string, string> = {
   "geometry-point": "几何点",
   "geometry-line": "几何线",
   "scene3d-object": "三维对象",
-};
+});
 
-const selectionContentKindLabels: Record<SelectionContentKind, string> = {
+const selectionContentKindLabels: Record<SelectionContentKind, string> = localizedCatalog({
   text: "文字",
   math: "公式",
   geometry: "图形",
   data: "数据",
   unknown: "暂不确定",
-};
+});
 
 const boardOcclusionSelector = BOARD_OCCLUSION_SELECTOR;
 const courseVisualNodeKinds = new Set([
@@ -428,21 +430,21 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
   };
 }
 
-const inkColorPresets = [
+const inkColorPresets = localizedCatalog([
   { color: "#176b62", label: "深青" },
   { color: "#1769aa", label: "蓝色" },
   { color: "#7a5aa3", label: "紫色" },
   { color: "#c75445", label: "红色" },
   { color: "#202b2a", label: "黑色" },
-];
+]);
 
 const INK_PEN_WIDTH_KEY = "octos-learning-pen-width:v1";
-const inkWidthPresets = [
+const inkWidthPresets = localizedCatalog([
   { width: 1.25, label: "极细" },
   { width: 2, label: "细" },
   { width: 3.25, label: "标准" },
   { width: 5, label: "粗" },
-];
+]);
 
 function initialInkPenWidth(): number {
   const stored = Number(localStorage.getItem(INK_PEN_WIDTH_KEY));
@@ -459,6 +461,7 @@ function InkColorControl({
   value: string;
   onChange: (color: string) => void;
 }) {
+  useLocale();
   return (
     <div className="learning-ink-colors" aria-label={label}>
       {inkColorPresets.map((preset) => (
@@ -513,11 +516,12 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
 function ensureScene3dInteractionHints(viewport: HTMLElement): void {
   const scenes = viewport.querySelectorAll<HTMLElement>(".scene3d-runtime");
   scenes.forEach((scene, index) => {
-    if (scene.querySelector(".learning-scene3d-interaction-hint")) return;
+    const existingHint = scene.querySelector(".learning-scene3d-interaction-hint");
+    if (existingHint) { existingHint.textContent = tr("拖动画面旋转 · 滚动缩放"); return; }
     const hint = viewport.ownerDocument.createElement("div");
     hint.className = "learning-scene3d-interaction-hint";
     hint.id = `learning-scene3d-interaction-hint-${index}`;
-    hint.textContent = "拖动画面旋转 · 滚动缩放";
+    hint.textContent = tr("拖动画面旋转 · 滚动缩放");
     const image = scene.querySelector<SVGElement>("svg[role='img']");
     image?.setAttribute("aria-describedby", hint.id);
     scene.append(hint);
@@ -780,11 +784,17 @@ export function LearningWhiteboard({
     request: DegradedVisualRetryRequest,
   ) => Promise<void> | void;
 }) {
+  useLocale();
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const questionsRef = useRef(questions);
   questionsRef.current = questions;
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
+  useEffect(() => subscribeLocale(() => {
+    (mountedRef.current?.view as unknown as { setLocale?: (locale: string) => void } | undefined)?.setLocale?.(getLocale());
+    (inkRuntimeRef.current as unknown as { setLocale?: (locale: string) => void } | null)?.setLocale?.(getLocale());
+    if (viewportRef.current) ensureScene3dInteractionHints(viewportRef.current);
+  }), []);
   const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
   const focusedLoadingTurnRef = useRef<string | null>(null);
   const availableTaskKeysRef = useRef(new Set<string>());
@@ -869,7 +879,7 @@ export function LearningWhiteboard({
       prepareBoardWritingFont()).catch(() => {
       if (active) {
         onBoardWritingReady?.(false);
-        setWritingError("手写字体加载失败，请重试。");
+        setWritingError(tr("手写字体加载失败，请重试。"));
       }
     });
     return () => { active = false; onBoardWritingReady?.(false); };
@@ -885,7 +895,7 @@ export function LearningWhiteboard({
     if (!ink?.writeAiPaths) {
       if (selectionEnhancements.some((artifact) => artifact.response.kind === "board_writing")) {
         const timer = window.setTimeout(() => {
-          setWritingError("当前笔迹组件不支持恢复这份板书，请更新客户端。");
+          setWritingError(tr("当前笔迹组件不支持恢复这份板书，请更新客户端。"));
         }, 0);
         return () => window.clearTimeout(timer);
       }
@@ -939,10 +949,10 @@ export function LearningWhiteboard({
           await ink.writeAiPaths!(artifact.turn_id, paths);
           return;
         }
-        throw new Error("白板内容正在变化，请稍后重试板书。");
+        throw new Error(tr("白板内容正在变化，请稍后重试板书。"));
       }).catch((cause: unknown) => {
         writingInFlightRef.current.delete(id);
-        if (inkRuntimeRef.current === ink) setWritingError(cause instanceof Error ? cause.message : "板书写入失败");
+        if (inkRuntimeRef.current === ink) setWritingError(cause instanceof Error ? cause.message : tr("板书写入失败"));
       });
     }
   }, [inkAvailable, inkMergeSourceSessionId, inkSessionId, selectionEnhancements, selectionSources, writingRetry]);
@@ -1160,11 +1170,11 @@ export function LearningWhiteboard({
         topic.taskAliases?.includes(activeStudentTask.task_id))
     : undefined;
   const lockedTaskMessage = (topicId: string) => {
-    if (!activeStudentTask) return "白板上的课程全部播放完后，就可以继续操作。";
+    if (!activeStudentTask) return tr("白板上的课程全部播放完后，就可以继续操作。");
     if (!activeStudentTaskTopic || activeStudentTaskTopic.id === topicId) {
-      return "先完成前面的练习，这一题就会开放。";
+      return tr("先完成前面的练习，这一题就会开放。");
     }
-    return `先完成「${activeStudentTaskTopic.title}」里的练习，这一题就会开放。`;
+    return tr("先完成「{{v0}}」里的练习，这一题就会开放。", { v0: String(activeStudentTaskTopic.title) });
   };
   const presentationTopicsRef = useRef(presentationTopics);
   presentationTopicsRef.current = presentationTopics;
@@ -1786,7 +1796,7 @@ export function LearningWhiteboard({
       });
       setRequestedDegradedNodeIds((current) => new Set(current).add(degraded.nodeId));
     } catch (cause) {
-      setTaskError(cause instanceof Error ? cause.message : "暂时无法重试这个画面");
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法重试这个画面"));
     } finally {
       setRetryingDegradedNodeId(null);
     }
@@ -1797,7 +1807,7 @@ export function LearningWhiteboard({
       runtimeRef.current?.requestStudentTaskHint(taskId);
       setTaskError("");
     } catch (cause) {
-      setTaskError(cause instanceof Error ? cause.message : "暂时无法显示提示");
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法显示提示"));
     }
   }, []);
 
@@ -1808,7 +1818,7 @@ export function LearningWhiteboard({
       setUnreadableAnswerTask(readable === false ? taskId : null);
       setTaskError("");
     } catch (cause) {
-      setTaskError(cause instanceof Error ? cause.message : "暂时无法提交答案");
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法提交答案"));
     }
   }, []);
 
@@ -1817,7 +1827,7 @@ export function LearningWhiteboard({
       runtimeRef.current?.retryStudentTask(taskId);
       setTaskError("");
     } catch (cause) {
-      setTaskError(cause instanceof Error ? cause.message : "暂时无法重新开始任务");
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法重新开始任务"));
     }
   }, []);
 
@@ -1964,7 +1974,7 @@ export function LearningWhiteboard({
       if (mode !== "draw") setInkWidthMenuOpen(false);
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法切换书写工具");
+      setInkError(cause instanceof Error ? cause.message : tr("无法切换书写工具"));
     }
   }, [setInkError]);
 
@@ -1979,7 +1989,7 @@ export function LearningWhiteboard({
     const ink = inkRuntimeRef.current;
     if (!ink) return;
     void Promise.resolve(action === "undo" ? ink.undo() : ink.redo()).catch(
-      (cause) => setInkError(cause instanceof Error ? cause.message : "笔迹历史操作失败"),
+      (cause) => setInkError(cause instanceof Error ? cause.message : tr("笔迹历史操作失败")),
     );
   }, [setInkError]);
 
@@ -1991,7 +2001,7 @@ export function LearningWhiteboard({
       ink.selectAll();
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法选择笔迹");
+      setInkError(cause instanceof Error ? cause.message : tr("无法选择笔迹"));
     }
   }, [setInkError]);
 
@@ -2032,12 +2042,12 @@ export function LearningWhiteboard({
     try {
       const ink = inkRuntimeRef.current;
       if (!ink?.setPenColor) {
-        throw new Error("当前 Ink Runtime 不支持笔迹颜色");
+        throw new Error(tr("当前 Ink Runtime 不支持笔迹颜色"));
       }
       ink.setPenColor(color);
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
+      setInkError(cause instanceof Error ? cause.message : tr("无法设置笔迹颜色"));
     }
   }, [setInkError]);
 
@@ -2045,7 +2055,7 @@ export function LearningWhiteboard({
     try {
       const ink = inkRuntimeRef.current;
       if (!ink?.setPenWidth) {
-        throw new Error("当前 Ink Runtime 不支持笔触粗细");
+        throw new Error(tr("当前 Ink Runtime 不支持笔触粗细"));
       }
       ink.setPenWidth(width);
       inkPenWidthRef.current = width;
@@ -2054,7 +2064,7 @@ export function LearningWhiteboard({
       setInkWidthMenuOpen(false);
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法设置笔触粗细");
+      setInkError(cause instanceof Error ? cause.message : tr("无法设置笔触粗细"));
     }
   }, [setInkError]);
 
@@ -2062,12 +2072,12 @@ export function LearningWhiteboard({
     const ink = inkRuntimeRef.current;
     if (!ink) return;
     if (!ink.setSelectionColor) {
-      setInkError("当前 Ink Runtime 不支持选区改色");
+      setInkError(tr("当前 Ink Runtime 不支持选区改色"));
       return;
     }
     void Promise.resolve(ink.setSelectionColor(color)).then(
       () => setInkError(""),
-      (cause) => setInkError(cause instanceof Error ? cause.message : "无法修改选中笔迹的颜色"),
+      (cause) => setInkError(cause instanceof Error ? cause.message : tr("无法修改选中笔迹的颜色")),
     );
   }, [setInkError]);
 
@@ -2077,7 +2087,7 @@ export function LearningWhiteboard({
 
   const readSelectionContext = useCallback(async (): Promise<PreparedSelectionContext> => {
     const ink = inkRuntimeRef.current;
-    if (!ink) throw new Error("笔迹功能尚未就绪");
+    if (!ink) throw new Error(tr("笔迹功能尚未就绪"));
     if (!inkAvailable) await ink.ready;
     let captured: { candidates: BoardTargetCandidate[]; boardId: string; boardRevision: number } | undefined;
     const captureContext = (selection: Pick<InkSelectionSnapshot, "bounds" | "region">) => {
@@ -2096,7 +2106,7 @@ export function LearningWhiteboard({
       onCaptured: typeof captureContext,
     ) => Promise<InkSelectionSnapshot>;
     const snapshot = await capture(captureContext);
-    if (inkRuntimeRef.current !== ink) throw new Error("本次选区所属白板已关闭。");
+    if (inkRuntimeRef.current !== ink) throw new Error(tr("本次选区所属白板已关闭。"));
     // Compatibility with the previous Runtime, before the synchronous callback.
     if (!captured) captureContext(snapshot);
     return { snapshot, ...captured!, recorded: false };
@@ -2130,7 +2140,7 @@ export function LearningWhiteboard({
     async (): Promise<VoiceInkSelectionRequest> => {
       const prepared = await readSelectionContext();
       const mounted = mountedRef.current;
-      if (!mounted) throw new Error("白板尚未就绪");
+      if (!mounted) throw new Error(tr("白板尚未就绪"));
       const contextImage = await selectionContextToPngFile(
         prepared.snapshot,
         mounted,
@@ -2256,7 +2266,7 @@ export function LearningWhiteboard({
       setInkError("");
     } catch (cause) {
       setSelectionQuestionOpen(false);
-      setInkError(cause instanceof Error ? cause.message : "无法读取当前选区");
+      setInkError(cause instanceof Error ? cause.message : tr("无法读取当前选区"));
     } finally {
       setSelectionRequestPending(false);
     }
@@ -2284,7 +2294,7 @@ export function LearningWhiteboard({
         requestedBoardTargetIds.includes(candidate.target_id),
       );
       const mounted = mountedRef.current;
-      if (!mounted) throw new Error("白板尚未就绪");
+      if (!mounted) throw new Error(tr("白板尚未就绪"));
       const contextImage = await selectionContextToPngFile(
         prepared.snapshot,
         mounted,
@@ -2310,7 +2320,7 @@ export function LearningWhiteboard({
       setSelectedBoardTargetIds([]);
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
+      setInkError(cause instanceof Error ? cause.message : tr("无法发送当前选区"));
     } finally {
       setSelectionRequestPending(false);
     }
@@ -2335,7 +2345,7 @@ export function LearningWhiteboard({
         selectedBoardTargetIds.includes(candidate.target_id),
       );
       const mounted = mountedRef.current;
-      if (!mounted) throw new Error("白板尚未就绪");
+      if (!mounted) throw new Error(tr("白板尚未就绪"));
       const contextImage = await selectionContextToPngFile(
         prepared.snapshot,
         mounted,
@@ -2356,7 +2366,7 @@ export function LearningWhiteboard({
       setSelectedBoardTargetIds([]);
       setInkError("");
     } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法针对当前选区开始语音提问");
+      setInkError(cause instanceof Error ? cause.message : tr("无法针对当前选区开始语音提问"));
     } finally {
       setSelectionRequestPending(false);
     }
@@ -2374,6 +2384,7 @@ export function LearningWhiteboard({
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
+    (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
     if (isAndroidRuntime()) {
       // Meeting displays are viewed from much farther away than laptops.
@@ -2550,7 +2561,7 @@ export function LearningWhiteboard({
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
           store: indexedInkStore,
           documentId: `learning-session:${inkSessionId}:student-ink`,
-          locale: "zh-CN",
+          locale: getLocale(),
           touchMarqueeActivation:
             import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
@@ -2631,7 +2642,7 @@ export function LearningWhiteboard({
             if (!active) return;
             setInkAvailable(false);
             setInkSupportsColors(false);
-            setInkError(cause instanceof Error ? cause.message : "笔迹功能加载失败");
+            setInkError(cause instanceof Error ? cause.message : tr("笔迹功能加载失败"));
             const destruction = destroyInk();
             if (destruction) void destruction.catch(() => undefined);
           },
@@ -2640,7 +2651,7 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkAvailable(false);
       setInkSupportsColors(false);
-      setInkError(cause instanceof Error ? cause.message : "笔迹功能加载失败");
+      setInkError(cause instanceof Error ? cause.message : tr("笔迹功能加载失败"));
       const destruction = destroyInk();
       if (destruction) void destruction.catch(() => undefined);
     }
@@ -2756,7 +2767,7 @@ export function LearningWhiteboard({
       (cause) => {
         setInkError(cause instanceof Error
           ? cause.message
-          : "上一遍笔迹暂时无法恢复");
+          : tr("上一遍笔迹暂时无法恢复"));
         // Keep the merge source pending on failure; never mark it recovered.
       },
     );
@@ -3380,22 +3391,22 @@ export function LearningWhiteboard({
         ref={viewportRef}
         className="learning-oll-board"
         data-testid="oll-lesson-board"
-        aria-label="OLL 无限白板"
+        aria-label={tr("OLL 无限白板")}
       />
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0
         && !loadingState ? (
         <div className="learning-whiteboard-empty" aria-live="polite">
-          <span>这块白板会保存我们的思考过程</span>
-          <strong>向 Octos 提问，我们从这里开始</strong>
+          <span>{tr("这块白板会保存我们的思考过程")}</span>
+          <strong>{tr("向 Octos 提问，我们从这里开始")}</strong>
         </div>
       ) : null}
       {degradedVisuals.length > 0 ? (
         <aside
           className="learning-degraded-visuals"
           data-learning-board-occlusion=""
-          aria-label="未完成的互动画面"
+          aria-label={tr("未完成的互动画面")}
         >
           {degradedVisuals.map((degraded) => {
             const requested = requestedDegradedNodeIds.has(degraded.nodeId);
@@ -3413,7 +3424,7 @@ export function LearningWhiteboard({
                     disabled={retrying || requested}
                   >
                     <RotateCcw size={14} />
-                    {retrying ? "正在重试" : requested ? "已发起重试" : "只重试这个画面"}
+                    {retrying ? tr("正在重试") : requested ? tr("已发起重试") : tr("只重试这个画面")}
                   </button>
                 ) : null}
               </div>
@@ -3422,12 +3433,12 @@ export function LearningWhiteboard({
         </aside>
       ) : null}
       {inkSessionId && inkAvailable ? (
-        <div className="learning-ink-toolbar" data-learning-board-occlusion="" aria-label="白板书写工具">
+        <div className="learning-ink-toolbar" data-learning-board-occlusion="" aria-label={tr("白板书写工具")}>
           <button
             type="button"
             className={inkState.mode === "navigate" ? "is-active" : ""}
             onClick={() => setInkMode("navigate")}
-            aria-label="浏览白板"
+            aria-label={tr("浏览白板")}
             aria-pressed={inkState.mode === "navigate"}
           >
             <Hand size={17} />
@@ -3444,10 +3455,10 @@ export function LearningWhiteboard({
                 setInkWidthMenuOpen(false);
               }
             }}
-            aria-label="书写笔迹"
+            aria-label={tr("书写笔迹")}
             aria-pressed={inkState.mode === "draw"}
             aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
-            title={inkState.mode === "draw" ? "再次点击选择笔触粗细" : "书写笔迹"}
+            title={inkState.mode === "draw" ? tr("再次点击选择笔触粗细") : tr("书写笔迹")}
           >
             <PenLine size={17} />
           </button>
@@ -3455,7 +3466,7 @@ export function LearningWhiteboard({
             type="button"
             className={inkState.mode === "erase" ? "is-active" : ""}
             onClick={() => setInkMode("erase")}
-            aria-label="擦除笔迹"
+            aria-label={tr("擦除笔迹")}
             aria-pressed={inkState.mode === "erase"}
           >
             <Eraser size={17} />
@@ -3467,9 +3478,9 @@ export function LearningWhiteboard({
               setSelectionMode("rectangle");
               setInkMode("select");
             }}
-            aria-label="框选多个笔迹"
+            aria-label={tr("框选多个笔迹")}
             aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
-            title="拖动矩形，可一次选中一条或多条笔迹"
+            title={tr("拖动矩形，可一次选中一条或多条笔迹")}
           >
             <BoxSelect size={17} />
           </button>
@@ -3482,14 +3493,14 @@ export function LearningWhiteboard({
                   setInkWidthMenuOpen(false);
                   setInkColorPaletteOpen((current) => !current);
                 }}
-                aria-label={inkColorPaletteOpen ? "隐藏调色板" : "显示调色板"}
+                aria-label={inkColorPaletteOpen ? tr("隐藏调色板") : tr("显示调色板")}
                 aria-expanded={inkColorPaletteOpen}
               >
                 <Palette size={17} />
               </button>
               {inkColorPaletteOpen ? (
                 <InkColorControl
-                  label={inkState.mode === "draw" ? "笔色" : "选区颜色"}
+                  label={inkState.mode === "draw" ? tr("笔色") : tr("选区颜色")}
                   value={inkState.mode === "draw"
                     ? inkState.pen_color
                     : inkState.selection_color ?? inkState.pen_color}
@@ -3506,8 +3517,7 @@ export function LearningWhiteboard({
               <>
                 {selectionClassificationStatus === "loading" ? (
                   <span className="learning-ink-classification-status" role="status">
-                    正在识别选区…
-                  </span>
+                    {tr("正在识别选区…")}</span>
                 ) : null}
                 {quickSelectionTools.map((tool) => (
                   <button
@@ -3531,43 +3541,40 @@ export function LearningWhiteboard({
                   onClick={() => void openSelectionQuestion()}
                   aria-expanded={selectionQuestionOpen}
                   title={selectionClassificationStatus === "error"
-                    ? "未能自动识别选区，可在提问面板中手动选择内容类型"
+                    ? tr("未能自动识别选区，可在提问面板中手动选择内容类型")
                     : undefined}
                   disabled={selectionRequestPending}
                 >
                   <MessageCircle size={16} />
-                  问小章鱼
-                </button>
+                  {tr("问小章鱼")}</button>
               </>
             ) : null}
           <button
             type="button"
             className="learning-ink-select-all"
             onClick={selectAllInk}
-            aria-label="选择全部笔迹"
+            aria-label={tr("选择全部笔迹")}
           >
-            全选
-          </button>
+            {tr("全选")}</button>
           <button
             type="button"
             onClick={() => runInkHistory("undo")}
-            aria-label="撤销笔迹"
+            aria-label={tr("撤销笔迹")}
           >
             <Undo2 size={17} />
           </button>
           <button
             type="button"
             onClick={() => runInkHistory("redo")}
-            aria-label="重做笔迹"
+            aria-label={tr("重做笔迹")}
           >
             <Redo2 size={17} />
           </button>
           <span className="learning-ink-status" role="status">
-            {inkState.component_count} 项笔迹
-            {inkState.selected_count > 0
-              ? ` · 已选 ${inkState.selected_count}`
+            {inkState.component_count} {tr("项笔迹")}{inkState.selected_count > 0
+              ? tr(" · 已选 {{v0}}", { v0: inkState.selected_count })
               : ""}
-            {inkMergeSourceSessionId ? (inkError ? " · 恢复失败" : " · 等待恢复笔迹") : inkState.saved ? " · 已保存" : " · 保存中"}
+            {inkMergeSourceSessionId ? (inkError ? tr(" · 恢复失败") : tr(" · 等待恢复笔迹")) : inkState.saved ? tr(" · 已保存") : tr(" · 保存中")}
           </span>
         </div>
       ) : null}
@@ -3575,7 +3582,7 @@ export function LearningWhiteboard({
         <div
           className="learning-ink-width-menu"
           data-learning-board-occlusion=""
-          aria-label="笔触粗细"
+          aria-label={tr("笔触粗细")}
         >
           {inkWidthPresets.map((preset) => (
             <button
@@ -3583,7 +3590,7 @@ export function LearningWhiteboard({
               type="button"
               className={inkPenWidth === preset.width ? "is-active" : ""}
               onClick={() => setPenWidth(preset.width)}
-              aria-label={`笔触粗细：${preset.label}`}
+              aria-label={tr("笔触粗细：{{v0}}", { v0: preset.label })}
               aria-pressed={inkPenWidth === preset.width}
             >
               <span className="learning-ink-width-preview" aria-hidden="true">
@@ -3607,14 +3614,13 @@ export function LearningWhiteboard({
           }}
         >
           <header>
-            <strong>针对当前选区提问</strong>
+            <strong>{tr("针对当前选区提问")}</strong>
             <span>
-              将发送 {inkState.selected_count} 项选中笔迹，以及你在下面明确选择的局部白板内容；不会发送整块白板。
-            </span>
+              {tr("将发送") + " "}{inkState.selected_count} {tr("项选中笔迹，以及你在下面明确选择的局部白板内容；不会发送整块白板。")}</span>
           </header>
           {preparedSelection?.candidates.length ? (
             <fieldset className="learning-selection-targets">
-              <legend>这段笔迹是在问哪部分白板内容？</legend>
+              <legend>{tr("这段笔迹是在问哪部分白板内容？")}</legend>
               <label>
                 <input
                   type="radio"
@@ -3622,8 +3628,7 @@ export function LearningWhiteboard({
                   checked={selectedBoardTargetIds.length === 0}
                   onChange={() => setSelectedBoardTargetIds([])}
                 />
-                只看我的笔迹
-              </label>
+                {tr("只看我的笔迹")}</label>
               {preparedSelection.candidates.map((candidate) => (
                 <label
                   key={candidate.target_id}
@@ -3636,49 +3641,46 @@ export function LearningWhiteboard({
                     onChange={() => setSelectedBoardTargetIds([candidate.target_id])}
                   />
                   <span>{candidate.label ?? candidate.target_id}</span>
-                  <small>{boardTargetKindLabels[candidate.kind] ?? "局部内容"}</small>
+                  <small>{boardTargetKindLabels[candidate.kind] ?? tr("局部内容")}</small>
                 </label>
               ))}
             </fieldset>
           ) : (
             <p className="learning-selection-no-target">
-              当前框选没有覆盖课程对象，本次只参考你的原始笔迹。
-            </p>
+              {tr("当前框选没有覆盖课程对象，本次只参考你的原始笔迹。")}</p>
           )}
           <label>
-            我写的内容更像
-            <select
+            {tr("我写的内容更像")}<select
               value={selectionContentKind}
               onChange={(event) =>
                 setSelectionContentKind(
                   event.target.value as SelectionContentKind,
                 )}
             >
-              <option value="unknown">暂不确定</option>
-              <option value="text">文字</option>
-              <option value="math">公式</option>
-              <option value="geometry">图形</option>
-              <option value="data">数据</option>
+              <option value="unknown">{tr("暂不确定")}</option>
+              <option value="text">{tr("文字")}</option>
+              <option value="math">{tr("公式")}</option>
+              <option value="geometry">{tr("图形")}</option>
+              <option value="data">{tr("数据")}</option>
             </select>
           </label>
           {selectionClassification ? (
             <p className="learning-selection-classification">
-              自动识别为：{selectionContentKindLabels[selectionClassification.kind]}
+              {tr("自动识别为：")}{selectionContentKindLabels[selectionClassification.kind]}
               {selectionClassification.content
                 ? `（${selectionClassification.content}）`
                 : ""}
               {selectionClassification.confidence === "low"
-                ? "；把握较低，请手动确认"
+                ? tr("；把握较低，请手动确认")
                 : ""}
             </p>
           ) : selectionClassificationStatus === "error" ? (
             <p className="learning-selection-classification">
-              没有可靠识别出内容，请手动选择类型。
-            </p>
+              {tr("没有可靠识别出内容，请手动选择类型。")}</p>
           ) : null}
           <p className="learning-selection-action-label">
-            <strong>接下来让小章鱼做什么？</strong>
-            <small>下面是操作，不会改变上面已经确认的选区。</small>
+            <strong>{tr("接下来让小章鱼做什么？")}</strong>
+            <small>{tr("下面是操作，不会改变上面已经确认的选区。")}</small>
           </p>
           <div className="learning-selection-suggestions">
             {availableSelectionTools(
@@ -3705,8 +3707,8 @@ export function LearningWhiteboard({
             <input
               value={selectionQuestion}
               onChange={(event) => setSelectionQuestion(event.target.value)}
-              placeholder="例如：这一步为什么不对？"
-              aria-label="针对选区的问题"
+              placeholder={tr("例如：这一步为什么不对？")}
+              aria-label={tr("针对选区的问题")}
               disabled={selectionRequestPending}
             />
             {onVoiceInkSelection ? (
@@ -3714,7 +3716,7 @@ export function LearningWhiteboard({
                 type="button"
                 onClick={() => void askSelectionByVoice()}
                 disabled={selectionRequestPending}
-                aria-label="针对当前选区语音提问"
+                aria-label={tr("针对当前选区语音提问")}
               >
                 <Mic size={16} />
               </button>
@@ -3725,20 +3727,19 @@ export function LearningWhiteboard({
                 selectionRequestPending || !selectionQuestion.trim()
               }
             >
-              发送
-            </button>
+              {tr("发送")}</button>
           </div>
         </form>
       ) : null}
       {writingError ? (
         <div className="learning-ink-error" role="alert">
-          {writingError}
-          <button type="button" onClick={() => { setWritingError(""); setWritingRetry((value) => value + 1); }}>重试板书</button>
+          {translateStatus(writingError)}
+          <button type="button" onClick={() => { setWritingError(""); setWritingRetry((value) => value + 1); }}>{tr("重试板书")}</button>
         </div>
       ) : null}
       {inkError ? (
         <div className="learning-ink-error" role="alert">
-          笔迹功能：{inkError}
+          {tr("笔迹功能：")}{translateStatus(inkError)}
         </div>
       ) : null}
       {enhancementLayer
@@ -3782,7 +3783,7 @@ export function LearningWhiteboard({
                         data-course-controls-id={courseId}
                         data-interaction-controls-id={presentation.id}
                         data-oll-ink-input="ignore"
-                        aria-label={`${presentation.topic.title}的课程变量控制`}
+                        aria-label={tr("{{v0}}的课程变量控制", { v0: String(presentation.topic.title) })}
                         data-testid="oll-variable-controls"
                       >
                         {presentation.controls.map((control) => {
@@ -3859,7 +3860,7 @@ export function LearningWhiteboard({
                                   );
                                 }}
                                 aria-label={control.label}
-                                aria-description="可拖动滑块，也可用减小、增大按钮或方向键精细调整"
+                                aria-description={tr("可拖动滑块，也可用减小、增大按钮或方向键精细调整")}
                               />
                               <output
                                 style={{ minWidth: `${courseControlLabelWidth(control.min, control.max, control.unit, control.step)}ch` }}
@@ -3905,7 +3906,7 @@ export function LearningWhiteboard({
                                         },
                                       );
                                     }}
-                                    aria-label={`${direction < 0 ? "减小" : "增大"}${control.label}`}
+                                    aria-label={`${direction < 0 ? tr("减小") : tr("增大")}${control.label}`}
                                   >
                                     {direction < 0 ? "−" : "+"}
                                   </button>
@@ -3939,8 +3940,8 @@ export function LearningWhiteboard({
                                       );
                                     }
                                   }}
-                                  aria-label={`复位${control.label}`}
-                                  title={`复位${control.label}`}
+                                  aria-label={tr("复位{{v0}}", { v0: String(control.label) })}
+                                  title={tr("复位{{v0}}", { v0: String(control.label) })}
                                 >
                                   <RotateCcw size={12} aria-hidden="true" />
                                 </button>
@@ -3957,7 +3958,7 @@ export function LearningWhiteboard({
                           className={runtime?.activeVariableAnimation ? undefined : "is-idle"}
                         >
                           {runtime?.activeVariableAnimation
-                            ? "老师正在演示这个变量，结束后即可继续拖动"
+                            ? tr("老师正在演示这个变量，结束后即可继续拖动")
                             : "\u00a0"}
                         </small>
                       </div>
@@ -3973,12 +3974,12 @@ export function LearningWhiteboard({
                         data-course-tasks-id={courseId}
                         data-interaction-tasks-id={presentation.id}
                         data-oll-ink-input="ignore"
-                        aria-label={`${presentation.topic.title}的动手任务`}
+                        aria-label={tr("{{v0}}的动手任务", { v0: String(presentation.topic.title) })}
                         data-testid="oll-student-tasks"
                       >
                         <header>
-                          <span>动手试一试</span>
-                          <small>直接操作白板上的图形、视角或控制器</small>
+                          <span>{tr("动手试一试")}</span>
+                          <small>{tr("直接操作白板上的图形、视角或控制器")}</small>
                         </header>
                         {presentation.tasks.map((task) => {
                           const lastAttempt = task.attempts.at(-1);
@@ -3995,7 +3996,7 @@ export function LearningWhiteboard({
                               {locked && task.status !== "succeeded" ? (
                                 <div className="learning-student-task-feedback">
                                   <span>{lockedTaskMessage(presentation.topic.id)}</span>
-                                  {attempts > 0 ? <small>已尝试 {attempts} 次</small> : null}
+                                  {attempts > 0 ? <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small> : null}
                                 </div>
                               ) : task.status === "succeeded" ? (
                                 <div className="learning-student-task-feedback is-success">
@@ -4023,11 +4024,11 @@ export function LearningWhiteboard({
                                       ? taskReactions.taskNeedsHint
                                       : taskReactions.taskRetry}
                                   </span>
-                                  <small>已尝试 {attempts} 次</small>
+                                  <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small>
                                 </div>
                               ) : (
                                 <div className="learning-student-task-feedback">
-                                  <span>轮到你操作了，完成后这里会立即反馈。</span>
+                                  <span>{tr("轮到你操作了，完成后这里会立即反馈。")}</span>
                                 </div>
                               )}
                               {task.current_hint ? (
@@ -4048,7 +4049,7 @@ export function LearningWhiteboard({
                                       onClick={() => requestTaskHint(task.task_id)}
                                     >
                                       <Lightbulb size={15} />
-                                      {task.current_hint ? "下一个提示" : "给我提示"}
+                                      {task.current_hint ? tr("下一个提示") : tr("给我提示")}
                                     </button>
                                   ) : null}
                                   <button
@@ -4057,8 +4058,7 @@ export function LearningWhiteboard({
                                     onClick={() => retryTask(task.task_id)}
                                   >
                                     <RotateCcw size={15} />
-                                    重新开始
-                                  </button>
+                                    {tr("重新开始")}</button>
                                 </div>
                               ) : null}
                             </article>
@@ -4069,7 +4069,7 @@ export function LearningWhiteboard({
                             className="learning-student-task-error"
                             role="alert"
                           >
-                            {taskError}
+                            {translateStatus(taskError)}
                           </div>
                         ) : null}
                       </section>
@@ -4089,12 +4089,12 @@ export function LearningWhiteboard({
                     data-course-reflection-id={card.topic.questionId ?? card.topic.id}
                     data-reflection-attachment-id={card.attachmentId}
                     data-oll-ink-input="ignore"
-                    aria-label="想一想"
+                    aria-label={tr("想一想")}
                     data-testid="oll-reflection-card"
                   >
                     <header>
-                      <span>想一想</span>
-                      <small>先独立思考，再展开答案核对</small>
+                      <span>{tr("想一想")}</span>
+                      <small>{tr("先独立思考，再展开答案核对")}</small>
                     </header>
                     <p>{card.prompt}</p>
                     <button
@@ -4102,7 +4102,7 @@ export function LearningWhiteboard({
                       aria-expanded={open}
                       onClick={() => toggleReflection(card.key)}
                     >
-                      {open ? "收起答案" : "查看答案"}
+                      {open ? tr("收起答案") : tr("查看答案")}
                     </button>
                     {open ? (
                       <div className="learning-reflection-answer">{card.answer}</div>
@@ -4126,12 +4126,12 @@ export function LearningWhiteboard({
                     data-course-tasks-id={card.topic.questionId ?? card.topic.id}
                     data-reflection-attachment-id={card.attachmentId}
                     data-oll-ink-input="ignore"
-                    aria-label="算一算"
+                    aria-label={tr("算一算")}
                     data-testid="oll-answer-task"
                   >
                     <header>
-                      <span>算一算</span>
-                      <small>输入答案，程序马上核对</small>
+                      <span>{tr("算一算")}</span>
+                      <small>{tr("输入答案，程序马上核对")}</small>
                     </header>
                     <article
                       className={`learning-student-task is-${card.status}${locked ? " is-locked" : ""}`}
@@ -4142,7 +4142,7 @@ export function LearningWhiteboard({
                       {locked && card.status !== "succeeded" ? (
                         <div className="learning-student-task-feedback">
                           <span>{lockedTaskMessage(card.topic.id)}</span>
-                          {attempts > 0 ? <small>已尝试 {attempts} 次</small> : null}
+                          {attempts > 0 ? <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small> : null}
                         </div>
                       ) : card.status === "succeeded" ? (
                         <div className="learning-student-task-feedback is-success">
@@ -4153,7 +4153,7 @@ export function LearningWhiteboard({
                               : card.hints_revealed > 0
                                 ? taskReactions.taskSucceededWithHint
                                 : taskReactions.taskSucceeded}
-                            <small>答案：{card.attempts.at(-1)?.answer}{unit ? ` ${unit}` : ""}</small>
+                            <small>{tr("答案：")}{card.attempts.at(-1)?.answer}{unit ? ` ${unit}` : ""}</small>
                           </span>
                         </div>
                       ) : (
@@ -4169,8 +4169,8 @@ export function LearningWhiteboard({
                             inputMode="text"
                             autoComplete="off"
                             enterKeyHint="done"
-                            aria-label="你的答案"
-                            placeholder="如 12、0.5、3/4、2 3/4"
+                            aria-label={tr("你的答案")}
+                            placeholder={tr("如 12、0.5、3/4、2 3/4")}
                             value={draft}
                             maxLength={32}
                             onChange={(event) => {
@@ -4180,24 +4180,24 @@ export function LearningWhiteboard({
                             }}
                           />
                           {unit ? <span className="learning-answer-unit">{unit}</span> : null}
-                          <button type="submit" disabled={!draft.trim()}>提交</button>
+                          <button type="submit" disabled={!draft.trim()}>{tr("提交")}</button>
                         </form>
                       )}
                       {!locked && card.status !== "succeeded" ? (
                         unreadableAnswerTask === card.task_id ? (
                           <div className="learning-student-task-feedback">
-                            <span>请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。</span>
+                            <span>{tr("请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。")}</span>
                           </div>
                         ) : attempts > 0 ? (
                           <div className="learning-student-task-feedback">
                             <span>
                               {mistake === "form"
-                                ? "数值对了，再写成最简分数。"
+                                ? tr("数值对了，再写成最简分数。")
                                 : card.status === "needs_hint"
                                   ? taskReactions.taskNeedsHint
                                   : taskReactions.answerRetry}
                             </span>
-                            <small>已尝试 {attempts} 次</small>
+                            <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small>
                           </div>
                         ) : null
                       ) : null}
@@ -4212,7 +4212,7 @@ export function LearningWhiteboard({
                         <div className="learning-student-task-actions">
                           <button type="button" onClick={() => requestTaskHint(card.task_id)}>
                             <Lightbulb size={15} />
-                            {card.current_hint ? "下一个提示" : "给我提示"}
+                            {card.current_hint ? tr("下一个提示") : tr("给我提示")}
                           </button>
                         </div>
                       ) : null}

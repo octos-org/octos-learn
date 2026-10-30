@@ -1,7 +1,8 @@
+import { localizedCatalog, tr } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 
 import type { TeacherSkin } from "@/hooks/use-teacher-skin";
-import type { AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
+import type { AchievementDefinition } from "@/learning/academy/achievement-catalog";
 
 import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_EVENT, TEACHER_STORAGE_KEY } from "./teacher-choice";
 
@@ -110,7 +111,7 @@ export interface TeacherReportLines {
 
 export const TEACHER_CATALOG_VERSION = 9;
 
-export const TEACHERS: readonly TeacherDefinition[] = [
+export const TEACHERS: readonly TeacherDefinition[] = localizedCatalog([
   {
     id: "alan",
     name: "阿澜",
@@ -415,10 +416,21 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "seed-tts-1.0-concurr": { id: "zh_female_qingxinnvsheng_mars_bigtts", name: "清新女声" },
     },
   },
-];
+]);
 
 export function isTeacherId(value: unknown): value is TeacherDefinition["id"] {
   return TEACHERS.some((teacher) => teacher.id === value);
+}
+
+// i18n-exempt: stable aliases used to recognize historical memories in either language.
+// The first name of each list is the teacher's stored name.
+export const TEACHER_NAME_ALIASES = { alan: ["阿澜", "Alan"], doudou: ["窦鸢", "豆豆", "Dou Yuan", "Doudou"], sufei: ["苏绯", "Su Fei"] } as const;
+
+/** The name recorded in learning history and sent to Octos as the memory
+ * participant. It never follows the interface language, so one teacher keeps
+ * one identity in durable memory. Display uses `teacher.name`. */
+export function teacherStoredName(id: TeacherDefinition["id"]): string {
+  return TEACHER_NAME_ALIASES[id][0];
 }
 
 export function getTeacher(id: TeacherDefinition["id"]): TeacherDefinition {
@@ -432,15 +444,18 @@ export function getTeacher(id: TeacherDefinition["id"]): TeacherDefinition {
 export function teacherProfile(teacher: TeacherDefinition): string {
   const { card } = teacher;
   return [
-    `本次授课老师：${teacher.name}（Octos Learn 预设老师，设定版本 ${TEACHER_CATALOG_VERSION}）。`,
-    ...(teacher.formerNames?.length ? [`你以前在应用里叫“${teacher.formerNames.join("”“")}”，学生背景里用这个名字说的就是你。`] : []),
-    `最看重：${card.values}。相处方式：${card.role}。`,
-    `学生出错时：${card.onError}。遇到质疑时：${card.onChallenge}。`,
-    `认可学生：${card.praise}。感兴趣的话题：${card.interests}（只影响例子，不限制能教的内容）。`,
-    `小习惯：${card.habit}。表达节奏：${card.rhythm}。`,
-    `情境范例（体会这位老师在各情境下的做法，不要照抄句子）：${teacher.examples.map((example) => `${example.situation}——“${example.line}”`).join("；")}。`,
-    `如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。`,
-    `学生说你以前讲过某句话时，你看不到那次课的内容：不要承认也不要否认说过，也不要为此道谢或道歉，直接核对这个说法本身，对就确认，错就讲清正确结论。只有这节课里你自己讲错的地方才承认并改正。`,
+    tr("本次授课老师：{{v0}}（Octos Learn 预设老师，设定版本 {{v1}}）。", { v0: teacher.name, v1: TEACHER_CATALOG_VERSION }),
+    ...(teacher.formerNames?.length ? [tr("你以前在应用里叫“{{v0}}”，学生背景里用这个名字说的就是你。", { v0: teacher.formerNames.join("”“") })] : []),
+    // Memory may name this teacher in the other interface language.
+    tr("学生背景里的“{{v0}}”也是指你。", { v0: TEACHER_NAME_ALIASES[teacher.id]
+      .filter((name) => name !== teacher.name && !teacher.formerNames?.includes(name)).join("”“") }),
+    tr("最看重：{{v0}}。相处方式：{{v1}}。", { v0: card.values, v1: card.role }),
+    tr("学生出错时：{{v0}}。遇到质疑时：{{v1}}。", { v0: card.onError, v1: card.onChallenge }),
+    tr("认可学生：{{v0}}。感兴趣的话题：{{v1}}（只影响例子，不限制能教的内容）。", { v0: card.praise, v1: card.interests }),
+    tr("小习惯：{{v0}}。表达节奏：{{v1}}。", { v0: card.habit, v1: card.rhythm }),
+    tr("情境范例（体会这位老师在各情境下的做法，不要照抄句子）：{{v0}}。", { v0: teacher.examples.map((example) => `${example.situation}——“${example.line}”`).join("；") }),
+    tr("如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。"),
+    tr("学生说你以前讲过某句话时，你看不到那次课的内容：不要承认也不要否认说过，也不要为此道谢或道歉，直接核对这个说法本身，对就确认，错就讲清正确结论。只有这节课里你自己讲错的地方才承认并改正。"),
   ].join("\n");
 }
 
@@ -483,7 +498,7 @@ export function useSelectedTeacher() {
 
 /** Lines for lessons without a preset teacher (course packs, or a Learning
  * Coach that did not take teacher_profile): the wording used before teachers. */
-export const NEUTRAL_REACTIONS: TeacherReactions = {
+export const NEUTRAL_REACTIONS: TeacherReactions = localizedCatalog({
   preparing: "我正在整理这道题，马上写到白板上。",
   selection: "小章鱼正在看你框选的这部分。",
   interrupted: "好，先停一下。",
@@ -493,7 +508,7 @@ export const NEUTRAL_REACTIONS: TeacherReactions = {
   taskRetry: "已经记录这次操作，再调整一下试试。",
   answerRetry: "已经记录这次答案，再算一次试试。",
   taskNeedsHint: "还没达到目标，可以查看提示后再试。",
-};
+});
 
 export function teacherReactions(teacher: TeacherDefinition | null | undefined): TeacherReactions {
   return teacher?.reactions ?? NEUTRAL_REACTIONS;
@@ -501,25 +516,25 @@ export function teacherReactions(teacher: TeacherDefinition | null | undefined):
 
 /** Plain wording: used when no preset teacher gave the lesson, or when the
  * learner turned the teachers' playful award lines off. */
-export const PLAIN_AWARDS: PlainAwards = {
+export const PLAIN_AWARDS: PlainAwards = localizedCatalog({
   "first-footprint": "星图上点亮了第一个知识点。",
   "did-it-alone": "第一次没用提示，达到了练习的要求。",
   "regular-guest": "在 3 个不同的日子学习了{topic}。",
   reunion: "隔了两周多，又回来学习{topic}。",
   other: "获得成就「{name}」。",
-};
+});
 
-export const PLAIN_REPORT: TeacherReportLines = {
+export const PLAIN_REPORT: TeacherReportLines = localizedCatalog({
   active: "这是本周的学习记录。",
   quiet: "本周没有学习记录。",
   closing: "这些记录说明学过、练过什么，都不等于已经掌握。",
   monthActive: "这是本月的学习记录。",
   monthQuiet: "本月没有学习记录。",
-};
+});
 
-export const PLAIN_SUGGESTIONS: TeacherSuggestionLines = {
+export const PLAIN_SUGGESTIONS: TeacherSuggestionLines = localizedCatalog({
   continue: "可以再练一次{topic}。",
   foundation: "{topic}会用到{target}，可以先看看{target}。",
   next: "{topic}做出来过一次，可以接着看{target}。",
   revisit: "隔了 {days} 天，可以回顾{topic}。",
-};
+});

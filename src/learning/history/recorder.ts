@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { createRequestId } from "../../lib/request-id";
 import { historyId, historySha256 } from "./identifiers";
 import type { HistoryCourse, HistoryEvent, HistoryKind } from '../../../services/learning-history/event-contract.mjs';
@@ -102,12 +103,12 @@ export class LearningHistoryRecorder {
         this.jobs.shift(); this.notify('');
         try { this.committed(identity); } catch { /* network scheduling cannot undo a local commit */ }
       }
-    } catch { this.notify('最新课堂记录尚未保存在本机，请重试保存，暂勿关闭页面。'); }
+    } catch { this.notify(tr("最新课堂记录尚未保存在本机，请重试保存，暂勿关闭页面。")); }
   }
   async flush() {
     await Promise.resolve();
     do { await this.pump(); } while (this.jobs.length && !this.status.error);
-    if (this.jobs.length) throw new Error(this.status.error || '课堂记录尚未保存');
+    if (this.jobs.length) throw new Error(this.status.error || tr("课堂记录尚未保存"));
   }
   async retry() { this.notify(''); await this.flush(); }
   record(draft: HistoryDraft) { this.stage(undefined, [draft]); }

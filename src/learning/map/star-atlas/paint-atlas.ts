@@ -1,8 +1,9 @@
+import { localizedCatalog, tr } from "@/i18n";
 import type { LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
 import { frameLevel, STAR_LEVEL, type Atlas, type View } from "./atlas-model";
 
-export const RING_NAMES = [{ name: "启明部", note: "小学" }, { name: "星辉部", note: "初中" }, { name: "星穹部", note: "高中" }];
+export const RING_NAMES = localizedCatalog([{ name: "启明部", note: "小学" }, { name: "星辉部", note: "初中" }, { name: "星穹部", note: "高中" }]);
 const HUES = [205, 285, 180, 150, 330, 25, 50, 95, 230, 260, 310, 10];
 const FONT_BODY = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif';
 const FONT_DISPLAY = '"ZCOOL XiaoWei", "Songti SC", "STSong", serif';
@@ -102,7 +103,7 @@ export function paintAtlas(ctx: CanvasRenderingContext2D, atlas: Atlas, s: Paint
     ctx.strokeStyle = k === 2 ? "rgba(142,161,200,0.12)" : "rgba(242,199,102,0.12)"; ctx.lineWidth = 1;
     ctx.setLineDash(k === 2 ? [4, 10] : []); ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     ctx.font = `12px ${FONT_BODY}`; ctx.fillStyle = "rgba(242,199,102,0.5)"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    ctx.fillText(`${RING_NAMES[k].name} · ${RING_NAMES[k].note}${k === 2 ? " · 尚未绘制" : ""}`, cx, cy - radius - 8);
+    ctx.fillText(`${RING_NAMES[k].name} · ${RING_NAMES[k].note}${k === 2 ? tr(" · 尚未绘制") : ""}`, cx, cy - radius - 8);
   });
 
   // Domain nebulae brighten as more of the domain is explored.

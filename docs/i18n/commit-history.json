@@ -1,0 +1,34 @@
+{
+  "octos-learn": [
+    "7ddb347 feat(i18n): add persistent language preference and header switch",
+    "b4f04c1 feat(i18n): localize product UI and preserve lesson language during playback",
+    "43ac2ad feat(i18n): localize report comments without duplicate generation",
+    "031ea2f test(i18n): protect course audio and localize course metadata",
+    "d05edfa fix(i18n): keep translated board labels compatible with memoization",
+    "299d108 feat(i18n): translate all atlas starter questions and load by language",
+    "62e4ddc build(i18n): pin the localized whiteboard runtime commit",
+    "4af70cb fix(i18n): pin request language and refresh persistent status labels",
+    "4e8b6db fix(i18n): preserve private speech capacity handling across languages",
+    "1756e6c chore(i18n): guard visible labels against untranslated additions",
+    "746ff74 fix(i18n): translate saved achievement titles when displayed",
+    "d23d6ff docs(i18n): record coverage and cross-repository regression results",
+    "459ee35 docs(i18n): clarify commit history and extend page verification",
+    "989e36d docs(i18n): record publication of the implementation branches",
+    "bddecfb docs(i18n): bound the remaining real-provider language acceptance",
+    "279e0a6 fix(i18n): keep active audio stable when prewarm language clears",
+    "4178778 fix(i18n): identify cached voices by speaker IDs rather than labels",
+    "d3da946 test(i18n): enforce language acceptance request and speech limits",
+    "8176582 fix(test): reserve the submitted language trial session before forwarding",
+    "7e08397 docs(i18n): record stopped live attempt and corrected free acceptance",
+    "d5ca8d4 fix(test): negotiate final course file queries in the language trial",
+    "713a35d fix(test): count matching audio replays after first readiness",
+    "61a1584 test(i18n): preserve cumulative limits when continuing the reviewed trial"
+  ],
+  "learning-coach": [
+    "b8c700e feat(i18n): carry lesson language through generation and compiled teaching text",
+    "cf00485 feat(i18n): support selected output language in selection assistance"
+  ],
+  "octos-lesson-language": [
+    "8e11d8d feat(i18n): localize board controls without remounting interactive views"
+  ]
+}

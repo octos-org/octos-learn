@@ -67,3 +67,9 @@ board_revision: 4
     expect(context).toContain("board_summary: 已完成配方 尚未作图");
   });
 });
+
+it("passes the selected output language separately from the learner's original words", () => {
+  const context = buildLearningTurnContext({ sessionId: "learn-1", preferredLanguage: "en-US" });
+  expect(context).toContain("preferred_language: en-US");
+  expect(buildLearningTurnContext({ sessionId: "learn-1" })).not.toContain("preferred_language");
+});

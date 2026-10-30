@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { historyRequestTimeout } from './request-timeout';
 import { createUiProtocolBridge, type UiProtocolBridge } from '../../runtime/ui-protocol-bridge';
 import type { HistoryIdentity } from './synchronize';
@@ -26,7 +27,7 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
   canContinue = () => true,
   probeSessionId,
 }: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; canContinue?: () => boolean; probeSessionId?: string | null } = {}): Promise<HistoryDeliveryResult> {
-  if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+  if (!isCurrent()) throw new Error(tr("账号已切换，原问答保留等待同步"));
   if (!canContinue()) return { status: 'paused', delivered: 0 };
   if (!probeSessionId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(probeSessionId)) return { status: 'waiting-for-octos', delivered: 0 };
   const bridge = createBridge();
@@ -41,29 +42,29 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
     if (!bridge.supportsFullHistoryAppendRetry?.()) return { status: 'waiting-for-octos', delivered };
     const headers = { Authorization: `Bearer ${identity.token}`, 'Content-Type': 'application/json', 'X-Learning-Owner': identity.owner };
     for (;;) {
-      if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+      if (!isCurrent()) throw new Error(tr("账号已切换，原问答保留等待同步"));
       if (!canContinue()) return { status: 'paused', delivered };
       const claim = await fetcher(`${base}/api/learn/history/deliveries/claim`, {
         method: 'POST', headers, body: JSON.stringify({ limit: 10 }), signal: historyRequestTimeout(10000), redirect: 'error',
       });
-      if (!claim.ok) throw new Error('问答尚未交给 Octos，原文已保留');
+      if (!claim.ok) throw new Error(tr("问答尚未交给 Octos，原文已保留"));
       const body = await claim.json() as { profile_id: string; tasks: HistoryDeliveryTask[] };
-      if (body.profile_id !== identity.owner || !Array.isArray(body.tasks)) throw new Error('问答同步回执所属账号不符');
+      if (body.profile_id !== identity.owner || !Array.isArray(body.tasks)) throw new Error(tr("问答同步回执所属账号不符"));
       if (!body.tasks.length) return { status: 'idle', delivered };
       for (const task of body.tasks) {
-        if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+        if (!isCurrent()) throw new Error(tr("账号已切换，原问答保留等待同步"));
         if (!canContinue()) return { status: 'paused', delivered };
         const receipt = await bridge.callMethod<{ session_id: string; seq: number; thread_id?: string }>('session/append_message',
           messageForOctos(task.message, bridge.supportsAppendParticipant?.() ?? false));
         const expectedThread = task.message.role === 'user' ? task.message.client_message_id : task.message.thread_id;
         if (receipt.session_id !== task.message.session_id || !Number.isSafeInteger(receipt.seq) || receipt.seq < 0
-          || receipt.thread_id !== expectedThread) throw new Error('Octos 未返回可核对的问答回执');
+          || receipt.thread_id !== expectedThread) throw new Error(tr("Octos 未返回可核对的问答回执"));
         const response = await fetcher(`${base}/api/learn/history/deliveries/${encodeURIComponent(task.id)}/receipt`, {
           method: 'POST', headers, body: JSON.stringify({ lease_id: task.lease_id, seq: receipt.seq }), signal: historyRequestTimeout(10000), redirect: 'error',
         });
-        if (!response.ok) throw new Error('Octos 已返回回执，产品记录尚待确认');
+        if (!response.ok) throw new Error(tr("Octos 已返回回执，产品记录尚待确认"));
         const acknowledgement = await response.json() as { profile_id: string; recorded: boolean };
-        if (acknowledgement.profile_id !== identity.owner || !acknowledgement.recorded) throw new Error('问答交付状态尚待核对');
+        if (acknowledgement.profile_id !== identity.owner || !acknowledgement.recorded) throw new Error(tr("问答交付状态尚待核对"));
         delivered++;
       }
     }

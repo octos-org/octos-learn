@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/api/client", () => ({ getToken: () => "alice", getSelectedProfileId: () => "alice", request: api.request }));
 import { resetClientServices, prepareClientServices, getServiceStatus, type ClientService } from "./services";
-import { directJson, synthesizeDirect, transcribeDirect, validateService } from "./providers";
+import { speechLanguageParameters, directJson, synthesizeDirect, transcribeDirect, validateService } from "./providers";
 const config = (provider = "volcano"): ClientService => ({ provider, enabled: true, key: "own-canary-key", params: { voice: "test-voice", auth_mode: "api-key", resource_id: "seed-tts-2.0" }, revision: "r1", execution_target: "client" });
 beforeEach(() => { resetClientServices(); api.request.mockReset(); delete window.OctosNativeByok; });
 afterEach(() => { vi.unstubAllGlobals(); delete window.OctosNativeByok; });
@@ -139,4 +139,12 @@ describe("BYOK provider transports", () => {
     await expect(result).rejects.toMatchObject({ name: "AbortError" });
     expect(api.request).not.toHaveBeenCalled();
   });
+});
+
+// Language affects provider pronunciation, without adding a synthesis call.
+it("uses the course language and lets bilingual quotations auto-detect", () => {
+  expect(speechLanguageParameters("en-US", "Plot y = 2x.")).toEqual({ additions: JSON.stringify({ explicit_language: "en" }) });
+  expect(speechLanguageParameters("zh-CN", "画 y = 2x。")).toEqual({ additions: JSON.stringify({ explicit_language: "zh-cn" }) });
+  expect(speechLanguageParameters("en-US", 'Read the word “圆”.')).toEqual({});
+  expect(speechLanguageParameters(undefined, "Legacy course")).toEqual({});
 });

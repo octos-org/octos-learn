@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookHeart, Loader2, Plus, RefreshCw } from "lucide-react";
@@ -33,14 +35,15 @@ const SCOPES: Scope[] = ["all", ...TEACHERS.map((teacher) => teacher.id), "me"];
 const newRequestId = () => `learn-memory-${crypto.randomUUID()}`;
 
 function ScopeChoice({ value, onChange }: { value: Scope; onChange: (scope: Scope) => void }) {
+  useLocale();
   return (
     <fieldset className="mt-4">
-      <legend className="mb-2 text-xs text-muted">对哪位老师</legend>
+      <legend className="mb-2 text-xs text-muted">{tr("对哪位老师")}</legend>
       <div className="flex flex-wrap gap-x-5 gap-y-2">
         {SCOPES.map((scope) => (
           <label key={scope} className="flex min-h-8 items-center gap-2 text-sm text-text">
             <input type="radio" name="memory-scope" checked={value === scope} onChange={() => onChange(scope)} />
-            {scope === "all" || scope === "me" ? memoryGroupLabel(scope) : `只对${memoryGroupLabel(scope)}`}
+            {scope === "all" || scope === "me" ? memoryGroupLabel(scope) : tr("只对{{v0}}", { v0: memoryGroupLabel(scope) })}
           </label>
         ))}
       </div>
@@ -56,6 +59,7 @@ function EntryRow({ entry, group, pending, onCorrect, onForget, onDismiss }: {
   onForget: () => void;
   onDismiss: () => void;
 }) {
+  useLocale();
   const forgetting = pending?.operation === "forget" && !pending.failed;
   return (
     <li className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0" data-testid={`memory-entry-${entry.id ?? entry.text}`}>
@@ -64,21 +68,21 @@ function EntryRow({ entry, group, pending, onCorrect, onForget, onDismiss }: {
       </span>
       <div className="min-w-0 flex-1">
         <div className={`text-sm ${forgetting ? "text-muted line-through" : "text-text-strong"}`}>{entry.text}</div>
-        {entry.updated && <div className="mt-0.5 text-xs text-muted">更新于 {entry.updated}</div>}
+        {entry.updated && <div className="mt-0.5 text-xs text-muted">{tr("更新于") + " "}{entry.updated}</div>}
       </div>
       {pending ? (
         pending.failed ? (
           <span className="flex shrink-0 items-center gap-2">
-            <span className="workbench-status-pill" data-tone="neutral">没有按要求改好</span>
-            <button type="button" onClick={onDismiss} className="text-xs text-accent">知道了</button>
+            <span className="workbench-status-pill" data-tone="neutral">{tr("没有按要求改好")}</span>
+            <button type="button" onClick={onDismiss} className="text-xs text-accent">{tr("知道了")}</button>
           </span>
         ) : (
-          <span className="workbench-status-pill shrink-0" data-tone="warning">已收到，等待整理</span>
+          <span className="workbench-status-pill shrink-0" data-tone="warning">{tr("已收到，等待整理")}</span>
         )
       ) : entry.id ? (
         <span className="flex shrink-0 gap-2">
-          <button type="button" onClick={onCorrect} className="rounded-lg border border-border px-3 py-1.5 text-xs text-text hover:border-accent/40">改一改</button>
-          <button type="button" onClick={onForget} className="rounded-lg border border-border px-3 py-1.5 text-xs text-text hover:border-accent/40">忘掉</button>
+          <button type="button" onClick={onCorrect} className="rounded-lg border border-border px-3 py-1.5 text-xs text-text hover:border-accent/40">{tr("改一改")}</button>
+          <button type="button" onClick={onForget} className="rounded-lg border border-border px-3 py-1.5 text-xs text-text hover:border-accent/40">{tr("忘掉")}</button>
         </span>
       ) : null}
     </li>
@@ -89,6 +93,7 @@ function EntryRow({ entry, group, pending, onCorrect, onForget, onDismiss }: {
  * as is. Changes are requests to Octos; they show as waiting until a later
  * read of memory shows them applied. */
 export function TeacherMemoryTab({ profileId }: { profileId: string }) {
+  useLocale();
   const [overview, setOverview] = useState<MemoryOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -172,7 +177,7 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
   );
 
   const filters: { id: Filter; label: string }[] = [
-    { id: "every", label: `全部 ${learning.length}` },
+    { id: "every", label: tr("全部 {{v0}}", { v0: learning.length }) },
     ...SCOPES.map((scope) => ({ id: scope, label: memoryGroupLabel(scope) })),
   ];
 
@@ -184,36 +189,34 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
             <BookHeart size={18} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base font-semibold text-text-strong">老师记得的事</h3>
-            <p className="mt-1 text-sm text-muted">老师从你们的对话里记住这些，下次上课时会用上。不对的可以改，不想让老师记着的可以让他们忘掉。</p>
+            <h3 className="text-base font-semibold text-text-strong">{tr("老师记得的事")}</h3>
+            <p className="mt-1 text-sm text-muted">{tr("老师从你们的对话里记住这些，下次上课时会用上。不对的可以改，不想让老师记着的可以让他们忘掉。")}</p>
             <p className="mt-1 text-sm text-muted">
-              每次学习的经过（播放、作答、提问）另存在学习记录里，星图和成就都按它计算，可以逐条查看或删除：
-              <Link to="/records?tab=facts" className="ml-1 text-accent underline">打开学习记录</Link>
+              {tr("每次学习的经过（播放、作答、提问）另存在学习记录里，星图和成就都按它计算，可以逐条查看或删除：")}<Link to="/records?tab=facts" className="ml-1 text-accent underline">{tr("打开学习记录")}</Link>
             </p>
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => { setLoading(true); load(); }} aria-label="刷新" className="glass-icon-button p-2.5" disabled={loading}>
+          <button type="button" onClick={() => { setLoading(true); load(); }} aria-label={tr("刷新")} className="glass-icon-button p-2.5" disabled={loading}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
           </button>
           <button type="button" onClick={() => setDraft({ operation: "remember", requestId: newRequestId(), text: "", scope: "all" })}
             className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dim">
-            <Plus size={15} />让老师记住一件事
-          </button>
+            <Plus size={15} />{tr("让老师记住一件事")}</button>
         </div>
       </div>
 
-      {loadError && <p role="alert" className="mt-4 text-sm text-red-500">暂时读不到老师的记忆，请稍后点刷新重试。</p>}
+      {loadError && <p role="alert" className="mt-4 text-sm text-red-500">{tr("暂时读不到老师的记忆，请稍后点刷新重试。")}</p>}
       {overview && !overview.refresh_enabled && (
-        <p className="mt-4 rounded-lg bg-surface-container px-3 py-2 text-sm text-muted">后台整理记忆没有开启：你的请求会被保存，但要等开启后才会生效。</p>
+        <p className="mt-4 rounded-lg bg-surface-container px-3 py-2 text-sm text-muted">{tr("后台整理记忆没有开启：你的请求会被保存，但要等开启后才会生效。")}</p>
       )}
       {overview?.long_term_truncated && (
-        <p className="mt-4 rounded-lg bg-surface-container px-3 py-2 text-sm text-muted">记忆内容太长，这里只显示了前一部分。</p>
+        <p className="mt-4 rounded-lg bg-surface-container px-3 py-2 text-sm text-muted">{tr("记忆内容太长，这里只显示了前一部分。")}</p>
       )}
 
       {overview && (
         <>
-          <div role="group" aria-label="按老师筛选" className="mt-5 flex flex-wrap gap-2">
+          <div role="group" aria-label={tr("按老师筛选")} className="mt-5 flex flex-wrap gap-2">
             {filters.map(({ id, label }) => (
               <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}
                 className={`rounded-full border px-3 py-1.5 text-xs ${filter === id ? "border-accent bg-accent text-white" : "border-border text-text hover:border-accent/40"}`}>
@@ -225,20 +228,20 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
           <ul className="workbench-card mt-4 overflow-hidden p-0">
             {waitingRemembers.map((request) => (
               <li key={request.request_id} className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
-                <span className="workbench-status-pill shrink-0" data-tone="neutral">新的</span>
+                <span className="workbench-status-pill shrink-0" data-tone="neutral">{tr("新的")}</span>
                 <div className="min-w-0 flex-1 text-sm text-text-strong">{request.content}</div>
                 {request.failed ? (
                   <span className="flex shrink-0 items-center gap-2">
-                    <span className="workbench-status-pill" data-tone="neutral">没有按要求改好</span>
-                    <button type="button" onClick={() => updatePending(pending.filter((item) => item.request_id !== request.request_id))} className="text-xs text-accent">知道了</button>
+                    <span className="workbench-status-pill" data-tone="neutral">{tr("没有按要求改好")}</span>
+                    <button type="button" onClick={() => updatePending(pending.filter((item) => item.request_id !== request.request_id))} className="text-xs text-accent">{tr("知道了")}</button>
                   </span>
-                ) : <span className="workbench-status-pill shrink-0" data-tone="warning">已收到，等待整理</span>}
+                ) : <span className="workbench-status-pill shrink-0" data-tone="warning">{tr("已收到，等待整理")}</span>}
               </li>
             ))}
             {shown.map(renderRow)}
             {!shown.length && !waitingRemembers.length && (
               <li className="px-4 py-6 text-center text-sm text-muted">
-                {learning.length ? "这一类还没有内容。" : "老师还没有记住什么。上课时说过的偏好和经历，整理后会出现在这里。"}
+                {learning.length ? tr("这一类还没有内容。") : tr("老师还没有记住什么。上课时说过的偏好和经历，整理后会出现在这里。")}
               </li>
             )}
           </ul>
@@ -246,26 +249,25 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
           {other.length > 0 && (
             <div className="mt-4">
               <button type="button" aria-expanded={showOther} onClick={() => setShowOther(!showOther)} className="text-sm text-accent">
-                {showOther ? "收起" : "展开"}其他（{other.length} 条，和学习无关）
-              </button>
+                {showOther ? tr("收起") : tr("展开")}{tr("其他（")}{other.length} {tr("条，和学习无关）")}</button>
               {showOther && <ul className="workbench-card mt-2 overflow-hidden p-0">{other.map(renderRow)}</ul>}
             </div>
           )}
         </>
       )}
 
-      <p className="mt-5 text-xs text-muted">上过哪些课、练习了几次，在学习记录里查看。删除学习记录和让老师忘掉是两件事：删除记录马上生效，但不会让老师忘掉已经记住的事；让老师忘掉只影响这里的内容，上过的课和统计都保留。</p>
+      <p className="mt-5 text-xs text-muted">{tr("上过哪些课、练习了几次，在学习记录里查看。删除学习记录和让老师忘掉是两件事：删除记录马上生效，但不会让老师忘掉已经记住的事；让老师忘掉只影响这里的内容，上过的课和统计都保留。")}</p>
 
       <ConfirmDialog
         open={draft !== null}
-        title={draft?.operation === "remember" ? "让老师记住一件事" : draft?.operation === "correct" ? "改一改这条" : "让老师忘掉这条？"}
+        title={draft?.operation === "remember" ? tr("让老师记住一件事") : draft?.operation === "correct" ? tr("改一改这条") : tr("让老师忘掉这条？")}
         body={draft?.operation === "forget"
-          ? "所有老师以后都不会再用这条，你上过的课和学习记录不会被删除。如果以后上课时你又说起这件事，老师可能会重新记住。"
+          ? tr("所有老师以后都不会再用这条，你上过的课和学习记录不会被删除。如果以后上课时你又说起这件事，老师可能会重新记住。")
           : draft?.operation === "correct"
-            ? "提交后老师会先收到，下次整理记忆时改好。整理之前，这条可能还会用到一次。"
-            : "提交后老师会先收到，下次整理记忆时加上。"}
-        confirmLabel={submitting ? "提交中…" : draft?.operation === "forget" ? "忘掉" : draft?.operation === "correct" ? "提交修改" : "提交"}
-        cancelLabel={draft?.operation === "forget" ? "留着" : "取消"}
+            ? tr("提交后老师会先收到，下次整理记忆时改好。整理之前，这条可能还会用到一次。")
+            : tr("提交后老师会先收到，下次整理记忆时加上。")}
+        confirmLabel={submitting ? tr("提交中…") : draft?.operation === "forget" ? tr("忘掉") : draft?.operation === "correct" ? tr("提交修改") : tr("提交")}
+        cancelLabel={draft?.operation === "forget" ? tr("留着") : tr("取消")}
         confirmDisabled={submitting || (draft !== null && draft.operation !== "forget" && !draft.text.trim())}
         variant={draft?.operation === "forget" ? "danger" : "default"}
         onCancel={() => { if (!submitting) { setDraft(null); setSubmitError(false); } }}
@@ -273,20 +275,20 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
       >
         {draft && draft.operation !== "remember" && (
           <div className="rounded-lg bg-surface-container px-3 py-2 text-sm text-text">
-            <div className="mb-1 text-xs text-muted">老师现在记得</div>
+            <div className="mb-1 text-xs text-muted">{tr("老师现在记得")}</div>
             {draft.entry.text}
           </div>
         )}
         {draft && draft.operation !== "forget" && (
           <>
-            <label htmlFor="memory-draft" className="mb-1 mt-4 block text-xs text-muted">{draft.operation === "correct" ? "应该是" : "想让老师记住什么"}</label>
+            <label htmlFor="memory-draft" className="mb-1 mt-4 block text-xs text-muted">{draft.operation === "correct" ? tr("应该是") : tr("想让老师记住什么")}</label>
             <textarea id="memory-draft" rows={3} maxLength={2000} value={draft.text}
               onChange={(event) => setDraft({ ...draft, text: event.target.value })}
               className="w-full resize-none rounded-lg border border-border bg-surface-container px-3 py-2 text-sm text-text outline-none focus:border-accent" />
             <ScopeChoice value={draft.scope} onChange={(scope) => setDraft({ ...draft, scope })} />
           </>
         )}
-        {submitError && <p role="alert" className="mt-3 text-sm text-red-500">没能提交，请稍后再试。</p>}
+        {submitError && <p role="alert" className="mt-3 text-sm text-red-500">{tr("没能提交，请稍后再试。")}</p>}
       </ConfirmDialog>
     </section>
   );

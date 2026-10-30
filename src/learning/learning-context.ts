@@ -8,6 +8,7 @@ export interface LearningSessionContext {
 }
 
 export interface LearningTurnContext {
+  preferredLanguage?: string;
   sessionId: string;
   turnId?: string;
   provisional?: boolean;
@@ -54,6 +55,7 @@ export function buildLearningTurnContext(
     "active: true",
     line("session_id", context.sessionId),
   ];
+  if (context.preferredLanguage) lines.push(line("preferred_language", context.preferredLanguage));
   if (context.turnId) {
     lines.push(line("turn_id", context.turnId));
     lines.push("lesson_artifact_tool: oll_generate_lesson");

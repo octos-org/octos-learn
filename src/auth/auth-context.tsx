@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import {
   createContext,
   useContext,
@@ -54,6 +56,7 @@ function isCredentialRejection(error: unknown): boolean {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  useLocale();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [portal, setPortal] = useState<PortalState | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatusResponse | null>(null);
@@ -201,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokenState(resp.token);
       await syncMe();
     } else {
-      throw new Error(resp.message || "Login failed");
+      throw new Error(resp.message || tr("Login failed"));
     }
   }, [syncMe]);
 
@@ -220,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Rethrow the ORIGINAL error so callers keep structural info (e.g.
       // ApiError.status 401 → "wrong token" copy) instead of a flattened
       // message string.
-      throw err instanceof Error ? err : new Error("Token validation failed");
+      throw err instanceof Error ? err : new Error(tr("Token validation failed"));
     }
   }, [syncMe]);
 

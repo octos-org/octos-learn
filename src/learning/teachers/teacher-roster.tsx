@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Check, Loader2, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,6 +19,7 @@ type VoiceState = { teacher: TeacherDefinition["id"]; quote: number; state: "loa
  * their words, each of which can be heard in the teacher's voice. Choosing one
  * sets who teaches the next lesson. */
 export function TeacherRoster() {
+  useLocale();
   const { teacher: current, setTeacherId } = useSelectedTeacher();
   const { setSkin } = useTeacherSkin();
   const [voice, setVoice] = useState<VoiceState>(null);
@@ -50,8 +53,8 @@ export function TeacherRoster() {
       setVoice({ teacher: teacher.id, quote, state: "playing" });
     } catch (error) {
       const message = error instanceof ServiceError && error.state === "unconfigured"
-        ? "在“设置”里配置自己的语音服务后，就能听到老师的声音。"
-        : "暂时播放不了老师的声音，请稍后再试。";
+        ? tr("在“设置”里配置自己的语音服务后，就能听到老师的声音。")
+        : tr("暂时播放不了老师的声音，请稍后再试。");
       setVoice({ teacher: teacher.id, quote, state: "error", message });
     }
   };
@@ -72,17 +75,17 @@ export function TeacherRoster() {
               <div className="teacher-roster-actions">
                 <button type="button" className={chosen ? "teacher-roster-chosen" : "teacher-roster-choose"} aria-pressed={chosen}
                   data-testid={`teacher-${teacher.id}`} onClick={() => { setTeacherId(teacher.id); setSkin(teacher.skin); }}>
-                  {chosen ? <><Check size={17} aria-hidden="true" /> 正在陪你上课</> : `请${teacher.name}上课`}
+                  {chosen ? <><Check size={17} aria-hidden="true" /> {tr("正在陪你上课")}</> : tr("请{{v0}}上课", { v0: teacher.name })}
                 </button>
               </div>
-              <ul className="teacher-roster-quotes" aria-label={`${teacher.name}的话`}>
+              <ul className="teacher-roster-quotes" aria-label={tr("{{v0}}的话", { v0: teacher.name })}>
                 {lore.quotes.map((quote, index) => {
                   const state = mine?.quote === index ? mine.state : null;
                   return (
                     <li key={quote}>
                       <span>{quote}</span>
                       <button type="button" className="teacher-roster-listen" data-state={state ?? undefined}
-                        aria-label={state === "playing" ? `停止播放：${quote}` : `听${teacher.name}说：${quote}`}
+                        aria-label={state === "playing" ? tr("停止播放：{{v0}}", { v0: quote }) : tr("听{{v0}}说：{{v1}}", { v0: teacher.name, v1: quote })}
                         onClick={() => void listen(teacher, index)} disabled={state === "loading"}>
                         {state === "loading" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                           : state === "playing" ? <Square size={13} fill="currentColor" aria-hidden="true" />

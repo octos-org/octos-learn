@@ -1,3 +1,4 @@
+import { localizedCatalog } from "@/i18n";
 import type { TeacherDefinition } from "./teachers";
 
 /** How the teachers page introduces each teacher. The profiles are written
@@ -12,7 +13,7 @@ export interface TeacherLore {
   quotes: readonly string[];
 }
 
-export const TEACHER_LORE: Readonly<Record<TeacherDefinition["id"], TeacherLore>> = {
+export const TEACHER_LORE: Readonly<Record<TeacherDefinition["id"], TeacherLore>> = localizedCatalog({
   alan: {
     post: "观星塔导师",
     profile: [
@@ -40,4 +41,4 @@ export const TEACHER_LORE: Readonly<Record<TeacherDefinition["id"], TeacherLore>
     ],
     quotes: ["这个数，从哪里来？", "这一步，做得准确。", "错在第三行。从那里重来。", "理由成立。我改。"],
   },
-};
+});

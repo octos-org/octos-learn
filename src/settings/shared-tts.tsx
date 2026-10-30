@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { getLocale, tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import { request } from "@/api/client";
 import {
@@ -8,6 +10,7 @@ import {
 import { formatSettingsError } from "./settings-api";
 
 function HostedTtsPanel() {
+  useLocale();
   const [status, setStatus] = useState<HostedTtsStatus | null>(null);
   const [limits, setLimits] = useState<HostedTtsLimits | null>(null);
   const [message, setMessage] = useState("");
@@ -24,7 +27,7 @@ function HostedTtsPanel() {
         })
         .catch(() => {
           if (!cancelled)
-            setMessage("暂时无法读取平台语音用量；个人 TTS 设置不受影响。");
+            setMessage(tr("暂时无法读取平台语音用量；个人 TTS 设置不受影响。"));
         });
     void refresh();
     const timer = window.setInterval(refresh, 15_000);
@@ -43,50 +46,46 @@ function HostedTtsPanel() {
         body: JSON.stringify(limits),
       });
       setStatus(await fetchHostedTtsStatus());
-      setMessage("平台语音额度已更新，即刻生效。");
+      setMessage(tr("平台语音额度已更新，即刻生效。"));
     } catch (e) {
       setMessage(formatSettingsError(e));
     } finally {
       setSaving(false);
     }
   }
-  const number = (n: number) => n.toLocaleString("zh-CN");
+  const number = (n: number) => n.toLocaleString(getLocale());
   return (
     <section
       className="rounded-2xl border border-teal-700/20 bg-teal-50/60 p-5 text-slate-800"
-      aria-label="平台旁白语音"
+      aria-label={tr("平台旁白语音")}
     >
-      <h3 className="font-semibold">平台提供的旁白语音</h3>
+      <h3 className="font-semibold">{tr("平台提供的旁白语音")}</h3>
       {status ? (
         <>
           <p className="mt-2 text-sm">
             {!status.configured
-              ? "本站尚未提供默认 TTS。"
+              ? tr("本站尚未提供默认 TTS。")
               : status.available
-                ? "可用，无需填写 TTS 凭据。"
-                : "平台语音已暂停或额度用完，文字旁白仍可使用。"}
+                ? tr("可用，无需填写 TTS 凭据。")
+                : tr("平台语音已暂停或额度用完，文字旁白仍可使用。")}
           </p>
           <p className="mt-2 text-sm">
-            本月已使用 {number(status.user_used_chars)} /{" "}
-            {number(status.limits.user_monthly_chars)} 字符
-          </p>
+            {tr("本月已使用") + " "}{number(status.user_used_chars)} /{" "}
+            {number(status.limits.user_monthly_chars)} {tr("字符")}</p>
           <progress
             className="mt-2 w-full accent-teal-700"
             max={Math.max(1, status.limits.user_monthly_chars)}
             value={status.user_used_chars}
-            aria-label="本月个人平台语音用量"
+            aria-label={tr("本月个人平台语音用量")}
           />
           <p className="mt-2 text-xs">
-            {status.month} · 每月 1 日 00:00 UTC
-            重置。只统计平台代付的合成请求；个人凭据由你自己的账户计费。请求发出后即计入额度，失败或中断不自动返还，实际账单以火山控制台为准。
-          </p>
+            {status.month} {tr("· 每月 1 日 00:00 UTC 重置。只统计平台代付的合成请求；个人凭据由你自己的账户计费。请求发出后即计入额度，失败或中断不自动返还，实际账单以火山控制台为准。")}</p>
           {status.can_manage && limits && (
             <fieldset className="mt-4 space-y-3 border-t border-teal-700/20 pt-4">
-              <legend className="text-sm font-medium">管理员额度设置</legend>
+              <legend className="text-sm font-medium">{tr("管理员额度设置")}</legend>
               <p className="text-sm">
-                平台本月已用 {number(status.platform_used_chars ?? 0)} /{" "}
-                {number(status.limits.platform_monthly_chars)} 字符
-              </p>
+                {tr("平台本月已用") + " "}{number(status.platform_used_chars ?? 0)} /{" "}
+                {number(status.limits.platform_monthly_chars)} {tr("字符")}</p>
               <label className="block text-sm">
                 <input
                   type="checkbox"
@@ -95,11 +94,9 @@ function HostedTtsPanel() {
                     setLimits({ ...limits, enabled: e.target.checked })
                   }
                 />{" "}
-                启用平台代付 TTS
-              </label>
+                {tr("启用平台代付 TTS")}</label>
               <label className="block text-sm">
-                平台每月字符上限
-                <input
+                {tr("平台每月字符上限")}<input
                   className="ml-3 w-36 rounded border bg-white p-2"
                   type="number"
                   min="0"
@@ -115,8 +112,7 @@ function HostedTtsPanel() {
                 />
               </label>
               <label className="block text-sm">
-                每用户每月字符上限
-                <input
+                {tr("每用户每月字符上限")}<input
                   className="ml-3 w-36 rounded border bg-white p-2"
                   type="number"
                   min="0"
@@ -139,17 +135,17 @@ function HostedTtsPanel() {
                 }
                 onClick={save}
               >
-                {saving ? "保存中…" : "保存额度"}
+                {saving ? tr("保存中…") : tr("保存额度")}
               </button>
             </fieldset>
           )}
         </>
       ) : (
-        <p className="mt-2 text-sm">正在读取平台语音用量…</p>
+        <p className="mt-2 text-sm">{tr("正在读取平台语音用量…")}</p>
       )}
       {message && (
         <p role="status" className="mt-2 text-sm">
-          {message}
+          {translateStatus(message)}
         </p>
       )}
     </section>
@@ -157,6 +153,7 @@ function HostedTtsPanel() {
 }
 
 export function SharedTtsPanel() {
+  useLocale();
   return import.meta.env.VITE_HOSTED_TTS_ENABLED === "true"
     ? <HostedTtsPanel />
     : null;

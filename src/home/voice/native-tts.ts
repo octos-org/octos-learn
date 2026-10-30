@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import type { NativeTtsConfig } from "@/api/voice";
 
 type AndroidTtsBridge = {
@@ -47,7 +48,7 @@ function parseBridgeResult(raw: string): { ok: boolean; error?: string } {
   try {
     return JSON.parse(raw) as { ok: boolean; error?: string };
   } catch {
-    return { ok: false, error: "Android TTS 接口返回了无效结果" };
+    return { ok: false, error: tr("Android TTS 接口返回了无效结果") };
   }
 }
 
@@ -75,7 +76,7 @@ function handleNativeTtsEvent(raw: string): void {
   if (event.type === "error") {
     pending.delete(event.requestId);
     playback.detachAbort();
-    const error = new Error(event.message || "Android TTS 播放失败");
+    const error = new Error(event.message || tr("Android TTS 播放失败"));
     if (playback.started) playback.onEnded();
     else playback.reject(error);
   }
@@ -140,12 +141,12 @@ export function playNativeTts(
       if (!result.ok) {
         pending.delete(id);
         signal?.removeEventListener("abort", abort);
-        reject(new Error(result.error || "Android TTS 无法启动"));
+        reject(new Error(result.error || tr("Android TTS 无法启动")));
       }
     } catch (error) {
       pending.delete(id);
       signal?.removeEventListener("abort", abort);
-      reject(error instanceof Error ? error : new Error("Android TTS 无法启动"));
+      reject(error instanceof Error ? error : new Error(tr("Android TTS 无法启动")));
     }
   });
 }
@@ -155,7 +156,7 @@ function blobArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(reader.error ?? new Error("无法读取课程旁白"));
+    reader.onerror = () => reject(reader.error ?? new Error(tr("无法读取课程旁白")));
     reader.readAsArrayBuffer(blob);
   });
 }
@@ -212,14 +213,14 @@ export async function playNativeAudioBlob(
       if (!result.ok) {
         pending.delete(id);
         signal?.removeEventListener("abort", abort);
-        reject(new Error(result.error || "Android 无法播放课程旁白"));
+        reject(new Error(result.error || tr("Android 无法播放课程旁白")));
       }
     } catch (error) {
       pending.delete(id);
       signal?.removeEventListener("abort", abort);
       reject(error instanceof Error
         ? error
-        : new Error("Android 无法播放课程旁白"));
+        : new Error(tr("Android 无法播放课程旁白")));
     }
   });
 }

@@ -1,3 +1,4 @@
+import { withLocale } from '@/i18n';
 import { expect, it } from 'vitest';
 import { memoryGroup, parseMemoryEntries, scopedContent } from './memory-entries';
 import { reconcileRequests, memorySnapshot, type PendingMemoryRequest } from './memory-requests';
@@ -34,6 +35,8 @@ it('keeps the chosen scope in request text', () => {
   expect(scopedContent('all', ' 先举例 ')).toBe('对所有老师：先举例');
   expect(scopedContent('alan', '不用比喻')).toBe('只对阿澜老师：不用比喻');
   expect(scopedContent('me', '下周考试')).toBe('下周考试');
+  // An English scope still names the stored teacher that Octos memory uses.
+  expect(withLocale('en-US', () => scopedContent('alan', 'no analogies'))).toBe('Only for Alan (阿澜): no analogies');
 });
 
 const request = (operation: PendingMemoryRequest['operation'], extra: Partial<PendingMemoryRequest> = {}): PendingMemoryRequest => ({

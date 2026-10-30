@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import type { InkDocumentRecord, InkDocumentStore } from 'octos-lesson-language/ink-runtime';
 import type { PlaybackStore } from 'octos-lesson-language/web-runtime';
 
@@ -14,7 +15,7 @@ let queue: Promise<void> = Promise.resolve();
 let errorMessage = '';
 
 function notify() {
-  errorMessage = failures.size ? '本地保存失败，最新学习进度或笔迹尚未保存。请重试，暂勿关闭页面。' : '';
+  errorMessage = failures.size ? tr("本地保存失败，最新学习进度或笔迹尚未保存。请重试，暂勿关闭页面。") : '';
   listeners.forEach(listener => listener());
 }
 export const learningStorageStatus = {
@@ -25,7 +26,7 @@ export const learningStorageStatus = {
 export function openLearningDatabase(): Promise<IDBDatabase> {
   if (database) return database;
   database = new Promise<IDBDatabase>((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') { reject(new Error('此设备的本地数据库不可用')); return; }
+    if (typeof indexedDB === 'undefined') { reject(new Error(tr("此设备的本地数据库不可用"))); return; }
     let blocked = false;
     const request = indexedDB.open(LEARNING_DATABASE_NAME, 2);
     request.onupgradeneeded = () => {
@@ -38,7 +39,7 @@ export function openLearningDatabase(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('history-meta')) db.createObjectStore('history-meta');
     };
     request.onerror = () => reject(request.error);
-    request.onblocked = () => { blocked = true; reject(new Error('请关闭其他 Octos 页面后重试本地数据库初始化')); };
+    request.onblocked = () => { blocked = true; reject(new Error(tr("请关闭其他 Octos 页面后重试本地数据库初始化"))); };
     request.onsuccess = () => {
       const db = request.result;
       if (blocked) { db.close(); return; }
@@ -56,8 +57,8 @@ async function transact<T>(mode: IDBTransactionMode, operation: (store: IDBObjec
     const request = operation(tx.objectStore(DOCUMENTS));
     // Request success is not durability: only the transaction commit counts.
     tx.oncomplete = () => resolve(request.result);
-    tx.onabort = () => reject(tx.error ?? new Error('本地保存事务已中止'));
-    tx.onerror = () => reject(tx.error ?? new Error('本地数据库读写失败'));
+    tx.onabort = () => reject(tx.error ?? new Error(tr("本地保存事务已中止")));
+    tx.onerror = () => reject(tx.error ?? new Error(tr("本地数据库读写失败")));
   });
 }
 

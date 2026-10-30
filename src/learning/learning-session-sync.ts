@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { getMessages, getSessionFiles, listSessions, type SessionFileInfo } from "@/api/sessions";
 import { DeviceHistoryQueue } from "./history/device-queue";
 import { getSelectedProfileId } from "@/api/client";
@@ -16,7 +17,7 @@ function sessionTimestamp(sessionId: string): number {
 function usableTitle(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const text = stripLearningContext(value);
-  return text && !text.startsWith("[[LEARNING_") && text !== "已保存的学习" && text !== "新的学习"
+  return text && !text.startsWith("[[LEARNING_") && !["已保存的学习", "新的学习"].some(title => [tr(title, {}, "zh-CN"), tr(title, {}, "en-US")].includes(text))
     && isSubstantiveLearningText(text) ? text : null;
 }
 
@@ -68,7 +69,7 @@ export async function discoverServerLearningSessions(options: { recoverTitles?: 
       if (!files.some(file => isOllLessonArtifact(file) || isSelectionEnhancementArtifact(file))) return null;
       const createdAt = sessionTimestamp(session.id);
       return { id: session.id, status: "paused" as const,
-        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? (recoverTitles ? await recoverTitle(session.id, files) : null) ?? "已保存的学习",
+        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? (recoverTitles ? await recoverTitle(session.id, files) : null) ?? tr("已保存的学习"),
         createdAt, updatedAt: createdAt };
     }));
     for (const session of batch) if (session) result.push(session);

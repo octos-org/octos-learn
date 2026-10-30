@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   layoutBoardWriting as layoutBoardWritingOnMainThread,
   prepareBoardWritingFont as prepareBoardWritingFontOnMainThread,
@@ -35,7 +36,7 @@ function request(message: { kind: "prepare" } | { kind: "layout"; lines: string[
       worker = undefined;
       ready = undefined;
       failedWorker?.terminate();
-      for (const task of pending.values()) task.reject(new Error("手写排版暂时不可用，请重试。"));
+      for (const task of pending.values()) task.reject(new Error(tr("手写排版暂时不可用，请重试。")));
       pending.clear();
     };
   }
@@ -68,6 +69,6 @@ export async function layoutBoardWriting(lines: string[], source: WritingBounds,
   }
   await prepareBoardWritingFont();
   const result = await request({ kind: "layout", lines, source, occupied });
-  if (!result) throw new Error("手写排版未返回内容。");
+  if (!result) throw new Error(tr("手写排版未返回内容。"));
   return result;
 }

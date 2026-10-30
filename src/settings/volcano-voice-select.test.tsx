@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { VolcanoVoiceSelect } from "./volcano-voice-select";
@@ -29,7 +30,7 @@ describe("Volcano voice catalog", () => {
     mockCatalog(); const changed = vi.fn();
     render(<VolcanoVoiceSelect hasCredential resourceId="seed-tts-2.0" value="my-clone" onChange={changed} />);
     await screen.findByRole("option", { name: "New voice" });
-    expect(screen.getByLabelText("Custom Voice ID")).toHaveProperty("value", "my-clone");
+    expect(screen.getByLabelText(tr("Custom Voice ID"))).toHaveProperty("value", "my-clone");
     expect(changed).not.toHaveBeenCalled();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "v2" } });
     expect(changed).toHaveBeenCalledWith("v2");
@@ -38,8 +39,8 @@ describe("Volcano voice catalog", () => {
     const fetcher = mockCatalog(); fetcher.mockRejectedValueOnce(new Error("offline"));
     render(<VolcanoVoiceSelect hasCredential resourceId="seed-tts-2.0" value="v2" onChange={vi.fn()} />);
     await screen.findByRole("alert");
-    expect(screen.getByLabelText("Custom Voice ID")).toHaveProperty("value", "v2");
-    fireEvent.click(screen.getByRole("button", { name: "Reload voices" }));
+    expect(screen.getByLabelText(tr("Custom Voice ID"))).toHaveProperty("value", "v2");
+    fireEvent.click(screen.getByRole("button", { name: tr("Reload voices") }));
     await screen.findByRole("option", { name: "New voice" });
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -48,14 +49,14 @@ describe("Volcano voice catalog", () => {
     render(<VolcanoVoiceSelect hasCredential resourceId="seed-tts-2.0" value="" onChange={vi.fn()} />);
     await act(async () => {});
     await act(async () => { vi.advanceTimersByTime(8000); });
-    expect(screen.getByRole("alert").textContent).toContain("too long");
+    expect(screen.getByRole("alert").textContent).toContain(tr("The voice list took too long to load. Retry or enter your voice ID."));
     expect(screen.getByRole("combobox")).toHaveProperty("disabled", false);
-    expect(screen.getByLabelText("Custom Voice ID")).toBeTruthy();
+    expect(screen.getByLabelText(tr("Custom Voice ID"))).toBeTruthy();
   });
   it("rejects malformed catalogs without clearing the saved voice", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ version: 1, voices: [null] }))));
     render(<VolcanoVoiceSelect hasCredential resourceId="seed-tts-2.0" value="saved" onChange={vi.fn()} />);
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
-    expect(screen.getByLabelText("Custom Voice ID")).toHaveProperty("value", "saved");
+    expect(screen.getByLabelText(tr("Custom Voice ID"))).toHaveProperty("value", "saved");
   });
 });

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { availableService } from "@/byok/providers";
 import { getService, hasServiceCredential, getServiceStatus, getLessonConfigured, subscribeServices } from "@/byok/services";
 import type { VoiceReadiness } from "@/settings/settings-api";
@@ -31,7 +32,7 @@ export async function getVoiceRouting(_force = false): Promise<VoiceRouting> {
   const ttsVerified = getServiceStatus("tts").state === "ready";
   cached = {
     readiness: { ready: asrVerified && ttsVerified && lesson === true, asr: { ready: asrVerified, mode: "cloud", detail: getServiceStatus("asr").detail },
-      llm: { ready: lesson === true, detail: lesson ? "课程模型已配置。" : "请连接自己的课程模型，语音配置独立保存。" }, tts: { ready: ttsVerified, mode: "cloud", detail: getServiceStatus("tts").detail } },
+      llm: { ready: lesson === true, detail: lesson ? tr("课程模型已配置。") : tr("请连接自己的课程模型，语音配置独立保存。") }, tts: { ready: ttsVerified, mode: "cloud", detail: getServiceStatus("tts").detail } },
     readinessKnown: lesson !== undefined, ...selectVoiceRoutes({} as VoiceReadiness, asr, tts),
     cloudAsrAvailable: asr, cloudTtsAvailable: tts, cloudAsrDetail: getServiceStatus("asr").detail,
   };

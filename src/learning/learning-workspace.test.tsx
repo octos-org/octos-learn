@@ -1,3 +1,4 @@
+import { setLocale, tr } from "@/i18n";
 import { renderLearning } from "../test/render-learning";
 import {
   act,
@@ -336,11 +337,11 @@ describe("LearningWorkspace", () => {
     );
 
     expect(screen.getByTestId("camera-preview")).toBeTruthy();
-    expect(screen.getByText("老师看到的画面")).toBeTruthy();
+    expect(screen.getByText(tr("老师看到的画面"))).toBeTruthy();
     expect(
       screen.getByAltText("本轮已发送给老师的画面").getAttribute("src"),
     ).toBe("blob:sent-frame");
-    expect(screen.getByText("本轮已发送")).toBeTruthy();
+    expect(screen.getByText(tr("本轮已发送"))).toBeTruthy();
   });
 
   it("answers a tap that interrupts the teacher with the teacher's short fixed line", async () => {
@@ -384,9 +385,9 @@ describe("LearningWorkspace", () => {
     );
 
     expect(screen.getByRole("status", {
-      name: "正在准备语音识别",
+      name: tr("正在准备语音识别"),
     }).textContent).toContain("正在连接语音识别服务并启动人声检测");
-    expect(screen.getByText(/首次使用需要加载约 17 MB/)).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("首次使用需要加载约 17 MB，请保持页面打开。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   });
 
   it("lets the learner calibrate the exact camera frame sent to the teacher", async () => {
@@ -405,14 +406,14 @@ describe("LearningWorkspace", () => {
     );
 
     await act(async () => {
-      screen.getByRole("button", { name: "调整摄像头画面" }).click();
+      screen.getByRole("button", { name: tr("调整摄像头画面") }).click();
     });
-    screen.getByRole("button", { name: "向右旋转摄像头画面" }).click();
+    screen.getByRole("button", { name: tr("向右旋转摄像头画面") }).click();
     expect(conversationMock.updateCameraSettings).toHaveBeenCalledWith({
       rotation: 90,
     });
     expect(
-      screen.getByRole("button", { name: /试卷清晰模式/ }).getAttribute("aria-pressed"),
+      screen.getByRole("button", { name: new RegExp(tr("试卷清晰模式").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "") }).getAttribute("aria-pressed"),
     ).toBe("true");
   });
 
@@ -428,7 +429,7 @@ describe("LearningWorkspace", () => {
     );
 
     await act(async () => {
-      screen.getByRole("button", { name: "启用语音" }).click();
+      screen.getByRole("button", { name: tr("启用语音") }).click();
       await Promise.resolve();
     });
     expect(onUseVoiceMode).toHaveBeenCalledTimes(1);
@@ -478,10 +479,10 @@ describe("LearningWorkspace", () => {
     );
 
     expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.queryByRole("button", { name: "启用语音" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "启用摄像头" })).toBeNull();
-    expect(screen.getByRole("button", { name: "开始互动学习" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "开始互动学习" }));
+    expect(screen.queryByRole("button", { name: tr("启用语音") })).toBeNull();
+    expect(screen.queryByRole("button", { name: tr("启用摄像头") })).toBeNull();
+    expect(screen.getByRole("button", { name: tr("开始互动学习") })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: tr("开始互动学习") }));
     expect(onStartCourseInteraction).toHaveBeenCalledOnce();
     await act(async () => Promise.resolve());
     expect(inkRuntimeMock.mountInkRuntime).not.toHaveBeenCalled();
@@ -496,8 +497,8 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "调整摄像头画面" })).toBeNull();
-    screen.getByRole("button", { name: "启用摄像头" }).click();
+    expect(screen.queryByRole("button", { name: tr("调整摄像头画面") })).toBeNull();
+    screen.getByRole("button", { name: tr("启用摄像头") }).click();
     expect(conversationMock.toggleCamera).toHaveBeenCalledTimes(1);
 
     conversationMock.cameraActive = true;
@@ -513,13 +514,13 @@ describe("LearningWorkspace", () => {
     );
 
     await act(async () => {
-      screen.getByRole("button", { name: "调整摄像头画面" }).click();
+      screen.getByRole("button", { name: tr("调整摄像头画面") }).click();
       await Promise.resolve();
     });
 
     expect(conversationMock.startCamera).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "调整老师看到的画面" })).toBeTruthy();
-    screen.getByRole("button", { name: "关闭摄像头画面设置" }).click();
+    expect(screen.getByRole("dialog", { name: tr("调整老师看到的画面") })).toBeTruthy();
+    screen.getByRole("button", { name: tr("关闭摄像头画面设置") }).click();
     expect(conversationMock.stopCamera).not.toHaveBeenCalled();
   });
 
@@ -566,7 +567,7 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(screen.getByText("向 Octos 提问，我们从这里开始")).toBeTruthy();
+    expect(screen.getByText(tr("向 Octos 提问，我们从这里开始"))).toBeTruthy();
     expect(screen.queryByText(longReply)).toBeNull();
     expect(screen.queryByRole("button", { name: "下一步" })).toBeNull();
   });
@@ -588,11 +589,11 @@ describe("LearningWorkspace", () => {
             "learning-session:learn-blank-whiteboard-ink:student-ink",
         }),
       );
-      expect(screen.getByLabelText("白板书写工具")).toBeTruthy();
+      expect(screen.getByLabelText(tr("白板书写工具"))).toBeTruthy();
     });
-    expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "擦除笔迹" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "框选多个笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("书写笔迹") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("擦除笔迹") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("框选多个笔迹") })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
   });
 
@@ -637,6 +638,25 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByText(/本轮没有更新白板/)).toBeNull();
   });
 
+  it("pins an English course request before a UI language switch and submits only once", async () => {
+    historyRecordingMock.enabled = true;
+    setLocale("en-US", false);
+    await renderLearning(<LearningWorkspace sessionId="learn-language-pinning" voiceEnabled={false} onBack={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释勾股定理 x²+y²=z²" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
+    act(() => setLocale("zh-CN", false));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledOnce());
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith("learn-language-pinning", "learning.lesson.generate", expect.objectContaining({ language: "en-US", learner_request: "请解释勾股定理 x²+y²=z²" }));
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    // The model context follows the submitted course, and history keeps the
+    // teacher's stored name whatever the interface language.
+    const profile = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.teacher_profile;
+    expect(profile).toContain("Teacher for this lesson: Alan");
+    expect(profile).not.toContain("本次授课老师");
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed",
+      data: expect.objectContaining({ teacher_id: "alan", teacher_name: "阿澜" }) }));
+  });
+
   it("places lesson generation feedback on the whiteboard", async () => {
     await renderLearning(
       <LearningWorkspace
@@ -646,15 +666,15 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请解释勾股定理" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     expect(await screen.findByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeTruthy();
-    expect(screen.getByText("我的问题")).toBeTruthy();
+    expect(screen.getByText(tr("我的问题"))).toBeTruthy();
     expect(screen.getByText("请解释勾股定理")).toBeTruthy();
     expect(localStorage.getItem(
       "octos-learning-questions:v1:learn-loading-lesson",
@@ -694,7 +714,7 @@ describe("LearningWorkspace", () => {
     act(() => {
       conversationMock.options?.onTurnStart?.("voice-lesson-turn");
     });
-    expect(screen.queryByText("我的问题")).toBeNull();
+    expect(screen.queryByText(tr("我的问题"))).toBeNull();
 
     await act(async () => {
       const handled = await conversationMock.options?.onAdmittedSpeech?.({
@@ -741,7 +761,7 @@ describe("LearningWorkspace", () => {
         },
       }));
     });
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
   });
 
   it("shows a clarification instead of a guessed lesson for ambiguous admitted speech", async () => {
@@ -807,7 +827,7 @@ describe("LearningWorkspace", () => {
 
     expect(await screen.findByText("你想了解这本书的哪一方面？"))
       .toBeTruthy();
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(screen.queryByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeNull();
@@ -880,16 +900,16 @@ describe("LearningWorkspace", () => {
       }));
     });
 
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(screen.getByText("嗯。")).toBeTruthy();
     expect(await screen.findByText(
-      "提问信息不足，无法生成课程。请告诉我你想学习的具体内容。",
+      tr("提问信息不足，无法生成课程。请告诉我你想学习的具体内容。"),
     )).toBeTruthy();
     expect(screen.queryByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeNull();
     expect(screen.queryByText(
-      "这节课讲完了，你可以缩放白板回顾刚才的内容。",
+      tr("这节课讲完了，你可以缩放白板回顾刚才的内容。"),
     )).toBeNull();
     expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1227,7 +1247,7 @@ describe("LearningWorkspace", () => {
     expect(screen.getByText(getTeacher("alan").reactions.selection)).toBeTruthy();
     expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
     expect(document.querySelector(".learning-selection-enhancement")).toBeTruthy();
-    expect(screen.getByText("正在生成小章鱼辅助")).toBeTruthy();
+    expect(screen.getByText(tr("正在生成小章鱼辅助"))).toBeTruthy();
     expect(screen.queryByText("正在准备课程")).toBeNull();
     await act(async () => { rejectFirst(new BridgeTimeoutError("skill.action.invoke", 30000)); await first; });
     const files = ["expired-turn", "success-turn"].map((turn) => ({
@@ -1338,10 +1358,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "讲一节课" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-selection-text",
@@ -1403,10 +1423,10 @@ describe("LearningWorkspace", () => {
         onBack={vi.fn()}
       />,
     );
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请解释我手上的这道题" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-camera-text",
@@ -1458,7 +1478,7 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeNull();
-    expect(await screen.findByText("没有生成成功")).toBeTruthy();
+    expect(await screen.findByText(tr("没有生成成功"))).toBeTruthy();
     expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
       expect.objectContaining({
         playing: true,
@@ -1494,10 +1514,10 @@ describe("LearningWorkspace", () => {
     );
 
     expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请再讲一节二元函数课程" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     expect(await screen.findByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
@@ -1548,8 +1568,8 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(4));
     await waitFor(() => expect(backgroundMock.getMyMemory).toHaveBeenCalled());
     await act(async () => {});
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释勾股定理" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释勾股定理" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, string>;
     expect(params.teacher_profile).toContain("本次授课老师：阿澜");
@@ -1571,8 +1591,8 @@ describe("LearningWorkspace", () => {
     expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
     await act(async () => {});
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "刚才最后那一步我没懂" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "刚才最后那一步我没懂" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, string>;
     expect(params.current_lesson).toContain("最近一节课：");
@@ -1591,8 +1611,8 @@ describe("LearningWorkspace", () => {
     expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
     await act(async () => {});
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "刚才最后那一步我没懂" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "刚才最后那一步我没懂" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(gateSpy).toHaveBeenCalled());
     expect(gateSpy.mock.calls.at(-1)?.[0].currentLesson).toBeUndefined();
     gateSpy.mockRestore();
@@ -1608,8 +1628,8 @@ describe("LearningWorkspace", () => {
     await renderLearning(<LearningWorkspace sessionId="learn-old-coach" voiceEnabled={false} onBack={vi.fn()} />);
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
     await act(async () => {});
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释勾股定理" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释勾股定理" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
     for (const field of ["teacher_profile", "learner_background", "current_lesson", "tutor_context", "learner_context"]) expect(params).not.toHaveProperty(field);
@@ -1645,10 +1665,10 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
     await act(async () => {});
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请解释勾股定理" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-direct-lesson",
@@ -1728,7 +1748,7 @@ describe("LearningWorkspace", () => {
         },
       }));
     });
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(await screen.findByText("勾股定理")).toBeTruthy();
     await waitFor(() => expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "answer_delivered", questionId: turnId, data: expect.objectContaining({ text: "我们来看勾股定理。" }) })));
     expect(localStorage.getItem(
@@ -1774,8 +1794,8 @@ describe("LearningWorkspace", () => {
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: job.action_id, ok: true, queued: 1, jobs: [job],
     });
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请讲一节新课" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请讲一节新课" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText(finishText)).toBeNull());
     const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
@@ -1795,7 +1815,7 @@ describe("LearningWorkspace", () => {
     const teacherFinishText = getTeacher("alan").reactions.lessonComplete;
     expect(screen.queryByText(finishText)).toBeNull();
     expect(screen.queryByText(teacherFinishText)).toBeNull();
-    expect(screen.queryByText("课程完成")).toBeNull();
+    expect(screen.queryByText(tr("课程完成"))).toBeNull();
     await act(async () => resolveFiles([makeFile("old-turn"), makeFile(turnId)]));
     expect(screen.queryByText(finishText)).toBeNull();
     expect(screen.queryByText(teacherFinishText)).toBeNull();
@@ -1818,8 +1838,8 @@ describe("LearningWorkspace", () => {
       created_at: "2026-09-04T00:00:00Z", updated_at: "2026-09-04T00:00:00Z" };
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: job.action_id, ok: true, queued: 1, jobs: [job] });
     await renderLearning(<LearningWorkspace sessionId={job.session_id} voiceEnabled={false} onBack={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释等比数列求和公式" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释等比数列求和公式" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const questionId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
     const detail = { ...job, status, result: { success: false, output: "synthetic-private-provider-error" } };
@@ -1841,8 +1861,8 @@ describe("LearningWorkspace", () => {
       action_id: "learning.lesson.generate", skill_id: "learning-coach", status: "queued", created_at: "2026-09-04T00:00:00Z", updated_at: "2026-09-04T00:00:00Z" };
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: job.action_id, ok: true, queued: 2, jobs: [job, { ...job, job_id: "second-job" }] });
     await renderLearning(<LearningWorkspace sessionId={job.session_id} voiceEnabled={false} onBack={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释等比数列求和公式" } });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释等比数列求和公式" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const questionId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
     await act(async () => { window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail: { ...job, status: "failed" } })); });
@@ -1882,10 +1902,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请解释等比数列求和公式" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
 
     act(() => {
@@ -1910,14 +1930,14 @@ describe("LearningWorkspace", () => {
     });
 
     expect(await screen.findAllByText(
-      "课程已经生成，但白板没有收到课程内容，请重试。",
+      tr("课程已经生成，但白板没有收到课程内容，请重试。"),
     )).not.toHaveLength(0);
-    expect(screen.queryByText("已回答")).toBeNull();
+    expect(screen.queryByText(tr("已回答"))).toBeNull();
     expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({
       kind: "request_failed", data: { execution_id: "lesson-job-without-artifact", status: "failed", reason: "missing-artifact" },
     }));
     expect(screen.queryByText(
-      "这节课讲完了，你可以缩放白板回顾刚才的内容。",
+      tr("这节课讲完了，你可以缩放白板回顾刚才的内容。"),
     )).toBeNull();
   });
 
@@ -1946,10 +1966,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "The book." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id;
     expect(turnId).toEqual(expect.any(String));
@@ -1980,14 +2000,14 @@ describe("LearningWorkspace", () => {
 
     expect(await screen.findByText("你想了解这本书的哪一方面？"))
       .toBeTruthy();
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(screen.queryByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeNull();
     expect(screen.queryByTestId("oll-controls")).toBeNull();
-    expect(screen.queryByText("这块白板会保存我们的思考过程"))
+    expect(screen.queryByText(tr("这块白板会保存我们的思考过程")))
       .toBeNull();
-    expect(screen.queryByText("向 Octos 提问，我们从这里开始"))
+    expect(screen.queryByText(tr("向 Octos 提问，我们从这里开始")))
       .toBeNull();
   });
 
@@ -2016,10 +2036,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "请让我拖动任意三角形顶点并实时重算外接圆" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
 
     act(() => {
@@ -2049,7 +2069,7 @@ describe("LearningWorkspace", () => {
     expect(await screen.findByText(
       "目前还不能完整生成这节课：当前还不能自由拖动三角形顶点并实时重算外接圆。",
     )).toBeTruthy();
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByText(/Lesson generation already exhausted/iu)).toBeNull();
   });
@@ -2094,7 +2114,7 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(sessionFilesMock.listSkillActionJobs).toHaveBeenCalledWith(
       "learn-restored-job",
       { actionId: "learning.lesson.generate" },
@@ -2181,7 +2201,7 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-course-pack-job",
     )).toBeNull();
@@ -2438,7 +2458,7 @@ describe("LearningWorkspace", () => {
         onBack={vi.fn()}
       />,
     );
-    const input = screen.getByRole("textbox", { name: "输入学习问题" });
+    const input = screen.getByRole("textbox", { name: tr("输入学习问题") });
     expect(conversationMock.options?.externalSpeechActive).toBe(false);
 
     fireEvent.change(input, { target: { value: "请讲解单位圆" } });
@@ -2477,16 +2497,16 @@ describe("LearningWorkspace", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "打开本课目录" }),
+      screen.getByRole("button", { name: tr("打开本课目录") }),
     ).toBeTruthy();
-    expect(screen.getByText("课程播放中")).toBeTruthy();
-    expect(screen.queryByText("轻触开始")).toBeNull();
+    expect(screen.getByText(tr("课程播放中"))).toBeTruthy();
+    expect(screen.queryByText(tr("轻触开始"))).toBeNull();
     act(() => vi.advanceTimersByTime(260));
     act(() => {
-      screen.getByRole("button", { name: "打开本课目录" }).click();
+      screen.getByRole("button", { name: tr("打开本课目录") }).click();
     });
-    expect(screen.getByRole("dialog", { name: "本课目录" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "暂停 OLL 课程" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: tr("本课目录") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("暂停 OLL 课程") })).toBeTruthy();
     expect(
       screen.getAllByRole("button", { name: /查看步骤：/ }).length,
     ).toBeGreaterThan(0);
@@ -2504,7 +2524,7 @@ describe("LearningWorkspace", () => {
     act(() => {
       screen.getAllByRole("button", { name: /查看讲解片段：/ })[0]!.click();
     });
-    expect(screen.queryByRole("dialog", { name: "本课目录" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: tr("本课目录") })).toBeNull();
   });
 
   it.each([
@@ -2546,10 +2566,10 @@ describe("LearningWorkspace", () => {
     );
 
     const teacher = screen.getByRole("button", {
-      name: "Octos 正在准备下一步",
+      name: tr("Octos 正在准备下一步"),
     });
     expect(teacher.getAttribute("aria-busy")).toBe("true");
-    expect(screen.getByText("稍等一下")).toBeTruthy();
+    expect(screen.getByText(tr("稍等一下"))).toBeTruthy();
   });
 
   it("restarts TTS on a saved lesson and opens a clean ink document", async () => {
@@ -2567,7 +2587,7 @@ describe("LearningWorkspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", {
-      name: "重新播放 OLL 课程",
+      name: tr("重新播放 OLL 课程"),
     }));
 
     await waitFor(() => {
@@ -2615,7 +2635,7 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "打开本课目录" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("打开本课目录") }));
     fireEvent.click(screen.getAllByRole("button", {
       name: /从步骤开始播放：/,
     })[0]!);
@@ -2833,7 +2853,7 @@ describe("LearningWorkspace", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("课程完成")).toBeTruthy();
+      expect(screen.getByText(tr("课程完成"))).toBeTruthy();
     });
 
     await act(async () => {
@@ -2920,7 +2940,7 @@ describe("LearningWorkspace", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("课程完成")).toBeTruthy();
+      expect(screen.getByText(tr("课程完成"))).toBeTruthy();
     });
 
     await waitFor(() => {
@@ -2952,7 +2972,7 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("读取旧笔迹失败"));
     expect(localStorage.getItem(`octos-learning-ink-merge-source:v2:${id}`)).toBe(id);
     expect(localStorage.getItem(`octos-learning-ink-cumulative-run:v2:${id}`)).not.toBe("1");
-    expect(screen.getByText(/恢复失败/)).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr(" · 恢复失败").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   });
 
   it("restores all composite board nodes from fullBoard when delivery is settled", async () => {
@@ -2967,7 +2987,7 @@ describe("LearningWorkspace", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("课程完成")).toBeTruthy();
+      expect(screen.getByText(tr("课程完成"))).toBeTruthy();
     });
 
     expect(screen.getByText("① 已知与目标")).toBeTruthy();
@@ -2992,14 +3012,14 @@ describe("LearningWorkspace", () => {
 
     const completionText = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
     expect(screen.getByText(completionText)).toBeTruthy();
-    expect(screen.getByText("课程完成")).toBeTruthy();
+    expect(screen.getByText(tr("课程完成"))).toBeTruthy();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6500);
     });
 
     expect(screen.queryByText(completionText)).toBeNull();
-    expect(screen.getByText("课程完成")).toBeTruthy();
+    expect(screen.getByText(tr("课程完成"))).toBeTruthy();
   });
 
   it("recovers ink hidden by the previous replay implementation once", async () => {
@@ -3327,11 +3347,11 @@ describe("LearningWorkspace", () => {
     await waitFor(() => {
       expect(screen.getByText("二次函数 y = x² 图像")).toBeTruthy();
     });
-    expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
+    expect(screen.queryByText(tr("选区辅助内容无法对应到已保存的原稿快照")))
       .toBeNull();
 
     fireEvent.click(screen.getByRole("button", {
-      name: "删除这条辅助内容",
+      name: tr("删除这条辅助内容"),
     }));
     await waitFor(() => {
       expect(screen.queryByText("二次函数 y = x² 图像")).toBeNull();
@@ -3392,9 +3412,9 @@ describe("LearningWorkspace", () => {
     await waitFor(() => {
       expect(screen.getByText("保留下来的历史说明")).toBeTruthy();
     });
-    expect(screen.getByText("原选区快照已不在本浏览器，保留生成结果"))
+    expect(screen.getByText(tr("原选区快照已不在本浏览器，保留生成结果")))
       .toBeTruthy();
-    expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
+    expect(screen.queryByText(tr("选区辅助内容无法对应到已保存的原稿快照")))
       .toBeNull();
   });
 
@@ -3675,7 +3695,7 @@ describe("LearningWorkspace", () => {
       expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(2);
       expect(screen.getByText("先到达的第一节")).toBeTruthy();
       expect(screen.getByTestId("oll-controls")).toBeTruthy();
-      expect(screen.getByLabelText("课程内容仍在生成")).toBeTruthy();
+      expect(screen.getByLabelText(tr("课程内容仍在生成"))).toBeTruthy();
       expect(screen.queryByText("正在补充白板内容")).toBeNull();
     });
 
@@ -3706,7 +3726,7 @@ describe("LearningWorkspace", () => {
       }));
     });
     await waitFor(() => {
-      expect(screen.queryByLabelText("课程内容仍在生成")).toBeNull();
+      expect(screen.queryByLabelText(tr("课程内容仍在生成"))).toBeNull();
     });
   });
 
@@ -3730,7 +3750,7 @@ describe("LearningWorkspace", () => {
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.queryByTestId("oll-controls")).toBeNull();
-    expect(screen.getByText("向 Octos 提问，我们从这里开始")).toBeTruthy();
+    expect(screen.getByText(tr("向 Octos 提问，我们从这里开始"))).toBeTruthy();
   });
 
   it("surfaces a durable file-list failure without falling back to prose", async () => {
@@ -3964,10 +3984,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "呃呃呃" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     await waitFor(() => {
       expect(gateSpy).toHaveBeenCalledWith(expect.objectContaining({
@@ -3997,10 +4017,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), {
       target: { value: "讲一下那个" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
 
     expect(await screen.findByText("输入内容不够明确，请补充你想学习的具体知识点。")).toBeTruthy();
     expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();

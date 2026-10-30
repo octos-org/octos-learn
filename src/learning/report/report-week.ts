@@ -1,3 +1,4 @@
+import { formatDate } from "@/i18n";
 const DAY_MS = 86_400_000;
 const VISIBILITY_KEY = "octos-learn-weekly-report";
 
@@ -15,7 +16,7 @@ export const shiftWeek = (weekStart: string, weeks: number) =>
 
 /** "10月13日–10月19日" for the Monday-to-Sunday week. */
 export function weekLabel(weekStart: string): string {
-  const day = (iso: string) => { const [, m, d] = iso.split("-").map(Number); return `${m}月${d}日`; };
+  const day = (iso: string) => formatDate(`${iso}T00:00:00Z`, { month: "short", day: "numeric", timeZone: "UTC" });
   const sunday = new Date(Date.parse(`${weekStart}T00:00:00.000Z`) + 6 * DAY_MS).toISOString().slice(0, 10);
   return `${day(weekStart)}–${day(sunday)}`;
 }
@@ -28,8 +29,7 @@ export function shiftMonth(month: string, months: number): string {
 
 /** "2026年10月" */
 export function monthLabel(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  return `${y}年${m}月`;
+  return formatDate(`${month}-01T00:00:00Z`, { year: "numeric", month: "long", timeZone: "UTC" });
 }
 
 /** Learners can hide the weekly report; nothing is computed while hidden. */

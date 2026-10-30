@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   parseCoursePackCatalog,
   type CoursePackCatalogEntry,
@@ -95,15 +96,15 @@ function isStoredCoursePack(value: unknown): value is StoredCoursePack {
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("课程包本地存储失败"));
+    request.onerror = () => reject(request.error ?? new Error(tr("课程包本地存储失败")));
   });
 }
 
 function transactionDone(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onabort = () => reject(transaction.error ?? new Error("课程包本地存储已中止"));
-    transaction.onerror = () => reject(transaction.error ?? new Error("课程包本地存储失败"));
+    transaction.onabort = () => reject(transaction.error ?? new Error(tr("课程包本地存储已中止")));
+    transaction.onerror = () => reject(transaction.error ?? new Error(tr("课程包本地存储失败")));
   });
 }
 
@@ -117,8 +118,8 @@ function openDatabase(): Promise<IDBDatabase | null> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("无法打开课程包本地存储"));
-    request.onblocked = () => reject(new Error("课程包本地存储升级被阻止"));
+    request.onerror = () => reject(request.error ?? new Error(tr("无法打开课程包本地存储")));
+    request.onblocked = () => reject(new Error(tr("课程包本地存储升级被阻止")));
   });
 }
 

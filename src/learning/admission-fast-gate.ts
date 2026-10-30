@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   evaluateSystemOne,
   type ChoiceAnswer,
@@ -151,7 +152,7 @@ export async function evaluateAdmissionFastGate(
       disposition: "generate_lesson",
       confidence: 0,
       isSelfContained: true,
-      reason: "未配置 Jev 凭据，已降级直通排课流程",
+      reason: tr("未配置 Jev 凭据，已降级直通排课流程"),
       source: "passthrough",
       elapsedMs,
       latencyMs: elapsedMs,
@@ -170,14 +171,14 @@ export async function evaluateAdmissionFastGate(
       // Explicit injection is retained for isolated tests; product calls use the account snapshot.
       if (options.apiKey !== undefined) return evaluateSystemOne(key, payload, settings);
       const config = getService("admission");
-      if (!config) throw new Error("Jev 未配置");
+      if (!config) throw new Error(tr("Jev 未配置"));
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const response = await directJson("admission", config, { ...payload, model: config.params.model || "jev-latest" }, controller.signal);
         const result = JSON.parse(response.body) as SystemOneResponse;
         if (!result.answers || typeof result.answers !== "object") throw new Error("Invalid Jev response");
-        setServiceStatus("admission", "ready", "已在此设备成功调用 Jev。");
+        setServiceStatus("admission", "ready", tr("已在此设备成功调用 Jev。"));
         return result;
       } finally { clearTimeout(timeout); }
     };
@@ -249,7 +250,7 @@ export async function evaluateAdmissionFastGate(
         confidence,
         subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
         isSelfContained,
-        reason: `意图边界模糊（排课概率 ${Math.round(lessonProbability * 100)}%），降级直通排课流程`,
+        reason: tr("意图边界模糊（排课概率 {{v0}}%），降级直通排课流程", { v0: Math.round(lessonProbability * 100) }),
         source: "passthrough",
         elapsedMs,
         latencyMs: elapsedMs,
@@ -271,7 +272,7 @@ export async function evaluateAdmissionFastGate(
         confidence,
         subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
         isSelfContained,
-        reason: "文字预判无法读取视觉上下文，交由选区或图片处理流程判断",
+        reason: tr("文字预判无法读取视觉上下文，交由选区或图片处理流程判断"),
         source: "passthrough",
         elapsedMs,
         latencyMs: elapsedMs,
@@ -283,8 +284,8 @@ export async function evaluateAdmissionFastGate(
       // Echo a short fragment ("这本书"); repeating a whole sentence back reads
       // as not having listened.
       clarificationPrompt = trimmed.length <= 12 && !input.currentLesson
-        ? `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`
-        : "我没能确定你指的是哪道题或哪部分内容。可以把题目或想学的知识点说具体一点吗？";
+        ? tr("你想了解关于“{{v0}}”的哪部分内容呢？请具体告诉我。", { v0: trimmed })
+        : tr("我没能确定你指的是哪道题或哪部分内容。可以把题目或想学的知识点说具体一点吗？");
     }
 
     const elapsedMs = Date.now() - startedAt;

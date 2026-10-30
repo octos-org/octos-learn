@@ -1,3 +1,5 @@
+import { localizedCatalog, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { lessonModelErrorMessage } from "./lesson-model-errors";
 import { useState } from "react";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
@@ -5,11 +7,11 @@ import { WhiteboardQuestionImage } from "./whiteboard-question-image";
 
 export const WHITEBOARD_QUESTION_CARD_WIDTH = 270;
 
-const statusCopy: Record<WhiteboardQuestionRecord["status"], string> = {
+const statusCopy: Record<WhiteboardQuestionRecord["status"], string> = localizedCatalog({
   pending: "正在准备回答",
   answered: "已回答",
   failed: "没有生成成功",
-};
+});
 
 export function WhiteboardQuestionCard({
   question,
@@ -22,6 +24,7 @@ export function WhiteboardQuestionCard({
   top: number;
   linked?: boolean;
 }) {
+  useLocale();
   const [expanded, setExpanded] = useState(false);
   return (
     <article
@@ -33,7 +36,7 @@ export function WhiteboardQuestionCard({
       data-oll-ink-input="ignore"
     >
       <header>
-        <strong>我的问题</strong>
+        <strong>{tr("我的问题")}</strong>
         <span className={`is-${question.status}`}>
           {statusCopy[question.status]}
         </span>
@@ -41,7 +44,7 @@ export function WhiteboardQuestionCard({
       <p className={expanded ? "is-expanded" : undefined}>{question.text}</p>
       <WhiteboardQuestionImage question={question} />
       {question.status === "failed" && lessonModelErrorMessage(question.errorCode) && (
-        <p>{lessonModelErrorMessage(question.errorCode)} <a href="/settings?tab=llm">前往设置</a></p>
+        <p>{lessonModelErrorMessage(question.errorCode)} <a href="/settings?tab=llm">{tr("前往设置")}</a></p>
       )}
       {question.text.length > 72 ? (
         <button
@@ -49,7 +52,7 @@ export function WhiteboardQuestionCard({
           onClick={() => setExpanded((current) => !current)}
           aria-expanded={expanded}
         >
-          {expanded ? "收起" : "展开完整问题"}
+          {expanded ? tr("收起") : tr("展开完整问题")}
         </button>
       ) : null}
     </article>

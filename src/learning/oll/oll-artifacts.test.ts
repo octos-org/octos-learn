@@ -538,6 +538,7 @@ describe("OLL lesson artifacts", () => {
       {
         id: first[0]?.board?.region_id,
         title: first[0]?.lesson?.title,
+        language: first[0]?.lesson?.language,
         stepIds: [first[1]?.step?.id],
         nodeSections: Object.fromEntries(first[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions => actions.flatMap(action => action.node ? [[action.node.id, first[1]!.step!.id]] : [])))),
         nodeIds: first[1]?.step?.beats.flatMap((beat) =>
@@ -561,6 +562,7 @@ describe("OLL lesson artifacts", () => {
       {
         id: second[0]?.board?.region_id,
         title: second[0]?.lesson?.title,
+        language: second[0]?.lesson?.language,
         stepIds: [second[1]?.step?.id],
         nodeSections: Object.fromEntries(second[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions => actions.flatMap(action => action.node ? [[action.node.id, second[1]!.step!.id]] : [])))),
         nodeIds: second[1]?.step?.beats.flatMap((beat) =>

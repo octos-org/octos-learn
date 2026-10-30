@@ -1,6 +1,9 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
+import { LanguageSwitch } from "@/i18n/language-switch";
 
 /**
  * Tool-page chrome in the Ivory Obsidian design language. API-compatible
@@ -29,6 +32,7 @@ export function StudioTopbar({
   actions?: ReactNode;
   afterTitle?: ReactNode;
 }) {
+  useLocale();
   const navigate = useNavigate();
   const backButton = backTo || onBack;
   const titleClass = "studio-headline truncate text-lg";
@@ -43,8 +47,8 @@ export function StudioTopbar({
             type="button"
             onClick={() => (onBack ? onBack() : navigate(backTo!))}
             className="studio-ghost-button p-2"
-            title="Go back"
-            aria-label="Go back"
+            title={tr("Go back")}
+            aria-label={tr("Go back")}
           >
             <ArrowLeft size={18} />
           </button>
@@ -71,6 +75,7 @@ export function StudioTopbar({
           )}
           {afterTitle}
         </div>
+        <LanguageSwitch />
         {actions && (
           <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
             {actions}

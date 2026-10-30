@@ -105,7 +105,7 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         } else if (path.length === 2 && path[1] === "claim") {
           const body = await post(["utc_offset_minutes"]);
           if (!Number.isSafeInteger(body.utc_offset_minutes) || body.utc_offset_minutes < -720 || body.utc_offset_minutes > 840) throw new HttpError(400, "Invalid UTC offset");
-          result = comments.claim(owner, body.utc_offset_minutes);
+          result = comments.claim(owner, body.utc_offset_minutes, request.headers["x-octos-locale"] === "en-US" ? "en-US" : "zh-CN");
         } else if (path.length === 3 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2]) && request.method === "GET" && !url.search) {
           const job = comments.job(owner, path[2]);
           if (!job) throw new HttpError(404, "Report comment task unavailable");
@@ -214,7 +214,7 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         if (!isWeekStart(weekStart)) throw new HttpError(400, "Week must start on a Monday");
         const report = queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) }, mappings);
         const teacherId = store().teacherChoice(owner)?.teacher_id ?? "alan";
-        send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store(), mappings).commentFor(owner, report, teacherId), comment_teacher_id: teacherId });
+        send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store(), mappings).commentFor(owner, report, teacherId, request.headers["x-octos-locale"] === "en-US" ? "en-US" : "zh-CN"), comment_teacher_id: teacherId });
       } else if (request.method === "GET" && path.length === 1 && path[0] === "monthly-report") {
         if ([...url.searchParams.keys()].some(key => !["month", "utc_offset_minutes"].includes(key))
           || url.searchParams.getAll("month").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");

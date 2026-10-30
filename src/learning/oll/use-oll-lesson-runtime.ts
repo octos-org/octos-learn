@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { PlaybackHistoryCapture, type PlaybackHistoryBinding } from "../history/playback-recorder";
 import { createIndexedPlaybackStore } from "../learning-document-store";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -33,6 +34,7 @@ import {
 } from "octos-lesson-language/web-runtime";
 
 export interface OllLessonTopicDefinition {
+  language?: string;
   id: string;
   title: string;
   stepIds: string[];
@@ -49,6 +51,7 @@ export interface OllLessonTopicDefinition {
 }
 
 export interface OllLessonOutlineTopic {
+  language?: string;
   id: string;
   title: string;
   steps: PlaybackOutlineStep[];
@@ -65,6 +68,7 @@ export interface OllLessonOutlineTopic {
 }
 
 export interface OllLessonNarration {
+  language?: string;
   beatId: string;
   text: string;
 }
@@ -540,7 +544,7 @@ export function useOllLessonRuntime({
   );
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
-      if (!session) throw new Error("OLL Runtime 尚未初始化");
+      if (!session) throw new Error(tr("OLL Runtime 尚未初始化"));
       const result = session.appendEvents(nextEvents);
       if (startAtEnd && result.accepted > 0) {
         capture.withReason("restore", () => advanceToAvailableEnd(session));
@@ -587,6 +591,7 @@ export function useOllLessonRuntime({
             {
               id: topic.id,
               title: topic.title,
+              language: topic.language,
               steps: topicSteps,
               nodeIds: topic.nodeIds,
               nodeSections: topic.nodeSections,
@@ -603,7 +608,7 @@ export function useOllLessonRuntime({
     if (remainingSteps.length > 0) {
       grouped.push({
         id: events[0]?.lesson_id ?? "lesson",
-        title: events[0]?.lesson?.title ?? "本节课程",
+        title: events[0]?.lesson?.title ?? tr("本节课程"),
         steps: remainingSteps,
         variableAliases: (events[0]?.lesson?.variables ?? []).map((variable) => variable.as),
         taskAliases: (events[0]?.lesson?.tasks ?? []).map((task) => task.as),
@@ -632,6 +637,7 @@ export function useOllLessonRuntime({
       ? {
           beatId: nextNarrationOperation.beat_id,
           text: nextNarrationOperation.narration.text,
+          language: outline.find(topic => topic.steps.some(step => step.beats.some(beat => beat.id === nextNarrationOperation.beat_id)))?.language ?? events[0]?.lesson?.language,
         }
       : undefined;
   const currentStepId =
@@ -641,8 +647,8 @@ export function useOllLessonRuntime({
   outlineRef.current = outline;
 
   return {
-    title: events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL 课程",
-    language: events[0]?.lesson?.language ?? "zh-CN",
+    title: events[0]?.lesson?.title ?? events[0]?.lesson_id ?? tr("OLL 课程"),
+    language: outline.find(topic => topic.steps.some(step => step.beats.some(beat => beat.id === currentBeatId)))?.language ?? events[0]?.lesson?.language ?? "zh-CN",
     status: session.status,
     failure: session.failure,
     activePhaseTransition: session.activePhaseTransition,

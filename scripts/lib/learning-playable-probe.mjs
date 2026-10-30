@@ -2,7 +2,7 @@
 // Correlates actual rendered course nodes and decoded narration bytes. No
 // production globals or source changes are required.
 export function installLivePlayableProbe() {
-  const state = { start: 0, visual: 0, audio: 0, target: null, audioSha256: null, audioSources: 0, audioInterval: null };
+  const state = { start: 0, visual: 0, audio: 0, target: null, audioSha256: null, audioSources: 0, audioStops: 0, audioInterval: null };
   window.__livePlayableProbe = state;
   const matching = new WeakSet();
   document.addEventListener('submit', () => {
@@ -36,11 +36,18 @@ export function installLivePlayableProbe() {
       callbacks[0]?.(buffer); return buffer;
     }, error => { callbacks[1]?.(error); throw error; });
   };
+  // An interface switch must neither replay nor cut off the matching narration.
+  const stop = AudioBufferSourceNode.prototype.stop;
+  AudioBufferSourceNode.prototype.stop = function (...args) {
+    if (state.start && matching.has(this.buffer)) state.audioStops++;
+    return stop.apply(this, args);
+  };
   const start = AudioBufferSourceNode.prototype.start;
   AudioBufferSourceNode.prototype.start = function (...args) {
     const result = start.apply(this, args);
-    if (!state.start || state.audio || !matching.has(this.buffer)) return result;
+    if (!state.start || !matching.has(this.buffer)) return result;
     state.audioSources++;
+    if (state.audio) return result;
     const ctx = this.context, analyser = ctx.createAnalyser(), mute = ctx.createGain();
     analyser.fftSize = 256; mute.gain.value = 0;
     this.connect(analyser); analyser.connect(mute); mute.connect(ctx.destination);

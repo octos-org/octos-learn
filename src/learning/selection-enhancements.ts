@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { buildApiHeaders } from "@/api/client";
 import { buildFileUrl } from "@/api/files";
 import type { SessionFileInfo } from "@/api/sessions";
@@ -216,11 +217,11 @@ export function parseSelectionClassificationMetadata(
   value: unknown,
 ): SelectionClassification {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("选区识别结果无效");
+    throw new Error(tr("选区识别结果无效"));
   }
   const classification = (value as Record<string, unknown>).selection_classification;
   if (!classification || typeof classification !== "object" || Array.isArray(classification)) {
-    throw new Error("选区识别结果缺少分类信息");
+    throw new Error(tr("选区识别结果缺少分类信息"));
   }
   const result = classification as Record<string, unknown>;
   if (
@@ -230,17 +231,17 @@ export function parseSelectionClassificationMetadata(
     && result.kind !== "data"
     && result.kind !== "unknown"
   ) {
-    throw new Error("选区识别类型无效");
+    throw new Error(tr("选区识别类型无效"));
   }
   if (
     result.confidence !== "high"
     && result.confidence !== "medium"
     && result.confidence !== "low"
   ) {
-    throw new Error("选区识别可信度无效");
+    throw new Error(tr("选区识别可信度无效"));
   }
   if (typeof result.content !== "string") {
-    throw new Error("选区识别内容无效");
+    throw new Error(tr("选区识别内容无效"));
   }
   return {
     kind: result.kind,
@@ -255,7 +256,7 @@ export function buildSelectionEnhancementActionArguments(
   return {
     paths: [context.mediaPath],
     turn_id: context.turnId,
-    learner_request: context.learnerRequest?.trim() || "请解释我选中的内容",
+    learner_request: context.learnerRequest?.trim() || tr("请解释我选中的内容"),
     source: selectionSourceArgument(context.source),
     content_hint: context.contentKind,
     ...(context.recognizedContent?.trim()
@@ -322,20 +323,20 @@ export function formatSelectionLessonRequest(
 
   const details: string[] = [];
   if (uniqueDescriptions.length > 0) {
-    details.push(`选中的白板内容【${uniqueDescriptions.join("，")}】`);
+    details.push(tr("选中的白板内容【{{v0}}】", { v0: uniqueDescriptions.join("，") }));
   }
   if (recognized) {
-    details.push(`识别出的内容【${recognized}】`);
+    details.push(tr("识别出的内容【{{v0}}】", { v0: recognized }));
   }
   if (details.length === 0) return trimmed;
 
   if (/^请结合这部分内容/u.test(trimmed)) {
     return trimmed.replace(
       /^请结合这部分内容/u,
-      `请结合我${details.join("及")}`,
+      tr("请结合我{{v0}}", { v0: details.join(tr("及")) }),
     );
   }
-  const contextPrefix = `请结合我${details.join("及")}：`;
+  const contextPrefix = tr("请结合我{{v0}}：", { v0: details.join(tr("及")) });
   return `${contextPrefix}${trimmed}`;
 }
 
@@ -425,20 +426,20 @@ export async function selectionSnapshotToPngFile(
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("当前浏览器无法生成选区图片");
+  if (!context) throw new Error(tr("当前浏览器无法生成选区图片"));
   context.fillStyle = "#fbfaf5";
   context.fillRect(0, 0, width, height);
   const image = new Image();
   const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source.svg)}`;
   await new Promise<void>((resolve, reject) => {
     image.onload = () => resolve();
-    image.onerror = (e) => reject(new Error(`选区图片解析失败: ${e instanceof Error ? e.message : String(e)}`));
+    image.onerror = (e) => reject(new Error(tr("选区图片解析失败: {{v0}}", { v0: e instanceof Error ? e.message : String(e) })));
     image.src = dataUri;
   });
   context.drawImage(image, 0, 0, width, height);
   const png = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (value) => value ? resolve(value) : reject(new Error("选区图片生成失败")),
+      (value) => value ? resolve(value) : reject(new Error(tr("选区图片生成失败"))),
       "image/png",
     );
   });
@@ -510,20 +511,20 @@ async function foreignObjectToPngFile(
   canvas.width = Math.max(1, Math.ceil(width * scale));
   canvas.height = Math.max(1, Math.ceil(height * scale));
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("当前浏览器无法生成选区图片");
+  if (!context) throw new Error(tr("当前浏览器无法生成选区图片"));
   const image = new Image();
   // Using a self-contained data URI rather than a blob URL prevents Chromium
   // from tainting the canvas when rasterizing SVG with foreignObject.
   const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   await new Promise<void>((resolve, reject) => {
     image.onload = () => resolve();
-    image.onerror = (e) => reject(new Error(`局部白板图片解析失败: ${e instanceof Error ? e.message : String(e)}`));
+    image.onerror = (e) => reject(new Error(tr("局部白板图片解析失败: {{v0}}", { v0: e instanceof Error ? e.message : String(e) })));
     image.src = dataUri;
   });
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
   const png = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (value) => value ? resolve(value) : reject(new Error("局部白板图片生成失败")),
+      (value) => value ? resolve(value) : reject(new Error(tr("局部白板图片生成失败"))),
       "image/png",
     );
   });
@@ -740,7 +741,7 @@ export function validateSelectionEnhancementArtifact(
   value: unknown,
 ): SelectionEnhancementArtifact {
   if (!value || typeof value !== "object") {
-    throw new Error("选区辅助内容必须是对象");
+    throw new Error(tr("选区辅助内容必须是对象"));
   }
   const artifact = value as Partial<SelectionEnhancementArtifact>;
   const interpretation = artifact.interpretation;
@@ -771,7 +772,7 @@ export function validateSelectionEnhancementArtifact(
     || typeof response.text !== "string"
     || !response.text.trim()
   ) {
-    throw new Error("选区辅助内容的来源或说明字段无效");
+    throw new Error(tr("选区辅助内容的来源或说明字段无效"));
   }
   if (response.kind === "board_writing") {
     if (artifact.version !== "0.3" || !Array.isArray(response.lines) || !response.lines.length || response.lines.length > 8
@@ -779,10 +780,10 @@ export function validateSelectionEnhancementArtifact(
         || [...line].some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127))
       || response.lines.join("\n").length > 500
       || response.lines.join("\n") !== response.text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean).join("\n")) {
-      throw new Error("手写板书内容无效或过长");
+      throw new Error(tr("手写板书内容无效或过长"));
     }
   } else if (artifact.version === "0.3") {
-    throw new Error("板书版本与内容类型不匹配");
+    throw new Error(tr("板书版本与内容类型不匹配"));
   } else if (response.kind === "unsupported") {
     if (
       ![
@@ -798,11 +799,11 @@ export function validateSelectionEnhancementArtifact(
         )
       ))
     ) {
-      throw new Error("选区函数图的不支持说明无效");
+      throw new Error(tr("选区函数图的不支持说明无效"));
     }
   } else if (response.kind === "scene3d") {
     if (!validSelectionScene3d(response.content)) {
-      throw new Error("选区三维函数图内容无效");
+      throw new Error(tr("选区三维函数图内容无效"));
     }
   } else if (response.kind === "explanation") {
     if (
@@ -812,7 +813,7 @@ export function validateSelectionEnhancementArtifact(
         || response.items.some((item) => typeof item !== "string" || !item.trim())
       )
     ) {
-      throw new Error("选区辅助内容的条目无效");
+      throw new Error(tr("选区辅助内容的条目无效"));
     }
   } else if (
     response.kind !== "plot"
@@ -828,7 +829,7 @@ export function validateSelectionEnhancementArtifact(
     || !finiteRange(response.x_range)
     || !finiteRange(response.y_range)
   ) {
-    throw new Error("选区函数图内容无效");
+    throw new Error(tr("选区函数图内容无效"));
   }
   return structuredClone(artifact as SelectionEnhancementArtifact);
 }
@@ -1045,7 +1046,7 @@ export function addSelectionSource(
   );
   if (existing) {
     if (JSON.stringify(existing) !== JSON.stringify(validated)) {
-      throw new Error("同一选区来源编号不能指向不同原稿");
+      throw new Error(tr("同一选区来源编号不能指向不同原稿"));
     }
     return state;
   }
@@ -1201,7 +1202,7 @@ export async function loadSelectionEnhancementArtifact(
     signal,
   });
   if (!response.ok) {
-    throw new Error("选区辅助内容读取失败 (" + response.status + ")");
+    throw new Error(tr("选区辅助内容读取失败 (") + response.status + ")");
   }
   return validateSelectionEnhancementArtifact(await response.json());
 }

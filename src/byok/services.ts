@@ -1,3 +1,4 @@
+import { localizedCatalog, tr } from "@/i18n";
 import { getSelectedProfileId, getToken, request } from "@/api/client";
 
 export type Capability = "asr" | "tts" | "admission";
@@ -35,20 +36,20 @@ export function hasServiceCredential(value: ClientService | undefined): boolean 
   return !!value && (!!value.key?.trim() || (!!value.has_credential && (!window.OctosNativeByok || value.local_credential === true)));
 }
 function nativeResult(raw: string | undefined): void {
-  if (!raw || !JSON.parse(raw).ok) throw new Error("无法安全保存本机 Key。请更新 APK 或检查设备存储；不会回退到明文存储。");
+  if (!raw || !JSON.parse(raw).ok) throw new Error(tr("无法安全保存本机 Key。请更新 APK 或检查设备存储；不会回退到明文存储。"));
 }
 function reconcile(result: Envelope<ServiceMetadata>): Envelope<ServiceMetadata> {
   const bridge = window.OctosNativeByok;
   if (!bridge) return result;
   nativeResult(bridge.bindScope?.(location.origin, result.profile_id));
   const local = JSON.parse(bridge.reconcile?.(JSON.stringify(result)) ?? "null") as Envelope<ServiceMetadata> | null;
-  if (!local?.services || local.profile_id !== result.profile_id) throw new Error("无法读取本机加密 Key，请在这台设备重新录入。");
+  if (!local?.services || local.profile_id !== result.profile_id) throw new Error(tr("无法读取本机加密 Key，请在这台设备重新录入。"));
   return local;
 }
 const listeners = new Set<() => void>();
 const requests = new Map<AbortController, Capability | undefined>();
 const identity = () => `${getToken() ?? ""}\0${getSelectedProfileId() ?? ""}`;
-const names: Record<Capability, string> = { asr: "语音输入", tts: "旁白", admission: "Jev 输入预判" };
+const names: Record<Capability, string> = localizedCatalog({ asr: "语音输入", tts: "旁白", admission: "Jev 输入预判" });
 function emit() { listeners.forEach(fn => fn()); }
 export function resetClientServices(): void {
   generation++;
@@ -89,7 +90,7 @@ export function getService(capability: Capability): ClientService | undefined {
 }
 export function getServiceStatus(capability: Capability): CapabilityStatus {
   ensureIdentity();
-  return states[capability] ?? { state: "unconfigured", detail: `${names[capability]}尚未配置，请在设置中保存本人服务 Key。` };
+  return states[capability] ?? { state: "unconfigured", detail: tr("{{v0}}尚未配置，请在设置中保存本人服务 Key。", { v0: names[capability] }) };
 }
 export function setLessonConfigured(value: boolean): void { ensureIdentity(); lessonConfigured = value; emit(); }
 export function getLessonConfigured(): boolean | undefined { ensureIdentity(); return lessonConfigured; }
@@ -114,12 +115,12 @@ export function prepareClientServices(force = false): Promise<void> {
         const value = snapshots[capability];
         const old = states[capability];
         if (!value || !hasServiceCredential(value)) {
-          states[capability] = { state: "unconfigured", detail: value?.local_storage_error ? "本机加密 Key 无法读取；请在 API Keys 重新录入，账号保存的 Key 不受影响。" : value?.has_credential && window.OctosNativeByok ? "账号已保存 Key；请在这台电视的 API Keys 中录入一次，之后在本机直接调用。" : `${names[capability]}尚未配置，请在设置中保存本人服务 Key。` };
+          states[capability] = { state: "unconfigured", detail: value?.local_storage_error ? tr("本机加密 Key 无法读取；请在 API Keys 重新录入，账号保存的 Key 不受影响。") : value?.has_credential && window.OctosNativeByok ? tr("账号已保存 Key；请在这台电视的 API Keys 中录入一次，之后在本机直接调用。") : tr("{{v0}}尚未配置，请在设置中保存本人服务 Key。", { v0: names[capability] }) };
         }
         else {
           // Key presence is the activation intent, including previously saved/off records.
           snapshots[capability] = { ...value, enabled: true };
-          if (!old || previous[capability]?.revision !== value.revision) states[capability] = { state: "configured_unverified", detail: "账号已配置，此设备尚未验证。" };
+          if (!old || previous[capability]?.revision !== value.revision) states[capability] = { state: "configured_unverified", detail: tr("账号已配置，此设备尚未验证。") };
         }
       }
       emit();
@@ -160,7 +161,7 @@ export async function saveClientService(capability: Capability, draft: ServiceDr
     if (bridge && draft.key !== undefined && owner === identity()) {
       invalidateCapability(capability);
       await prepareClientServices().catch(() => undefined);
-      throw new Error(draft.key.trim() ? "Key 已保存在本机，但账号保存失败。请重试保存以同步到账号。" : "本机 Key 已移除，但账号保存失败。请重试清除账号 Key。", { cause: error });
+      throw new Error(draft.key.trim() ? tr("Key 已保存在本机，但账号保存失败。请重试保存以同步到账号。") : tr("本机 Key 已移除，但账号保存失败。请重试清除账号 Key。"), { cause: error });
     }
     throw error;
   }
@@ -180,7 +181,7 @@ export async function deleteClientService(capability: Capability, revision: stri
   } catch (error) {
     if (window.OctosNativeByok && owner === identity()) {
       invalidateCapability(capability); await prepareClientServices().catch(() => undefined);
-      throw new Error("本机 Key 已移除，但账号删除失败。请重试删除账号 Key。", { cause: error });
+      throw new Error(tr("本机 Key 已移除，但账号删除失败。请重试删除账号 Key。"), { cause: error });
     }
     throw error;
   }

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { WeeklyReport } from '../history/history-api';
@@ -39,10 +40,10 @@ it('shows recorded learning and state changes with their evidence, in the chosen
   // The figures are on screen too, not only in the label.
   expect([...stats.querySelectorAll('dd')].map(item => item.textContent)).toEqual(['2天', '4节课', '18段', '6次', '2个']);
   expect(api.weeklyReport).toHaveBeenCalledWith('2026-10-19');
-  expect(screen.getByText(TEACHERS[1].report.active).closest('figure')?.textContent).toContain('窦鸢');
-  expect(screen.getByLabelText('新点亮').textContent).toContain('Energy transfer');
-  expect(screen.getByLabelText('状态变化').textContent).toMatch(/一次函数图像.*已探索 → 做出来过.*不用提示达到练习要求/);
-  expect(screen.getByLabelText('新成就').textContent).toContain('亲手搞定');
+  expect(screen.getByText(TEACHERS[1].report.active).closest('figure')?.textContent).toContain(tr("窦鸢"));
+  expect(screen.getByLabelText(tr("新点亮")).textContent).toContain('Energy transfer');
+  expect(screen.getByLabelText(tr("状态变化")).textContent).toMatch(/一次函数图像.*已探索 → 做出来过.*不用提示达到练习要求/);
+  expect(screen.getByLabelText(tr("新成就")).textContent).toContain(tr("亲手搞定"));
   expect(document.body.textContent).not.toMatch(/进步|已掌握|掌握了/);
   expect(screen.getByText(/都不等于已经掌握/)).toBeTruthy();
 });
@@ -64,12 +65,12 @@ it('shows a checked comment only for the teacher it was written as', async () =>
   localStorage.setItem('octos-learn-teacher', 'doudou');
   api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周来了 2 天，地图亮起来啦！' });
   render(<ReportPanel period="week" today={today} />);
-  expect((await screen.findByText('这周来了 2 天，地图亮起来啦！')).closest('figure')?.textContent).toContain('窦鸢');
-  expect(screen.getByText(/由模型根据本周记录生成/)).toBeTruthy();
+  expect((await screen.findByText('这周来了 2 天，地图亮起来啦！')).closest('figure')?.textContent).toContain(tr("窦鸢"));
+  expect(screen.getByText(new RegExp(tr("老师评语由模型根据本周记录生成，可在设置中关闭。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   cleanup();
   localStorage.setItem('octos-learn-teacher', 'alan');
   render(<ReportPanel period="week" today={today} />);
-  expect((await screen.findByText(TEACHERS[0].report.active)).closest('figure')?.textContent).toContain('阿澜');
+  expect((await screen.findByText(TEACHERS[0].report.active)).closest('figure')?.textContent).toContain(tr("阿澜"));
 });
 
 it('shows the monthly report in the teacher\'s month words, with days per week and no model comment', async () => {
@@ -78,7 +79,7 @@ it('shows the monthly report in the teacher\'s month words, with days per week a
   api.monthlyReport.mockImplementation(async (month: string) => ({ ...REPORT, rules_version: 'report-month-v1', month, first_month: '2026-09',
     weeks: [{ week_start: '2026-10-12', days: 1 }, { week_start: '2026-10-19', days: 2 }] }));
   render(<ReportPanel period="month" today={today} />);
-  expect((await screen.findByText(TEACHERS[2].report.monthActive)).closest('figure')?.textContent).toContain('苏绯');
+  expect((await screen.findByText(TEACHERS[2].report.monthActive)).closest('figure')?.textContent).toContain(tr("苏绯"));
   expect(api.monthlyReport).toHaveBeenCalledWith('2026-10');
   expect(api.weeklyReport).not.toHaveBeenCalled();
   expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('本月2026年10月');

@@ -1,8 +1,10 @@
+import { getLocale, localizedCatalog, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { getToken } from "../../api/client";
-import { ACHIEVEMENT_BY_ID } from "../../../services/learning-history/achievement-catalog.mjs";
+import { ACHIEVEMENT_BY_ID } from "@/learning/academy/achievement-catalog";
 import { Medal } from "../academy/medal";
 import { openHistoryApi, type MapState, type MonthlyReport, type WeeklyReport } from "../history/history-api";
 import { achievementName, readAwardTone } from "../map/award-line";
@@ -13,10 +15,11 @@ import { localDayOf, monthLabel, shiftMonth, shiftWeek, weekLabel, weekStartOf }
 
 export type ReportPeriod = "week" | "month";
 
-const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
-const shortDay = (iso: string) => new Date(iso).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
+const STATE_LABEL: Record<MapState, string> = localizedCatalog({ explored: "已探索", practising: "正在练习", "did-it": "做出来过" });
+const shortDay = (iso: string) => new Date(iso).toLocaleDateString(getLocale(), { month: "numeric", day: "numeric" });
 
 function ReportBody({ report }: { report: WeeklyReport | MonthlyReport }) {
+  useLocale();
   const teacher = readAwardTone() === "playful" ? getTeacher(resolveSelectedTeacherId()) : null;
   const lines = teacher?.report ?? PLAIN_REPORT;
   const monthly = "month" in report;
@@ -29,8 +32,8 @@ function ReportBody({ report }: { report: WeeklyReport | MonthlyReport }) {
   const place = (topic: WeeklyReport["topics"][number]) => `${subjectLabel(topic.subject)} · ${domainLabel(topic.domain)}`;
   const opening = quiet ? (monthly ? lines.monthQuiet : lines.quiet) : comment ?? (monthly ? lines.monthActive : lines.active);
   const stats = [
-    ["学了", activity.days.length, "天"], ["上了", activity.runs, "节课"], ["播放", activity.played_beats, "段"],
-    ["练习", activity.task_attempts, "次"], ["提问", activity.questions, "个"],
+    [tr("学了"), activity.days.length, tr("天")], [tr("上了"), activity.runs, tr("节课")], [tr("播放"), activity.played_beats, tr("段")],
+    [tr("练习"), activity.task_attempts, tr("次")], [tr("提问"), activity.questions, tr("个")],
   ] as const;
   return <>
     <div className="academy-report-band" data-quiet={quiet || undefined}>
@@ -41,32 +44,32 @@ function ReportBody({ report }: { report: WeeklyReport | MonthlyReport }) {
       {!quiet && <dl className="academy-report-stats" aria-label={stats.map(([verb, value, unit]) => `${verb} ${value} ${unit}`).join("，")}>
         {stats.map(([verb, value, unit]) => <div key={unit}><dt>{verb}</dt><dd><b>{value}</b>{unit}</dd></div>)}
       </dl>}
-      {monthly && !quiet && report.weeks.length > 0 && <ol className="academy-report-weeks" aria-label="每周来过的天数">
-        {report.weeks.map(week => <li key={week.week_start} aria-label={`${weekLabel(week.week_start)} ${week.days} 天`}>
+      {monthly && !quiet && report.weeks.length > 0 && <ol className="academy-report-weeks" aria-label={tr("每周来过的天数")}>
+        {report.weeks.map(week => <li key={week.week_start} aria-label={tr("{{v0}} {{v1}} 天", { v0: weekLabel(week.week_start), v1: week.days })}>
           <span>{weekLabel(week.week_start).split("–")[0]}</span>
           <span className="academy-report-dots" aria-hidden="true">{Array.from({ length: 7 }, (_, day) => <i key={day} data-on={day < week.days || undefined} />)}</span>
-          <b>{week.days} 天</b>
+          <b>{week.days} {tr("天")}</b>
         </li>)}
       </ol>}
     </div>
-    {comment && <p className="academy-report-note">老师评语由模型根据本周记录生成，可在设置中关闭。</p>}
+    {comment && <p className="academy-report-note">{tr("老师评语由模型根据本周记录生成，可在设置中关闭。")}</p>}
     {!quiet && (lit.length > 0 || raised.length > 0 || report.achievements.length > 0) && <div className="academy-report-sections">
-      {lit.length > 0 && <section aria-label="新点亮"><h3>新点亮<small>{lit.length}</small></h3><ul>
+      {lit.length > 0 && <section aria-label={tr("新点亮")}><h3>{tr("新点亮")}<small>{lit.length}</small></h3><ul>
         {lit.map(topic => <li key={topic.topic_id}>
           <small>{place(topic)}</small>
           <strong>{topicLabel(topic.topic_id, topic.name)}</strong>
           <span className="academy-state" data-state={topic.state_after}>{STATE_LABEL[topic.state_after]}</span>
         </li>)}
       </ul></section>}
-      {raised.length > 0 && <section aria-label="状态变化"><h3>状态变化<small>{raised.length}</small></h3><ul>
+      {raised.length > 0 && <section aria-label={tr("状态变化")}><h3>{tr("状态变化")}<small>{raised.length}</small></h3><ul>
         {raised.map(topic => <li key={topic.topic_id}>
           <small>{place(topic)}</small>
           <strong>{topicLabel(topic.topic_id, topic.name)}</strong>
           <span className="academy-state" data-state={topic.state_after}>{STATE_LABEL[topic.state_before!]} → {STATE_LABEL[topic.state_after]}</span>
-          <em>{shortDay(topic.change!.occurred_at)}，{topic.state_after === "did-it" ? "不用提示达到练习要求" : topic.change!.kind === "task_attempt" ? "做了相关练习" : "播放了相关讲解"}</em>
+          <em>{shortDay(topic.change!.occurred_at)}，{topic.state_after === "did-it" ? tr("不用提示达到练习要求") : topic.change!.kind === "task_attempt" ? tr("做了相关练习") : tr("播放了相关讲解")}</em>
         </li>)}
       </ul></section>}
-      {report.achievements.length > 0 && <section aria-label="新成就"><h3>新成就<small>{report.achievements.length}</small></h3><ul className="academy-report-awards">
+      {report.achievements.length > 0 && <section aria-label={tr("新成就")}><h3>{tr("新成就")}<small>{report.achievements.length}</small></h3><ul className="academy-report-awards">
         {report.achievements.map(item => {
           const definition = ACHIEVEMENT_BY_ID.get(item.achievement_id);
           return <li key={`${item.achievement_id}:${item.scope}`}>
@@ -79,12 +82,13 @@ function ReportBody({ report }: { report: WeeklyReport | MonthlyReport }) {
       </ul></section>}
     </div>}
     {!quiet && <p className="academy-report-closing">{lines.closing}</p>}
-    <p className="academy-report-note">这些记录说明你学过、练过什么，都不等于已经掌握。</p>
+    <p className="academy-report-note">{tr("这些记录说明你学过、练过什么，都不等于已经掌握。")}</p>
   </>;
 }
 
 /** The weekly or monthly report, paged back to the first period with records. */
 export function ReportPanel({ period, today = () => new Date() }: { period: ReportPeriod; today?: () => Date }) {
+  const locale = useLocale();
   const current = weekStartOf(localDayOf(today()));
   const currentMonth = localDayOf(today()).slice(0, 7);
   const [week, setWeek] = useState(current);
@@ -101,7 +105,7 @@ export function ReportPanel({ period, today = () => new Date() }: { period: Repo
       if (active) { setReport(next); setError(false); }
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [period, week, month]);
+  }, [period, week, month, locale]);
 
   const shown = period === "week"
     ? (report && "week_start" in report && report.week_start === week ? report : undefined)
@@ -109,16 +113,16 @@ export function ReportPanel({ period, today = () => new Date() }: { period: Repo
   const first = shown && ("month" in shown ? shown.first_month : shown.first_week);
   const at = period === "week" ? week : month, now = period === "week" ? current : currentMonth;
   const go = (step: number) => { setError(false); if (period === "week") setWeek(shiftWeek(week, step)); else setMonth(shiftMonth(month, step)); };
-  const unit = period === "week" ? "周" : "个月";
-  const name = period === "week" ? "周报" : "月报";
+  const unit = period === "week" ? tr("周") : tr("个月");
+  const name = period === "week" ? tr("周报") : tr("月报");
   return <div className="academy-report">
-    <nav className="academy-report-nav" aria-label={`选择${period === "week" ? "周" : "月"}`}>
-      <button type="button" aria-label={`上一${unit}`} disabled={!first || at <= first} onClick={() => go(-1)}><ChevronLeft size={18} aria-hidden="true" /><span>上一{unit}</span></button>
-      <h2>{at === now ? (period === "week" ? "本周" : "本月") : name}<span>{period === "week" ? weekLabel(week) : monthLabel(month)}</span></h2>
-      <button type="button" aria-label={`下一${unit}`} disabled={at >= now} onClick={() => go(1)}><span>下一{unit}</span><ChevronRight size={18} aria-hidden="true" /></button>
+    <nav className="academy-report-nav" aria-label={tr("选择{{v0}}", { v0: period === "week" ? tr("周") : tr("月") })}>
+      <button type="button" aria-label={tr("上一{{v0}}", { v0: unit })} disabled={!first || at <= first} onClick={() => go(-1)}><ChevronLeft size={18} aria-hidden="true" /><span>{tr("上一")}{unit}</span></button>
+      <h2>{at === now ? (period === "week" ? tr("本周") : tr("本月")) : name}<span>{period === "week" ? weekLabel(week) : monthLabel(month)}</span></h2>
+      <button type="button" aria-label={tr("下一{{v0}}", { v0: unit })} disabled={at >= now} onClick={() => go(1)}><span>{tr("下一")}{unit}</span><ChevronRight size={18} aria-hidden="true" /></button>
     </nav>
-    {error ? <p role="status" className="academy-report-status">暂时读不到{name}，请稍后再试。</p>
-      : !shown ? <p role="status" className="academy-report-status">正在整理{name}…</p>
+    {error ? <p role="status" className="academy-report-status">{tr("暂时读不到")}{name}{tr("，请稍后再试。")}</p>
+      : !shown ? <p role="status" className="academy-report-status">{tr("正在整理")}{name}…</p>
         : <ReportBody report={shown} />}
   </div>;
 }
