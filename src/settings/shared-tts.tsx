@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { getLocale, tr } from "@/i18n";
+import { getLocale, tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import { request } from "@/api/client";
 import {
@@ -145,7 +145,7 @@ function HostedTtsPanel() {
       )}
       {message && (
         <p role="status" className="mt-2 text-sm">
-          {message}
+          {translateStatus(message)}
         </p>
       )}
     </section>

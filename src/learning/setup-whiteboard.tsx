@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSelectedProfileId } from "@/api/client";
@@ -129,7 +129,7 @@ export function SetupWhiteboard() {
       </header>
       <p className="setup-intro">
         {tr("写下问题、拍下纸上的题目，或直接开口问。Octos 会在同一块白板上讲解，并陪你一起推导。")}</p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{translateStatus(error)}</p>}
       {!profile ? (
         <p role="status">{tr("正在读取你的设置…")}</p>
       ) : (
@@ -330,7 +330,7 @@ function ModelCard({
         <button disabled={busy || !provider} type="submit">
           {busy ? tr("正在测试并保存…") : tr("测试连接并保存")}
         </button>
-        <p role="status">{message}</p>
+        <p role="status">{translateStatus(message)}</p>
       </div>
       <Link to="/settings?tab=llm">{tr("打开完整模型设置 →")}</Link>
     </form>

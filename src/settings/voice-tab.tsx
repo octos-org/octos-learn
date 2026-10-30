@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import { AlertCircle, Brain, Check, CheckCircle2, Info, KeyRound, Loader2, Mic, RotateCcw, Save, Volume2 } from "lucide-react";
 import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsService } from "@/byok/service-config";
@@ -124,7 +124,7 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
         {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}{saved ? tr("Saved") : tr("Save Changes")}
       </button>
       {dirty.length > 0 && <button type="button" onClick={reset} disabled={saving} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"><RotateCcw size={14} />{tr("Reset")}</button>}
-      {error && <p role="alert" className="flex items-center gap-2 text-xs text-red-400"><AlertCircle size={14} className="shrink-0" />{error}</p>}
+      {error && <p role="alert" className="flex items-center gap-2 text-xs text-red-400"><AlertCircle size={14} className="shrink-0" />{translateStatus(error)}</p>}
     </div>
   </div>;
 }

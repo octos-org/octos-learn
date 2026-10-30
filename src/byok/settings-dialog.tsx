@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { getMyProfile, type Profile } from "@/settings/settings-api";
 import type { Capability } from "./services";
@@ -37,7 +37,7 @@ export function CapabilitySettingsDialog() {
   return <dialog ref={dialog} aria-label={tr("连接自己的服务")} onCancel={event => { event.preventDefault(); close(); }} style={{ position: "fixed", inset: "4vh 4vw", margin: "auto", width: "min(680px, 92vw)", maxHeight: "92vh", overflow: "auto", padding: 24, borderRadius: 20, background: "var(--color-surface, white)", color: "var(--color-text, #222)", zIndex: 10000 }}>
     <button autoFocus onClick={close}>{tr("返回白板")}</button>
     <p>{tr("当前问题、选区和课程会保留。保存后返回白板，再主动继续；不会自动生成课程或开启麦克风。")}</p>
-    {error && <p role="alert">{error}</p>}
+    {error && <p role="alert">{translateStatus(error)}</p>}
     <Suspense fallback={<p>{tr("正在打开配置…")}</p>}>
       {capability === "lesson" ? profile && <Model profile={profile} onProfileUpdated={setProfile} /> : <Services only={capability} />}
     </Suspense>

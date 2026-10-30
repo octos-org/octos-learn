@@ -1,4 +1,4 @@
-import { getLocale, localizedCatalog, subscribeLocale, tr } from "@/i18n";
+import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
 import { NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
@@ -516,7 +516,8 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
 function ensureScene3dInteractionHints(viewport: HTMLElement): void {
   const scenes = viewport.querySelectorAll<HTMLElement>(".scene3d-runtime");
   scenes.forEach((scene, index) => {
-    if (scene.querySelector(".learning-scene3d-interaction-hint")) return;
+    const existingHint = scene.querySelector(".learning-scene3d-interaction-hint");
+    if (existingHint) { existingHint.textContent = tr("拖动画面旋转 · 滚动缩放"); return; }
     const hint = viewport.ownerDocument.createElement("div");
     hint.className = "learning-scene3d-interaction-hint";
     hint.id = `learning-scene3d-interaction-hint-${index}`;
@@ -792,6 +793,7 @@ export function LearningWhiteboard({
   useEffect(() => subscribeLocale(() => {
     (mountedRef.current?.view as unknown as { setLocale?: (locale: string) => void } | undefined)?.setLocale?.(getLocale());
     (inkRuntimeRef.current as unknown as { setLocale?: (locale: string) => void } | null)?.setLocale?.(getLocale());
+    if (viewportRef.current) ensureScene3dInteractionHints(viewportRef.current);
   }), []);
   const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
   const focusedLoadingTurnRef = useRef<string | null>(null);
@@ -3731,13 +3733,13 @@ export function LearningWhiteboard({
       ) : null}
       {writingError ? (
         <div className="learning-ink-error" role="alert">
-          {writingError}
+          {translateStatus(writingError)}
           <button type="button" onClick={() => { setWritingError(""); setWritingRetry((value) => value + 1); }}>{tr("重试板书")}</button>
         </div>
       ) : null}
       {inkError ? (
         <div className="learning-ink-error" role="alert">
-          {tr("笔迹功能：")}{inkError}
+          {tr("笔迹功能：")}{translateStatus(inkError)}
         </div>
       ) : null}
       {enhancementLayer
@@ -4067,7 +4069,7 @@ export function LearningWhiteboard({
                             className="learning-student-task-error"
                             role="alert"
                           >
-                            {taskError}
+                            {translateStatus(taskError)}
                           </div>
                         ) : null}
                       </section>

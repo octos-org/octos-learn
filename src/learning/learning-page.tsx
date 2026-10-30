@@ -590,7 +590,7 @@ export function LearningPage() {
       let promoted: LearningSessionRecord | null = null;
       if (currentRecord.status === "provisional") {
         promoted = promoteLearningSession(currentRecord.id, text);
-      } else if (currentRecord.title === "手写白板") {
+      } else if ([tr("手写白板", {}, "zh-CN"), tr("手写白板", {}, "en-US")].includes(currentRecord.title)) {
         promoted = updateLearningSession(currentRecord.id, {
           title: titleFromLearningText(text),
         });

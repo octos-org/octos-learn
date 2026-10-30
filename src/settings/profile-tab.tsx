@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { getLocale, localizedCatalog, tr } from "@/i18n";
+import { getLocale, localizedCatalog, tr, translateStatus } from "@/i18n";
 import { useState, useCallback } from "react";
 import {
   User,
@@ -448,7 +448,7 @@ export function ProfileTab({
             {saved ? LABELS.saved : LABELS.saveChanges}
           </button>
           {error && (
-            <span role="alert" className="text-xs text-red-400">{error}</span>
+            <span role="alert" className="text-xs text-red-400">{translateStatus(error)}</span>
           )}
         </div>
       </div>
@@ -546,7 +546,7 @@ export function ProfileTab({
         </div>
 
         {gatewayError && (
-          <p className="mt-3 text-xs text-red-400">{gatewayError}</p>
+          <p className="mt-3 text-xs text-red-400">{translateStatus(gatewayError)}</p>
         )}
       </div>
 
@@ -664,7 +664,7 @@ export function ProfileTab({
               {envSaved ? LABELS.envSaved : LABELS.saveEnvVars}
             </button>
             {envError && (
-              <span className="text-xs text-red-400">{envError}</span>
+              <span className="text-xs text-red-400">{translateStatus(envError)}</span>
             )}
           </div>
         )}
@@ -705,7 +705,7 @@ export function ProfileTab({
             </div>
 
             {deleteProfileError && (
-              <p className="mt-3 text-xs text-red-400">{deleteProfileError}</p>
+              <p className="mt-3 text-xs text-red-400">{translateStatus(deleteProfileError)}</p>
             )}
           </div>
         </div>

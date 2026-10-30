@@ -314,7 +314,7 @@ export function AdminSettingsPage() {
           {tr("当前版本") + " "}<span className="font-medium text-text-strong">{import.meta.env.VITE_APP_VERSION ? `v${import.meta.env.VITE_APP_VERSION}` : tr("开发版")}</span>
         </span>
         {import.meta.env.VITE_BUILD_REVISION && (
-          <span>{tr("构建") + " "}{import.meta.env.VITE_BUILD_REVISION}</span>
+          <span>{tr("构建") + " "}{import.meta.env.VITE_BUILD_REVISION.replace("（本地修改）", tr("（本地修改）"))}</span>
         )}
       </footer>
     </div>

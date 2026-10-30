@@ -116,7 +116,7 @@ export function ReportPanel({ period, today = () => new Date() }: { period: Repo
   const unit = period === "week" ? tr("周") : tr("个月");
   const name = period === "week" ? tr("周报") : tr("月报");
   return <div className="academy-report">
-    <nav className="academy-report-nav" aria-label={tr("选择{{v0}}", { v0: period === "week" ? "周" : "月" })}>
+    <nav className="academy-report-nav" aria-label={tr("选择{{v0}}", { v0: period === "week" ? tr("周") : tr("月") })}>
       <button type="button" aria-label={tr("上一{{v0}}", { v0: unit })} disabled={!first || at <= first} onClick={() => go(-1)}><ChevronLeft size={18} aria-hidden="true" /><span>{tr("上一")}{unit}</span></button>
       <h2>{at === now ? (period === "week" ? tr("本周") : tr("本月")) : name}<span>{period === "week" ? weekLabel(week) : monthLabel(month)}</span></h2>
       <button type="button" aria-label={tr("下一{{v0}}", { v0: unit })} disabled={at >= now} onClick={() => go(1)}><span>{tr("下一")}{unit}</span><ChevronRight size={18} aria-hidden="true" /></button>

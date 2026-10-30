@@ -35,10 +35,26 @@ void i18n.use(initReactI18next).init({
 
 export function getLocale(): Locale { return normalizeLocale(i18n.language); }
 
+// Async status strings may outlive the language in which they were created.
+// Keep only a small in-memory set of message recipes; learner content is never
+// translated or used as a message key through interpolation.
+const statusRecipes = new Map<string, { source: string; values: Record<string, unknown> }>();
+
 /** Source text is a stable message key. Values are interpolated, never used as keys. */
 export function tr(source: string, values: Record<string, unknown> = {}, locale = getLocale()): string {
   const key = Object.hasOwn(en, source) ? source : canonicalMessages.get(source) ?? source;
-  return String(i18n.t(key, { ...values, lng: locale, defaultValue: source }));
+  const message = String(i18n.t(key, { ...values, lng: locale, defaultValue: source }));
+  if (Object.keys(values).length && Object.hasOwn(en, key)) {
+    if (statusRecipes.size >= 256) statusRecipes.delete(statusRecipes.keys().next().value!);
+    statusRecipes.set(message, { source: key, values: { ...values } });
+  }
+  return message;
+}
+
+export function translateStatus(message: string | null | undefined): string {
+  if (!message) return "";
+  const recipe = statusRecipes.get(message);
+  return recipe ? tr(recipe.source, recipe.values) : tr(message);
 }
 
 export function setLocale(locale: Locale, persist = true): void {

@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   AlertCircle,
@@ -261,7 +261,7 @@ export function AuthenticationTab() {
       >
         <div className="flex items-center gap-2">
           <AlertCircle size={18} />
-          {loadError}
+          {translateStatus(loadError)}
         </div>
       </div>
     );
@@ -514,7 +514,7 @@ export function AuthenticationTab() {
             className="mt-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs [background:var(--workbench-danger-bg)] [border-color:var(--workbench-danger-border)] [color:var(--workbench-danger-text)]"
           >
             <AlertCircle size={15} />
-            {allowedEmailsError}
+            {translateStatus(allowedEmailsError)}
           </div>
         )}
 

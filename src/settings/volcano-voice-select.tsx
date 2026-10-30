@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 
@@ -54,7 +54,7 @@ export function VolcanoVoiceSelect({ hasCredential, resourceId, value, onChange 
     </select>
     {useCustom && <label className="block"><span className="mb-2 block text-xs font-medium text-muted">{tr("Custom Voice ID")}</span><input className={`${inputClass} font-mono`} value={value} onChange={event => onChange(event.target.value)} autoComplete="off" spellCheck={false} placeholder={tr("Enter the voice ID from your speech console")} /></label>}
     {loading && <p role="status" className="text-xs text-muted">{tr("Loading the standard voice catalog…")}</p>}
-    {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
+    {error && <p role="alert" className="text-xs text-red-400">{translateStatus(error)}</p>}
     {hasCredential && !loading && <p className="text-xs leading-5 text-muted">{value && !useCustom ? <><span className="font-mono">{value}</span><br /></> : null}
       {options.length ? tr("Standard voices for this resource. Account access is checked only when you test a voice.") : tr("No standard voices listed for this resource. Use a custom voice ID if your resource supports it.")}{" "}
       <a className="text-accent hover:underline" href="https://docs.volcengine.com/docs/DoubaoVoice/Tonelist-1?lang=zh" target="_blank" rel="noreferrer">{tr("Official voice catalog")}</a>

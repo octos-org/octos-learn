@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useMemo, useState } from "react";
 
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
@@ -232,7 +232,7 @@ export function UiProtocolQuestionDialog({
 
           {error && (
             <div className="rounded-[10px] border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-              {error}
+              {translateStatus(error)}
             </div>
           )}
         </div>

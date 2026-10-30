@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -347,7 +347,7 @@ export function LoginPage() {
 
             {error && (
               <div data-testid="login-error" className="mb-4 rounded-lg border border-(--workbench-danger-border) bg-(--workbench-danger-bg) p-3 text-sm text-(--workbench-danger-text)">
-                {error}
+                {translateStatus(error)}
               </div>
             )}
 
@@ -359,7 +359,7 @@ export function LoginPage() {
                 {soloEnabled && (emailLoginEnabled || tokenModeEnabled) && (
                   <div className="mb-6 flex items-center gap-3 text-xs text-muted">
                     <span className="h-px flex-1 bg-border" />
-                    or sign in another way
+                    {tr("or sign in another way")}
                     <span className="h-px flex-1 bg-border" />
                   </div>
                 )}

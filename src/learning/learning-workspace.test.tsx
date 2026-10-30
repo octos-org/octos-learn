@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { setLocale, tr } from "@/i18n";
 import { renderLearning } from "../test/render-learning";
 import {
   act,
@@ -636,6 +636,17 @@ describe("LearningWorkspace", () => {
       }),
     );
     expect(screen.queryByText(/本轮没有更新白板/)).toBeNull();
+  });
+
+  it("pins an English course request before a UI language switch and submits only once", async () => {
+    setLocale("en-US", false);
+    await renderLearning(<LearningWorkspace sessionId="learn-language-pinning" voiceEnabled={false} onBack={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释勾股定理 x²+y²=z²" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
+    act(() => setLocale("zh-CN", false));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledOnce());
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith("learn-language-pinning", "learning.lesson.generate", expect.objectContaining({ language: "en-US", learner_request: "请解释勾股定理 x²+y²=z²" }));
+    expect(sendMessageMock).not.toHaveBeenCalled();
   });
 
   it("places lesson generation feedback on the whiteboard", async () => {

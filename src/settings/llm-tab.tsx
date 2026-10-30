@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useMemo, useState } from "react";
 import {
   Cpu,
@@ -480,7 +480,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, custom_family_id: e.target.value }))
                 }
-                placeholder="e.g. my-provider"
+                placeholder={tr("e.g. my-provider")}
                 className={inputClass}
               />
             </div>
@@ -528,7 +528,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, custom_model_id: e.target.value }))
                 }
-                placeholder="e.g. my-model-v2"
+                placeholder={tr("e.g. my-model-v2")}
                 className={inputClass}
               />
             </div>
@@ -579,7 +579,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-text">
                       {selectedProvider.envKey}
                     </code>{" "}
-                    is configured in API Keys.
+                    {tr("is configured in API Keys.")}
                   </span>
                 </>
               ) : (
@@ -593,7 +593,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-text">
                       {selectedProvider.envKey}
                     </code>{" "}
-                    in Environment Variables (see the API Keys tab)
+                    {tr("in Environment Variables (see the API Keys tab)")}
                   </span>
                 </>
               )}
@@ -1060,7 +1060,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
             {tr("Reset")}</button>
         )}
         {error && (
-          <span role="alert" className="text-xs text-red-400">{error}</span>
+          <span role="alert" className="text-xs text-red-400">{translateStatus(error)}</span>
         )}
       </div>
     </div>

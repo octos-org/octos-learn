@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { getLocale, initialLocale, initLocale, localizedCatalog, LOCALE_STORAGE_KEY, normalizeLocale, setLocale, tr } from "./index";
+import { getLocale, initialLocale, initLocale, localizedCatalog, LOCALE_STORAGE_KEY, normalizeLocale, setLocale, tr, translateStatus } from "./index";
 import en from "./messages/en.json";
 import zh from "./messages/zh.json";
 import { memoryGroup } from "../learning/memory/memory-entries";
@@ -67,4 +67,12 @@ describe("language preference", () => {
     act(() => window.dispatchEvent(new StorageEvent("storage", { key: LOCALE_STORAGE_KEY })));
     expect(getLocale()).toBe("zh-CN");
   });
+});
+
+it("updates a pending status after switching language while preserving interpolated original content", () => {
+  setLocale("zh-CN", false);
+  const message = tr("课程主题 {{v0}}", { v0: "x² + 圆" });
+  setLocale("en-US", false);
+  expect(translateStatus(message)).toBe("Lesson topic x² + 圆");
+  expect(translateStatus("A learner’s original words 圆")).toBe("A learner’s original words 圆");
 });

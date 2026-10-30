@@ -333,10 +333,10 @@ export function formatSelectionLessonRequest(
   if (/^请结合这部分内容/u.test(trimmed)) {
     return trimmed.replace(
       /^请结合这部分内容/u,
-      tr("请结合我{{v0}}", { v0: details.join("及") }),
+      tr("请结合我{{v0}}", { v0: details.join(tr("及")) }),
     );
   }
-  const contextPrefix = tr("请结合我{{v0}}：", { v0: details.join("及") });
+  const contextPrefix = tr("请结合我{{v0}}：", { v0: details.join(tr("及")) });
   return `${contextPrefix}${trimmed}`;
 }
 

@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -75,7 +75,7 @@ export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
       </div>
       {error && (
         <p data-testid="solo-error" className="text-sm text-red-400">
-          {error}
+          {translateStatus(error)}
         </p>
       )}
       <button

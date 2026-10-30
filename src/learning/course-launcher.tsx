@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { queueWhiteboardDeletion } from "./history/history-api";
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
@@ -224,7 +224,7 @@ function CourseCard({
   };
   return (
     <article className="course-launcher-card">
-      {deleteError && <p role="alert">{deleteError}</p>}
+      {deleteError && <p role="alert">{translateStatus(deleteError)}</p>}
       {deleting && <p role="status">{tr("正在保存删除请求…")}</p>}
       <div className="course-launcher-cover">
         <img src={installedThumbnail ?? entry.thumbnailUrl} alt="" />
@@ -326,7 +326,7 @@ function WhiteboardSessionCard({
   };
   return (
     <article className="course-launcher-session-card">
-      {deleteError && <p role="alert">{deleteError}</p>}
+      {deleteError && <p role="alert">{translateStatus(deleteError)}</p>}
       <button type="button" className="course-launcher-session-open" onClick={open}>
         <span>{session.title}</span>
         <small>{session.status === "completed" ? tr("已完成") : tr("继续学习")}</small>
@@ -457,7 +457,7 @@ export function CourseLauncher() {
           {collectionId && <Link to="/" className="course-collection-back"><ArrowLeft size={17} /> {tr("全部课程集")}</Link>}
           <div className="course-launcher-section-title">
             <div>
-              <p>{selected ? selected.level : "CURATED COLLECTIONS"}</p>
+              <p>{selected ? selected.level : tr("CURATED COLLECTIONS")}</p>
               <h2 id="course-launcher-library-title">{selected?.title ?? tr("课程集")}</h2>
             </div>
             <BookOpen size={23} aria-hidden="true" />

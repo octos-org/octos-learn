@@ -392,8 +392,7 @@ export function adoptLearningSession(
           ? record.status
           : existing.status,
       title:
-        existing.status === "provisional" || existing.title === "新的学习"
-          || existing.title === "已保存的学习" || existing.title.startsWith("[[LEARNING_")
+        existing.status === "provisional" || ["新的学习", "已保存的学习"].some(title => [tr(title, {}, "zh-CN"), tr(title, {}, "en-US")].includes(existing.title)) || existing.title.startsWith("[[LEARNING_")
           ? record.title
           : existing.title,
       createdAt: Math.min(existing.createdAt, record.createdAt),

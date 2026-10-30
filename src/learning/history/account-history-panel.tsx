@@ -1,4 +1,4 @@
-import { getLocale, tr } from "@/i18n";
+import { getLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useState } from 'react';
 import { getSelectedProfileId, getToken } from '../../api/client';
@@ -53,7 +53,7 @@ export function TopicEvidence({ api, topicId, through }: { api: HistoryApi; topi
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : tr("依据暂不可用")); });
     return () => { active = false; };
   }, [api, topicId, through]);
-  if (error) return <p role="alert">{error}</p>;
+  if (error) return <p role="alert">{translateStatus(error)}</p>;
   if (!topic) return <p role="status">{tr("正在读取知识点依据…")}</p>;
   return <section aria-label={tr("知识点原始依据")}>
     <p>{tr("这里仅统计有来源依据的部分内容，不代表整个知识点已掌握。人工确认的课程对应与模型分析分别列出。")}</p>
@@ -82,7 +82,7 @@ function CourseCoverage({ api, run, through }: { api: HistoryApi; run: LearningR
     return () => { active = false; };
   }, [api, run.run_id, through]);
   return <section aria-label={tr("课程与知识点对应进度")}>
-    {error && <p role="alert">{error}</p>}
+    {error && <p role="alert">{translateStatus(error)}</p>}
     {coverage?.status === 'unmapped' && <p>{tr("这门课没有人工确认的教学对应表。自动分析的结果另列在下方；没有结果时不猜测知识点进度。")}</p>}
     {coverage?.status === 'pending-review' && <p>{tr("课程与知识点的对应表尚待内容审核，暂不计算知识点进度。")}</p>}
     {coverage?.generated_playback?.status === 'unknown' && <p>{tr("尚无足够的完整课程与内容版本依据，暂不能判断整课是否播放完成；已有片段记录仍保留。")}</p>}
@@ -167,7 +167,7 @@ export function AccountHistoryPanel({ onSelect, topic, onTopicClose }: {
   const local = selected && api?.owner === getSelectedProfileId() && getLearningSession(selected.session_id);
   return <section className="learning-history-account" aria-label={tr("学习经过与原始记录")}>
     <p>{tr("从记录功能启用后开始统计。播放次数和作答结果不代表已经理解或掌握。")}</p>
-    {error && <p role="alert">{error} <button onClick={() => { setSelected(undefined); setDetail(undefined); setPage(undefined); setRefresh(value => value + 1); }}>{tr("刷新记录")}</button></p>}
+    {error && <p role="alert">{translateStatus(error)} <button onClick={() => { setSelected(undefined); setDetail(undefined); setPage(undefined); setRefresh(value => value + 1); }}>{tr("刷新记录")}</button></p>}
     {busy && <p role="status">{tr("正在读取记录…")}</p>}
     {!page && !error && <p role="status">{tr("正在读取已同步记录…")}</p>}
     {topic && !selected ? <>

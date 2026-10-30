@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { localizedCatalog, tr } from "@/i18n";
+import { localizedCatalog, tr, translateStatus } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { listClientServices, prepareClientServices, getService, getServiceStatus, subscribeServices, saveClientService, deleteClientService, type Capability, type ClientService, type ServiceMetadata } from "./services";
 import { directJson, serviceFailure, synthesizeDirect, transcribeDirect, validateService } from "./providers";
@@ -27,7 +27,7 @@ export function ServiceSettings({ only, compact = false }: { only?: Capability; 
   return <div className="space-y-5">
     <p>{tr("所有 AI 调用使用你自己的 Key，费用由供应商账户承担。电视直连供应商；网页直连受限时经服务器转发，仍使用你自己的 Key。可跳过，继续白板和已有课程。")}</p>
     {loading && <p role="status">{tr("正在读取账号配置…")}</p>}
-    {error ? <p role="alert">{error} <button onClick={reload}>{tr("重新读取")}</button></p> : !loading && (only ? [only] : ["tts", "asr", "admission"] as const).map(capability => <ServiceCard key={`${capability}:${metadata[capability]?.revision ?? "empty"}`} capability={capability} collapsed={compact || (!only && capability === "admission")} saved={metadata[capability]} onSaved={reload} />)}
+    {error ? <p role="alert">{translateStatus(error)} <button onClick={reload}>{tr("重新读取")}</button></p> : !loading && (only ? [only] : ["tts", "asr", "admission"] as const).map(capability => <ServiceCard key={`${capability}:${metadata[capability]?.revision ?? "empty"}`} capability={capability} collapsed={compact || (!only && capability === "admission")} saved={metadata[capability]} onSaved={reload} />)}
   </div>;
 }
 function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Capability; collapsed: boolean; saved?: ServiceMetadata; onSaved: () => void }) {
@@ -114,7 +114,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     </div>
     {capability === "asr" && <AsrTest config={draft} onMessage={setMessage} />}
     <p>{tr("测试会调用你自己的供应商，可能产生少量用量。测试成功不自动保存草稿。")}</p>
-    {message && <p role="status">{message}</p>}
+    {message && <p role="status">{translateStatus(message)}</p>}
   </div>;
   return <section className="glass-section rounded-lg p-6 space-y-4" aria-label={titles[capability]}>
     <h3>{titles[capability]}</h3>

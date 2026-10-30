@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { Minimize2, Trash2 } from "lucide-react";
 import {
   useEffect,
@@ -327,7 +327,7 @@ function SelectionPlot({
   return (
     <div className="learning-selection-plot">
       {error ? (
-        <span role="alert">{error}</span>
+        <span role="alert">{translateStatus(error)}</span>
       ) : (
         <svg viewBox="0 0 300 164" aria-label={artifact.response.title}>
           <line x1={left} y1={xAxis} x2={right} y2={xAxis} />

@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Loader2, Mic, Play, Plug, Square, XCircle } from "lucide-react";
 import { directJson, markVerified, ServiceError, serviceFailure, synthesizeDirect, transcribeDirect, validateService } from "@/byok/providers";
@@ -123,7 +123,7 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
       {capture.manualAvailable && !capture.hasFrames && <p>{tr("Waiting for microphone audio…")}</p>}
     </div>}
     {message && <p role={state === "failed" ? "alert" : "status"} className={`flex items-start gap-2 text-xs leading-5 ${state === "failed" ? "text-red-400" : "text-muted"}`}>
-      {state === "failed" ? <XCircle size={14} className="mt-0.5 shrink-0" /> : state === "success" ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" /> : null}{message}
+      {state === "failed" ? <XCircle size={14} className="mt-0.5 shrink-0" /> : state === "success" ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" /> : null}{translateStatus(message)}
     </p>}
   </div>;
 }

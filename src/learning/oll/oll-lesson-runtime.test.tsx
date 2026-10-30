@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { setLocale, tr } from "@/i18n";
 import { renderLearning } from "../../test/render-learning";
 import {
   act,
@@ -2003,6 +2003,27 @@ describe("OLL lesson Runtime integration", () => {
         }
       }
     }
+  });
+
+  it("switches board controls without replacing the board, ink editor, camera, or playback", async () => {
+    setLocale("zh-CN", false);
+    const state: InkRuntimeState = { mode: "navigate", component_count: 2, selected_count: 0, selection_revision: 0, document_version: 7, saved: true };
+    const ink = { ready: Promise.resolve(), subscribe: (listener: (state: InkRuntimeState) => void) => { listener(state); return () => undefined; }, setMode: vi.fn(), setLocale: vi.fn(), destroy: vi.fn() };
+    mountInkRuntimeMock.mockReturnValue(ink);
+    const boardLocale = vi.spyOn(InfiniteBoardView.prototype, "setLocale");
+    await renderLearning(<QuestionPlacementProbe inkSessionId="locale-preservation" onPlaceQuestion={vi.fn()} />);
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    await waitFor(() => expect(document.querySelectorAll(".board-node").length).toBeGreaterThan(0));
+    const nodes = [...document.querySelectorAll(".board-node")];
+    expect(nodes.length).toBeGreaterThan(0);
+    const calls = boardLocale.mock.calls.length;
+    act(() => setLocale("en-US", false));
+    await waitFor(() => expect(boardLocale.mock.calls.length).toBeGreaterThan(calls));
+    expect(ink.setLocale).toHaveBeenLastCalledWith("en-US");
+    expect(mountInkRuntimeMock).toHaveBeenCalledOnce();
+    expect(ink.destroy).not.toHaveBeenCalled();
+    expect([...document.querySelectorAll(".board-node")]).toEqual(nodes);
+    act(() => setLocale("zh-CN", false));
   });
 
   it("mounts writing as a persistent whiteboard capability", async () => {

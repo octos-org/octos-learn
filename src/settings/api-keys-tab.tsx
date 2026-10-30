@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { localizedCatalog, tr } from "@/i18n";
+import { localizedCatalog, tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   Save,
@@ -352,7 +352,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
             {tr("Reset")}</button>
         )}
         {error && (
-          <span role="alert" className="text-xs text-red-400">{error}</span>
+          <span role="alert" className="text-xs text-red-400">{translateStatus(error)}</span>
         )}
       </div>
     </div>

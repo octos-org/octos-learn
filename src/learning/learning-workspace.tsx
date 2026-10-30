@@ -1,4 +1,4 @@
-import { getLocale, tr } from "@/i18n";
+import { getLocale, tr, type Locale } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
@@ -1282,11 +1282,11 @@ export function LearningWorkspace({
       mediaPath: string;
     },
     clientTiming?: LearningClientTiming,
+    lessonLanguage: Locale = getLocale(),
   ) => {
     // The teacher is fixed when the question is submitted; switching later
     // does not change a lesson already being generated.
     const lessonTeacher = teacher;
-    const lessonLanguage = getLocale();
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
       : visualContext?.kind === "ink_selection"
@@ -1488,6 +1488,7 @@ export function LearningWorkspace({
           // a lesson or plain spoken reply releases the microphone.
           externalSpeechReleaseDelayMs: 1200,
           onAdmittedSpeech: async (context) => {
+            const requestLanguage = getLocale();
             const clientTiming = context.clientTiming ?? {};
             learnTrace.recordOnce(`${context.turnId}:request-submitted`, {
               turnId: context.turnId,
@@ -1614,6 +1615,7 @@ export function LearningWorkspace({
                   "voice",
                   { kind: "ink_selection", mediaPath: selectionPath },
                   clientTiming,
+                  requestLanguage,
                 );
                 return true;
               }
@@ -1656,6 +1658,7 @@ export function LearningWorkspace({
                 ? { kind: "camera", mediaPath: context.currentFramePath }
                 : undefined,
               clientTiming,
+              requestLanguage,
             );
             return true;
           },
@@ -2665,6 +2668,7 @@ export function LearningWorkspace({
       turnId: string;
       uploadedMediaPath: string;
     }) => {
+      const requestLanguage = getLocale();
       if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       const selectionScope = selectionScopeRef.current;
       if (!selectionScope?.active || selectionScope.sessionId !== sessionId) return;
@@ -2724,6 +2728,8 @@ export function LearningWorkspace({
             effectiveQuestion,
             "text",
             { kind: "ink_selection", mediaPath },
+            undefined,
+            requestLanguage,
           );
           return;
         }
@@ -2753,7 +2759,7 @@ export function LearningWorkspace({
           sessionId,
           "learning.selection.enhance",
           { ...actionArguments,
-            ...(languageAwareActions.current.has("learning.selection.enhance") ? { language: getLocale() } : {}),
+            ...(languageAwareActions.current.has("learning.selection.enhance") ? { language: requestLanguage } : {}),
             ...(boardWritingReady ? { capabilities: ["board_writing"] } : {}),
           },
         );
@@ -2995,6 +3001,7 @@ export function LearningWorkspace({
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
+      const requestLanguage = getLocale();
       if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       unlockAudio();
       const clientTiming: LearningClientTiming = {
@@ -3102,6 +3109,7 @@ export function LearningWorkspace({
             "text",
             { kind: "ink_selection", mediaPath: selectionMediaPath },
             clientTiming,
+            requestLanguage,
           );
           if (lessonSelection.referenceId) {
             setComposerBoardReferences((current) => current.filter(
@@ -3165,6 +3173,7 @@ export function LearningWorkspace({
               ? { kind: "camera", mediaPath: cameraMediaPath }
               : undefined,
             clientTiming,
+            requestLanguage,
           );
           return;
         }

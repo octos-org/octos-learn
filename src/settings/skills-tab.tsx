@@ -1,5 +1,5 @@
 import { useLocale } from "@/i18n/use-locale";
-import { tr } from "@/i18n";
+import { tr, translateStatus } from "@/i18n";
 import { useState, useEffect, useRef } from "react";
 import { Puzzle, Loader2, Wrench, RefreshCw, Trash2, Plus, Download, Package, Search, Check, Tag } from "lucide-react";
 import {
@@ -215,7 +215,7 @@ export function SkillsTab() {
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-500/10 px-4 py-3 text-xs text-red-400">
-            {error}
+            {translateStatus(error)}
           </div>
         )}
 
@@ -258,7 +258,7 @@ export function SkillsTab() {
                 </div>
                 <div className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted">
                   <Wrench size={12} />
-                  <span>{skill.tool_count} tool{skill.tool_count === 1 ? "" : "s"}</span>
+                  <span>{skill.tool_count === 1 ? tr("1 tool") : tr("{{count}} tools", { count: skill.tool_count })}</span>
                 </div>
                 <button
                   onClick={() => setPendingRemoveSkill(skill.name)}
@@ -296,7 +296,7 @@ export function SkillsTab() {
             value={installSource}
             onChange={(e) => setInstallSource(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleInstall(); }}
-            placeholder="octos-org/system-skills, https://host/org/repo.git, or ./skills/my-skill"
+            placeholder={tr("octos-org/system-skills, https://host/org/repo.git, or ./skills/my-skill")}
             className="flex-1 rounded-xl bg-surface-container px-4 py-3 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 transition"
           />
           <button
@@ -328,7 +328,7 @@ export function SkillsTab() {
           </div>
           {!hubLoading && hubPackages.length > 0 && (
             <span className="text-xs text-muted">
-              {filteredPackages.length} of {hubPackages.length} package{hubPackages.length === 1 ? "" : "s"}
+              {hubPackages.length === 1 ? tr("{{shown}} of 1 package", { shown: filteredPackages.length }) : tr("{{shown}} of {{total}} packages", { shown: filteredPackages.length, total: hubPackages.length })}
             </span>
           )}
         </div>
@@ -451,7 +451,7 @@ export function SkillsTab() {
                         </span>
                       ))}
                       {pkg.tags.length > 6 && (
-                        <span className="text-[10px] text-muted/50">+{pkg.tags.length - 6} more</span>
+                        <span className="text-[10px] text-muted/50">{tr("+{{count}} more", { count: pkg.tags.length - 6 })}</span>
                       )}
                     </div>
                   )}
