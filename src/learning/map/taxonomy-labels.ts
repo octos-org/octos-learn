@@ -91,5 +91,5 @@ export const domainLabel = (domain: string) => DOMAIN_LABELS[domain] ?? domain;
  * keep their original English name. */
 const TOPIC_NAMES: Readonly<Record<string, string>> = topicNames.names;
 const ENGLISH_NAMES: Readonly<Record<string, string>> = englishNames.names;
-export const topicLabel = (topicId: string, name: string) => (getLocale() === "zh-CN" ? TOPIC_NAMES : ENGLISH_NAMES)[topicId] ?? name;
+export const topicLabel = (topicId: string, name: string, locale = getLocale()) => (locale === "zh-CN" ? TOPIC_NAMES : ENGLISH_NAMES)[topicId] ?? name;
 

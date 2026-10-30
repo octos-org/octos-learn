@@ -1,0 +1,2844 @@
+{
+  "status": "translated",
+  "note": "Starter questions for each Mathematics topic on the star atlas: [real-life hook, a problem to try, a stretch], in the learner's voice. Drafted by agents from each topic's catalog description and examples and reviewed by independent agents on 2026-10-28 (16 of 567 topics corrected), at the user's decision (no human review). Where a topic's Chinese name and its catalog description disagree, the questions follow the description.",
+  "catalog_commit": "c7ed549758d9fb430c4af54886c658e78162a0b1",
+  "language": "en-US",
+  "source_language": "zh-CN",
+  "prompts": {
+    "mt_-3udyo6VyB": [
+      "A taxi charges 8 yuan to start, then 2 yuan per kilometre. How can I make a table, plot points, and graph the fare against distance?",
+      "Help me rearrange 2x + 3y = 12 into y = mx + c, then make a table and draw the graph.",
+      "A line passes through (1, 3) and (4, 12). How do I find its slope, and why does swapping the points give the same result?"
+    ],
+    "mt_-F_Lv_apzH": [
+      "Our school collected 12450 plastic bottles in the first week and 8372 in the second. Our target is 25000. How many more do we need?",
+      "Help me solve this: a reservoir held 58600 cubic metres of water, released 12750, and received another 9480. How much is there now?",
+      "For 60000 − 18750 − 21250, is it easier to subtract twice or add the two subtracted numbers first? Why?"
+    ],
+    "mt_-P1kdZhHbL": [
+      "With an apple in one hand and grapes in the other, how can I feel which is heavier and which is lighter?",
+      "My dog and I sit on opposite ends of a seesaw. My end goes down. Who is heavier?",
+      "Is a big balloon necessarily heavier than a small stone? How can I compare them with a balance?"
+    ],
+    "mt_-V7EnqU7gG": [
+      "I used 1/3 of a sheet of colored paper for a craft and my brother used 1/6. How much paper did we use altogether?",
+      "Help me calculate 3/4 − 1/8. How can I turn both fractions into eighths before subtracting?",
+      "Why can't I add the numerators and denominators in 2/5 + 3/10 to get 5/15? What should I do instead?"
+    ],
+    "mt_-af65bxfdp": [
+      "About how much does a bottle of water weigh? Should I weigh a mathematics book in grams or kilograms, and how can I estimate?",
+      "There are 3 bags of biscuits, each weighing 250 grams. How many grams is that altogether? Is it 1 kilogram yet?",
+      "A measuring jug marks only 1 litre and 2 litres. The water is halfway between them. How many litres is that, and how many millilitres?"
+    ],
+    "mt_-bMnJcPJy8": [
+      "If I roll a die 60 times, will every number appear exactly 10 times?",
+      "A die was rolled 60 times and 3 appeared 14 times. How many more than expected is that, and what is its relative frequency?",
+      "If I increase the number of die rolls to 600, how might each number's relative frequency change? Why?"
+    ],
+    "mt_-c4Ca_nBzX": [
+      "When guessing heads or tails on a coin toss, why do we write the chance of guessing correctly as 1/2?",
+      "A deck of 52 cards has 26 red cards. How do I write the probability of drawing a red card as a fraction?",
+      "There are 4 balls of each color: red, yellow, and blue. Why is the probability of drawing yellow 1/3 rather than 1/4?"
+    ],
+    "mt_-hTTat0mBR": [
+      "My sister and I share a pancake. How should we cut it so that each of us gets half?",
+      "Help me share 8 strawberries equally between my friend and me. If we each get half, how many is that and how should we share them?",
+      "A sheet of paper is folded into one large part and one small part. Why can't I call each part a half?"
+    ],
+    "mt_-vvVxpOHG2": [
+      "Getting up, brushing my teeth, and eating breakfast: which comes first, and which comes later?",
+      "Today is Wednesday. What day was yesterday, and what day will tomorrow be?",
+      "Eating breakfast, coming home from school, and going to bed: which happens in the morning, afternoon, and evening? What is their order?"
+    ],
+    "mt_09sySPqM9Z": [
+      "A chocolate bar has 8 equal squares and I eat 5. Why can I describe that as adding 5 lots of 1/8?",
+      "Show me how to start at 0 on a number line and count in steps of 1/3 until I reach 4/3.",
+      "Why can 7/4, which is greater than 1, still be written as 7 lots of 1/4 added together? Can a fraction be greater than 1?"
+    ],
+    "mt_0Wg5F97osg": [
+      "Can 156 students form exactly 6 columns with none left over? Can I decide without doing division?",
+      "Show me how to rewrite 24×25 as 6×4×25 to simplify the calculation. Why work out 4×25 first?",
+      "Which two square numbers add up to exactly 100? How can I search systematically without missing any?"
+    ],
+    "mt_0XxyaQLRhn": [
+      "A cartoon starts at half past seven. Where should the hour and minute hands point on the clock?",
+      "The minute hand points to 12 and the hour hand to 3. What time is it, and how is it written on a digital clock?",
+      "When drawing half past 2, why is the hour hand between 2 and 3 instead of pointing directly at 2?"
+    ],
+    "mt_0ZDouU664X": [
+      "Our class collected a large pile of pencils, a little over a hundred. How can I group them to count quickly and accurately?",
+      "Teach me to count 85 sticks by bundling every 10 together. How do I count after making the bundles?",
+      "Why can I count 46 shoes in pairs, while it is better to bundle 120 straws in tens?"
+    ],
+    "mt_0u4KLbvBa1": [
+      "Our class has 23 students and we play in pairs. Will anyone be left without a partner? How can I tell at once?",
+      "Help me decide which of 17, 24, 38, and 51 are odd and which are even. What should I look at?",
+      "Why can the units digit alone tell me whether a number is odd or even? How can I tell immediately for 3458 and 9997?"
+    ],
+    "mt_14T5yPXUq_": [
+      "I used 2/3 metre of ribbon, then another 3/4 metre. How much did I use altogether? How do I add fractions with different denominators?",
+      "Help me calculate 3 1/4 minus 1 3/5. Do I need common denominators first?",
+      "Why can't 1/2 + 1/3 be calculated as 2/5? How can a diagram explain this?"
+    ],
+    "mt_167X6Ax8P7": [
+      "To cut two identical triangular pieces of fabric, which sides and angles should I measure to guarantee they fit exactly over each other?",
+      "Two triangles each have sides of 5 cm and 7 cm with an included angle of 50°. Which congruence criterion proves they are congruent?",
+      "Why does equality of two sides and an angle opposite one of them (SSA) not guarantee that two triangles are congruent?"
+    ],
+    "mt_18fK9sQdIz": [
+      "The school bought 5 boxes of chalk, with 234 pieces in each. How many pieces altogether? How do I set out three-digit by one-digit multiplication?",
+      "Show me how to calculate 47×6 using column multiplication. How do I carry when the units total ten or more?",
+      "I calculated 234×5 as 1070. Can estimation show that it is wrong? Where did the carrying go wrong?"
+    ],
+    "mt_19j_5AuuQI": [
+      "Ruler marks resemble a number line. When marking numbers from 0 to 100 along a line, why must the intervals be equal?",
+      "Teach me to show 38 + 27 on a number line. How many tens should I jump first, then how many ones?",
+      "For 72 − 35 on a number line, why can both jumping back from 72 and jumping forward from 35 to 72 find the answer?"
+    ],
+    "mt_1KkvzwYxbR": [
+      "If 20 metres below sea level is written as -20 metres, how do I write a summit 300 metres above sea level?",
+      "The temperature is -4 °C and rises by 7 degrees. What is the new temperature?",
+      "When counting backwards one at a time from 3 to -2, why must I include 0?"
+    ],
+    "mt_1PAWhRhpdg": [
+      "A ribbon is 3 metres long. If I cut a piece every 1/4 metre to make bows, how many pieces can I make? Why is that number so much greater than 3?",
+      "What is 6 ÷ 1/4? How can I draw a diagram to think about how many quarters fit into 6?",
+      "Why is the quotient of 4 ÷ 1/5 greater than 4? How can multiplication check the result?"
+    ],
+    "mt_1VSfm9yiLn": [
+      "I sorted colored pens into red, blue, and green. How can I find the total and compare how many of each color there are?",
+      "There are 6 apples, 4 pears, and 9 oranges in a fruit bowl. How many fruits altogether, and how many more oranges than pears?",
+      "There are 2 more apples than pears and 4 pears. How many apples are there? How should I think about a question asked this way round?"
+    ],
+    "mt_1VmTUxBrNd": [
+      "A 5-metre ladder leans against a wall, with its foot 3 metres from the wall. How high does its top reach?",
+      "A right triangle has perpendicular sides of 6 cm and 8 cm. Help me calculate the hypotenuse.",
+      "How can I use the Pythagorean theorem to find the distance between (1, 2) and (4, 6) in a coordinate system?"
+    ],
+    "mt_1YwOCMMwD8": [
+      "Some students joined both calligraphy and Go clubs. How can sets represent the members the two groups share?",
+      "For A={1,2,3,4,6} and B={2,4,5,6,8}, what are A∩B and A∪B?",
+      "Which region should I shade for A′ in a Venn diagram? How can a table list every outcome of rolling two dice together?"
+    ],
+    "mt_1badik7iKJ": [
+      "On a classroom plan, what does a scale such as “1 cm represents 2 metres” mean?",
+      "Two places are 6.5 cm apart on a map with scale 1:25000. What is their actual distance in kilometres?",
+      "If a plan changes from scale 1:50 to 1:100, how should each line change? How long should a wall shown as 9 cm become?"
+    ],
+    "mt_20WfHhnL39": [
+      "I have 7 red blocks and 5 blue ones, too many to count on my fingers. What can help me count them?",
+      "Teach me to calculate 8+5 with a ten-frame: fill the frame first, then see how many are left.",
+      "For 9+6, are small blocks or fingers more convenient? Why?"
+    ],
+    "mt_2ESZh70NyS": [
+      "Two cakes are the same size. I ate 3/4 of one and my sister ate 2/3 of the other. Who ate more, and how can I explain?",
+      "Teach me to show 3/4 > 2/3 using common denominators, then prove it with a diagram.",
+      "Why do a triangle's three interior angles add to 180°? What can tearing off the angles and fitting them together show?"
+    ],
+    "mt_2OtRUM_0zW": [
+      "When enlarging a photograph, why must its length and width be multiplied by the same number to avoid distortion?",
+      "A rectangle 6 cm long and 4 cm wide is similar to another rectangle 18 cm long. What is the second rectangle's width?",
+      "Similar triangles have side lengths 4, 6, 8 and 6, 9, 12. How do I find the scale factor, and why check every side?"
+    ],
+    "mt_2VR963szuk": [
+      "Can I build a triangle using straws and modelling-clay balls? How many straws do I need?",
+      "Help me work out how many equal-length straws and modelling-clay balls I need to build a cube.",
+      "When drawing a rectangle, how can I make opposite sides equal in length?"
+    ],
+    "mt_2VpdPjvewx": [
+      "A parcel weighs 3250 grams. What should I write in kilograms on the delivery form, and where should the decimal point go?",
+      "Teach me to convert 0.45 kilometres to metres and 5 centimetres to metres. Why do I move the decimal point?",
+      "How many factors of 10 connect millimetres, centimetres, metres, and kilometres? Why is 1.2 kilometres not 120 metres?"
+    ],
+    "mt_2XDGT5tei1": [
+      "Mum says I can play for 1 more hour before bed. How many minutes are there in 1 hour?",
+      "A day has 24 hours. If I slept for 9 hours, how many hours was I awake?",
+      "An animated film lasts 90 minutes. How many hours and minutes is that? Why can't I call it 1 hour and 90 minutes?"
+    ],
+    "mt_2jbUekyTu4": [
+      "A supermarket sells eggs in boxes of 4. Why are the egg totals always even when I buy 1 box, 2 boxes, 3 boxes, and so on?",
+      "I can't remember 8×7. Can I combine 8×5 and 8×2 to find it? Please show me how.",
+      "The sequence is 50, 100, 150, 200… What is the 8th number, and how does adding 50 each time help predict it?"
+    ],
+    "mt_2yas4Unc8o": [
+      "Mum says I can read for 1 hour and 30 minutes this weekend. How many minutes is that, and how do I convert between time units?",
+      "Help me convert 3 hours and 25 minutes into minutes, and 150 seconds into minutes and seconds.",
+      "How many days are there in 8 weeks and 3 days? Why can't I convert time by multiplying by 10 or 100 as with length units?"
+    ],
+    "mt_3JgrHY221M": [
+      "I have 8 yuan and want a pencil case costing 11 yuan. How much more do I need? Can I write an equation with a box?",
+      "Teach me to fill the boxes in 8 + □ = 11 and 5 = □ − 3. What goes in each box?",
+      "□ − 7 = 6 and 13 − □ = 6 look similar. Why do I need different methods to find the missing number?"
+    ],
+    "mt_3S10OOGPqu": [
+      "A classroom door is half open, making an angle with the wall. Where are the vertex and the two arms?",
+      "For the angle made by a clock's hour and minute hands, what are the vertex and the two arms?",
+      "Why are an angle's arms called rays rather than line segments? Does drawing them longer make the angle larger?"
+    ],
+    "mt_3VmBdlAeOZ": [
+      "If 3 pancakes are shared equally among 4 people, how much does each get? Can I write this as both division and a fraction?",
+      "On a number line, 0 to 1 is divided into 10 equal parts. How do I write the 7th mark from 0 as a decimal and as a fraction?",
+      "How can a rectangle area diagram split 4×23 into 4×20 and 4×3? How does this connect to column multiplication?"
+    ],
+    "mt_3e_PQxwC12": [
+      "My piggy bank holds 60 yuan and I add 40 yuan. Can knowing 6 + 4 help me find the total quickly?",
+      "Help me calculate 7 + 8 and 15 − 8 quickly, then use 6 + 4 = 10 to work out 60 + 40.",
+      "Why does remembering 5 + 5 = 10 help me work out 35 + 5 and 65 + 5 immediately?"
+    ],
+    "mt_3fwYu7imd4": [
+      "The weather forecast gives a 0.3 chance of rain tomorrow. What is the chance that it won't rain?",
+      "What is the probability of not rolling a 3 on a die? Why can I subtract from 1?",
+      "A spinner's probabilities for red, yellow, blue, and green are listed as 0.4, 0.3, 0.2, and 0.2. What is wrong?"
+    ],
+    "mt_3m0pA-aeat": [
+      "I calculated that 30 metres of fabric at 4.87 yuan per metre costs 1461 yuan. How can estimation reveal the mistake?",
+      "I calculated 63.6÷20 as 31.8. If I estimate using 60÷20, can I see where the decimal point went wrong?",
+      "I got 984 for 2.46×400. Is 2.5×400 a reasonable estimate, and how should I round a decimal when estimating?"
+    ],
+    "mt_3qrCtdoVAU": [
+      "Given distance s = vt, how should I rearrange the formula to find the cycling time t?",
+      "Help me rearrange v = u + at to make a the subject. Which inverse operation is used at each step?",
+      "For a circle's area A = πr², how do I make r the subject? Why do I take only the positive square root?"
+    ],
+    "mt_3rTIyJDw7-": [
+      "When measuring a bicycle wheel, which parts are its radius, diameter, and circumference? How can I describe them without confusion?",
+      "Help me find the volume of a box 5 cm long, 4 cm wide, and 3 cm high. How should I write the answer's units?",
+      "What are 3x+5, 3x+5=20, and S=ab called? How do algebraic expressions, equations, and formulas differ?"
+    ],
+    "mt_3tPI0HqqcN": [
+      "A travel map says two towns are 50 miles apart. Roughly how many kilometres is that? Is a mile longer or shorter than a kilometre?",
+      "Given that 5 miles is about 8 kilometres, roughly how many kilometres is 40 miles? Teach me the conversion.",
+      "Which is farther: a 10-kilometre run or a 6-mile run? Why is 1 mile approximately 1.6 kilometres?"
+    ],
+    "mt_3tz3Otap5j": [
+      "My piggy bank contains 1-yuan, 5-jiao, and 1-jiao coins. How can I count the money quickly and accurately?",
+      "I have 2 notes worth 1 yuan each, 3 coins worth 5 jiao each, and 4 coins worth 1 jiao each. How many yuan and jiao altogether?",
+      "Why can 3 yuan and 5 jiao be written as 3.5 yuan? How do I use yuan, jiao, and fen correctly when writing amounts?"
+    ],
+    "mt_3y7xKP9MjU": [
+      "There are 35 students in our class, and 3/5 took part in sports day. How many students participated?",
+      "What is 2/3 of 18? Why divide first, then multiply?",
+      "I've read 2/5 of a book, which is 48 pages. How many pages are in the whole book? How should I reason backwards?"
+    ],
+    "mt_42QD6nYjiZ": [
+      "Several bean sprouts grew by fractional amounts of a centimetre over a week. How can I draw a graph to compare their growth?",
+      "5 bean sprouts grew 1/8, 3/8, 3/8, 5/8, and 7/8 cm. After drawing a dot plot, how much greater is the largest growth than the smallest?",
+      "A dot plot has 2 crosses at 1/4 cm and 3 crosses at 1/2 cm. How many centimetres did these sprouts grow altogether?"
+    ],
+    "mt_4K1dr204Hi": [
+      "A shop says “pay 80% of the price”, “20% off”, or “1/5 off”. Do all three mean the same thing?",
+      "How do I convert 3/8 into a decimal? Show me how to calculate 3 ÷ 8.",
+      "Which of 30%, 1/3, and 0.35 is greatest and which is smallest? How can I convert them to one form to compare?"
+    ],
+    "mt_4Km38F4L-6": [
+      "If 3 pancakes are shared equally among 4 people, how much does each get? Why can the answer be written as 3/4?",
+      "If 50 kilograms of rice are shared equally among 9 families, how much does each get? How can I write it as a mixed number?",
+      "Why is 3/4 equal to 3 ÷ 4? Can multiplying 3/4 by 4 to get 3 check this?"
+    ],
+    "mt_4MFUAsbx_6": [
+      "What angle does a slide make with the ground? How can I measure it with a protractor?",
+      "To draw a 135° angle with a protractor, should I read the inner scale or the outer scale?",
+      "Why might someone read an obtuse angle as 47° instead of 133°? How can I avoid the mistake?"
+    ],
+    "mt_4WaKWECpcv": [
+      "I buy 3 identical breakfasts, each with a bun and a cup of soy milk. How can I write one expression for the total price?",
+      "How do I write “multiply the sum of 8 and 7 by 2” as one expression? Where do the brackets belong?",
+      "Without calculating, how can I see how many times 18932+921 is represented by 3×(18932+921)? What does the expression mean?"
+    ],
+    "mt_4bc3EAxhlY": [
+      "Why can't three sticks of lengths 3 cm, 4 cm, and 8 cm form a triangle, however I arrange them?",
+      "Can line segments of 3 cm, 4 cm, and 7 cm form a triangle? What happens when I try drawing construction arcs?",
+      "Why can I draw many differently sized triangles with angles of 50°, 60°, and 70°?"
+    ],
+    "mt_4emC463IyW": [
+      "Which takes longest in the morning: brushing my teeth, eating breakfast, or walking to school? How can I compare durations?",
+      "A cartoon episode runs from 5:17 p.m. to 5:43 p.m. How many minutes does it last?",
+      "The bus takes 35 minutes and walking takes 40, but I must first wait 8 minutes for the bus. Which is quicker, and by how many minutes?"
+    ],
+    "mt_4lp_b5Pzik": [
+      "How many cups of water does our kettle hold? How should I count as I pour in one cup at a time?",
+      "It takes 8 small cups to fill a bucket. How can I record its capacity, and how much is a litre?",
+      "A kettle holds 4 large cups or 7 small cups. Why are the counts different?"
+    ],
+    "mt_4m8BimI4G5": [
+      "School starts at 8:45. Is that 8:45 a.m. or 8:45 p.m.? How can I tell?",
+      "After school, the hour hand is between 4 and 5 and the minute hand points to 5. What is the time, including a.m. or p.m.?",
+      "Is ten minutes after noon a.m. or p.m.? What about ten minutes after midnight?"
+    ],
+    "mt_4ubP_RMg9o": [
+      "A T-shirt costing 40 yuan is discounted by 25%. How much do I pay now?",
+      "How do I write 1/5 as a percentage and as a decimal? What is 20% of 60?",
+      "Why are 3/4, 75%, and 0.75 the same number? What percentages are 2/5 and 4/5?"
+    ],
+    "mt_4zgPzc6yu5": [
+      "A school wants the opinions of 800 students about lunch but asks only 40. How should those 40 be chosen fairly?",
+      "What is wrong with asking people outside a gym how often they exercise each week, then using that sample to represent the entire city?",
+      "A random sample of 10 students happens to contain mostly seventh graders. Does that mean random sampling is unfair? Why?"
+    ],
+    "mt_5HV4mbgSGH": [
+      "A 2.5-kilogram bag of flour is shared equally among 4 jars. How much goes in each? Could a number line help me think?",
+      "Three ribbons are 0.75 m, 1.2 m, and 0.95 m long. What is their combined length?",
+      "A train leaves at 9:20 and travels for 1 hour and 45 minutes. When does it arrive? Why isn't 1 hour and 45 minutes equal to 1.45 hours?"
+    ],
+    "mt_5J2quSTspi": [
+      "Grandma's clock uses Roman numerals such as I, II, and III instead of ordinary numbers. How can I read the time?",
+      "On a Roman-numeral clock, the minute hand points to IX and the hour hand is between IV and V. What is the time?",
+      "Why is 3:20 p.m. written as 15:20, while 12:20 at noon does not have 12 added, and 12:20 after midnight is written as 00:20?"
+    ],
+    "mt_5NwqN6pf_A": [
+      "A city has 456782 households, but the news says about 460000. How was that rounded figure obtained?",
+      "Help me round 387412 to the nearest ten thousand, then to the nearest hundred thousand.",
+      "What is 950500 rounded to the nearest hundred thousand? Why does the result suddenly have seven digits?"
+    ],
+    "mt_5TBUFnCy5-": [
+      "To calculate the cubic metres of concrete used for some steps, can I split the steps into cuboids?",
+      "An L-shaped block joins two cuboids measuring 6 cm by 4 cm by 2 cm and 3 cm by 4 cm by 5 cm. What is the total volume?",
+      "Why does cutting the same L-shaped solid horizontally or vertically into two cuboids give the same total volume?"
+    ],
+    "mt_5mIcmKRCgA": [
+      "More workers take fewer days to repair a road. Is this direct proportion or inverse proportion?",
+      "4 pens cost 6 yuan. What do 10 pens cost, and how can I set up a proportion?",
+      "Direct proportion graphs are straight lines through the origin. Why is an inverse proportion graph curved?"
+    ],
+    "mt_6-j1NO2ZUH": [
+      "A small tree is 2 metres tall and a large tree is 4 times as tall. How tall is the large tree? How can a bar model show multiples?",
+      "36 is 4 times a number. What is the number, and how can I use a letter to write an equation?",
+      "How do “my brother has 5 more cards than me” and “my brother has 5 times as many cards as me” differ? What would their diagrams look like?"
+    ],
+    "mt_61Nhj8W78f": [
+      "Why are square and regular hexagonal floor tiles common, while regular pentagonal tiles are rare?",
+      "Each angle of an equilateral triangle is 60°. How many triangles must meet at a point to fill the space without gaps?",
+      "A regular pentagon has interior angles of 108°. Why can't it tessellate by itself? Can translations and rotations help?"
+    ],
+    "mt_6J1wmCWf41": [
+      "I have 5 yuan and buy an eraser costing 3 yuan and 5 jiao. How much change should I get?",
+      "A notebook costs 4 yuan and a pen 2 yuan and 5 jiao. What is the total, and how much change do I get from 10 yuan?",
+      "A box of colored pencils costs 18 yuan and I have only 12. How much more do I need, and why use subtraction?"
+    ],
+    "mt_6XCURuNwPw": [
+      "Running took 5 minutes, a walk took 20, and exercises took 10. Which activity took longest?",
+      "Watching a cartoon takes 30 minutes, homework 45, and eating 20. How do I order these durations from shortest to longest?",
+      "Running lasted from 3:00 to 3:10, while walking lasted from 3:00 to 3:25. Which took longer, and by how many minutes?"
+    ],
+    "mt_6_O6THdEDK": [
+      "At the supermarket, I pay with a 10-yuan note and receive several smaller notes. How can I check that the change is correct?",
+      "A loaf costs 3 yuan and 5 jiao and milk costs 2 yuan and 8 jiao. What change should I receive from 10 yuan?",
+      "Someone says the change from 10 yuan for an item costing 4 yuan and 7 jiao is 6 yuan and 3 jiao. What went wrong? How can counting up find the change?"
+    ],
+    "mt_6gpryAnpoZ": [
+      "Many people report going to bed at exactly nine or half past nine. Is it really such a coincidence?",
+      "A frequency table has four rows with frequencies 3, 7, 6, and 4. How many data values were recorded, and why isn't it just 4?",
+      "How does measuring palm widths to the nearest 0.5 cm differ from asking classmates to report their own palm widths?"
+    ],
+    "mt_6oxQPNLHNv": [
+      "A fruit scale shows 1 kilogram and 300 grams. How are kilograms and grams related, and how do I calculate with both units?",
+      "A jug contains 250 millilitres of milk, then I add 400 millilitres of water. How many millilitres are there now?",
+      "A wooden strip is 1 metre long. How much remains after cutting off 35 centimetres? What must I do first when the units differ?"
+    ],
+    "mt_6xNmQLzuqm": [
+      "Exactly 12 square tiles cover a floor. How should I describe its area?",
+      "What is the area of a square with side length 1 cm? If 15 such squares cover a rectangle, what is its area?",
+      "If two tiles overlap, can I still say the area equals the number of tiles? How do area and perimeter differ?"
+    ],
+    "mt_70qDTI14td": [
+      "A container holds 5 3/4 litres of oil and I use 3 1/4 litres for cooking. How much remains?",
+      "Help me calculate 2 3/5 + 1 4/5 and write the result as a mixed number.",
+      "For 4 2/6 − 1 5/6, 2/6 is too small to subtract 5/6. How can I borrow 1 from the whole-number part?"
+    ],
+    "mt_76SPWvdI7r": [
+      "Mum says a box of shrimp costs fifty-seven yuan. How do I write fifty-seven in digits?",
+      "How do I write eighty-three and thirty-eight in digits?",
+      "Why is 60 read as sixty and 16 as sixteen? What pattern do names of multiples of ten follow?"
+    ],
+    "mt_7XcCG43ZZW": [
+      "I have 5 sweets to hold in my left and right hands. How many different ways can I split them?",
+      "Help me find every way to split 7 into two parts, using sticks to show them.",
+      "How can I split 10 into two parts systematically without missing any possibilities? Does 0 and 10 count too?"
+    ],
+    "mt_7rJM8eWUfw": [
+      "A week has 7 days. How many days are in 3 weeks and 5 weeks? How do I count in sevens?",
+      "Starting at 0, I count in steps of twenty-five: 25, 50, 75… How many steps reach 1000?",
+      "Which numbers appear both when counting in sixes and when counting in nines? How can I find them?"
+    ],
+    "mt_89riIKwGYp": [
+      "A folding fan has two sections opened by 35° and 40°. What is the total opening angle?",
+      "Two adjacent angles on a straight line are 65° and x°. What is x, and how do I write the equation?",
+      "Three angles around a point are 120°, 90°, and x°. Why can subtracting from 360° find x?"
+    ],
+    "mt_8A3pZNOp7Z": [
+      "There are 40 students, each paying 60 yuan for a uniform. How can the teacher calculate the total mentally?",
+      "Show me how to split 7×15 into 7×10 plus 7×5 mentally. Which multiplication fact helps with 360÷9?",
+      "40×60 adds two zeros to the result of 4×6. Why does the result of 50×40 have three zeros?"
+    ],
+    "mt_8H2kO4k2B9": [
+      "Honeycomb cells are regular hexagons. What conditions make a hexagon regular?",
+      "A pentagon has five sides each measuring 4 cm. Must it be a regular pentagon?",
+      "A rectangle has four equal angles. Why isn't it necessarily a regular polygon, and when would it be one?"
+    ],
+    "mt_8IsaoMPvod": [
+      "An advert says nine out of 10 children like this milk. Is the claim trustworthy, and what should I ask first?",
+      "A bar chart starts its vertical axis at 90. Bars at 92 and 95 look very different. Is the actual difference large?",
+      "A headline says student short-sightedness has soared, but the rate rose only from 30% to 32%. How could I rewrite it without misleading readers?"
+    ],
+    "mt_8OAGVdeTJ_": [
+      "When I open a book, why is the opening between its cover and pages also called an angle?",
+      "If a door turns through a quarter-circle, what angle does it make with the door frame?",
+      "Why does an angle depend on how wide it opens rather than the drawn lengths of its arms?"
+    ],
+    "mt_8RmpkDxT9L": [
+      "My sister's notebook says 3 + 2 = 5. How do I read these symbols, and what does each mean?",
+      "A kitten had 4 fish and received 3 more. Teach me to write the calculation: which symbol do I use, and where does the equals sign go?",
+      "Can the equals sign go first, as in 5 = 3 + 2? What does it actually mean?"
+    ],
+    "mt_8VjmxR1yfw": [
+      "Two classes' skipping results are shown as box plots. How do the boxes and whiskers show which class is more consistent?",
+      "A five-number summary is 3, 6, 9, 14, 21. How do I draw its box plot, and what are its interquartile range and range?",
+      "If a box plot's upper whisker from 14 to 21 is especially long, does that mean it contains more data? Why?"
+    ],
+    "mt_8atyuvPUZc": [
+      "Does hotter weather mean more cold-drink sales? How can a scatter plot show whether temperature and sales are related?",
+      "On a scatter plot of study time and test marks, points rise roughly from bottom left to top right. What kind of correlation is this?",
+      "How does negative correlation differ from no correlation? Which might describe time watching television and time sleeping?"
+    ],
+    "mt_8gy7uxRlF6": [
+      "A tissue packet contains 10 tissues. How many tissues are in 10 packets, and why is this called one hundred?",
+      "There are 10 bundles of sticks, each containing 10 sticks. How many altogether, and how can I make one large bundle?",
+      "When I add 1 stick to 99 sticks, why do both the units and tens carry to make 100?"
+    ],
+    "mt_8jFSnXxqQD": [
+      "I buy 3 meal deals, each with fries costing 4 yuan and a drink costing 5 yuan. Why is the total written as 3×(4+5)?",
+      "In {2×[3+(7−1)]}, which brackets should I calculate first: parentheses, square brackets, or braces?",
+      "Where can I add one pair of brackets in 2+3×4−1 to make the result 19?"
+    ],
+    "mt_8xVHooT4aI": [
+      "Clothes originally costing 150 yuan are sold at 80% of the price. What is the new price, and can a diagram explain it?",
+      "A bedroom is 4 metres long and 3.5 metres wide. Carpet costs 80 yuan per square metre. Teach me to draw a diagram and calculate the total.",
+      "A biscuit recipe uses 150 grams of butter to make 12 biscuits. How many grams are needed for 30 biscuits?"
+    ],
+    "mt_933BohS9BH": [
+      "One bag of sweets weighs 0.45 kg and another weighs 0.405 kg. Which is heavier? Does having more digits make a number greater?",
+      "Put 3.142, 3.14, and 3.2 in increasing order. Which digit should I compare first?",
+      "Why are 0.7, 0.70, and 0.700 equal? Why don't zeros added at the end of a decimal change its value?"
+    ],
+    "mt_98c2qwEF7Q": [
+      "I have 3 notes of 100 yuan, 5 notes of 10 yuan, and 8 coins of 1 yuan. How much money is that altogether?",
+      "A schoolbag costs 426 yuan. Using only 100-yuan, 10-yuan, and 1-yuan denominations, what is the fewest of each I need?",
+      "How many tens are there altogether in 357: 5 or 35? Why?"
+    ],
+    "mt_9IzhGUZ30z": [
+      "Mum says we live on the twelfth floor. Which number should I press in the lift?",
+      "How do I write 17 in Chinese characters: 十七 or 一七?",
+      "Why is 20 called twenty and 12 called twelve? How does exchanging the positions of tens and units change the number?"
+    ],
+    "mt_9KmVWCuh5_": [
+      "In a pie chart of our class's favorite sports, football takes up a quarter. Is that the same as 25%?",
+      "An older brother has 3 times as much money as his younger brother, and they have 48 yuan altogether. How can I draw a bar model, then write an equation to find each amount?",
+      "Of 40 people, 15 wear glasses. How do I show this as a fraction, a percentage, and a pie chart? What is the sector's central angle?"
+    ],
+    "mt_9L3NQqgqRd": [
+      "About how many marbles are in a jar? How can I first estimate 30 or 50, then count to check?",
+      "On a number line from 0 to 100 marked every 10, which two marks should 47 lie between, and which is nearer?",
+      "How can I bundle 112 straws into hundreds, tens, and ones? How would the bundles differ for 121 straws?"
+    ],
+    "mt_9QzSnn8m80": [
+      "What does a bank balance of −50 yuan mean? Where else do positive and negative numbers represent opposite situations?",
+      "Help me calculate −3 + 7 and 4 − (−5). Which way should I move on a number line, and how many spaces?",
+      "Why is subtracting a negative number the same as adding its opposite? Why does 2 − (−6) become larger?"
+    ],
+    "mt_9XVFje6Tyr": [
+      "A car's odometer shows 4562 kilometres. What will it show after another 1000 kilometres?",
+      "What is 1000 more than 7085, and what is 1000 less?",
+      "What is 1000 more than 9500? Why does a ten-thousands digit appear this time?"
+    ],
+    "mt_9Y96vxG_LH": [
+      "I have 3/4 litre of juice and pour 1/8 litre into each cup. How many cups can I fill? How should I think about dividing fractions?",
+      "How do I calculate 5/6 ÷ 2/3, and why multiply by the reciprocal of 2/3?",
+      "Can you make a real-life story for 2/3 ÷ 1/6, then draw a diagram to show where the answer comes from?"
+    ],
+    "mt_A-FyLLLLzy": [
+      "A row of squares made from sticks uses 4 sticks for 1 square and 3 more for every extra square. How many sticks for 10 squares?",
+      "Starting at 1 and adding 3 each time, what are the first 8 numbers? What pattern appears in odd and even numbers?",
+      "Why does starting at 2 and adding 4 always give even numbers? Will 30 and 40 appear in the sequence?"
+    ],
+    "mt_A2hKhHXgL5": [
+      "Two basketball teams' heights overlap a lot when plotted on one number line. How can I explain how much the teams differ?",
+      "Two teams' mean heights differ by 10 cm and each team's mean absolute deviation is about 5 cm. How many mean absolute deviations apart are the means?",
+      "Two groups' means differ by 2 mean absolute deviations, but one group has a long tail toward the other. Why is there more overlap than expected?"
+    ],
+    "mt_AF2BeFQwfX": [
+      "Which coins can I use to pay for an ice lolly costing 5 jiao?",
+      "How many 5-jiao and 1-jiao coins can make 1 yuan? How many different combinations are possible?",
+      "Using 1-yuan, 5-jiao, and 1-jiao coins to make 2 yuan, how can I search systematically without missing a combination?"
+    ],
+    "mt_AKAtWEwpcj": [
+      "I saved 36 yuan and Grandma gave me another 7. How much do I have now, and how can I calculate mentally?",
+      "Teach me to calculate 52 − 4 mentally. Should I subtract to 50 first? How would I jump on a number line?",
+      "Why is 36 + 3 straightforward, while 36 + 7 is easier after first making a multiple of ten?"
+    ],
+    "mt_ALUrJpY0cZ": [
+      "A tree's height this year is 150% of last year's height. What does a percentage above 100% mean?",
+      "18 of the 40 students in our class wear glasses. What percentage is that?",
+      "Why doesn't a price return to its original value after increasing by 20% and then decreasing by 20%?"
+    ],
+    "mt_AQcVRBddko": [
+      "Three hills are 586 m, 568 m, and 605 m high. Which is tallest, and how should I compare them?",
+      "Should I put > or < between 472 and 427? Which place value should I compare first?",
+      "Put 309, 390, 93, and 903 in increasing order. Why is 93 smallest?"
+    ],
+    "mt_AQo4u7O4sM": [
+      "A rectangular flowerbed is split into red and yellow flowers. Does adding the two parts' areas give the same result as calculating the whole area?",
+      "How can rectangle area help me calculate 6×13? Why can I split it into 6×10 plus 6×3?",
+      "Someone says 5×(7+3) equals 5×7+3. Why is that wrong, and how can a rectangle area diagram show it?"
+    ],
+    "mt_AR-K72OIIO": [
+      "A sandwich shop offers 3 types of bread and 4 fillings. Choosing one of each, how many different sandwiches can I make?",
+      "A box holds 14 drinks. How many are in 6 boxes, and why can I calculate 10×6 plus 4×6?",
+      "A tower is 3 times the height of a 15-metre building, with an 8-metre flagpole on top. What is the total height? Do I multiply or add first?"
+    ],
+    "mt_ATYLKt0je-": [
+      "Buying more apples costs more, while more road workers take less time. What type of proportion describes each relationship?",
+      "A car travels 120 kilometres in 2 hours. What is its speed, and why is the unit kilometres per hour?",
+      "Which quantities are divided to find unit price, speed, and density? Why are their units called compound units?"
+    ],
+    "mt_AYzE1EAvI0": [
+      "A watermelon is cut into 4 pieces and I eat all 4. What fraction of the watermelon did I eat, and why is it 1 whole?",
+      "Which of 6/3, 8/4, and 5/2 are whole numbers? How can I tell?",
+      "Can 5 be written as 5/1? Why does a fraction with denominator 1 equal its numerator?"
+    ],
+    "mt_AabJisinfi": [
+      "Vegetables cover 2/3 of a field, and cabbage covers 4/5 of the vegetable area. What fraction of the whole field is cabbage?",
+      "How do I calculate 2/3 × 4? What is the result as a mixed number, and how can I show it in a diagram?",
+      "Can I cancel common factors before multiplying 3/4 × 2/3? Why does cancelling before or after multiplication give the same answer?"
+    ],
+    "mt_Ac7oMWhyPw": [
+      "A pharmacy scale displays 0.375 kilograms. How do I read this decimal, and what does each digit represent?",
+      "How can I expand 347.392 as 3×100+4×10+…? How do I write the decimal part?",
+      "Which is greater, 0.372 or 0.38? Why does having more decimal places not necessarily make 0.372 greater?"
+    ],
+    "mt_B1zj1RwQ3a": [
+      "A cinema has rows with the same number of seats in each row. How can I quickly find the total number of seats?",
+      "Star stickers are arranged in 3 rows of 4. How can I write this as repeated addition, and how many stars are there?",
+      "What dot array could represent 5+5+5+5? How many rows and columns would it have?"
+    ],
+    "mt_BFJ-ch_8QU": [
+      "My mother's shoes are 24 cm long and mine are 18 cm long. How can I compare them using > or <?",
+      "Three ropes are 45 cm, 32 cm, and 38 cm long. How do I order them from longest to shortest using comparison symbols?",
+      "Two cups each contain 250 milliliters of water. Which symbol should I use to compare them, and when do I use =?"
+    ],
+    "mt_BK5xwkrD5C": [
+      "A domino has 4 dots on one side and 2 on the other. Can I see the total without counting every dot?",
+      "Teach me to read a ten-frame: the first row has all 5 counters and the second has 2. How can I tell the number without counting?",
+      "I can see 8 dots as 4 and 4, or as 5 and 3. Are there other ways? Which is quickest to recognize?"
+    ],
+    "mt_BdAeZJUOir": [
+      "I want to investigate whether my classmates' heights and arm spans are related. How do I plot the data on a scatter graph?",
+      "Five students have heights from 140 to 160 cm and arm spans from 138 to 161 cm. How should I choose the scales for the two axes of a scatter graph?",
+      "How can I draw a sensible line of best fit by eye? Then how can I use it to estimate the arm span of someone 152 cm tall?"
+    ],
+    "mt_Bt-iORUzdO": [
+      "I have 3 bundles of 10 sticks and 4 loose sticks. If I open one bundle, do I still have 34 sticks?",
+      "Besides 5 tens and 2 ones, what other combinations of tens and ones make 52?",
+      "Why do 4 tens and 6 ones represent the same number as 3 tens and 16 ones?"
+    ],
+    "mt_C9ZfT-4cgn": [
+      "Chairs are arranged in 3 rows of 5. From the side, they look like 5 rows of 3. Has the total number of chairs changed?",
+      "Do 3×5 and 5×3 give the same result? How can rotating a dot array explain this?",
+      "We can swap the two numbers in multiplication, so why are 12÷3 and 3÷12 different?"
+    ],
+    "mt_CBHwluE6Lp": [
+      "I used 3/5 kg of flour for cookies and another 4/5 kg for bread. How much did I use altogether? Is it more than 1 kg?",
+      "What is 7/8 + 3/8? How do I write the answer as a mixed number when it is greater than 1?",
+      "Are 11/8 − 5/8 and 1 3/8 − 5/8 the same calculation? Which form is easier to work with, and why?"
+    ],
+    "mt_CDa5AVakLE": [
+      "My mother took 200 yuan to the supermarket, spent 68 yuan on rice and 45 yuan on vegetables. How much is left? What are the two steps?",
+      "A train has 856 seats. At the first stop, 375 passengers get on, and another 290 get on at the second. How many seats remain empty?",
+      "When calculating 500 − 199 − 101, why can I add 199 + 101 first? Which method is faster?"
+    ],
+    "mt_CUJr8L5_Wn": [
+      "A living room measures 6 cm × 4 cm on a 1:50 floor plan. How many square meters of flooring do I actually need?",
+      "A park covers 8 square centimeters on a 1:10000 map. What is its actual area in square meters?",
+      "If every side of a rectangle is enlarged by a factor of 3, why does its area become 9 times as large rather than 3 times?"
+    ],
+    "mt_CUmjcE7W6c": [
+      "If 35 squares out of a hundred are shaded, how do I write the amount as a decimal, a fraction, and a percentage? Why are they equal?",
+      "A seedling is 24 cm tall and grows to 3 times its original height. How can I draw a bar model and write a multiplication equation?",
+      "A line graph shows 12°C on Monday and 21°C on Friday. How can I use subtraction to find the temperature difference?"
+    ],
+    "mt_Cg8VPguS_V": [
+      "My five skipping scores are all different. My teacher says to find the mean. How exactly is the mean calculated?",
+      "My five test scores are 72, 85, 90, 68, and 95. How do I calculate the mean score?",
+      "My mean score across four tests is 85. The first three scores are 80, 90, and 82. How can I work backwards to find the fourth score?"
+    ],
+    "mt_ChjMU2GDJa": [
+      "Bar charts are often used for class sizes. Can I also use a bar chart to show temperature changes throughout a day?",
+      "A sunflower is 3 cm tall in week 1, 7 cm in week 2, 12 cm in week 3, and 15 cm in week 4. How can I graph this data?",
+      "Why do we use bar charts for class sizes but often line graphs for temperature changes during a day?"
+    ],
+    "mt_Cqm8iy48UI": [
+      "A bus timetable has rows of times. How do I find when the next bus reaches the stop near my home?",
+      "A train leaves Beijing at 8:45 and reaches Jinan at 11:20. How long is the journey?",
+      "I am making a two-way table of boys' and girls' favorite sports. How can I use the totals to fill empty cells?"
+    ],
+    "mt_DLcEzmmj2r": [
+      "I cut a piece from a ribbon for a craft project. Can I calculate the remaining length without measuring it again?",
+      "A rope is 45 cm long and I cut off 18 cm. How many centimeters remain? Can I draw a diagram before writing the calculation?",
+      "A ribbon has 38 cm left after 26 cm is cut off. How long was it originally? Why does this problem use addition instead of subtraction?"
+    ],
+    "mt_DNYQLahbfa": [
+      "An expandable gate is made of many parallelograms. What properties do parallelograms' sides and angles have?",
+      "In parallelogram ABCD, ∠A = 65°. What are the other three angles, and why?",
+      "Why is a square both a special rectangle and a special rhombus? What is special about its diagonals?"
+    ],
+    "mt_DOe893F6gN": [
+      "Should I weigh an apple in kilograms or grams? Should I measure a bottle of water in liters or milliliters?",
+      "A classroom door is about 2 ( ), an egg is about 50 ( ), and a glass of water is about 250 ( ). Which units fill the blanks?",
+      "Why do we measure height in centimeters, a running track in meters, and body temperature in degrees Celsius? How do I choose a unit?"
+    ],
+    "mt_DRlbMok2lT": [
+      "Four children share 1 yuan equally. What fraction of 1 yuan does each receive, and what is it as a decimal in yuan?",
+      "What is 3/4 as a decimal? How can a hundred-square grid explain it?",
+      "Why is 1/4 equal to 25/100 and 0.25? How do 0.5 and 1/2 match up?"
+    ],
+    "mt_DW2D1c0fKx": [
+      "I have 3 stickers and get 9 more. Counting on 9 steps from 3 is slow. Is there a faster way?",
+      "Help me calculate 47+10 and 47+30. Why does only the tens digit change while the ones digit stays the same?",
+      "Rectangles and squares both have 4 sides and 4 right angles. Does a square count as a rectangle? Why?"
+    ],
+    "mt_DyGBW3ZHh3": [
+      "Each box has 23 colored pencils. How many are in 4 boxes? How do I multiply a two-digit number by a one-digit number?",
+      "How can I split 23×4 into 20×4 and 3×4? How do I write it as column multiplication?",
+      "How can I calculate 96÷8 using multiplication facts and partitioning? Why can I split 96 into 80 and 16?"
+    ],
+    "mt_EBYGhd8X3x": [
+      "A parking lot has 14 cars and 5 more arrive. How do I turn this story into an equation? What does each number mean?",
+      "Teach me to draw a bar model: a rope is 18 meters long and 6 meters are cut off. How many meters remain?",
+      "How can I make up a story for 9+□=15 and draw a part-whole diagram to represent it?"
+    ],
+    "mt_EDgw64OmfA": [
+      "There are 10 jiao in 1 yuan and 10 fen in 1 jiao. Why does each money place become 10 times larger as we move left?",
+      "How many times greater is the value of the 4 in 0.4 than the 4 in 0.04? How does place value explain this?",
+      "How many times greater is the value of the 6 in 6000 than the 6 in 0.006? How many places left do we move to get from one to the other?"
+    ],
+    "mt_ESgc4YBw-a": [
+      "I mix 1 part blue paint with 3 parts yellow. What fraction of the whole is blue? Is that the same as the ratio 1 to 3?",
+      "How do I write 3/4 as a decimal and a percentage? What does seventy-five percent mean?",
+      "A class has 8 boys and 12 girls. What is the ratio of boys to girls, and what percentage of the class is boys? How do those statements differ?"
+    ],
+    "mt_EXlmTURK_o": [
+      "Some people have birthdays on February 29. Why does that date not occur every year? How many days are in a year?",
+      "Of the 12 months, which have 31 days and which have 30? How many days does February have in a common year?",
+      "Why does a leap year have 366 days? If 2024 is a leap year, is 2028 also one? How can I tell?"
+    ],
+    "mt_EmR5n58jZt": [
+      "I have 4 tops and 3 pairs of trousers. If I wear a different combination each day, how many days can I go without repeating one?",
+      "A red ribbon is 6 cm long, and a blue ribbon is 3 times as long. How long is the blue ribbon?",
+      "How many pairs of trousers do I need with 4 tops to make 20 different outfits? How do I work backwards from the total combinations?"
+    ],
+    "mt_Ep7TDFuYUa": [
+      "If I walk 2/3 of the way from home to the park, do I stop at the same place as if I walk 4/6? How can a number line show this?",
+      "How can fraction strips show that 1/2, 2/4, and 3/6 are equal?",
+      "Besides 2/4 and 3/6, which fractions land at the same point as 1/2 on a number line? What pattern do they follow?"
+    ],
+    "mt_Eqk6oSbySH": [
+      "On a three-day strawberry-picking trip, I pick 3 boxes on the first day, 9 on the second, and 7 on the third. What is the quickest way to find the total?",
+      "Help me write an equation and draw a bar model: a parking lot has 5 cars, 8 bicycles, and 2 buses. How many vehicles are there altogether?",
+      "When calculating 6 + 5 + 4, which two numbers are easiest to add first? Does changing the order change the answer?"
+    ],
+    "mt_FAXjFkgG6X": [
+      "My money box has 356 yuan and I add 200 yuan. Why does only the hundreds digit change?",
+      "If I know 6×7=42, how can I immediately write 42÷6 and 42÷7? How are multiplication and division related?",
+      "How can I classify rectangles, squares, trapezoids, and triangles by whether they have right angles or parallel sides?"
+    ],
+    "mt_FHIAv6dfhU": [
+      "I want to share 24 pencils and 36 erasers equally among some students with nothing left over. What is the greatest possible number of students?",
+      "What are the common factors of 36 and 48? How can I list factors without missing any?",
+      "Is 97 prime? Up to which divisor do I need to test to decide?"
+    ],
+    "mt_FP-mjXaq3B": [
+      "I cut a cake into 3 pieces and eat 1. My brother cuts an identical cake into 6 pieces and eats 2. Who eats more?",
+      "In 1/4 = ?/8 = ?/12, which numbers fill the question marks? Why must the numerator change too?",
+      "How can fraction strips show that 4/8 and its simplified form 1/2 are equal?"
+    ],
+    "mt_FX4a2Q8XXN": [
+      "Three students each buy a pen costing x yuan and a notebook costing 5 yuan. The total is 3(x + 5). How do I expand the brackets?",
+      "Help me expand 4(2x − 3) and −2(5 − 3x). How do I handle a negative sign in front?",
+      "When simplifying 3(2x + 1) − 2(x − 4), many people write the second part as −2x − 8. What is wrong?"
+    ],
+    "mt_F_zEAJ8VIo": [
+      "Flags mark every 100 meters along a 1000-meter track. Between which two flags is the 346-meter point?",
+      "How do I represent 507 using hundreds, tens, and ones blocks? What do I write when there are no tens blocks?",
+      "What number is made from 3 hundreds, 14 tens, and 2 ones? Why is it not 3142?"
+    ],
+    "mt_FbDKeLfBCo": [
+      "I have knitted half a scarf. My mother says that is 2 out of 4 parts. Do these mean the same thing?",
+      "How can I draw a diagram to show that 1/3 and 2/6 are equal?",
+      "Why do equal shaded amounts show that two fractions are equal? Must the two whole diagrams be the same size?"
+    ],
+    "mt_FieL-vVTI_": [
+      "Apple juice and orange juice are mixed in the ratio 2:3. To make 1.5 liters, how many milliliters of apple juice do I need? What do I calculate first?",
+      "Help me solve this in steps: a container holds 3.6 kg of oil. After 5/12 is used, the rest is shared equally among 6 bottles. How many kilograms go in each bottle?",
+      "I got 70 when calculating 47.6÷6.8. How can I check this using estimation and the inverse operation?"
+    ],
+    "mt_Fl7b8q9pI1": [
+      "A pen costs 3.7 yuan, and my mother says that is about 4 yuan. How do we get about 4? What is 3.2 yuan approximately?",
+      "What are 6.5, 6.4, and 8.2 rounded to the nearest integer? Why does 6.5 round up?",
+      "Which numbers with one decimal place round to 7? What are the smallest and largest?"
+    ],
+    "mt_FnUJMXPUZX": [
+      "Two sisters contribute 3 yuan and 5 yuan to buy 40 sweets. If they share in proportion to their contributions, how many should each get?",
+      "A has twice as many stickers as B, and B has 3 times as many as C. They have 30 altogether. How many does each have?",
+      "When sharing in the ratio 2:3, why does one person receive 2/5 of the total rather than 2/3?"
+    ],
+    "mt_FspV_imUGK": [
+      "Three kilograms of rice cost 18 yuan. If I plot kilograms against cost on grid paper, will the points form a straight line?",
+      "If 3 kg of rice cost 18 yuan, how can I read the cost of 5 kg from a direct-proportion graph?",
+      "Why must a direct-proportion graph pass through the origin (0,0)? What does it mean if it does not?"
+    ],
+    "mt_FvEq4heNBx": [
+      "A school library has 3648 books to share equally among 16 shelves. How do I divide such a large number by a two-digit number?",
+      "Help me calculate 3648÷16 using long division. In which place should I write each quotient digit?",
+      "A 100-meter ribbon is cut into 16 equal pieces. How long is each piece? How does a remainder turn into decimal digits?"
+    ],
+    "mt_G3sVFQNCme": [
+      "A museum receives 47832 visitors one day and 23156 the next. After adding them, how can I use estimation to check the total?",
+      "Someone calculated 6128 + 3945 = 9073. Can rounding help me decide whether 9073 could be correct?",
+      "When estimating 4865 − 1972, should I round to hundreds or thousands? When do I need a more precise estimate?"
+    ],
+    "mt_GDG9_SZmsO": [
+      "If 32 students form groups of 8, how many groups are there? Why can I ask what times 8 equals 32?",
+      "How many bundles of 7 can I make from 56 books? How does 56÷7 become 7×( )=56?",
+      "Why can division mean finding an unknown factor? Are 72÷9 and 9×( )=72 the same question?"
+    ],
+    "mt_GDtFU5fyUv": [
+      "Breakfast offers buns or noodles, with soy milk, milk, or juice. How many combinations are possible?",
+      "What is the probability of a total of 7 when rolling two dice? How do I list the outcomes in a table?",
+      "Why is the probability of one head and one tail in two coin tosses 1/2 rather than 1/3?"
+    ],
+    "mt_GRWwTDZ3wD": [
+      "Eggs are arranged in neat rows in a carton. How can I find the total without counting individually?",
+      "Which multiplication represents 3 rows of 4 dots? How many dots are there?",
+      "If I arrange 12 counters in rows of 4, how many rows can I make? How can an array help with division?"
+    ],
+    "mt_GZuoYaDdWd": [
+      "A thrown ball follows a curved path. Why is a quadratic graph a parabola rather than a straight line?",
+      "Help me tabulate and plot y = x² − 4 for x from −3 to 3. Where does it cross the x-axis?",
+      "How can I estimate solutions of x² − 2x − 1 = 0 from the graph of y = x² − 2x − 1?"
+    ],
+    "mt_Gag_h98jWP": [
+      "The news says a city has 4302561 people. Where do I start when reading such a long number?",
+      "How do I read 4302561 in Chinese? Do I pronounce the middle 0? How is it written in Chinese characters?",
+      "What does the 7 in 7045200 represent? When reading it in Chinese, why are trailing zeros silent but an internal 0 is spoken?"
+    ],
+    "mt_GpltXPoaoc": [
+      "A train leaves at 1:30 p.m. The journey takes 2 hours 45 minutes, followed by a 30-minute transfer wait. What time is it then? How do I calculate in steps?",
+      "I calculated 4832×7 = 33824. How can estimation check whether this is roughly right?",
+      "A class has 40 students and someone calculates a pass rate of 105%. What went wrong? How do I check whether a percentage is reasonable?"
+    ],
+    "mt_GzcJEVkNRn": [
+      "We want a rectangular rug. Why does multiplying its length by its width give the area?",
+      "A vegetable plot is 8 meters long and 5 meters wide. What is its area in square meters?",
+      "What lengths and widths can a rectangle with area 36 square centimeters have? How many different ones can I draw?"
+    ],
+    "mt_H6LlpWgEYS": [
+      "On a weekly temperature line graph, what do rising and falling lines tell me about the weather?",
+      "A line graph shows 45 mm of rain in March and 180 mm in July. How much more fell in July? How do I find the wettest month?",
+      "Two lines show a week's temperatures in cities A and B. How do I find the day with the largest difference?"
+    ],
+    "mt_HFRYjTb-Z5": [
+      "Two building sets cost 598 yuan and 236 yuan. What is the total? Is there a faster method than column addition?",
+      "Help me calculate 724 − 386. Is column subtraction, partitioning, or compensation quickest?",
+      "Why does adding 300 then subtracting 1 suit 645 + 299, while column addition suits 645 + 238?"
+    ],
+    "mt_HJA2Oz-Zh1": [
+      "Each student drinks 3/8 liter of milk. How many 1-liter bottles do I need for 5 students?",
+      "Each ribbon piece is 2/3 meter long. How long are 4 pieces altogether? Help me write a calculation and draw a diagram.",
+      "Without finding the exact answer, how can I tell which consecutive integers 6 × 3/4 lies between?"
+    ],
+    "mt_HJTuIGHvcR": [
+      "I have 70 yuan and buy a 30-yuan book. How much remains? Why can I just look at the tens?",
+      "Teach me to use sticks for 80 − 50. What does removing 5 bundles from 8 bundles mean?",
+      "How are 90 − 40 and 9 − 4 related? Why do their answers differ by a trailing 0?"
+    ],
+    "mt_HLUqHJ9Y7n": [
+      "A kilometer is 1000 meters. Why can 1000 be written as 10³? What does the small raised 3 mean?",
+      "Why is 3.4×10² equal to 340? Which way does the decimal point move, and how many places?",
+      "What is 2.56×10³ without column multiplication? How do powers of 10 relate to decimal-point shifts?"
+    ],
+    "mt_HNOPGJYiRK": [
+      "The minute hand points to 5 and the hour hand is between 3 and 4. What time is it?",
+      "How do I write quarter past 9 and twenty to 4 in digital-clock notation?",
+      "When drawing 3:40, why is the hour hand nearly at 4 rather than directly on it?"
+    ],
+    "mt_HRKzwEQJgO": [
+      "A row of matchstick squares uses 4 sticks for 1 square, 7 for 2, and 10 for 3. How many sticks make 50 squares?",
+      "Help me find the nth-term formula for 3, 7, 11, 15, … and calculate the 100th term.",
+      "Is 99 a term of 5, 11, 17, 23, …? How can the nth-term formula tell me?"
+    ],
+    "mt_HY8Yycu_rz": [
+      "A mooncake is divided equally into 4 pieces and I eat 3. What do the numerator and denominator mean?",
+      "Are 1/2 and 2/4 equal? Should I use >, <, or =? How do I describe equivalent fractions accurately?",
+      "Which is greater, 1/3 or 1/5? Why does the larger denominator give a smaller fraction? Which comparison symbol should I use?"
+    ],
+    "mt_H_pNJ3ZI_S": [
+      "A slanting road crosses two parallel railway tracks. Which of the resulting angles must be equal?",
+      "Two parallel lines are cut by a transversal. If one co-interior angle is 65°, what is the other?",
+      "Why are alternate interior angles equal? Can translating an angle along the transversal explain it?"
+    ],
+    "mt_HhuSDxwDNM": [
+      "An ice pop costs 5 jiao. How much do 3 cost? Is there a multiplication fact instead of repeated addition?",
+      "Help me learn the 5 times table. What does the Chinese multiplication phrase “三五十五” mean?",
+      "How can multiplication facts quickly give 20÷5? How are the 2, 5, and 10 times tables related?"
+    ],
+    "mt_HlNSurPVDp": [
+      "A forecast gives 12°C at 8 a.m. and 20°C at 2 p.m. Can a line graph estimate the temperature at 11 a.m.?",
+      "A puppy weighs 2 kg in January, 3.5 kg in February, 5 kg in March, and 6 kg in April. How do I draw a line graph?",
+      "Does the steepest segment of a line graph show the fastest change? How can the data prove it?"
+    ],
+    "mt_HnKbuCliNS": [
+      "Two identical cakes are cut into 8 and 4 pieces respectively. If I take 3 pieces from each, which amount is larger?",
+      "How do I compare 3/5 and 3/10? What matters when the numerators are equal?",
+      "Can I say 1/2 of a small watermelon is more than 1/4 of a large one? Why must fractions refer to the same whole when comparing?"
+    ],
+    "mt_I5j1ZWo2cn": [
+      "I have skipped 45 times and do another 30. What is the total? Why does the ones digit stay unchanged?",
+      "Help me mentally calculate 82 − 40 and 56 + 30. Which place do I look at first, and which stays unchanged?",
+      "Someone says 63 + 20 = 65. What is wrong? Why does adding whole tens change only the tens place?"
+    ],
+    "mt_IHipFGTFEY": [
+      "Some pencils measure 5 1/2 cm and 5 3/4 cm. How do I display mixed-number measurements on a dot plot?",
+      "Four cups hold 1/2, 1/4, 3/4, and 1/2 liter of juice. How do I show them on a dot plot, and what is the total?",
+      "Four cups hold 1/2, 1/4, 3/4, and 1/2 liter of juice. If I redistribute it equally into 4 cups, how much does each hold?"
+    ],
+    "mt_IL86kadLSS": [
+      "How much time passes from leaving home for swimming class until class ends? How can a clock help calculate elapsed time?",
+      "A film starts at 2:15 and lasts 47 minutes. When does it end? Can I show this on a number line?",
+      "How many minutes pass from 9:20 to 10:05? Why is subtracting 9.20 from 10.05 incorrect?"
+    ],
+    "mt_IM1G_7QzTa": [
+      "A pond has 4 ducks and 3 more join them. What equation describes this story?",
+      "A shelf has 9 books and 4 are borrowed. Teach me to model it with counters and write an equation.",
+      "What everyday story fits 7-2=5? Which operations match taking away and combining?"
+    ],
+    "mt_IegHBHERVa": [
+      "I jump 3.27 meters and a classmate jumps 3.72 meters. Who jumps farther? How do I compare decimals?",
+      "How do I order 0.45, 0.54, and 0.39 from smallest to largest? Which place should I compare first?",
+      "Why is 0.54 greater than 0.45 even though they use the same digits? How does place value help?"
+    ],
+    "mt_IfEgu0X449": [
+      "If a cake is shared between 2 people or 5 people, which gives each person more? Why?",
+      "How do I order 1/2, 1/3, 1/4, and 1/5 from greatest to smallest? Can diagrams help?",
+      "Which is greater, 2/5 or 4/5? Why is comparing numerators enough when denominators match?"
+    ],
+    "mt_Ii1hV4V5ql": [
+      "Vegetables cost 4.83 yuan and 2.17 yuan. Without a written calculation, about how much is the total?",
+      "How do I round 3.47 to the nearest integer and to one decimal place?",
+      "Why does 12.95 rounded to one decimal place need to be written as 13.0 rather than 13?"
+    ],
+    "mt_IlDaxVr60U": [
+      "How many cubes with 1/2-cm edges make a cube with 1-cm edges? What is each small cube's volume?",
+      "How many cubes with 1/2-cm edges fill a cuboid 1 1/2 cm long, 1 cm wide, and 2 1/2 cm high?",
+      "A sandbox is 2 1/4 meters long, 1 1/2 meters wide, and 2/3 meter deep. How many cubic meters of sand fill it?"
+    ],
+    "mt_IuHa5UI5od": [
+      "One box is tall and thin, another short and wide. How do I compare the space they occupy?",
+      "Eight cubes, each 1 cubic centimeter, exactly fill a box. What is the box's volume?",
+      "How do volume and area differ? Why is area in square centimeters but volume in cubic centimeters?"
+    ],
+    "mt_IwEOCN6bL1": [
+      "In PE, I estimate an angle at about 60°. How can I confirm it: by eye or with a protractor?",
+      "Which methods suit 25×40 and 347×26? Teach me column multiplication for the second.",
+      "Is a common denominator or comparing with 1/2 faster for comparing 5/8 and 4/9? Why?"
+    ],
+    "mt_IzQvs7k_sE": [
+      "Each table seats 4 people. How can I count in fours to find how many people several classroom tables seat?",
+      "Help me count in eights from 0: 8, 16, 24, all the way to 96. How can I avoid mistakes?",
+      "How many counts reach 1000 when counting in fifties and in hundreds? How are the sequences related?"
+    ],
+    "mt_J03RFlVdas": [
+      "What is each interior angle of a regular hexagon on a football? How can I derive it from triangle angle sums?",
+      "What is the interior angle sum of an octagon? Why is the formula (n − 2) × 180°?",
+      "A regular polygon has exterior angles of 40°. How many sides does it have, and what is each interior angle?"
+    ],
+    "mt_J339bO7qLe": [
+      "Clothes originally cost 200 yuan and are sold at 75% of the original price. What do I pay? Why does a discount use multiplication?",
+      "Why do I multiply to find 5/8 of 360?",
+      "A 300-yuan fan is reduced by 20%, then sold at 90% of that price. What is the final price? Why is this not a 30% reduction?"
+    ],
+    "mt_J4j7d3iAfg": [
+      "If we toss a coin to decide who plays first, will heads and tails occur equally often?",
+      "How can I record heads and tails from 20 coin tosses using Chinese tally marks formed from “正”?",
+      "A die shows 6 only 2 times in 30 rolls. Is it faulty? How many sixes would I expect?"
+    ],
+    "mt_JH_6RpNWjr": [
+      "A receipt adds 12.35 yuan and 6.80 yuan. How does the cashier align yuan, jiao, and fen when adding?",
+      "Help me calculate 5.03 − 2.67. How do I regroup when there are not enough hundredths? Can a number line show it?",
+      "Why do we align decimal points in decimal addition rather than the final digits as with integers? For example, 3.4 + 2.78."
+    ],
+    "mt_JRzXQl9M7c": [
+      "Our class read between 0 and 12 books each last month. How can a dot plot show how much everyone read?",
+      "Ten students score 2, 3, 3, 5, 5, 5, 6, 8, 8, and 9 basketball baskets. How do I draw a dot plot?",
+      "A dot plot has 6 dots above 5. Does that mean someone read 6 books? What do those 6 dots represent?"
+    ],
+    "mt_Jf8xcX4UTq": [
+      "How can I accurately construct a triangular kite frame with sides 6 cm, 5 cm, and 4 cm using a compass?",
+      "Help me construct triangle ABC with AB = 7 cm, ∠A = 40°, and AC = 5 cm using a ruler and protractor.",
+      "Why do angles of 50° and 60° with a 7-cm side between them determine a triangle's shape and size?"
+    ],
+    "mt_Jvg8X0N5u0": [
+      "How do I use perimeter = 2 × (length + width) to find the fencing for a plot 8 meters long and 5 meters wide?",
+      "Help me use A = 1/2 × b × h for a triangle with base 12 cm and height 7 cm. What is its area?",
+      "Taxi fare = 10 + 2 × kilometers, in yuan. What is the fare for 8 km? Why can I not calculate 10 + 2 first?"
+    ],
+    "mt_Jvvh5P06NV": [
+      "How do I find how many square tiles a bathroom floor needs? Would counting them individually be too slow?",
+      "How many 1-cm squares cover a rectangle 6 cm long and 4 cm wide?",
+      "Why does tiles per row × number of rows give area? How do 5 rows of 7 tiles relate to a rectangle's length and width?"
+    ],
+    "mt_JwP9QFv6gQ": [
+      "A stadium display shows an attendance of 403072. How do I read this number?",
+      "How do I write 403072 in Chinese characters and expand it as 400000+…?",
+      "Which is greater, 548301 or 543801? Why can I decide at the thousands place?"
+    ],
+    "mt_K0Y15w48SY": [
+      "Which transformations describe a spinning fan and a mirror image? Do shape and size change?",
+      "What are the coordinates of A(2, 1) after a 90° counterclockwise rotation about the origin?",
+      "If a triangle is reflected in y = x, where does vertex (3, 1) go? Why do shape and size stay the same?"
+    ],
+    "mt_K3R0yaHVcx": [
+      "A kitchen floor needs 6 rows of 8 square tiles. How many tiles is that, and why can I use multiplication?",
+      "A batch of cookies needs 300 grams of flour. How much do I need for 2/3 of a batch? Help me write the calculation.",
+      "A rope is 3 meters long and I cut off 75 centimeters. How many centimeters remain? Why convert meters first?"
+    ],
+    "mt_K5jM7vlVhA": [
+      "A year has 12 months and a dozen eggs has 12 eggs. How can I learn the useful 12 times table quickly and accurately?",
+      "What are 11×8 and 12×7? How do I write their related division equations?",
+      "What is 12×12? How can I derive it from 10×12 plus 2×12 instead of memorizing it?"
+    ],
+    "mt_KB_Czd7RQH": [
+      "Standing 10 meters from a tree, I see its top at an elevation angle of 35°. How can trigonometry find its height?",
+      "A right triangle has hypotenuse 10 cm and an acute angle of 30°. How long is the side opposite 30°?",
+      "Given opposite and adjacent sides, how do I choose sin, cos, or tan to find an angle? How do I use tan⁻¹?"
+    ],
+    "mt_KCS9GbZgU_": [
+      "My teacher says the middle half of our class took between 6 and 14 minutes on a puzzle. How were those two values found?",
+      "How do I find the lower and upper quartiles of these 10 values: 2, 4, 4, 5, 7, 8, 9, 10, 12, 15?",
+      "For 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 21, why does changing 21 to 40 alter the range but not the interquartile range?"
+    ],
+    "mt_KFKUR_gBg_": [
+      "If I know a rectangular desk's area and one side, can I find the other side without measuring?",
+      "A rectangle has one side of 8 cm and perimeter 28 cm. How long is the other side?",
+      "A rectangle has area 48 square centimeters and length 8 cm. What is its width? Why are all four angles 90°?"
+    ],
+    "mt_KJeEeTutJI": [
+      "Our clock is circular and our window is rectangular. What everyday objects are triangular?",
+      "What is a shape with 3 straight sides and 3 angles called?",
+      "If I rotate a square so a corner points up, is it still a square? Why?"
+    ],
+    "mt_KaF0SQvaiu": [
+      "Can I measure our table's length by lining up small blocks end to end?",
+      "A pencil starts at 0 on a ruler and ends at 12. How should I record its length?",
+      "The same table measures 8 blocks or 5 books long. Why are the numbers different?"
+    ],
+    "mt_KhS7K1Mgrw": [
+      "A square plot has side x meters. Increasing its length by 3 meters and reducing its width by 2 gives area (x + 3)(x − 2). How do I expand it?",
+      "Help me expand (2x + 1)(x − 4) using a grid. What goes in its four cells, and how do I collect like terms?",
+      "Why is (x + 5)² not x² + 25? What missing area does a square diagram reveal?"
+    ],
+    "mt_Kr3IyA6m-O": [
+      "Where is 3/4 of the way along a 1-kilometer track? How do I mark it on a number line?",
+      "Where do 1/2, 1/4, and 3/4 go on a number line from 0 to 1?",
+      "Is 1/3 left or right of 1/2 on a number line? Why is a fraction a number too?"
+    ],
+    "mt_KwdjWEmMNo": [
+      "Why do 3y, ab, and a² omit multiplication signs? What does each mean?",
+      "How do I write “divide the sum of a and b by 2, then multiply by c” algebraically? Where do brackets and the fraction bar go?",
+      "Are 2a² and (2a)² equal? What is each when a = 3, and why do they differ?"
+    ],
+    "mt_LBT-9jz7kR": [
+      "What kind of angle do the pages form when a book lies fully open on a table?",
+      "How many right angles make a straight angle or a full turn? What angle do the clock hands form at 6 o'clock?",
+      "What is an angle larger than a straight angle but smaller than a full turn called? Can I find one on a clock?"
+    ],
+    "mt_Lb2ZnMdkYR": [
+      "In PE there are 2 rows, each with 3 groups of 5 students. How many students altogether? Which two numbers are easiest to multiply first?",
+      "If I forget 8×7, how can 8×5 plus 8×2 help? Why is that split valid?",
+      "How do the commutative, associative, and distributive laws differ? Can each make a multiplication easier?"
+    ],
+    "mt_LlMl2PbaZe": [
+      "A pencil case costs 3.45 yuan. How much do 100 cost? What happens to the decimal point when multiplying by 100?",
+      "What is 72÷1000? How do I add zeros when there are not enough places to move the decimal point left?",
+      "Someone says multiplying by 10 means adding a 0 at the end. Why is 3.45×10 not 3.450?"
+    ],
+    "mt_LpSuPgL31x": [
+      "What does sharing sweets equally mean? Why might some children think a share is unfair?",
+      "Help me share 10 cookies equally between 2 plates. How many go on each?",
+      "If I put 8 strawberries into bags of 2, how many bags can I fill? How does this differ from sharing equally among people?"
+    ],
+    "mt_M1tnXqmYbn": [
+      "Our car-saving target is 150000 yuan. We had 86500 and saved another 32800 this year. How much more is needed, and what are the steps?",
+      "A library had 1250000 books, added 386400, and discarded 92750. How many does it have now?",
+      "For 4999999 + 2000001 − 3000000, should I use mental arithmetic, a written method, or a calculator? Why?"
+    ],
+    "mt_M2v1A9OEuM": [
+      "Library books are numbered in order. After book 395, how do I count the next few numbers?",
+      "Help me count in hundreds from 150: 150, 250, 350, up to 950.",
+      "Counting on from 697, what follows 698 and 699? Why does the hundreds digit change?"
+    ],
+    "mt_M5PPDJStGm": [
+      "I want to count skips up to 100 but get stuck at 29. What comes after 29?",
+      "Teach me to count forwards from 23 to 35, then backwards from 20 to 0.",
+      "Why does the tens digit change after 69, 79, and 89? What comes after 99?"
+    ],
+    "mt_MCu_SNg_OW": [
+      "How many full boxes of 8 can I pack from 125 eggs? How do I describe the eggs left over?",
+      "Help me calculate 4932÷6 with long division. How do I carry each remainder into the next step?",
+      "After getting 125÷8=15 remainder 5, how can multiplication check it? Why must the remainder be less than 8?"
+    ],
+    "mt_MFfYcnv6Tv": [
+      "How can paper folded in half twice check whether a book's corner is a right angle?",
+      "What angle do clock hands form at exactly 3 o'clock? What about 9 o'clock?",
+      "Why do 4 right angles make a full turn? How much of a turn is 2 right angles?"
+    ],
+    "mt_MHaiUd2FLA": [
+      "Two mountains are 3767 and 3776 meters high. Which is taller? What is the quickest comparison?",
+      "Help me order 5098, 5908, 5890, and 5089 from smallest to largest.",
+      "Why is 999 less than 1000 even though every digit in 999 is larger?"
+    ],
+    "mt_MJZA90uc6H": [
+      "I use 24 square tiles with 1-meter sides to make a rectangular flower bed. Which arrangement needs the shortest fence?",
+      "Help me draw two rectangles of area 24 square centimeters and find their perimeters.",
+      "Among rectangles with perimeter 20 cm, which length and width give the largest area? Why do long thin ones have smaller areas?"
+    ],
+    "mt_ML5t7n2-U8": [
+      "A parallelogram plot has base 8 meters and height 5 meters. Can I cut and rearrange it into a rectangle to find its area?",
+      "An obtuse triangle has base 12 cm and height 7 cm, with the altitude outside it. How do I find its area?",
+      "A parallelogram has base 10 cm, sloping side 6 cm, and height 5 cm. Why is its area not 10×6?"
+    ],
+    "mt_MWXPiaTnEu": [
+      "A stadium had 45000 seats and adds 8000. How many seats now? How can I calculate mentally?",
+      "Help me calculate 10000 − 3200 mentally by counting up, step by step.",
+      "Why can I calculate 2500 + 2600 as 2500 + 2500 plus 100? What other numbers suit this method?"
+    ],
+    "mt_MewIRdzpzz": [
+      "An old clock shows IV, IX, and XII. Which hours do they mean?",
+      "What numbers do the Roman numerals XLIV and LXXVIII represent?",
+      "Roman numerals have no 0 or decimal place values. How do they distinguish 60 from 6?"
+    ],
+    "mt_MgsDabdnr1": [
+      "My mother says to leave at quarter past three. How many minutes is a quarter hour, and where does the minute hand point?",
+      "How should I position both hands for quarter to seven? Which clock number does the minute hand point to?",
+      "Why is a quarter turn of the minute hand a quarter hour? At quarter to seven, why is the hour hand not exactly at 7?"
+    ],
+    "mt_Mnodea7mG_": [
+      "How many faces, edges, and vertices does a delivery box have?",
+      "A cube has 6 faces. Help me count its edges and vertices.",
+      "Why do cubes and cuboids have the same numbers of faces, edges, and vertices but different shapes?"
+    ],
+    "mt_MqqR7VUoz1": [
+      "How can semicircles and quarter circles cut from paper make a whole circle again?",
+      "Can 1 rectangle and 2 triangles form a trapezoid? How should I arrange them?",
+      "Which simple shapes can a house-shaped figure be split into? How many different decompositions are possible?"
+    ],
+    "mt_MyGblah2yY": [
+      "If I take half of 10 oranges, how many do I take? How do I write this using a fraction?",
+      "What is 1/2 of 6 sweets? How do I write the calculation?",
+      "Is eating 2 of 4 cake pieces the same amount as eating 1 of 2? Why are 2/4 and 1/2 equal?"
+    ],
+    "mt_NLSfvB9vUl": [
+      "A computer costs 4367 yuan. My father says about 4000 yuan. How did he estimate it?",
+      "What is 4367 rounded to the nearest ten, hundred, and thousand?",
+      "Why does 2950 rounded to the nearest hundred become 3000?"
+    ],
+    "mt_NM5I3yN-Q6": [
+      "During one full turn of a windmill, how many times does it look exactly as it did initially?",
+      "How many times does a square match its original position during a full turn about its center? How many degrees between matches?",
+      "A heart has a line of symmetry. Why does it have no nontrivial rotational symmetry? What about an equilateral triangle?"
+    ],
+    "mt_NSC3LT_-ch": [
+      "How much might a drinking cup hold: 30 milliliters, 300 milliliters, or 3 liters?",
+      "Compare a large jug with a 1-liter bottle to estimate its capacity. How can a measuring cup check the estimate?",
+      "A 1-liter jug is half full. What is its capacity, and how many milliliters of water are inside?"
+    ],
+    "mt_NaqEP8xDhZ": [
+      "A yuan is 10 jiao or 100 fen. If 7 jiao is 7/10 yuan, why is it also 70/100 yuan?",
+      "How do I calculate 3/10 + 4/100 when the denominators differ?",
+      "How does a 10×10 hundred-square grid show that 5/10 and 50/100 are equal?"
+    ],
+    "mt_NoB20kVa4w": [
+      "A 1-meter bamboo pole is divided into 6 equal sections. What fraction of a meter marks the end of the 5th section?",
+      "How do I locate 3/4 on a number line from 0 to 1? Why first divide it into 4 equal parts?",
+      "On two equally long number lines, which is farther from 0, 1/3 or 1/6? Why?"
+    ],
+    "mt_NtJYlJdUe9": [
+      "A cup has height, weight, and an amount of water it holds. Can all these be measured?",
+      "Which properties of a pencil can I measure? How do I describe its length and weight?",
+      "What is the same and different between a full water bottle and an empty one?"
+    ],
+    "mt_O_UOTiMvT_": [
+      "My mother buys 15 eggs, uses 4 for cake and 3 for breakfast. How many remain? What should I find first?",
+      "A bus has 36 people. At a stop, 9 leave and 14 get on. Help me find the new total step by step.",
+      "How can I estimate 45+38 first, then use a different method to check the answer?"
+    ],
+    "mt_OkSJfrmFb_": [
+      "My money box has 7 yuan and I add 10 each day. How do I count each day's amount in tens?",
+      "Counting backwards in tens from 83 gives 83, 73, 63. What are the next three numbers?",
+      "Counting in tens from 46, why does the ones digit stay 6 while the tens digit changes? Does this also hold backwards?"
+    ],
+    "mt_OvyoRo47K-": [
+      "I have 3 blocks and my sister has 2. How many together? Does addition mean combining?",
+      "Teach me to model with pebbles: 4 ducklings are swimming and 2 join them. How many now?",
+      "Can addition describe both 3 children joined by 2 more and a group of 3 boys with 2 girls?"
+    ],
+    "mt_OwYms2tB1L": [
+      "A dot plot of 25 students' reaction times forms two clusters with a gap. What might that suggest?",
+      "Two classes have mean scores of 60. One is concentrated from 52 to 68, the other ranges from 20 to 95. How do their distributions differ?",
+      "Most reaction times are around 0.3 seconds, but one is 4.2 seconds. How can I judge whether it is a recording error or real?"
+    ],
+    "mt_OzRZ89GrQW": [
+      "About how many paperclips long is a pencil case? How can I estimate first, then measure to check?",
+      "My index finger is about 1 cm wide. How can I use it to estimate a textbook's length, then compare with a ruler measurement?",
+      "I estimate a blackboard at 3 meters but measure 4 meters. How do I assess the estimate and improve next time?"
+    ],
+    "mt_PL9VkDwXfh": [
+      "Two identical juice bottles have 5/6 and 7/8 drunk respectively. Which has more left?",
+      "How do I order 3/4, 7/8, 5/6, and 11/12 from smallest to largest? What common denominator should I find?",
+      "Both 7/5 and 4/3 exceed 1. Can I compare them without common denominators by considering how much each exceeds 1?"
+    ],
+    "mt_PNSyfH56eQ": [
+      "Milk contains 3% protein by mass. How many grams of protein are in a 250-gram carton?",
+      "What is 15% of 360? Can I find 10% and 5%, then add them?",
+      "A 300-yuan coat is reduced by 20%, and 250-yuan shoes by 25%. Which saves more money?"
+    ],
+    "mt_PZ909yPrEC": [
+      "Each car has 4 wheels. How many wheels do 3 cars have, without counting individually?",
+      "Why can 3 groups of 2 apples be written as 2+2+2? How many apples altogether?",
+      "Both 2+2+2 and 3+3 give the same total. Do they describe the same grouping? Can blocks show the difference?"
+    ],
+    "mt_PgsHGYJMH-": [
+      "Grandma gives me 3 oranges and Dad gives me 2 more. Can fingers or a picture represent this?",
+      "Teach me to draw a parking lot with 6 cars and 2 leaving. How do I show this and write an equation?",
+      "What equations match drawing 4 circles then crossing out 1, and drawing 4 circles then adding 1?"
+    ],
+    "mt_PpWSHA-0kv": [
+      "I am on stair 8 and climb another 3 stairs. Which stair do I reach? How do I count on?",
+      "Teach me to calculate 12 − 3 by counting backwards. Which number do I start from?",
+      "Someone counts “8, 9, 10” for 8 + 3 and answers 10. What is the mistake?"
+    ],
+    "mt_PsylzZ9lHW": [
+      "Can elevations of -3 meters, 1.5 meters, and 2 1/2 meters all be placed on one number line?",
+      "Where do -1.5, 3/4, -2, and 0.6 go on a number line?",
+      "Which is farther left, -2/3 or -0.6? How do I compare a mixture of fractions and decimals?"
+    ],
+    "mt_QCgbiVrwnp": [
+      "Do eating 3 grapes then 8 and eating 8 then 3 give the same total?",
+      "For 2 + 9, is counting on from 9 quicker? Why may I swap the order?",
+      "If 3 + 8 and 8 + 3 are equal, are 5 − 3 and 3 − 5 equal too? Why can I not swap subtraction?"
+    ],
+    "mt_QDTO3GAgcq": [
+      "Why are vertically opposite angles equal where two scissor blades cross?",
+      "Two adjacent angles on a straight line include one of 72°. What is the other?",
+      "Three angles around a point are 140°, 95°, and x°. What is x, and why is their sum 360°?"
+    ],
+    "mt_QHT16CrFO-": [
+      "In a favorite-season survey, someone writes Wednesday and another leaves it blank. How should I handle those responses?",
+      "A survey gives spring 8 votes, summer 12, autumn 6, and winter 4. What is the mode? What would its bar chart look like?",
+      "Are favorite color and a lunch rating from 1 to 5 both categorical data? How do they differ?"
+    ],
+    "mt_QNxFnxikCN": [
+      "Putting a cone on a cylinder makes a tower in my block castle. What other combinations can I build?",
+      "What shape do 2 identical cubes make when joined side by side?",
+      "How can I build a block bridge whose left and right halves match? Where should the dividing line be?"
+    ],
+    "mt_QU5R7Aajy9": [
+      "Three people share 100 yuan, giving 33.333… yuan each. To which decimal place should actual payments be rounded?",
+      "What is 10÷3 rounded to one decimal place and to two decimal places?",
+      "For 50 liters of water in 8-liter buckets, division gives 6.25. Why do I need 7 buckets rather than 6?"
+    ],
+    "mt_QaYfeVL-0C": [
+      "Bread costs 4.95 yuan, milk 2.10, and fruit 7.85. How can I quickly estimate the total before paying?",
+      "Help me estimate and calculate 298 + 413, then check the result with subtraction.",
+      "I spend 38 yuan, pay 100, and receive 72 in change. How can estimation reveal the error?"
+    ],
+    "mt_Qcp2d_kuta": [
+      "Which solid shapes describe a tin can, a ball, and an ice-cream cone?",
+      "What shape is a die? How does its shape differ from a brick?",
+      "Cylinders and cones both have circular faces. How do they differ?"
+    ],
+    "mt_Qe2PsFmSAH": [
+      "The same biscuits come in a larger, pricier box and a smaller box. How can I decide which is better value?",
+      "Rice costs 11.6 yuan for 2 kg or 3.2 yuan for 500 g. Which is better value? Teach me to compare.",
+      "Cereal costs 18 yuan for 450 g or 13.5 yuan for 300 g. What does each cost per 100 g? Should I always buy the cheaper large pack?"
+    ],
+    "mt_QhFEDyIwSO": [
+      "One print shop charges 0.5 yuan per page; another charges 10 yuan plus 0.3 per page. For how many pages do they cost the same?",
+      "Help me solve 3(x − 2) = 2x + 5. How do I expand brackets and rearrange terms?",
+      "To clear denominators in x/3 + 1 = (x − 1)/2, why must every term, including 1, be multiplied by 6?"
+    ],
+    "mt_QpJydot2Kh": [
+      "A pet survey can use a Chinese tally chart with “正” marks or a pictogram. Which makes the most popular pet easier to see?",
+      "To find exactly how many chose dogs, is a frequency table or a bar chart quicker? Why?",
+      "Which chart or table should I choose to compare categories at a glance, and which to report exact counts?"
+    ],
+    "mt_QqG6IdmTSE": [
+      "One hundred-yuan note exchanges for 10 ten-yuan notes. Why is 1 in the hundreds place 10 times 1 in the tens place?",
+      "What is 700÷70? How can place value explain it?",
+      "How many times greater is the value of 5 in 50000 than in 5000? What about in 500?"
+    ],
+    "mt_QysgF57dxh": [
+      "Why is a flashlight beam like a ray? How does a ray differ from a line and a line segment?",
+      "How many pairs of parallel sides does a trapezoid have? How do I draw an altitude perpendicular to its base?",
+      "Which can have its length measured: a line, ray, or line segment? Why?"
+    ],
+    "mt_R2ccrI-nKD": [
+      "One banknote is 100 yuan. How much are 3 worth, and why are there two trailing zeros?",
+      "How many hundreds, tens, and ones make 700? Where is it on a number line?",
+      "Only one extra 0 separates 300 from 30 in writing. Why are their values so different?"
+    ],
+    "mt_R4AY0LKxfl": [
+      "With the school as origin on a map, what coordinates describe 3 squares west and 4 north?",
+      "Which quadrant contains (2, −5)? How do I get there from the origin?",
+      "Why are (−3, 4) and (3, −4) in different quadrants? How can signs identify a quadrant?"
+    ],
+    "mt_REwgr0d_ss": [
+      "How should I draw a cardboard net for a triangular-prism gift box?",
+      "How many faces, edges, and vertices does a triangular prism have? What shapes are its faces?",
+      "How can I tell whether a figure made of 6 squares will fold into a cube?"
+    ],
+    "mt_RFeVlw0QvX": [
+      "Counting in twos gives 2, 4, 6, 8, … What pattern do the ones digits follow?",
+      "On a hundred chart, what is one square below 23? What about two more squares down? What pattern comes from adding 10?",
+      "Why does adding 1 always give the next counting number? Why does 39 plus 1 become a whole ten?"
+    ],
+    "mt_RKeheOL9uo": [
+      "A school buys 3 cases of 24 water bottles and uses 50 at sports day. How many remain? What are the steps?",
+      "A library has 425 books, lends 168, and gets 97 back. How many now? Estimate first, then calculate.",
+      "Someone gets 335 for 503-268. How can addition expose and help correct the error?"
+    ],
+    "mt_RVK655t391": [
+      "A freezer is -18 °C and a fridge is 4 °C. What is the temperature difference?",
+      "Temperature falls from 3 °C to -5 °C. How many degrees is the drop? How do I calculate across 0?",
+      "How far is -7 from 5 on a number line? Why is 7-5 incorrect?"
+    ],
+    "mt_RWUY7_IXvw": [
+      "A diver is 8 meters below sea level and a gull 8 meters above it. Are they equally far from sea level?",
+      "What are |-3.5|, |2/5|, and |0|? How does a number line show absolute value?",
+      "Accounts owing 50 and 30 yuan are recorded as -50 and -30. Why is -50 smaller but its absolute value greater?"
+    ],
+    "mt_RXnyhCRYXA": [
+      "For a class trip, we add ticket and transport costs, then share equally. How do I decide which step comes first?",
+      "I buy 3 boxes of pencils at 18 yuan each, pay 100 yuan, and share the change between 2 people. How much does each get?",
+      "Four crates hold 25 kg of apples each, and 30 kg are sold. Why is 4×25+30 wrong for the amount left?"
+    ],
+    "mt_SBkTGjiZjZ": [
+      "We use 3.5 meters of cloth. What is that as a fraction? How do I convert between fractions and decimals?",
+      "How do I convert 0.375 to a fraction in simplest form and 7/20 to a decimal?",
+      "Why does 3/8 give a terminating decimal while 1/3 does not? What property of the denominator tells me?"
+    ],
+    "mt_SH7QgFl8-v": [
+      "Some floor-tile patterns are reflected and some rotated. How do I distinguish translation, rotation, and reflection?",
+      "Where does (2, 3) go after a 180° rotation about (4, 4) on grid paper?",
+      "A shape and its image have the same size but different orientation. How do I tell whether reflection or rotation produced it?"
+    ],
+    "mt_SHVyE1CLUa": [
+      "How should I design a statistical investigation into whether my classmates sleep less on school days than weekends?",
+      "“Do children like sport?” is too broad. How can I turn it into a question that data can answer?",
+      "After surveying classmates' sleep times, should I use a bar chart, dot plot, or table? What limitations belong in the report?"
+    ],
+    "mt_SK7WntVZ6y": [
+      "Which simple shapes can I combine to draw our school building?",
+      "How can a slide be split into rectangles and triangles? What shape is each part?",
+      "How can I approximate a curved leaf on grid paper using a few simple shapes?"
+    ],
+    "mt_SOM6Imm2sO": [
+      "A kitchen scale labels every 200 grams. How do I read a pointer halfway between labels?",
+      "A measuring jug has lines every 50 milliliters. The water is halfway between 150 and 200. How many milliliters is that?",
+      "A thermometer has marks every 2 degrees. The red line is halfway between 22 and 24. What temperature is it, and what should I check before reading a scale?"
+    ],
+    "mt_SXbZ3bC9z7": [
+      "From two equal-sized pieces of bread, I eat 3/8 and my sister eats 5/12. Who eats more?",
+      "How do I order 2/3, 3/5, and 7/10 from smallest to largest? Do I need common denominators first?",
+      "How can comparing with 1/2 show which is larger, 5/8 or 3/7, without common denominators?"
+    ],
+    "mt_Sij9ByyHq6": [
+      "An L-shaped planter is 0.5 meters deep. I need volume for the soil; what do I need to calculate to paint its outer walls?",
+      "A triangular prism is 10 cm long with right-triangle ends of sides 3, 4, and 5 cm. What is its surface area?",
+      "Why can I not simply add surface areas when gluing a 2-cm cube onto a 4×4×2-cm cuboid?"
+    ],
+    "mt_SmghasIvbT": [
+      "A garden is 8 meters long and 5 meters wide, and fencing costs 12 yuan per meter. What is the total cost? What comes first?",
+      "A book has 96 pages. I read 1/4 on the first day and 30 pages on the second. How many remain?",
+      "I got 8 for 3/5 of 20. How can comparing with half tell me whether that is right?"
+    ],
+    "mt_SoDP1fSQEB": [
+      "Milk costs 4.56 yuan per carton. What do 7 cost? Where does the decimal point go when multiplying by an integer?",
+      "Help me calculate 3.47×6 using column multiplication. Where does the decimal point go in the product?",
+      "Why is 3.2×5 equal to 16.0 rather than 160? How does decimal place value explain it?"
+    ],
+    "mt_SqhXQhAEUf": [
+      "Which holds more, a 2.5-liter jug or a 2450-milliliter bottle? How do I compare?",
+      "A bread recipe needs 0.75 kg of flour per batch. How many grams for 3 batches? Teach me the conversion steps.",
+      "I cycle 250 meters per minute and the library is 3.5 km away. How many minutes will it take? What conversion comes first?"
+    ],
+    "mt_SrrsLiJkr3": [
+      "Sports day receives 356 people in the morning and 278 in the afternoon. What is the total? How do I align place values in column addition?",
+      "Teach me column subtraction for 503 − 268. How do I regroup when the tens digit is 0?",
+      "After getting 427 + 386 = 813, how can subtraction and estimation check it?"
+    ],
+    "mt_SsLWS_APM7": [
+      "A box has 24 colored pencils. My brother takes 1/3 and I take 1/4. Who takes more, and by how many?",
+      "I drink 2/7 of a bottle of water, then 3/7 more. What fraction have I drunk, and what remains?",
+      "Someone says 1/4 is greater than 1/3 because 4 is greater than 3. What is wrong with that reasoning?"
+    ],
+    "mt_T76hKqXf0z": [
+      "I have 2 cards, my brother 6, and my sister 4. How many together? Which pair is easiest to add first?",
+      "Teach me to group 7 + 5 + 3 so I make 10 first.",
+      "For 8 + 6 + 4, does adding 8 + 6 first or 6 + 4 first give the same result? Why may I regroup?"
+    ],
+    "mt_THl9GLxwoL": [
+      "There are 47 chairs. How many chairs do the 4 and 7 each represent?",
+      "What are the tens and ones digits of 68, and what values do they represent?",
+      "Why do 36 and 63 have different values despite using the same digits? Which places differ?"
+    ],
+    "mt_TMoHjMhRS2": [
+      "How do answers of “60” and “60 centimeters” differ when measuring a desk? Why must I include units?",
+      "What fills the box in 8+4=□+5? What does the equals sign actually mean?",
+      "How many faces, edges, and vertices does a cube have? What does each term refer to?"
+    ],
+    "mt_TcG90kS8nu": [
+      "My sister and I eat breakfast together, and I finish first. Who eats faster and who slower?",
+      "A rabbit finishes a race in 5 minutes and a tortoise in 9. Who reaches the finish first, and who is faster?",
+      "I get up at 7 and Dad at 6. Who gets up earlier? Why does a smaller clock number mean earlier here?"
+    ],
+    "mt_TdV9YGJEoY": [
+      "Clock hands turn clockwise. What does counterclockwise movement look like?",
+      "Facing north, I turn a quarter turn clockwise. Which direction do I face now?",
+      "Why is a right-angle turn a quarter turn? What fraction of a turn is three right angles?"
+    ],
+    "mt_TgHxujL81r": [
+      "A batch of cookies needs 2/5 cup of sugar. How many cups for 3 batches? How do I write the result as a mixed number?",
+      "How can repeated addition calculate 4 × 3/8? Does it match multiplying the numerator by 4?",
+      "How do I calculate 2 1/3 × 3? Do I multiply only the integer part or both parts?"
+    ],
+    "mt_TiFjjvBMaY": [
+      "For the same pocket-money survey, does a bar chart or a pictogram make differences between groups easier to see?",
+      "Most classmates' hand widths are around 16 cm, with a few unusually wide ones. How should I describe that distribution?",
+      "Which graph best compares heights in two classes? Why are other graphs less suitable?"
+    ],
+    "mt_TiQbi027PE": [
+      "Four trip groups have 23, 18, 27, and 12 people. What is the total? Can I pair numbers to make round totals?",
+      "Help me calculate 36 + 45 + 14 + 25. Which pairs make whole tens?",
+      "For 19 + 32 + 41, why does adding all the tens and then all the ones also work?"
+    ],
+    "mt_To9HdLy8vq": [
+      "Old buildings sometimes show a year such as MCMXCIX. How do I read it as a number?",
+      "How do I write the year 2024 in Roman numerals?",
+      "Why is 4 written IV rather than IIII? Why is 900 written CM?"
+    ],
+    "mt_TqDq6jyOmL": [
+      "A yuan has 100 fen. What fraction of a yuan is 27 fen, and what is it as a decimal?",
+      "How do I write 45/100 and 7/10 as decimals? How many decimal places does each have?",
+      "Are 0.3 and 3/10 the same point on a number line? How are 0.3 and 0.30 related?"
+    ],
+    "mt_U0waNfD8PB": [
+      "I do 98 skips and my deskmate does 104. Who does more? How do I compare?",
+      "Does > or < go between 34 and 43? Which place should I compare first?",
+      "Order 111, 98, 120, and 104 from smallest to largest. Why does 98 come first despite its large digit 9?"
+    ],
+    "mt_U4cIBXVug4": [
+      "An older brother has 3 times his younger brother's 8 stickers. Can I write this as a multiplication equation?",
+      "Can 35=5×7 be read as “35 is 5 times 7”? How do I express the comparison?",
+      "Does “4 more than” use addition or multiplication? What about “4 times as many”? How does the wording tell me?"
+    ],
+    "mt_U9sme87C32": [
+      "A track measures 98.4762 meters. To which place should I round it in a report, and why?",
+      "What is 0.004867 to two significant figures? Do leading zeros count as significant?",
+      "Why is 3.996 rounded to two decimal places 4.00 rather than 4? May I omit the trailing zeros?"
+    ],
+    "mt_UNzojLkNdm": [
+      "The minute hand is on a small tick between clock numbers. How do I read the hours and minutes?",
+      "The hour hand is between 7 and 8, and the minute hand is 3 ticks past 8. What time is it, including in digital notation?",
+      "Which lasts longer, 1 minute 20 seconds or 75 seconds? Why can I not compare just 20 and 75?"
+    ],
+    "mt_UQnAFPs83F": [
+      "A trip has 34 boys and 27 girls. How many water bottles are needed? How do I add two two-digit numbers?",
+      "Teach me to calculate 63 − 28 using a number line or by partitioning 28.",
+      "In 47 + 36, what happens when the ones total ten or more? Why carry 1 into the tens place?"
+    ],
+    "mt_UTnDKQkVX5": [
+      "A rectangular chocolate bar has rows and columns of small squares. How can I quickly find their total?",
+      "Help me divide a rectangle into 3 rows and 5 columns of equal squares. How many squares are there?",
+      "Why does counting a rectangle's small squares by rows or by columns give the same total?"
+    ],
+    "mt_UcGn2hjhYU": [
+      "A spinner is mostly red with a small blue section. Which color is more likely?",
+      "A bag has 7 red and 3 blue balls. Order drawing red, blue, and green from least to most likely.",
+      "Why is drawing red an even chance with 5 red and 5 blue balls, but almost certain with 9 red and 1 blue?"
+    ],
+    "mt_UooUHC_V7U": [
+      "What shapes can a cylindrical block stamp onto paper when dipped in paint?",
+      "How many triangular faces does a quadrilateral-based pyramid have? What shape is its base?",
+      "Cones and cylinders both have circular faces. How many does each have?"
+    ],
+    "mt_Uq5vYqboCR": [
+      "On a park map, how many squares and in which direction do I walk from the ticket office (2, 3) to the carousel (5, 3)?",
+      "A triangle has vertices (1, 1), (3, 1), and (2, 4). What are they after translating 4 squares right and 2 up?",
+      "A point becomes (6, 7) after translating 2 squares right and 3 up. Where was it originally?"
+    ],
+    "mt_VAWV_l7J0D": [
+      "I have 12 sweets and eat 4. How many remain, and how do I write the equation?",
+      "What fills the box in 7 = □ − 9? How should I reason it out?",
+      "A bus has some passengers. After 5 leave, 8 remain. How many were there originally, and why use addition?"
+    ],
+    "mt_VFsuftfvYM": [
+      "A receipt shows 637 yuan. How do I read this number?",
+      "How do I write three hundred and four in digits, then expand it as 300+…?",
+      "When reading 450 and 405 in Chinese, when is the 0 pronounced and when is it silent?"
+    ],
+    "mt_VKW8lOcFaw": [
+      "A cake recipe serves 8. If I make 3/4 or 5/3 of it, will I need more or less flour?",
+      "Without calculating, is 3/4 × 7 greater or less than 7? How can I tell?",
+      "Why does multiplying by 5/3 increase a positive number, multiplying by 2/5 decrease it, and multiplying by 3/3 leave it unchanged?"
+    ],
+    "mt_VUQNveSYjQ": [
+      "I calculated 23 books at 15 yuan each cost 345 yuan. How can I check without repeating exactly the same calculation?",
+      "A number multiplied by 7 and then reduced by 5 gives 51. How can I work backwards to find it?",
+      "Why are squaring and taking a square root inverse operations? How can area 49 square centimeters give a square's side length?"
+    ],
+    "mt_VVn1IXjkzn": [
+      "A desk measures 120 cm to the nearest 1 cm. What range could its actual length lie in?",
+      "A rope rounds to 3.7 meters to the nearest 0.1 meter. What are its lower and upper bounds, written as an inequality?",
+      "How should I round each number to estimate 38.7×5.12÷0.49? Why round 0.49 to 0.5 rather than 0?"
+    ],
+    "mt_VgOePicFYK": [
+      "A watermelon has 6 equal pieces. How can I share 5 of them between two people? How many ways are there?",
+      "Besides 1/8 + 1/8 + 1/8, what sums of same-denominator fractions make 3/8?",
+      "Can I split 2 1/8 into 1 + 9/8 as well as 1 + 1 + 1/8? How can a diagram show this?"
+    ],
+    "mt_VhBH8wrFC6": [
+      "Our class votes for cats, dogs, rabbits, and goldfish. How can a bar chart make the most popular pet obvious?",
+      "Cats get 8 votes and dogs 5. How do I read their difference from a bar chart?",
+      "Cats and dogs have 13 votes altogether, including 8 for cats. How many for dogs, and how can a chart verify it?"
+    ],
+    "mt_Vi4Vo5xs_g": [
+      "An eraser costs 0.62 yuan. Why is that 62/100 of 1 yuan?",
+      "What is 3/10 as a decimal, and where does it go between 0 and 1 on a number line?",
+      "Why does 0.07 mean 7/100 while 0.7 means 7/10, despite only one extra 0?"
+    ],
+    "mt_W17Kbwm0-u": [
+      "A phone battery shows 45%. What does percent mean, and how do I write it as a decimal?",
+      "In 3.47, which places do 3, 4, and 7 occupy, and what does each represent?",
+      "Why are 1/2, 0.5, and 50% the same number? What are the corresponding forms for 1/4?"
+    ],
+    "mt_W3VOAuFwVw": [
+      "The 1st block tower uses 2 blocks, and each next tower uses 2 more. How many blocks does the 6th use?",
+      "Find the pattern in 40, 35, □, 25, □, 15. How much does each step change, and what fills the boxes?",
+      "Will 30 occur in 5, 8, 11, 14, …? How can the starting value and step size tell me?"
+    ],
+    "mt_WBdHkc2HTf": [
+      "A bucket starts with 5 liters and gains 2 liters per minute. Why is its volume-time graph a straight line?",
+      "For y = −2x + 3, what are the slope and y-intercept? Which way does the line slope?",
+      "Which of y = x² + 1, y = 3 − x, and y = 1/x have straight-line graphs? How can their formulas tell me?"
+    ],
+    "mt_WX30dzi4dt": [
+      "In the make-24 game, how do quick players immediately recall multiplication and division results?",
+      "How can 10×7 minus 7 quickly give 9×7? How should I think about 63÷9?",
+      "If I forget 8×6, which known facts can help derive it? Which way is quickest?"
+    ],
+    "mt_WXW0hjNhph": [
+      "A necklace repeats red, red, blue, red, red, blue. What color comes next?",
+      "A pattern repeats circle, triangle, square. What is the 10th shape?",
+      "I want to design my own repeating shape pattern. What makes a sequence a pattern?"
+    ],
+    "mt_WcfaSfVT33": [
+      "There are 6 cups on a table. How can I point and count so each is counted exactly once?",
+      "Teach me to count a row of 5 toy cars, coordinating my finger with the numbers I say.",
+      "My brother counts one of 4 ducklings twice and says there are 5. Where did he go wrong?"
+    ],
+    "mt_WfrE_4r-kY": [
+      "A train departs at 19:30, but our clock only shows 1 to 12. What evening time is that?",
+      "How do I write 3:45 p.m. and 9:10 p.m. using the 24-hour clock?",
+      "Is 00:15 just after midnight or midday? Why is 24:15 not used on the 24-hour clock?"
+    ],
+    "mt_WkKkb7W9Qd": [
+      "Four people need bowls and I have already brought 1. How many more do I need? What is the question asking?",
+      "A tree has 7 birds and 3 fly away. What is being asked, and how can fingers or a picture help solve it?",
+      "A box has 5 red and 4 blue balls. How many altogether, and how can recounting check my answer?"
+    ],
+    "mt_WsM4EmdOLe": [
+      "A trip has 300 students and each bus seats 45. How many buses are needed? What does the remainder mean for the answer?",
+      "Help me calculate 4752÷13 using long division. How can I express the final remainder as a fraction?",
+      "Sometimes a remainder means rounding up, sometimes down. At 13 yuan per notebook, how many can 100 yuan buy, and why?"
+    ],
+    "mt_WtIFJSCQIT": [
+      "How do I read AB ∥ CD and ∠ABC, and what do these symbols mean?",
+      "In rectangle ABCD, which sides are parallel or perpendicular? How do I write that with symbols?",
+      "Sketch a regular hexagon. How many symmetry axes does it have, and what is its smallest rotational symmetry angle?"
+    ],
+    "mt_WtcFrxGOgw": [
+      "I measure every side of a pentagonal garden. How do I find the fencing needed all around it?",
+      "A pentagon has perimeter 30 cm, and four sides of 5, 7, 6, and 4 cm. How long is the fifth side?",
+      "Can rectangles both of perimeter 24 cm have different areas? Compare 6 cm × 6 cm with 10 cm × 2 cm."
+    ],
+    "mt_X5cypSGoGU": [
+      "A calculator gives different answers for 2+3² and (2+3)². Which operation comes first in each?",
+      "In what order should I calculate (4+2)²÷3−√16, step by step?",
+      "Why does a number times its reciprocal equal 1? What is the reciprocal of 3/4? Does 0 have one?"
+    ],
+    "mt_XLP1IM3Qbb": [
+      "A warehouse has 135 cases of 24 milk cartons. How do I multiply to find the total with numbers this large?",
+      "Help me calculate 2463×37 using column multiplication. What do the two partial products mean?",
+      "In 1205×34, what goes wrong if I forget to shift the second row left? Why is that shift essential?"
+    ],
+    "mt_XNmGwNggdU": [
+      "A headline says a city has about 8 million people, while the actual count is 8274500. How was the estimate obtained?",
+      "Three performances have audiences of 386500, 512300, and 249800. Estimate their total by rounding to the nearest hundred thousand.",
+      "Trench depths are -10994, -8648, and -7235 meters. Order them from highest to lowest. Why can a larger depth magnitude mean deeper?"
+    ],
+    "mt_XSXnTQoQ4l": [
+      "One of six people's pocket-money amounts is unusually large. Is the mean or median better for describing a typical amount?",
+      "How do I find the mean, median, and mode of 3, 5, 5, 6, 11?",
+      "For 12, 14, 15, 15, 48, why does 48 pull the mean so far above the median?"
+    ],
+    "mt_XV0B4kWwqL": [
+      "When counting library books, what comes after 99? How do I continue after 100?",
+      "How do I write one hundred and fifteen in digits? Do I need a 0 in the middle?",
+      "How do I read 108 and 180 in Chinese? Why is the middle 0 in 108 spoken?"
+    ],
+    "mt_XWSGuFW7It": [
+      "A drink mixes 12 cups of water with 8 cups of juice. Can I write the ratio more simply?",
+      "How do I simplify 0.6:1.5 to a whole-number ratio in lowest terms?",
+      "If boys and girls are in the ratio 3:2, why are boys 3/5 of the class rather than 3/2?"
+    ],
+    "mt_XfyqXLqzpx": [
+      "A shot has probability 0.65 of scoring. What is the probability of missing? What are complementary events?",
+      "A ticket is drawn randomly from numbers 1 to 20. What is the probability it is not a multiple of 5?",
+      "Rolling an even number and rolling an odd number are complementary. Are rolling 1 and rolling 6 complementary too?"
+    ],
+    "mt_XjwUlmxdCT": [
+      "What shapes can I make by joining two triangular biscuits?",
+      "Can 2 identical right triangles form a rectangle? What else can they form?",
+      "How many triangles can tile a hexagon? Can other shapes tile it too?"
+    ],
+    "mt_Xp-rj46S2w": [
+      "How do I cut a round cake equally among 3 people? What is each share called?",
+      "In how many different ways can I divide a rectangular sheet into 4 equal parts?",
+      "One square biscuit is cut into two triangles and another into two rectangles. Despite different shapes, is each piece a half?"
+    ],
+    "mt_Xt1cRqaBOW": [
+      "Windows, kites, and diamond-shaped tiles are quadrilaterals. Which types are they?",
+      "If a quadrilateral has four equal sides and four right angles, is it both a rectangle and a rhombus?",
+      "Can I draw a quadrilateral that is neither a rectangle, rhombus, nor square? How?"
+    ],
+    "mt_XuHmIn2xje": [
+      "I need 380 yuan for a bicycle helmet and have 245. How much more do I need? Can I write a missing-number equation?",
+      "Help me solve □ − 156 = 278 and 503 − □ = 247. Which method suits each?",
+      "A library lends 128 books, receives 75 back, and now has 460. How can I work backwards to find the original number?"
+    ],
+    "mt_Y9XKzLrUAZ": [
+      "How much do we turn when told to turn right or turn around during exercises?",
+      "Facing a window, I make a half turn to the right. Where do I face now?",
+      "Why do a three-quarter turn right and a quarter turn left leave me facing the same way?"
+    ],
+    "mt_YFS7JFk64p": [
+      "How can I spend exactly 10 yuan on stickers costing 2 yuan and 1 yuan each? List the different purchases.",
+      "Help me list all positive-integer pairs a and b satisfying a + b = 12 systematically.",
+      "For integer solutions of 2x + y = 20, why is y always even? Starting at 0, what is the largest x can be?"
+    ],
+    "mt_YUJ5pwalqL": [
+      "About how many degrees is an open laptop screen tilted? How can I estimate?",
+      "Estimate the smaller angle between clock hands at 4 o'clock. What type of angle is it?",
+      "An angle looks about 270°. What kind is it, and why compare with 180° first when estimating?"
+    ],
+    "mt_Yw1_4Nfsql": [
+      "Two cities planted 34567 and 28945 trees last year. What is the total? What matters in column addition of large numbers?",
+      "Teach me column subtraction for 500000 − 234178. How do I regroup across several zeros?",
+      "How do I add 23456, 38709, and 17865 in one column calculation when a column needs a carry greater than 1?"
+    ],
+    "mt_Yw27nweoTj": [
+      "How can a cycling distance-time graph estimate the distance traveled after 25 minutes?",
+      "From y = x² − 3, estimate y when x = 1.5 and x when y = 0.",
+      "How can intersections of y = x² and y = x + 2 estimate the solutions of x² = x + 2?"
+    ],
+    "mt_YzM5goBctT": [
+      "A chocolate bar has 10 squares and I eat 3. What fraction have I eaten?",
+      "Help me count in tenths from one tenth to ten tenths. Why is ten tenths equal to 1?",
+      "Why is 3 ÷ 10 equal to 3/10? How does sharing 3 cakes among 10 people explain it?"
+    ],
+    "mt_ZJC7JnnPCu": [
+      "To find how many small cubes fit in a moving box, is counting individually or using a formula quicker?",
+      "Why is 4752÷13 awkward mentally? Teach me long division step by step to find the quotient and remainder.",
+      "A shape moves 3 squares right and 2 up. Is reasoning from words or checking a drawing on grid paper more reliable?"
+    ],
+    "mt_ZLqYE7la4Z": [
+      "A jug has 3/4 liter of juice and I pour out 2/4 liter. How much remains?",
+      "Two ribbons are 2 3/8 meters and 1 5/8 meters long. How long are they joined together?",
+      "I read 3/7 of a book on day one and 2/7 on day two. What fraction remains? Can a diagram show it?"
+    ],
+    "mt_ZM9mhHsyYZ": [
+      "A phone battery shows 35%. What does the percent sign mean?",
+      "How do I write 35% as a fraction with denominator 100 and as a decimal?",
+      "How many squares do I shade for 40% of a 10×10 grid? Why does 100% mean the whole?"
+    ],
+    "mt_ZOJ6EbdPOb": [
+      "A recipe serves 4, but I only need 2 servings. Should I halve every ingredient? Why?",
+      "Noodles for 4 people require 200 grams of flour. How much for 6 people?",
+      "If 3 kg of apples cost 12 yuan, what do 5 kg cost? Is finding the price of 1 kg or using a scale factor easier?"
+    ],
+    "mt_Zdv-b-iW5K": [
+      "A ribbon is 28 cm long and each flower uses 4 cm. How many flowers can I make? Should I multiply or divide?",
+      "A classroom has 6 rows of 8 desks. How many desks altogether?",
+      "How do “54 peaches in boxes of 9” and “54 peaches shared among 9 boxes” differ?"
+    ],
+    "mt_ZfpeI1CFyP": [
+      "Two students average 30 minutes of piano daily, but one is consistent and the other varies. How can numbers describe that difference?",
+      "Reading times over 5 days are 20, 50, 70, 100, and 110 minutes. How do I calculate mean absolute deviation?",
+      "Two bowlers both average 120 points, with mean absolute deviations of 8 and 21. Who is more consistent, and why?"
+    ],
+    "mt_ZjIFGc6zPW": [
+      "Beads repeat red, blue, blue, red, blue, blue. Which group keeps repeating?",
+      "Find the repeating part of 1, 2, 2, 3, 1, 2, 2, 3, then write the next 4 numbers.",
+      "Why do clap, stamp, stamp and circle, square, square share a pattern? How can letters represent both?"
+    ],
+    "mt_Zks8xyInSG": [
+      "A race is 3.5 km, but my watch displays meters. How many meters is 3.5 km?",
+      "Convert 2 kg 350 g to grams and 1.2 liters to milliliters.",
+      "Why is 2 kg 35 g not 2.35 kg? What error comes from missing a 0 in conversion?"
+    ],
+    "mt_ZrsqGVG-Wt": [
+      "Where could a station be equally far from villages A and B? How can ruler and compass construct the possible locations?",
+      "How do I construct the perpendicular bisector of an 8-cm segment using a compass and straightedge?",
+      "When constructing an angle bisector, why must the two arcs have equal radii? Why does the resulting line bisect the angle?"
+    ],
+    "mt_Zt30Gxi-qp": [
+      "One of 40 classmates is drawn to speak first. What fraction describes my chance?",
+      "A box has 4 winning cards and 12 blank ones. What is the probability of winning? Should I simplify it?",
+      "A bag has 3 blue and 7 red balls. Why does adding 2 blue balls increase the probability of blue?"
+    ],
+    "mt_Zx1xZM-RbX": [
+      "I score 5, 7, and 3 baskets in three rounds. What is the total, and what is the quickest addition?",
+      "In 4 + 9 + 6 and 8 + 3 + 2, which pairs make 10?",
+      "In 6 + 8 + 5, no pair makes 10. What is a good way to add them?"
+    ],
+    "mt__Itf4aQZUj": [
+      "Each box has 13 pencils. How many in 7 boxes? Can splitting 13 into 10 and 3 help?",
+      "Why can I calculate 6×24 as 6×20 plus 6×4?",
+      "Is a square a special rectangle? Must it have every property a rectangle has?"
+    ],
+    "mt__N55B7u7HD": [
+      "I should brush my teeth for 2 minutes. How can an hourglass show when time is up?",
+      "When timing skips for 1 minute, how many second-hand ticks pass? How many seconds are in a minute?",
+      "Getting dressed takes about 2 minutes and tying shoes takes 30 seconds. Which takes longer?"
+    ],
+    "mt__YRJ23GuIK": [
+      "An elevator has buttons 4 and 7. Which number is greater, and how do I compare them?",
+      "Teach me to compare 6 and 9 and write > and < correctly.",
+      "Does > or < belong between 8 and 3? What about 3 and 8? How do I remember which way the opening faces?"
+    ],
+    "mt__casygEB85": [
+      "A calculator says each person pays 12.666 yuan. Since payments go only to fen, how should I round?",
+      "What is 3.4567 to two decimal places? Which digit decides the rounding?",
+      "What is 7654321 rounded to the nearest hundred thousand? Why can 4.83×2.17 be estimated as 5×2?"
+    ],
+    "mt__h7hvT4tEb": [
+      "Are there more children or chairs? How can matching one chair to each child tell me?",
+      "Compare 5 cookies and 3 strawberries on a plate. Which are more and which fewer?",
+      "Four large watermelons look bigger than 6 small grapes. Why are there more grapes?"
+    ],
+    "mt__sMrmOv3bx": [
+      "Two cities are 2385 km apart. How does a map get an estimate of about 2400 km?",
+      "What are the largest and smallest four-digit numbers using 3, 0, 7, and 5 once each?",
+      "A four-digit number rounds to 6300 to the nearest hundred. What are its smallest and largest possible values?"
+    ],
+    "mt__t4afSyZRm": [
+      "In a board game, two rolls give 6 and 5. Can I say the total moves within three seconds?",
+      "Help me practice 15 − 8, 7 + 9, 13 − 6, and 8 + 8. How can I recall them quickly and reliably?",
+      "Why does knowing 9 + 7 = 16 immediately give 16 − 9 and 16 − 7?"
+    ],
+    "mt__we2TDqnJx": [
+      "Two playing cards show 6 and 3. Can I say their total without counting the symbols?",
+      "Help me practice 7 + 2, 10 − 6, 4 + 5, and 9 − 3 accurately without counting on fingers.",
+      "If I know 6 + 4 = 10, can I immediately give 10 − 4 and 10 − 6? Which other equations belong to this fact family?"
+    ],
+    "mt_a1FdAsRKOF": [
+      "A route has 8 equal sections. I walk 3, then 2 more. What fraction of the route have I walked?",
+      "What is 6/8 − 3/8, and why does the denominator stay the same?",
+      "Someone says 1/5 + 2/5 = 3/10. What is wrong, and how can a diagram explain clearly?"
+    ],
+    "mt_a3dov8CZkq": [
+      "Which gives larger watermelon pieces, dividing equally into 3 or into 5? Why is 1/3 greater than 1/5?",
+      "In column subtraction for 503-178, how do I regroup when the tens digit is 0? Explain the reason for each step.",
+      "Knowing 6×10=60 and 6×2=12, how can I derive 6×8 step by step, giving each reason?"
+    ],
+    "mt_aCwj2PCoRV": [
+      "Of 25 students, 12 are girls. If one is chosen randomly for classroom duty, what is the probability of a girl?",
+      "A paper cup is tossed 50 times, landing on its side 31 times, upright 13, and upside down 6. How do I build a probability model?",
+      "A die shows 6 on 160 of 600 rolls, versus about 100 expected for a fair die. Does this suggest unfairness?"
+    ],
+    "mt_aHAM29nidj": [
+      "Each tricycle has 3 wheels. How can I count wheels in threes for several tricycles?",
+      "Help me count backwards in threes from 30: 30, 27, 24, down to 0.",
+      "What follows 3, 6, 9, 12, 15? How can I decide whether 25 belongs to the sequence?"
+    ],
+    "mt_aHQ9kNt3is": [
+      "A library lends 345 books in the morning and 40 in the afternoon. How do I find the total mentally?",
+      "Help me mentally calculate 462 − 30 and 278 + 50. Which crosses a hundred, and how should I handle it?",
+      "Why does 345 + 40 change only the tens digit, while 385 + 40 also changes the hundreds?"
+    ],
+    "mt_aPBzD28_mT": [
+      "A school has 362 students. How many people do the digits 3, 6, and 2 each represent?",
+      "How do I expand 485 into a sum of hundreds, tens, and ones?",
+      "Why does 706 need a 0 in the tens place? If I remove it to get 76, how much changes?"
+    ],
+    "mt_aivrWs6jrS": [
+      "A table seats 3 people. How many do 4, 40, and 400 tables seat? What multiplication pattern appears?",
+      "If I forget 8×7, how can 8×5 plus 8×2 give it? Does this method work for other products?",
+      "In 1/2, 2/4, 3/6, 5/10, … how are numerator and denominator related? How can I check whether a fraction equals 1/2?"
+    ],
+    "mt_anAe11HAEH": [
+      "Three identical notebooks and a 5-yuan pen cost 26 yuan. How much is each notebook? Can I use a letter in an equation?",
+      "Help me write and solve an equation: 4 boxes each hold the same number of apples, plus 6 loose apples, totaling 54. How many per box?",
+      "When solving 5 × n − 8 = 37, why add 8 before dividing by 5?"
+    ],
+    "mt_b4lbTOJYwI": [
+      "How many numbers lie between 1 cm and 2 cm on a ruler? Are there endlessly many?",
+      "Which of 0.333…, √2, 22/7, and π are rational, and which irrational?",
+      "Why is √2's decimal expansion nonterminating and nonrepeating? Is 0.1010010001… rational?"
+    ],
+    "mt_b7T-CjOYUR": [
+      "I eat 18 of 24 biscuits. Can I simplify 18/24 to an easier fraction?",
+      "How do I simplify 36/48 fully? How do I find the greatest common factor?",
+      "Why does dividing numerator and denominator by the same number preserve a fraction? Why can I multiply them to find a common denominator?"
+    ],
+    "mt_bESTSBB0wK": [
+      "Food is a large part of our monthly spending. How is each sector's size determined in a pie chart?",
+      "Of 40 students, 10 like football. What central angle represents them in a pie chart, and how is it calculated?",
+      "A basketball sector is 72° and the class has 50 students. How many like basketball? How do I reverse the calculation?"
+    ],
+    "mt_bO-njVOige": [
+      "Earth is about 150000000 km from the Sun. How can A×10ⁿ express this more compactly?",
+      "Write 0.000032 as A×10ⁿ. What are A and n?",
+      "Which is greater, 4.2×10⁻³ or 3.9×10⁻²? Why can I not just compare 4.2 and 3.9?"
+    ],
+    "mt_bZC-wqWX7Y": [
+      "In how many ways can 24 students form rows with equal numbers? Is there a systematic search?",
+      "If I divide 24 by each number from 1 to 24 and record those with no remainder, will I find all its factors?",
+      "List multiples of 6 in a table and mark those also divisible by 4. What pattern appears, and why?"
+    ],
+    "mt_bfhng6mOuy": [
+      "Why are a large red triangle and a small blue triangle both triangles?",
+      "A figure has 3 sides but one corner is not joined. Is it still a triangle?",
+      "Is an upside-down triangle still a triangle? Why do color, size, and orientation not matter?"
+    ],
+    "mt_bj1YCgNWUx": [
+      "A week has 7 days. How do I name them in order starting with Monday?",
+      "How many months are in a year? What follows March, and what follows December?",
+      "About how many weeks are in a month? Are there more weeks or months in a year, and why?"
+    ],
+    "mt_bnwHo5wfCD": [
+      "How do I compare the capacities of differently shaped bottles? Can I pour their water into the same cup?",
+      "A balance shows an apple heavier than a block and the block heavier than an egg. Which is heavier, apple or egg, and why?",
+      "Three boxes take 6, 9, and 4 spoonfuls of rice to fill. How do I order their capacities, and why?"
+    ],
+    "mt_c29FaCTNsx": [
+      "Our teacher records trip-destination votes using Chinese “正” tally marks. What is useful about that method?",
+      "A class has 7 cat votes, 9 dog votes, and 4 rabbit votes. How do I make a tally chart and pictogram?",
+      "Why does a pictogram need a title, category labels, and data source? What if these are missing?"
+    ],
+    "mt_cChv2j_-Da": [
+      "I have 83 yuan and buy a 25-yuan picture book. How much remains? What is a quick method?",
+      "Can I calculate 46 + 37 by adding the tens and ones separately?",
+      "Which methods are easiest for 64 + 29 and 71 − 38? Why should the numbers guide my choice?"
+    ],
+    "mt_cFltwUQi-d": [
+      "I use 1/3 of 12 eggs for cake. How many eggs is that, and how can grouping show it?",
+      "What is 1/4 of a 20-cm rope? How can I locate it on a ruler?",
+      "What are 1/4 and 3/4 of 12 beads? How are the two answers related?"
+    ],
+    "mt_cPZwlUk8Nd": [
+      "Which is worth most: a 1-yuan coin, a 5-jiao coin, or a 1-jiao coin?",
+      "Which is worth more, a 5-yuan note or a 1-yuan coin? How many 1-yuan coins equal 5 yuan?",
+      "Why are 3 one-jiao coins more coins than 1 five-jiao coin, but worth less?"
+    ],
+    "mt_cdMlC7EpTJ": [
+      "A triangular flower bed has angles 50° and 65°. Can I calculate the third without measuring?",
+      "Three angles of a quadrilateral are 90°, 85°, and 110°. What is the fourth?",
+      "What is each interior angle of a regular hexagon? How does the angle sum give it?"
+    ],
+    "mt_cqSf213hSa": [
+      "Without a ruler, can paperclips placed end to end measure a book's length?",
+      "A book measures 9 paperclips and a little more. How should I state its length?",
+      "When measuring with paperclips, do gaps or overlaps make the count larger or smaller?"
+    ],
+    "mt_d-WZC2OyMB": [
+      "Can I mentally find the cost of 4 books at 25 yuan each? What about 3 garments at 167 yuan each? How do I choose a method?",
+      "Is a fraction strip or number line clearer for comparing 3/8 and 1/4? Teach me.",
+      "A rectangle is 7 cm long and 4 cm wide. After using the area formula, how can counting grid squares verify it?"
+    ],
+    "mt_d4reBzaIRl": [
+      "On the school-bus journey, which changes: the number of seats or passengers? Which stays fixed, and why?",
+      "During a football match, which can change: number of goals on the pitch, score, remaining time, or pitch size?",
+      "If our classroom's desk count stays fixed today, does it stay fixed forever? When might it change?"
+    ],
+    "mt_d7XktBQPxm": [
+      "Can I estimate how many 1-cubic-centimeter blocks fit in a box before filling it?",
+      "A cuboid is built from 1-cubic-centimeter cubes, 3 long, 2 wide, and 2 layers high. What is its volume?",
+      "How can I count hidden cubes at the back and bottom without missing any? Could I count layer by layer?"
+    ],
+    "mt_d8al9JcajP": [
+      "Grandma's house is 3 km away, and one of my steps is about half a meter. How many meters is 3 km?",
+      "Convert 5 weeks to days and 2 hours to minutes. Do both use multiplication?",
+      "Why multiply to convert larger units to smaller ones and divide the other way? For example, how many hours are 180 minutes?"
+    ],
+    "mt_dJOKkYMsCv": [
+      "A staircase has 20 steps and I stand on step 13. Which step is one below and one above?",
+      "Help me order cards 14, 3, 19, 0, and 8 from smallest to largest.",
+      "Which is greater, 16 or 6? Why must 16 be greater? How can ten-frames show it?"
+    ],
+    "mt_dXq9VWm31W": [
+      "I use 1/3 of a box of 12 eggs. How many is that? How can a bar model show it?",
+      "A track is 400 meters around and I run 3/4 of it. How far do I run? Teach me with a bar model.",
+      "A 258-yuan schoolbag costs 139 yuan more than a pencil case. What does the pencil case cost? Can a number line show it?"
+    ],
+    "mt_dlg6i-Lw0I": [
+      "A coin has shown heads 3 times in a row. Is tails now more likely on the next toss?",
+      "A bag has 3 red and 2 blue balls. I remove one red without replacement. Has the chance of red on the next draw changed?",
+      "Do rain today and my rolling a 6 influence each other? How do I judge whether events are independent?"
+    ],
+    "mt_dmNvjroCPT": [
+      "When counting stairs, the last number is 8. How many stairs are there? Why does the last count give the total?",
+      "Teach me to count 7 buttons and answer how many there are altogether.",
+      "If I arrange 5 marbles in a row, then a circle, does the number change? What if I count in a different order?"
+    ],
+    "mt_doX1BhmFgk": [
+      "A meter has 100 cm. What fraction of a meter is 1 cm? What about 3 cm and 12 cm?",
+      "Help me count in hundredths from 3/100 to 12/100.",
+      "Why does dividing 1/10 into 10 equal parts make each 1/100? Can meters and centimeters explain?"
+    ],
+    "mt_e4V6hvcuEJ": [
+      "What do small squares at angles and small ticks on sides mean in geometry diagrams?",
+      "Which point is the vertex of ∠ABC? Why must B be the middle letter?",
+      "Why mark one pair of equal opposite sides of a parallelogram with one tick and the other pair with two?"
+    ],
+    "mt_e4x3l2JeLI": [
+      "Should I use a ruler, meter stick, or tape measure for a desk, pencil, and running track? How do I choose?",
+      "A pencil extends from 0 to 14 on a ruler. How many centimeters long is it?",
+      "A pencil starts at 2 and ends at 15 on a ruler. How long is it? Why do we usually align with 0?"
+    ],
+    "mt_e7filQgayF": [
+      "My mother gardens 2/5 of the area in the morning and 1/3 in the afternoon. What fraction remains unfinished?",
+      "I use 1/4 of a bucket of water, then 3/8. What fraction is used altogether, and what remains?",
+      "Someone says 2/5 + 1/2 = 3/7. How can I see it is wrong without detailed calculation?"
+    ],
+    "mt_e7tLi9SCIE": [
+      "A table measures 3 hand spans and a little more. How much is a little more, and how can I measure more precisely?",
+      "A book is about 2 pencils long but 9 paperclips long. Why are many more paperclips needed?",
+      "To measure a small cup's capacity, is a large cup or a small spoon more precise? Why?"
+    ],
+    "mt_e8CZ7E5qW7": [
+      "An egg box holds 10 eggs and already has 7. How many more fill it?",
+      "Use a ten-frame to find what joins 6 to make 10, and what joins 4. Can I write equations?",
+      "For each number from 1 to 9, which partner makes 10? How can I find all pairs systematically?"
+    ],
+    "mt_eKJG-0eC6D": [
+      "We have dozens of classmates' height measurements. How can grouping them in a frequency table make them clearer?",
+      "Among 60 breakfast choices, 20 choose buns, 15 noodles, and 25 milk. How do I calculate each pie-chart angle?",
+      "Should height groups have intervals of 5 cm or 20 cm? What goes wrong if groups are too broad or too narrow?"
+    ],
+    "mt_eMtV6tBSJm": [
+      "Our living room is L-shaped. How do I find its area before buying flooring?",
+      "An L-shaped room splits into rectangles 3 meters × 5 meters and 2 meters × 4 meters. What is its total area?",
+      "Will horizontal and vertical splits of the same L-shape give the same area? Why must the pieces not overlap?"
+    ],
+    "mt_ePXg_XyCKU": [
+      "My sister and I share 20 yuan in the ratio 3:2. How can a bar model show each share?",
+      "Boys and girls are in the ratio 4:5, with 6 more girls. How can a bar model find both counts?",
+      "I have read 40% of a book and 90 pages remain. How can a bar model find the total pages?"
+    ],
+    "mt_eSv_w46u6H": [
+      "Some classmates like football, some basketball, and some both. How can a Venn diagram separate these groups?",
+      "Of 30 people, 18 like football, 15 basketball, and 6 both. How many like neither?",
+      "Which regions are A∩B and A∪B on a Venn diagram? How do I find the probability of randomly choosing someone in A∪B?"
+    ],
+    "mt_ebPelt-qAl": [
+      "Is eating 2 of 3 equal rice-cake pieces the same amount as eating 4 of 6?",
+      "Write three fractions equivalent to 3/5 and explain how diagrams can check them.",
+      "Why does multiplying numerator and denominator by 3 preserve a fraction? Would adding 3 to both work?"
+    ],
+    "mt_ebQURBOsM5": [
+      "How can I collect data on my classmates' most common ways of getting to school?",
+      "Classmates have 0, 1, or 2 siblings. How do I record their counts in a frequency table using Chinese “正” tally marks?",
+      "How should I organize columns in a spreadsheet of journeys to school? How does it differ from a paper table?"
+    ],
+    "mt_efOeaGFyGM": [
+      "Is my mirror image the same size as me? Does reflecting or translating a shape on grid paper change its shape?",
+      "A triangle has vertices (1,2), (3,2), and (1,5). What are they after translating 4 squares right and 2 up?",
+      "Reflect triangle vertices (2,1), (4,1), and (2,3) across x=5. Where do they go, and why does its size stay the same?"
+    ],
+    "mt_ehGS_uVSJv": [
+      "I spend 15 yuan, pay 22, and receive 7 in change. How can addition check the change?",
+      "Teach me to solve □ + 9 = 14. Why can 14 − 9 find the missing number?",
+      "How many ways can I check 52 − 17 = 35? Why can addition reverse subtraction?"
+    ],
+    "mt_eiB3-6pu6a": [
+      "Flooring needs area, while skirting boards along walls need perimeter. How do these differ?",
+      "A rectangular room has area 48 square meters and length 8 meters. What are its width and perimeter?",
+      "For an irregular pond on grid paper, is counting full squares as one and partial squares as half a reasonable area estimate?"
+    ],
+    "mt_ewmuMMPAzP": [
+      "An orchard picks 268 apples in the morning and 157 in the afternoon. What is the total? How does carrying ten ones work?",
+      "Teach me to diagram 432 − 175. How do I regroup when both ones and tens are insufficient?",
+      "In 600 − 248, why split 1 hundred into 10 tens, then give 1 ten to the ones?"
+    ],
+    "mt_ezc2m_0dzN": [
+      "My skipping target is 10 and I have done 8. How many more? Is this addition or subtraction?",
+      "Teach me 13 − 9 by asking what added to 9 gives 13.",
+      "Why do the boxes in 10 − 8 = □ and 8 + □ = 10 contain the same number?"
+    ],
+    "mt_f67qGDhyfi": [
+      "A class party has 28 students and 2 teachers. How many paper cups do we need, and how should I think about it?",
+      "A ribbon is 30 cm long and I cut 12 cm for a bow. How much remains? What does the answer represent?",
+      "We planned 1 cup for each of 30 people, but 6 people each use 1 extra. How should the original calculation change?"
+    ],
+    "mt_fEuoBYw6bU": [
+      "How can I sort solid blocks into those that roll and those that do not?",
+      "How can I group triangles, squares, pentagons, and rectangles by number of sides?",
+      "How does grouping solids by flat or curved surfaces differ from grouping them by number of faces?"
+    ],
+    "mt_fLOkq-HfPB": [
+      "I have 5 apples and eat 2. Can I model it with blocks and state an equation?",
+      "My brother has 3 toy cars and I have 6. How many more do I have? Teach me a comparison diagram.",
+      "A plate has 8 dumplings. I eat 3 and my brother eats 2. How many remain? How can circles show the two removals?"
+    ],
+    "mt_fQ9Rw10fss": [
+      "A school has 900 students. How can I estimate how many walk to school without asking everyone?",
+      "Of 60 randomly sampled students, 18 walk to school. About how many of all 900 students might walk?",
+      "Why are surveying only seventh graders or taking a voluntary online poll unreliable for estimating the whole school's behavior?"
+    ],
+    "mt_fR0UtsSREU": [
+      "After counting 15 strawberries on a plate, how do I write that number?",
+      "My teacher says eighteen. How do I write 18? Do I write 1 or 8 first?",
+      "Why are 12 and 21 different numbers despite using the same digits?"
+    ],
+    "mt_fZTn0W_iZR": [
+      "Can I combine 6 and 7 sweets by thinking 6+6 plus 1? Why is that easier?",
+      "Given 8+8=16, how can I derive 8+9 and 7+8 using doubles?",
+      "Subtracting 10 repeatedly from 58 gives 48, 38, … How do tens and ones change? Does this hold for any two-digit number?"
+    ],
+    "mt_fmm-P17Vka": [
+      "The news says mean and median income differ greatly. What do these two terms mean?",
+      "For 4, 7, 7, 9, 13, what do mean, median, mode, and range mean, and how do I find them?",
+      "If a set of test scores suddenly includes a 0, how does that outlier affect the mean? Does it affect the median as much?"
+    ],
+    "mt_fxPtngwUfz": [
+      "I save 3 yuan daily and my sister 6, both starting at 0. How are our savings related each day?",
+      "Starting at 0, write the first 5 terms using add 2 and add 8. Pair corresponding terms and plot them as coordinates.",
+      "Why does a sequence starting at 0 and adding 6 have terms twice those of adding 3? Is this still true starting at 1?"
+    ],
+    "mt_g3W0mdADVu": [
+      "How can I cut a large pancake equally among 4 children? What is each share called?",
+      "How can 2 friends share 5 biscuits equally? How should the leftover biscuit be divided?",
+      "When 4 people share 6 biscuits, how do I cut the extra 2? Why do two quarters equal a half?"
+    ],
+    "mt_gC-6JXAG5S": [
+      "I fold a paper strip in half three times. On unfolding, what fraction of the whole is each section?",
+      "A 16-minute activity has 8 equal sections. How many minutes is each, and what fraction of the activity?",
+      "Why are 2/8 and 1/4 of a pizza equal? How can folding explain it?"
+    ],
+    "mt_gNUE4B3vuk": [
+      "A winter morning is -3.5°C and warms by 7 1/4°C by noon. What is the noon temperature?",
+      "How do I calculate 2 1/3 × (-1 1/2)? Should I first convert mixed numbers to improper fractions?",
+      "How do I calculate -3 1/4 ÷ 1 5/8? What mistakes are common with negatives and mixed numbers together?"
+    ],
+    "mt_gTI7MuS-y8": [
+      "Our class and the neighboring class have equal sizes. Must they have the same favorite fruits? Can I make a prediction?",
+      "Our class has 8 apple votes and the next class 5. How do I compare their frequency tables category by category?",
+      "Both classes have 30 students. Why might the counts for each favorite fruit differ?"
+    ],
+    "mt_g_fkAqmz72": [
+      "Pens cost 3 yuan each and I spend 5 extra. What are 3x + 5, 3x + 5 = 20, and 3x + 5 > 20 called?",
+      "How many terms are in 4x² − 7x + 2y + 9? What are their coefficients, and which is the constant term?",
+      "In 5(x + 2), are 5 and (x + 2) factors or terms? Why does the terminology change after expansion?"
+    ],
+    "mt_ghF3Vv6taM": [
+      "In a clapping game, I show 2 fingers and you show 3. Can I immediately say the total without counting?",
+      "Help me quickly recall 2 + 3, 5 − 2, 4 + 1, and 3 − 3.",
+      "Knowing 1 + 4 = 5, can I immediately give 5 − 4 and 5 − 1? Why?"
+    ],
+    "mt_ghK1mnEstc": [
+      "Craft yarn often measures a whole number of meters plus a half or quarter. How do I record these lengths?",
+      "Five ribbons measure 1/2, 3/4, 1, 3/4, and 1¼ meters. How do I draw a dot plot?",
+      "Why label 1/4, 1/2, and 3/4 on a dot plot's axis? Between which integers does 3/4 meter belong?"
+    ],
+    "mt_glPPG-kTQY": [
+      "A shelf has 46 books and gets 7 more. What is the total? How can I make a whole ten first?",
+      "Help me calculate 38 + 40 and 57 + 6. How should I think about each, and which number should I split?",
+      "Why can 46 + 7 be written as 46 + 4 + 3? How does this split relate to carrying in column addition?"
+    ],
+    "mt_gtTl3R5buH": [
+      "Yogurt comes in rows of 4 cartons. How many cartons are in 6 rows? Why write 6×4?",
+      "What does 5×7 mean? Help me draw 5 groups of 7.",
+      "How do 4 people with 6 stickers each and 6 people with 4 each differ in meaning and equation?"
+    ],
+    "mt_gu0NPDvlhY": [
+      "A breakfast shop has 3 mains and 4 drinks. How many combinations choose one of each?",
+      "List outfits systematically from 3 tops—red, white, blue—and 2 trousers—black, gray. How many combinations?",
+      "Why do 3 mains and 4 drinks give exactly 3 × 4 combinations? How can a table show this?"
+    ],
+    "mt_gx6KQK5-Kx": [
+      "A plot is 3/4 meter long and 2/3 meter wide. How do I find its area? Can small grid squares help?",
+      "A rectangular tablecloth is 1 1/2 meters long and 2/3 meter wide. What is its area in square meters?",
+      "Why do 1/12-square-meter tiles cover a rectangle 3/4 meter by 2/3 meter with exactly 3 × 2 tiles?"
+    ],
+    "mt_gxCIASSezX": [
+      "A square plot has side 7 meters. Why can its area be written 7²? What does the raised 2 mean?",
+      "What is 4³? How does it differ from 4×3?",
+      "What are the first ten positive square numbers? Why are 1 and 64 both squares and cubes?"
+    ],
+    "mt_h02-C8PRrj": [
+      "Cucumber slices are similar sizes, while slices of a cone-shaped carrot get smaller. Why?",
+      "For a hexagonal-prism pencil, cone, and cuboid box, which have equal-sized cross-sections parallel to the base?",
+      "Why do slices of a square-based pyramid parallel to its base get smaller near the apex? Are they still squares?"
+    ],
+    "mt_h0CVtqI2xo": [
+      "A folding fan opens to an acute angle, then an obtuse one. How do I know when it exceeds a right angle?",
+      "What angles do clock hands form at 1, 3, and 5 o'clock?",
+      "Can a triangle have two obtuse angles? Why can it have at most one?"
+    ],
+    "mt_h0gJcSuwdL": [
+      "Dumplings need 3 bowls of flour for every 2 of filling. If flour increases to 6 bowls, must filling double too?",
+      "A bracelet has red and blue beads in the ratio 3:5. With 15 blue beads, how many red?",
+      "For every 2 apples there are 5 oranges. With 20 oranges, why can I not use 20-3 to find the apples?"
+    ],
+    "mt_h7zVgCDVmx": [
+      "On a map, a library is at (−6, 3), a park at (2, 3), and each square is 100 meters. How far apart are they?",
+      "Points (−3, 2), (4, 2), (4, −1), and (−3, −1) form a rectangle. What are its perimeter and area?",
+      "Why is the distance from (2, −4) to (2, 3) not 4 − 3 = 1 square? How do I measure across the x-axis?"
+    ],
+    "mt_hBZwbst0ow": [
+      "At 6 a.m. it is 5 °C, then falls 3 °C each hour. When does it go below zero? How can I list the temperatures as a sequence?",
+      "Continue 2.5, 4.0, 5.5, … What is the rule and the 8th term?",
+      "What is the 10th term of 4, 1.5, −1, −3.5, …? How can I find it without listing every term?"
+    ],
+    "mt_hCVPYlF-7Y": [
+      "A cube has edges of 4 cm. Is its volume 4 cubed? How do squares and cubes differ?",
+      "What are 2¹⁰ and 3⁵? What is the cube root of 343?",
+      "Why can √50 not be written as an exact finite decimal? Are 7.07 and √50 equal?"
+    ],
+    "mt_hImiKNiaNh": [
+      "Each of 3 meals includes a burger costing n yuan and a 5-yuan drink. Why are brackets essential in 3×(n+5)?",
+      "Help me calculate 36+64÷8×2-(15-7). In what order should I work?",
+      "Why is 3×(n+5) equal to 3n+15 rather than 3n+5? Can a rectangle area model explain?"
+    ],
+    "mt_hR2Y7NhMSY": [
+      "When folded paper is cut and unfolded, why do both sides match?",
+      "A point lies 3 squares left of a vertical symmetry axis. Where should its matching point go?",
+      "How can folding check whether I have completed a symmetrical figure correctly?"
+    ],
+    "mt_hRZyKvz1KN": [
+      "In how many ways can I fold a rectangular sheet in half so its two halves match exactly?",
+      "How many symmetry axes do a square, equilateral triangle, and regular hexagon each have?",
+      "A tilted parallelogram looks symmetrical. Does it actually have a line of symmetry?"
+    ],
+    "mt_hVpGOEz2kG": [
+      "With school as origin and east and north positive, what coordinates describe 3 squares west and 2 south?",
+      "Teach me to plot (−4, 3), (2, −5), and (−1, −1). Which quadrant contains each?",
+      "Are (3, −2) and (−2, 3) the same point? How can coordinate signs identify their quadrants?"
+    ],
+    "mt_hdrMoiTgqu": [
+      "How can I draw a greeting card 8 cm long and 5 cm wide with all four angles right angles?",
+      "How do I use a ruler and protractor to draw a triangle with sides 5 cm and 7 cm enclosing 60°?",
+      "A regular pentagon has interior angles of 108° and sides of 4 cm. How can I draw it accurately with a protractor?"
+    ],
+    "mt_hlGKg5M7qJ": [
+      "A coat at 75% of its original price is also at 3/4 of that price. Which form is easiest for calculating its cost?",
+      "How does splitting 25×16 into 25×4×4 simplify calculation? Why is it valid?",
+      "To find 75% of 80, is 0.75, 3/4, or 75% easiest? Why do they represent the same number?"
+    ],
+    "mt_hniI4E-OCE": [
+      "If 17 classmates form pairs for a game, will someone be left without a partner?",
+      "If I arrange 14 apples in pairs, are any left over? Which two equal numbers sum to 14?",
+      "Why can even numbers be written as two equal addends, such as 8=4+4, while 9 cannot?"
+    ],
+    "mt_hyvHv2BCwb": [
+      "Two equal cakes are cut into 2 and 4 pieces. Which has larger pieces?",
+      "Two equal square sheets are divided into 2 and 4 equal parts. How do I compare each part's size?",
+      "Why does making more equal parts make each smaller? What happens with 8 parts?"
+    ],
+    "mt_i2-QaXbyzB": [
+      "Our living room is L-shaped. How can I split it into rectangles to find its flooring area?",
+      "A trapezoid has bases 6 cm and 10 cm, and height 4 cm. How can a rectangle and two triangles give its area?",
+      "A kite has diagonals of 8 cm and 6 cm. Why can subtracting four corners from its enclosing rectangle give its area?"
+    ],
+    "mt_i2F1nWxJjv": [
+      "A roller coaster requires height at least 120 cm. How do I write and graph that inequality?",
+      "Solve 3x + 1 < 10 and show the solution on a number line. Should the endpoint be open or filled?",
+      "When solving −2x > 6, why must dividing both sides by −2 reverse the inequality sign?"
+    ],
+    "mt_i5_HnoFOYw": [
+      "A garden plan has corners (1, 1), (1, 4), (5, 4), and (5, 1). What shape do they form?",
+      "Three vertices of a square are (2, 1), (2, 4), and (5, 4). Where is the fourth?",
+      "A triangle has vertices (1, 1) and (5, 1). Where can a third vertex make it isosceles?"
+    ],
+    "mt_i9rJbuFO3p": [
+      "I double a number and add 5 to get 17. How do I write that as an equation with a letter?",
+      "A pen costs x yuan and 3 cost 24 yuan. How do I write the equation and find x?",
+      "An older brother is 4 years older, and their ages total 22. How do I write an equation if x is the younger age? What if x is the older age?"
+    ],
+    "mt_iEXqN48w3x": [
+      "A monthly electricity bill of 240 yuan rises by 15%. What is the new bill?",
+      "What simple interest does 500 yuan earn over 4 years at 3% annually?",
+      "An item costs 64 yuan after a 20% discount. Why is the original price not 64×1.2? How should I calculate it?"
+    ],
+    "mt_iFFKZd-Vgv": [
+      "Is the Sun rising in the east tomorrow certain, possible, or impossible?",
+      "A bag has 9 red balls and 1 yellow. Is drawing red certain or very likely?",
+      "Why is heads on a fair coin an even chance rather than very likely?"
+    ],
+    "mt_iNdrM2-oJf": [
+      "How does sharing 56 ping-pong balls among 8 classes differ from packing them in boxes of 8?",
+      "Help me draw two meanings of 24÷6: sharing into 6 equal groups and making groups of 6.",
+      "Make two stories for 56÷8: one sharing among people and one making fixed-size groups. How should each read?"
+    ],
+    "mt_iQYPw8bMfN": [
+      "I buy an 8-yuan pen and a 5-yuan notebook, paying 20 yuan. What change should I get?",
+      "My mother takes 50 yuan and buys meat for 18 and vegetables for 12. How much remains? Teach me an equation.",
+      "Water costs 2 yuan 5 jiao per bottle. What change comes from 10 yuan for 3 bottles? Is a bar model or equation clearer?"
+    ],
+    "mt_idbKDrf9qZ": [
+      "A rectangular plot is shared equally among 6 households. What fraction does each receive, and how can I divide it?",
+      "Show two ways to divide a square into 4 equal parts. What fraction is each?",
+      "If a rectangle has 4 differently shaped parts of equal area, is each still 1/4?"
+    ],
+    "mt_ifPDOYvUqm": [
+      "Four people share the remaining 1/3 of a watermelon equally. What fraction of the whole does each receive?",
+      "What is 1/6 ÷ 3? How can I draw 1/6 divided into 3 equal shares?",
+      "Is 1/3 ÷ 4 = 1/12 correct? How can multiplication check it?"
+    ],
+    "mt_ilPrU0cbtT": [
+      "I buy 23 items at 487 yuan each, but the till shows 1201 yuan. How can I quickly spot the error?",
+      "How can 500×20 estimate 487×23? How does the estimate check a written answer?",
+      "If one factor is rounded up and the other down in 487×23, is the estimate necessarily closer? When is an exact value needed?"
+    ],
+    "mt_ish_uH8vZe": [
+      "Before using a calculator for purchases costing 48.5, 123, and 79.5 yuan, how can I estimate the total?",
+      "How can I estimate 1468+2975+813 before calculating and then check the display?",
+      "A calculator shows 4150 for 83×5. How can I immediately see a keying error? Does 400×3 need a calculator?"
+    ],
+    "mt_isojCL9yy-": [
+      "A cinema ticket costs 40 yuan. What do 6 cost? What quick method multiplies whole tens by one digit?",
+      "Why can I think of 7×30 as 7×3 tens? What is the result?",
+      "Why does 5×40 end in two zeros, while 5×4 ends in only one?"
+    ],
+    "mt_iykH2P5oFq": [
+      "Is asking how long my journey to school takes a statistical question? How is asking the whole year group different?",
+      "Which is statistical: “How many days are in March?” or “How many hours do 12-year-olds usually sleep?” How can I tell?",
+      "Why is “How many people are in our class?” not a statistical question despite referring to a group? How can I change it?"
+    ],
+    "mt_iyovKgZC1q": [
+      "Matchstick triangles use 3 sticks for 1 and 5 for 2 joined together. How many for 20? What is the pattern?",
+      "What is the 20th term of 4, 7, 10, 13, …? How do I express the nth term?",
+      "Triangle angles sum to 180°, quadrilateral angles to 360°, pentagon angles to 540°. Why is an n-gon's sum (n-2)×180°?"
+    ],
+    "mt_izien3ZX51": [
+      "I have 485 game points and earn 100 for a correct answer. What is my new score?",
+      "What is 10 more than 608? What is 100 less than 608?",
+      "What is 10 more than 395? Why do both tens and hundreds change this time?"
+    ],
+    "mt_j5YqQnN6xe": [
+      "My mother says multiplication always makes numbers larger. Does buying 0.5 kg of apples at 12 yuan per kg support that claim? Explain.",
+      "Someone gets 3/8 for 3/4÷1/2. What went wrong? Teach me the correct calculation and reasoning.",
+      "An isosceles triangle has apex angle 60°. Prove step by step that both base angles are also 60°."
+    ],
+    "mt_jBQS-CicNn": [
+      "How can a pair such as (3, 5) locate a classroom seat by column and row?",
+      "Starting at the origin, I move 4 squares right and 2 up. What are the coordinates?",
+      "Why does the first coordinate describe horizontal movement? What happens if I reverse the order?"
+    ],
+    "mt_jCy07DyBNU": [
+      "To find 35% of a garment's price, can I combine 10% and 5% portions?",
+      "Teach me a quick method for 48×25. Why does multiplying by 100 then dividing by 4 preserve the answer?",
+      "What is the 20th term of 5, 9, 13, 17, …? How do I find a general rule?"
+    ],
+    "mt_jHgRQ4hR0g": [
+      "I buy 1 loaf at 8 yuan and 2 drinks at 5 yuan each. In one expression, which operation comes first?",
+      "In 12÷3+4×2, which operation comes first? Why not simply work left to right throughout?",
+      "Someone calculates 8+2×5 as 50. What is wrong? Why do multiplication and division precede addition and subtraction?"
+    ],
+    "mt_jHv4BgRK8B": [
+      "A desk measures 5 pencils or 20 erasers long. Why do different units give different numbers for the same desk?",
+      "A skipping rope measures exactly 2 meter sticks of 1 meter each. How many 10-cm sticks long is it?",
+      "Will measuring the same shelf in centimeters or decimeters give a larger number? Why does a smaller unit give a larger count?"
+    ],
+    "mt_jY7uf0Cb7o": [
+      "A library has 7345 books. What quantities do 7 and 3 represent?",
+      "What number is 3000+400+50+2? How do I split 8061 into thousands, hundreds, tens, and ones?",
+      "Do the two 4s in 4040 have the same value? What does each represent?"
+    ],
+    "mt_k2WE0-22-4": [
+      "Of 16 balloons, 1/4 are red. How many red balloons are there, and how can grouping help?",
+      "What is 3/4 of 12 biscuits? After finding 1/4, what comes next?",
+      "Five of 15 apples are green. What fraction is green, and how do I write it?"
+    ],
+    "mt_kDMKJ5Ztt6": [
+      "If 37 yuan is shared among 10 people, how much does each get? Why does a decimal point appear?",
+      "What is 4 ÷ 100? Which place does the 4 occupy in the answer?",
+      "Why does dividing by 10 move every digit one place right? How many places for division by 100?"
+    ],
+    "mt_kJ5wYzO8qC": [
+      "I collect 8 bottle caps and find 5 more. Why does making 10 first, then adding the rest, work?",
+      "Try making ten and counting on fingers for 9+6. Do both give the same answer?",
+      "Someone says 14-6 is 12. What went wrong, and how can a drawing explain it?"
+    ],
+    "mt_kJGCjnuelW": [
+      "I have 34 yuan and Grandma gives me 20 more. What is the quickest way to find the total?",
+      "A number plus 10 equals 45. What was the original number?",
+      "Why does 57+30 change only the tens digit and leave the ones unchanged?"
+    ],
+    "mt_kLQOzZYrd5": [
+      "A speedometer shows 60 kilometers per hour. What does per hour mean?",
+      "Detergent costs 24 yuan for 1.5 kg or 30 yuan for 2 kg. Which is cheaper per kilogram?",
+      "How many meters per second is 72 km/h? Why can division by 3.6 convert it?"
+    ],
+    "mt_kdWoAel3Zl": [
+      "A race timer shows 12.345 seconds. What does the third decimal place represent?",
+      "Write 0.025 as a fraction with denominator 1000, and 35/1000 as a decimal.",
+      "Why is one tenth equal to 100 thousandths? Where is 0.345 between 0.34 and 0.35?"
+    ],
+    "mt_km4V6d5IAh": [
+      "Are words in a seventh-grade English book longer than in a fourth-grade book? Can a few examples justify a conclusion?",
+      "Random samples of 20 words per book average 6.2 and 4.4 letters, both with mean absolute deviation about 0.9. What does this suggest?",
+      "Two sample medians differ by 1 point, but repeated sampling varies them by about 3 points. Is the 1-point difference convincing?"
+    ],
+    "mt_kw7xmp68rU": [
+      "My money box has 56 yuan and I add a 10-yuan note. What is the total without counting one by one?",
+      "What is 10 more than 73? What is 10 less?",
+      "Does adding 10 change only the tens digit? Why does 10 more than 95 have three digits?"
+    ],
+    "mt_kxeuXm6EyC": [
+      "Which playground equipment is most popular at lunchtime? How can a statistical investigation answer this?",
+      "Over three days I observe 15 swing users, 22 slide users, and 9 seesaw users. How can a bar chart answer the question?",
+      "How might conclusions from observing one day differ from observing three consecutive days?"
+    ],
+    "mt_lC_Q5mSL_I": [
+      "A cashier counts 3 bundles of 1000 yuan, 4 notes of 100, and 6 notes of 10. What is the total?",
+      "Where should 6800 roughly go on a number line from 0 to 10000?",
+      "What number is 2 thousands, 15 hundreds, and 3 ones? Why is it not 2153?"
+    ],
+    "mt_lMz9nAs7VO": [
+      "A plate has 5 apples and 3 pears. How do I correctly say which fruit there are more of?",
+      "How can matching 4 cookies with 4 sweets one to one show equal quantities?",
+      "How many sides and angles do triangles and squares have? Use sides and angles to describe their differences."
+    ],
+    "mt_lNGpnILM5C": [
+      "A race time is 12.635 seconds. What values do the decimal digits 6, 3, and 5 represent?",
+      "In 2.635, how many ones, tenths, hundredths, and thousandths does each digit represent?",
+      "How do I write 4 ones, 0 tenths, 7 hundredths, and 3 thousandths? Why include the 0?"
+    ],
+    "mt_lU-2aTRB9f": [
+      "Five students share the 93.5-yuan cost of a gift. How much each? How do I divide a decimal by an integer?",
+      "Help me calculate 14.76÷4 using long division. Where does the quotient's decimal point go?",
+      "In 7÷4, why can I append a 0 to the remainder 3 and continue dividing? How many decimal places will the quotient have?"
+    ],
+    "mt_liIW336odh": [
+      "How can I classify quadrilateral windows, tiles, and kites by their sides and angles?",
+      "A quadrilateral has four sides of 6 cm and four right angles. Which shape categories does it belong to?",
+      "Why are all squares rectangles but not all rectangles squares? What about rhombi and parallelograms?"
+    ],
+    "mt_lvaSGHwvQ5": [
+      "A wall is 4 1/2 meters long and I paint 2/3 of its length. How long is the painted section?",
+      "A recipe needs 2 1/3 cups of flour. How much for 1 1/2 batches?",
+      "After calculating 2 1/3 × 1 1/2, how can estimation check it? Should the result exceed 2 1/3?"
+    ],
+    "mt_lxaM6iVpdr": [
+      "A flag on grid paper moves 3 squares right and 2 down. How do its vertex coordinates change?",
+      "Translate triangle vertices (1, 2), (4, 2), and (1, 5) by 3 squares right and 2 down. What are the new coordinates?",
+      "Why does reflecting (3, 4) across the x-axis change the vertical coordinate's sign rather than the horizontal one?"
+    ],
+    "mt_m1W6nTQJ2b": [
+      "I have 8 marbles and receive 6 more. Is there a faster way to find the total than counting individually?",
+      "Teach me to calculate 13 − 4 by first subtracting to reach 10, then subtracting the rest. Why reach 10 first?",
+      "How can knowing 8 + 4 = 12 give 12 − 8? Is this faster than breaking a ten apart?"
+    ],
+    "mt_mFJ-2ZF6Tk": [
+      "My mother gives me 5 yuan for three small items. Before checkout, how can I estimate whether it is enough?",
+      "Three stationery items cost 2.45, 1.30, and 0.75 yuan. What is the total?",
+      "Which is heavier, a 1.5-kg watermelon or a 1200-g melon? How do I compare different units?"
+    ],
+    "mt_mN4Ye_vtR7": [
+      "Why are drinks cans cylinders rather than cubes?",
+      "Why are shoe boxes usually cuboids? How does that help storage in a cupboard?",
+      "Which makes the most stable base for a block tower: a sphere, cone, or cube? Why?"
+    ],
+    "mt_mQcWGh02no": [
+      "Should I measure a classroom with a ruler or meter stick? What about an eraser? How do I choose tools?",
+      "I can calculate 345+200 mentally. What about 345+278? Teach me when column addition is useful.",
+      "For 1000-397, is compensation or column subtraction quicker? Why?"
+    ],
+    "mt_mayItsxMUu": [
+      "Classmates' pencils have different lengths. How can one graph show the most common length at a glance?",
+      "Five crayons measure 6, 7, 7, 8, and 7 cm. Help me record them with crosses on a number line.",
+      "Six leaves measure 5, 6, 6, 6, 8, and 9 cm. On a dot plot, which length is most common? What is the longest-shortest difference?"
+    ],
+    "mt_mn765HbXi1": [
+      "Do third and sixth graders prefer the same sports? How can a spreadsheet make a comparative bar chart?",
+      "Of 30 students in one class, 12 read often; in another class of 25, 11 do. How can percentages compare them?",
+      "How can back-to-back dot plots compare two classes' long-jump results using mode, range, and distribution shape?"
+    ],
+    "mt_mnEVZNkX3p": [
+      "Why is a drawn circle flat while a ball in my hand is three-dimensional?",
+      "Which are two-dimensional: a drawn triangle, a cube block, a ping-pong ball, and a circular sticker?",
+      "A square sheet is two-dimensional. Why does joining 6 sheets into a box create a three-dimensional shape?"
+    ],
+    "mt_mpS-JK_p_m": [
+      "A school library has 2468 books and buys 1375 more. How do I avoid misaligning places in column addition?",
+      "Teach me 7003 − 2658 with column subtraction, regrouping across zeros step by step.",
+      "How can estimation and subtraction check 4526 + 3789 = 8315?"
+    ],
+    "mt_mqgu72aCMz": [
+      "Two apples and one pear cost 7 yuan; one apple and one pear cost 5. Why does the intersection of two lines give the answer?",
+      "Plot x + y = 6 and y = 2x, read their simultaneous solution at the intersection, and check by substitution.",
+      "The lines y = 2x + 1 and y = 2x − 3 are parallel. Does their simultaneous equation system have a solution? Why?"
+    ],
+    "mt_mr_Vk7FGzK": [
+      "I have 14 stickers and get 5 more for my birthday. What is the new total, and the quickest method?",
+      "Teach me 17 − 3 and 12 + 0. Why does adding 0 leave a number unchanged?",
+      "How do 9 − 0 and 9 − 9 differ? What does 0 mean in subtraction?"
+    ],
+    "mt_mywsN77hGZ": [
+      "A film starts at 15:45. What afternoon time is that? How does it differ from 3:45?",
+      "A rectangular tile measures 9 cm by 7 cm. What is its area, and why are the units square centimeters?",
+      "How do I distinguish acute, right, obtuse, and straight angles? What is a 100° angle called?"
+    ],
+    "mt_n0AlyLQwC9": [
+      "How can I find the fencing perimeter of an L-shaped flower bed when some side lengths are unmeasured?",
+      "A 4 cm × 3 cm rectangle is removed from a corner of a 10 cm × 8 cm rectangle. What is the remaining L-shape's perimeter?",
+      "Why does removing a small rectangle from a rectangle's corner reduce area but leave perimeter unchanged?"
+    ],
+    "mt_nNNVrLqPW3": [
+      "Apples cost a yuan and pears b yuan each. I buy 3 apples and 2 pears, then my mother buys 5 apples. How do I combine the costs?",
+      "Simplify 3a + 2b + 5a − 7b + 4 by identifying and collecting like terms.",
+      "Why can −2xy and 5yx combine, but 3x² and 3x cannot?"
+    ],
+    "mt_nOCPx5qw0Z": [
+      "Two families share 60 yuan of fuel costs in the ratio 2:3. How much does each pay?",
+      "Divide 180 in the ratio 1:2:3. What is each share?",
+      "Twenty-four sweets are split into 10 and 14. What is the ratio in simplest form, and each share as a fraction of the total?"
+    ],
+    "mt_nRksLqt-iR": [
+      "What shapes are cross-sections of a cylindrical sausage cut across and lengthways?",
+      "Count the faces, edges, and vertices of a quadrilateral-based pyramid and a triangular prism.",
+      "A cone is cut vertically through its apex. What is the cross-section, and why is it not a rectangle?"
+    ],
+    "mt_nTL-owFJTF": [
+      "How many boxes with 10-cm edges fit in a carton 50 cm long, 40 cm wide, and 30 cm high?",
+      "How many 1-cubic-centimeter cubes fill a cuboid 4 cm by 3 cm by 5 cm? Why multiply length × width × height?",
+      "Can length × width × height find the volume of an irregular model built from 58 one-cubic-centimeter cubes? Why?"
+    ],
+    "mt_nZkL5-XjRX": [
+      "Twenty-four mooncakes are packed equally in boxes. Which numbers per box are possible, and how many arrangements?",
+      "What are the factor pairs of 36? How can I avoid missing any?",
+      "Why can I stop at 6×6 when finding factor pairs of 36? Do 4×9 and 9×4 count as two pairs?"
+    ],
+    "mt_ndGqFPWyen": [
+      "A cake is cut into 5 equal pieces and I eat 1. What fraction of the whole have I eaten?",
+      "A sheet is folded into 4 equal parts and 3 are shaded. What fraction is shaded?",
+      "If a rope is cut into 6 pieces and I take 2, is that always 2/6? Why must the pieces be equal?"
+    ],
+    "mt_nvdpxAJTBG": [
+      "Counting socks in pairs is quicker than individually. What follows 2, 4, 6, …?",
+      "Teach me to count in fives to 50 and in tens to 100.",
+      "Will counting in twos from 2 reach 15? Why do counts in fives always end in 5 or 0?"
+    ],
+    "mt_nx4a3kH-59": [
+      "In PE, clap for multiples of 3, stamp for multiples of 5, and jump for both. How can a flowchart show the rules?",
+      "Starting at 1, repeat multiply by 2 then add 1 for 10 steps. What values appear? Help me organize a table.",
+      "Why are all numbers generated from 1 by multiply by 2 then add 1 odd?"
+    ],
+    "mt_nyK25mNOeR": [
+      "I have 3 strawberries and receive 2 more. How can fingers or a drawing show the total?",
+      "A basket has 6 oranges and 2 are eaten. How many remain? How can circles show the process?",
+      "A child says removing 1 of 5 blocks leaves 3. Is that correct? How can blocks justify my answer?"
+    ],
+    "mt_nzdtOLXWWa": [
+      "About 40% of blood donors have type A. Can random-number simulation estimate the probability without visiting a hospital?",
+      "Why does mapping random digits 0 to 3 to type A and 4 to 9 to other types represent exactly 40%?",
+      "Two simulations of 50 trials give estimates 0.18 and 0.26. Why do they differ, and how can I improve reliability?"
+    ],
+    "mt_oDU_8zMZjp": [
+      "A factory finishes 345 parts, then 7 more. What is the total? What is the quickest mental method?",
+      "Help me mentally calculate 462 − 5 and 538 + 6. How do I cross a whole ten?",
+      "Why does 345 + 4 change only the ones, while 345 + 7 also changes the tens?"
+    ],
+    "mt_oDlduFnemk": [
+      "A cinema locates seats by row and seat number. How does a coordinate grid locate (3, 5)?",
+      "Help me locate (3, 5) from the origin. Which direction comes first, and how many squares?",
+      "Are (2, 4) and (4, 2) the same point? Why does coordinate order matter?"
+    ],
+    "mt_oIzycTBeE4": [
+      "A balance has 4 apples plus 1 on one side and 5 on the other. Why is it balanced, and how does this relate to =?",
+      "Which is true, 4 + 1 = 5 + 2 or 6 = 6? How do I check both sides of an equals sign?",
+      "Many students put 9 in 7 + 2 = □ + 4. Why is that wrong?"
+    ],
+    "mt_oMkQQ2O-ML": [
+      "A shop price excludes tax, and 10% tax is added at checkout. How do I find the final amount?",
+      "A coat originally costs 80 yuan and is reduced by 25%. Estimate then calculate its new price.",
+      "What is a 45-yuan tax-exclusive price after 10% tax? Why must I not add 10% again to a tax-inclusive price?"
+    ],
+    "mt_o_p-3tCxiM": [
+      "There are 11 quarter-orange pieces. How many whole oranges do they make, and what fraction remains?",
+      "Convert 3 2/5 to an improper fraction and 11/4 to a mixed number.",
+      "Why can 10/5, the result of 6/5 + 4/5, be written as the integer 2?"
+    ],
+    "mt_oderfUBZPw": [
+      "Why do bars touch without gaps in a histogram of classmates' heights?",
+      "For height groups such as 140≤h<150, which group includes someone exactly 150 cm tall, and why?",
+      "Can a grouped height histogram reveal the tallest student's exact height? Which questions can it not answer?"
+    ],
+    "mt_oqziWKry-L": [
+      "Fold a circular sheet in half twice and unfold. What do its 4 central angles sum to, and why?",
+      "Two adjacent angles on a line include one of 125°. What is the other?",
+      "Two intersecting lines form one angle of 70°. What are the other three, and why are opposite angles equal?"
+    ],
+    "mt_oxfxzbat3k": [
+      "Two classes each have an odd number of students. When combined into pairs, can everyone have a partner?",
+      "Without calculating 347+129, is its sum odd or even? How can I tell?",
+      "Why must 6×37 be even? Does any integer multiplied by an even number give an even number?"
+    ],
+    "mt_p-nbe0w_lf": [
+      "Fifty-two students need vans seating 9 each. A calculator gives 5.777… How many vans must be rented?",
+      "I have 50 yuan and buy 5 packs of pencils at 9 yuan each. Write an equation using n for the money left.",
+      "If 100 apples go into boxes of 12, how many full boxes can I fill? When should I round up for a remainder, and when down?"
+    ],
+    "mt_p6MhZJYYPN": [
+      "A TV is advertised as 55 inches. How long is an inch, and how do I convert it to centimeters?",
+      "Using 1 inch ≈ 2.5 cm, about how many centimeters is a 6-inch phone screen?",
+      "If 1 kg ≈ 2.2 pounds, about how many pounds is a 30-kg student? Why is the conversion approximate?"
+    ],
+    "mt_pAcaehday5": [
+      "I am 6 years old. Can fingers, blocks, or drawn dots represent 6?",
+      "Teach me to represent 8 with tally strokes and locate 8 on a number line.",
+      "Five beads and 5 drawn dots both represent 5. Why is 5 just one point on a number line?"
+    ],
+    "mt_pbuhUQJjtt": [
+      "A price tag says 3.45 yuan. How many yuan, jiao, and fen is that? What do the two decimal places mean?",
+      "How many jiao are 1 yuan 5 jiao? How many yuan and jiao are 45 jiao? Teach me the conversions.",
+      "Give two different coin or note combinations for 3 yuan 6 jiao. Why can it be written 3.6 yuan?"
+    ],
+    "mt_pjfmCMMPjO": [
+      "A skipping rope costs 40 yuan and our class needs 6. How can I quickly calculate the cost mentally?",
+      "For 2×7×5, which pair is easiest to multiply first? Why may I reorder?",
+      "Why does any number times 0 give 0, while times 1 gives itself? Consider 365×0 and 365×1."
+    ],
+    "mt_pyMD_SIiYO": [
+      "If two people each have an even number of sweets, must their combined total be even? Explain why.",
+      "In column addition for 367+258, why does ten ones carry 1 into the tens? Explain step by step.",
+      "Someone says 52-27 is 35. What went wrong, and how should regrouping work?"
+    ],
+    "mt_q9EaJc2FP8": [
+      "A school buys 27 cases of 34 exercise books. What is the total? How do I multiply two two-digit numbers?",
+      "Help me use column multiplication for 2347×6. How can I avoid errors with repeated carrying?",
+      "Draw 45×23 as a rectangle split into four areas. Which written-multiplication step does each match?"
+    ],
+    "mt_qUGMyMYn9m": [
+      "A skateboarder says they did a 360. What does 360 mean, and how large is 1 degree?",
+      "How many degrees does a clock's minute hand turn from 12 to 5? What fraction of a full turn is 1 degree?",
+      "Why is 45° made of 45 angles of 1°? How many degrees are a half turn and a three-quarter turn?"
+    ],
+    "mt_qeZYF6HZ4o": [
+      "How can above, below, and beside clearly describe where to put toys away?",
+      "I stand in front of a box, a cat behind it and a dog in front. Which animal is nearer me?",
+      "A classmate facing me and I both raise our right hands. Why does one appear on the left and the other on the right?"
+    ],
+    "mt_r0VXbfAmsH": [
+      "Why is a bundle of 10 pencils called 1 ten?",
+      "How many bundles of ten can I make from 23 sticks, and how many are left?",
+      "Why do 10 separate ones and 1 bundled ten represent the same quantity?"
+    ],
+    "mt_r8XnXwRA6g": [
+      "Hundreds of students vote, so a pictogram cannot fit one smiley per person. What can I do?",
+      "Each pictogram icon means 5 people. Football has 7 icons and ping-pong 4. How many more prefer football?",
+      "A bar-chart square represents 10 pets. What does a bar 2 1/2 squares long mean, and how do I read it?"
+    ],
+    "mt_r8c43QB6wx": [
+      "Which door-frame, ladder, and roof edges are parallel or perpendicular?",
+      "Which of rectangles, trapezoids, parallelograms, and general quadrilaterals have parallel sides?",
+      "Does a right triangle have parallel sides? Does it have perpendicular sides?"
+    ],
+    "mt_rCMdwG-YOE": [
+      "Each cupcake needs 1/3 cup of raisins. How many can 2 cups make?",
+      "Three people share 1/2 kg of chocolate equally. How many kilograms each? How do I write the calculation?",
+      "Make a story for 5 ÷ 1/2. How does it differ from a story for 1/2 ÷ 5?"
+    ],
+    "mt_rxInpOQ74w": [
+      "A reservoir falls 3 cm daily, recorded as −3. Was its level 4 days ago higher or lower? How can multiplication express this?",
+      "Determine the signs and results of (−6)×4, (−6)×(−4), and (−24)÷(−3).",
+      "Why does a negative times a negative give a positive? How can counting negative factors determine a product's sign?"
+    ],
+    "mt_s2mfRBoTal": [
+      "A hopscotch route has 10 squares and I have jumped 7. How many remain? Can I recall it immediately?",
+      "Knowing 8 + 5 = 13, how can I immediately give 13 − 5 and 13 − 8?",
+      "Which pairs of one-digit numbers sum to 15? How can I list them all systematically?"
+    ],
+    "mt_sA2OvTiech": [
+      "A bottle has 1.5 liters and I pour out 0.375 liter. How much remains?",
+      "Three wood strips measure 1.234, 0.567, and 2.199 meters. How long are they joined together?",
+      "How can I find two three-decimal-place numbers that sum to exactly 1? What pattern do the pairs follow?"
+    ],
+    "mt_sBcRdUfAzV": [
+      "Traffic signs can be circles, triangles, or octagons. How do I count their sides?",
+      "How many sides do an isosceles triangle and rectangle have? Can they fold along a vertical line so their halves match?",
+      "Two shapes both have 4 sides, but only one folds into matching left and right halves. What shapes might they be?"
+    ],
+    "mt_sHJqh6UUya": [
+      "Is a bottle cap equally likely to land open-side up or on its side? Must I estimate by repeated tossing?",
+      "A coin shows heads 28 times in 50 tosses. What is the relative frequency of heads?",
+      "Is the heads frequency likelier to approach 0.5 after 10 tosses or 1000? Why?"
+    ],
+    "mt_sYpKWbq5ra": [
+      "I have 5 balloons and receive 1 more. How many now? How does the number change each time I add one?",
+      "What number is 1 more than 7? What is 1 less than 7?",
+      "Why does each next counting number represent one more object? What is 1 more than 9?"
+    ],
+    "mt_skYly2Qm01": [
+      "A door and fridge cannot be moved together. How can I compare their heights using a rope?",
+      "Three pencils are 12, 9, and 15 cm long. Order them shortest to longest.",
+      "If a red rope is longer than a yellow rope and yellow longer than blue, why must red be longer than blue?"
+    ],
+    "mt_snlqRCiA1R": [
+      "I cycle 200 meters in 1 minute and 400 in 2 minutes. How do I plot these as coordinate points?",
+      "To plot (4, 7), how many squares do I count along the horizontal and vertical axes?",
+      "If the horizontal axis is hours and the vertical axis kilometers, what does (6, 3) mean?"
+    ],
+    "mt_svFa6_mjO_": [
+      "A circular flower bed has diameter 6 meters. What length of fence goes around it?",
+      "A circle has radius 5 cm. Find its circumference and area using π = 3.14.",
+      "A track combines a rectangle with a semicircle at each end. Why must its perimeter exclude two rectangle sides?"
+    ],
+    "mt_t0g2SlP404": [
+      "Where between 0 and 1 should the probability of heads on a coin go?",
+      "Write probability 3/4 as a decimal and percentage, and mark it on a line from 0 to 1.",
+      "About where between 0 and 1 is very unlikely? Why does 0.5 mean an even chance?"
+    ],
+    "mt_t9BICauBSI": [
+      "How can someone instantly recognize 4 dots on a die without counting them?",
+      "Teach me to instantly show 3 fingers without counting them individually.",
+      "Is 5 easier to recognize as a row of dots or a die pattern? Why?"
+    ],
+    "mt_tAJH5BrpOx": [
+      "A channel has a trapezoidal cross-section. Why is its area (top base + bottom base) × height ÷ 2?",
+      "A triangular prism has a base triangle of base 6 cm and height 4 cm, and length 10 cm. What is its volume?",
+      "Why can a cylinder's volume be found like a prism's using base area × height, giving πr²h?"
+    ],
+    "mt_tAtMET4EIU": [
+      "A city library has 462000 books and adds 10000 yearly. How many will it have in each of the next three years?",
+      "Starting at 800000, count backwards in steps of 100000. Which numbers appear?",
+      "Starting at 395000 and adding 10000, why do both the ten-thousands and hundred-thousands digits change on the first step?"
+    ],
+    "mt_tVvZVWO5d6": [
+      "How can I find the weekday of March 15 on a calendar? How should I write today's date?",
+      "From June 3, how many days until a birthday on June 17? How do I count on a calendar?",
+      "National Day is October 1 and today is September 10. How many days remain, approximately how many weeks?"
+    ],
+    "mt_tedML_iu4Y": [
+      "Two roads form an X and one angle is 70°. Can I find the other three without measuring?",
+      "Vertically opposite angles are (2x + 10)° and 70°. What is x?",
+      "Three adjacent angles a, b, c form a straight angle. If a = 40° and b is 2 times a, what is c? What are the steps?"
+    ],
+    "mt_tegkuJA5gM": [
+      "Why does unfolding a gift box into a net help find how much wrapping paper it needs?",
+      "A cuboid is 5 cm long, 4 cm wide, and 3 cm high. After drawing its net, how do I find its surface area?",
+      "How much cardboard makes an open-top box 30 cm long, 20 cm wide, and 10 cm high? Why square centimeters?"
+    ],
+    "mt_tpT9brpI6D": [
+      "How many 250-milliliter cups can a 1.5-liter bottle fill? How do I convert liters and milliliters?",
+      "How many seconds are 2.5 hours? Should I convert to minutes first?",
+      "Why is 1 square meter equal to 10000 square centimeters rather than 100?"
+    ],
+    "mt_tuEnyrp5Ia": [
+      "My teacher says “average journey time is 14 minutes” is incomplete. What should a good data summary explain?",
+      "Thirty students have median journey time 14 minutes, with the middle half between 9 and 22. How can I write a complete summary?",
+      "A few journeys exceed an hour. Why might median and interquartile range be better summaries than the mean?"
+    ],
+    "mt_u23IGDxOpk": [
+      "Which zebra-crossing lines and roadside lines are parallel or perpendicular?",
+      "Among a rectangle's four sides, which pairs are parallel and which perpendicular?",
+      "If two lines do not currently appear to intersect, must they be parallel? How can I tell?"
+    ],
+    "mt_u5HkSxZECM": [
+      "How do measured heights differ from counted people? Which are continuous and which discrete data?",
+      "For a bar chart of favorite colors, what should the title, horizontal axis, vertical axis, and scale say?",
+      "What do tally chart, frequency, and pictogram mean? How should I use them when describing a survey?"
+    ],
+    "mt_uDJY0X0hgo": [
+      "Game scores are -1.5, 3/4, -2, and 0.8. How do I order them on a number line?",
+      "Order -3/4, 0.75, -0.8, 1/2, and -1 from smallest to largest, joining them with <.",
+      "Does >, <, or = go between 0.75 and 3/4? How do x≤-2 and x<-2 differ on a number line?"
+    ],
+    "mt_uESbzWCZIq": [
+      "A rectangle has area 6x + 9 and width 3. What is its length, and how does this relate to factoring?",
+      "Factorize 12a² − 8a. How do I find the greatest common factor?",
+      "Someone factors 10x + 15y as 5(2x + 15y). What is wrong? How can expansion check it?"
+    ],
+    "mt_uG2mjHFOlO": [
+      "I hold 3 sweets in my left hand and 2 in my right, then swap them. Does the total change?",
+      "How many tens and ones make 14? Show it with a bundle of sticks and loose ones.",
+      "Beads repeat red, yellow, yellow, red, yellow, yellow. What is the 10th bead's color? How can I find the pattern?"
+    ],
+    "mt_uhuxX8sg9f": [
+      "How can my friend and I standing back to back show who is taller?",
+      "How should I place two ribbons to compare lengths? Must one end line up?",
+      "One rope is twice as long as another. How will the longer compare with the shorter after folding it in half?"
+    ],
+    "mt_vHzVa3SURC": [
+      "Using F = 1.8C + 32, what is 25 °C in Fahrenheit? What matters when substituting?",
+      "Evaluate a² − 4b + 5 when a = −3 and b = 2. How do I square a negative number?",
+      "For x = −2, are −x² and (−x)² equal? Why use brackets when substituting negatives?"
+    ],
+    "mt_vJUa62bxeR": [
+      "How can I draw a neat, closed pentagon on paper?",
+      "Can 4 sticks of 6 cm and 8 sticks of 3 cm build a cuboid frame?",
+      "A quadrilateral-based pyramid looks different upside down or sideways. How can I still recognize it?"
+    ],
+    "mt_vKcxX6iNOA": [
+      "A recipe says 3/4 cup of sugar. What do 3 and 4 mean, and how do I read it?",
+      "Classify 1/4, 3/5, 7/4, and 2 1/3 as unit fraction, proper fraction, improper fraction, or mixed number.",
+      "Why are 2/4 and 1/2 equivalent fractions? What does simplest form mean?"
+    ],
+    "mt_vXRzMbiPff": [
+      "A thermometer drops below 0 °C in winter. How do I count and read the marks below 0?",
+      "Count backwards from 4 in steps of 1, past 0 to -3. Which numbers do I pass?",
+      "Why is -5 less than -2? Which is farther from 0 on a number line?"
+    ],
+    "mt_vmQJAtAFuy": [
+      "Where do rain tomorrow and rolling a 7 on a standard die belong on a probability scale from 0 to 1?",
+      "Why is the chance of 4 on a fair die 1/6? Roughly where is that on the scale?",
+      "A spinner is half red, one quarter blue, and one quarter green. Are its three colors equally likely?"
+    ],
+    "mt_vmW2cb5c7A": [
+      "How can I mentally find the total for 8 books costing 45 yuan each before reaching the till?",
+      "Calculate 45×8 mentally as 40×8 plus 5×8. Is there an even faster method?",
+      "Why can I calculate 199×6 as 200×6 minus 6? How does rounding then adjusting work?"
+    ],
+    "mt_vnJEztczji": [
+      "What does a flattened toothpaste carton look like? Can I see how many faces it has?",
+      "How many triangles and rectangles make a triangular prism's net?",
+      "Why can 6 squares in a straight row not fold into a cube? Which arrangements can?"
+    ],
+    "mt_w6MxaaoMXZ": [
+      "Counting 5-jiao coins gives 5, 10, 15 jiao, … Why do the ones digits always alternate 0 and 5?",
+      "Why are 3×8 and 8×3 symmetrically placed in a multiplication table? Why can the table fold along its diagonal?",
+      "In the 9 times table, why do the digits of 18, 27, 36, and 45 each sum to 9?"
+    ],
+    "mt_wB-GBDkoNr": [
+      "A grocery scale shows 0.75 kg. Is that equal to 3/4 kg?",
+      "A rope is 2.5 meters long and I cut 0.75 meter off. How much remains?",
+      "How many grams are 3/10 of 1 kg? How is that written as a decimal in kilograms?"
+    ],
+    "mt_wE7-Gs9ENL": [
+      "Which parts of a photo should I measure to find the wood-strip length needed for a frame?",
+      "A rectangular flower bed is 8 meters long and 5 meters wide. How much railing goes around it?",
+      "A regular hexagon has sides of 7 cm. How do I find its perimeter, and why is perimeter the boundary length rather than the inside size?"
+    ],
+    "mt_wPgpMJ0-PA": [
+      "A sheet is about 0.087 mm thick. How thick are 1000 sheets? What happens to the decimal point when multiplying by 1000?",
+      "Calculate 3.456×100 and 45.2÷1000. Which way and how many places does the decimal point move?",
+      "Why does multiplying by 10 really move each digit one place left? How can a place-value chart show it?"
+    ],
+    "mt_wQ89AEXhz3": [
+      "Each cake box has 8 pieces. How many in 6 boxes? How can I remember the 8 times table?",
+      "What are 4×7 and 28÷4? How can the same multiplication fact give both?",
+      "How are the 8 and 4 times tables related? Why is 8×6 twice 4×6?"
+    ],
+    "mt_wUSbRt3-qw": [
+      "A cabinet diagram looks slanted. How can I recognize a cuboid from the flat drawing?",
+      "What solid can a net of 2 squares and 4 rectangles form?",
+      "If a solid looks square from the front, side, and top, must it be a cube?"
+    ],
+    "mt_wh3UqnWsa7": [
+      "I buy 5 bags of 2 apples. Is there a faster way to count them than one at a time?",
+      "Share 15 sweets equally among 3 children. How many each, and how can grouping help?",
+      "Draw an array for 6 plates with 4 dumplings each. How do addition and multiplication each give the total?"
+    ],
+    "mt_wzAZ8qFDc4": [
+      "A 45-cm ribbon has 18 cm cut for a bow. How much remains? Is a mental or written calculation better?",
+      "I have 35 yuan, spend 12 on stationery, then receive 5 from my mother. How much now?",
+      "Why can I calculate 50 − 19 as 50 − 20 plus 1? Why add 1 rather than subtract it?"
+    ],
+    "mt_x7V1qrkiqH": [
+      "I repeatedly sample 20 red and white balls from a bag, replacing each sample. Why does the red count vary?",
+      "Five random samples have red proportions of 25%, 30%, 40%, 35%, and 30%. How much might a single estimate vary?",
+      "Classmates' sleep times range from 6 to 11 hours. Why do means of 5 samples vary only from 8.6 to 9.3 hours?"
+    ],
+    "mt_x8TshvbbQT": [
+      "A bus says route 63 and a price tag says 63 yuan. Do these two 63s mean the same thing?",
+      "How do I write seventy-nine in digits? Is 709 correct?",
+      "Consider house number 25, height 95 cm, place 3, and 9 apples. Which describe quantity, order, or a label?"
+    ],
+    "mt_xACS3rWWDp": [
+      "How can I divide both a round pancake and rectangular bread into four equal parts?",
+      "Four friends each eat half a sandwich. How many sandwiches are needed? Can a diagram show it?",
+      "Six people each get half a cake. How many cakes are needed? How does two halves make one help?"
+    ],
+    "mt_xAf2bu9wYK": [
+      "I sleep 8 hours daily. What fraction of a day is that, and how do I find it?",
+      "What fraction of 2 hours is 45 minutes? How do I handle different units?",
+      "What fraction of 2 kg is 3 kg? What does an answer greater than 1 mean?"
+    ],
+    "mt_xMt1TLTs--": [
+      "A stadium seats 67450, reported as about 67000. To which place has it been rounded?",
+      "Five city populations are 845200, 798500, 912300, 760400, and 803600. What is the largest-smallest difference?",
+      "What is the largest six-digit number whose digits sum to 15? How should I reason it out?"
+    ],
+    "mt_xPqczp7zPX": [
+      "One book has 345 pages and another 200. What is the total? Why does only the hundreds digit change?",
+      "Mentally calculate 762 − 400 and 518 + 300. Which digit changes and which stay fixed?",
+      "Someone says 506 + 200 = 526. What is wrong? Which place matters when adding whole hundreds?"
+    ],
+    "mt_xSgAgg9Ej_": [
+      "If classroom duties are assigned by drawing lots, does everyone have the same chance? What makes it fair?",
+      "A spinner has 4 sections, one covering half and the other three equal. Are all sections equally likely?",
+      "Does a bag having red, yellow, and blue balls imply equal probabilities? Give an unequal example."
+    ],
+    "mt_xWg0lI_gG4": [
+      "My brother and I mark our heights on a door frame. How do I find how many centimeters taller I am?",
+      "A shelf is 92 cm high and a desk 68 cm. How many centimeters taller is the shelf?",
+      "One pencil spans 0 to 13 on a ruler, another 3 to 11. Which is longer, and by how many centimeters?"
+    ],
+    "mt_xZvDCYA5Ae": [
+      "There are 42 oranges packed 6 per bag. How many bags? How do I find the blank in ( )×6=42?",
+      "Fill the blanks in 7×( )=63 and ( )÷5=9.",
+      "Why use multiplication for ( )÷5=9 but division for 7×( )=63?"
+    ],
+    "mt_xfwv0M83mJ": [
+      "In how many ways can 24 sweets be packed equally into bags? How does this relate to factors?",
+      "Is 3 a factor or multiple of 12? What is 12 in relation to 3? How do I say it accurately?",
+      "How do I read 5², and how does it differ from 5×2? How can I abbreviate 48 square centimeters?"
+    ],
+    "mt_xhoOWnhtHq": [
+      "Buses on two routes leave every 12 and 18 minutes. After departing together, when will they next depart together?",
+      "Express 360 as a product of prime factors, then using exponents.",
+      "How can prime factorization find the greatest common factor and least common multiple of 84 and 90? Why is factorization unique?"
+    ],
+    "mt_xmmgAzxe5j": [
+      "A box holds 10 eggs, with 4 outside, making 14. Why is 14 called 1 ten and 4 ones?",
+      "Split 17 into 10 and what? How should I write the equation?",
+      "What is 1 more than 19? Why do ten ones become 2 tens in the total?"
+    ],
+    "mt_xppl18avyY": [
+      "How can I sort mixed toy cars, blocks, and balls, then count each category?",
+      "There are 3 red blocks, 5 blue, and 2 yellow. After sorting by color, which are most and fewest?",
+      "Buttons can be sorted by color or size. Will category counts change with a different classification?"
+    ],
+    "mt_xq3YHZ2zeR": [
+      "Which part of a circle does a bicycle spoke from center to rim represent?",
+      "A circle's radius is 4.5 cm. What is its diameter, and why?",
+      "Why is a circle's diameter always 2 times its radius? Which part is the circumference?"
+    ],
+    "mt_y-BuQAfw4B": [
+      "An enlarged photo keeps people undistorted. How have its length and width changed?",
+      "A triangle has sides 3, 4, and 5 cm. What are they after enlargement by factor 2? Do its angles change?",
+      "Are a 4×6 rectangle and a 6×8 rectangle similar? How can I tell?"
+    ],
+    "mt_y1XCVsIelg": [
+      "How many rectangular equal-row arrangements can 21 beads make? Why can 23 make only one nontrivial row arrangement?",
+      "Is 51 prime or composite? Help me find its factors step by step.",
+      "Why is 1 neither prime nor composite? Which primes are below 20, and how can I remember them?"
+    ],
+    "mt_y1n0Zwhoca": [
+      "How large is a book cover? Can I find out by covering it with 1-square-centimeter tiles?",
+      "An L-shape combines a 4-square × 3-square rectangle and a 2-square × 2-square square. How many unit squares is its area?",
+      "Two shapes cover 14 and 16 squares, but the squares differ in size. Can I directly compare their areas?"
+    ],
+    "mt_yGv8doDAmp": [
+      "How many corners do triangular and square biscuits have? Which has more?",
+      "Count a rectangle's sides and corners. How many fewer sides does a triangle have?",
+      "What shape is each face of a Rubik's Cube? How many pointed corners does the whole cube have?"
+    ],
+    "mt_yJmvUCCym7": [
+      "My mother buys 6 apples and my brother and I eat 2. How many remain? Can drawn circles help?",
+      "Teach me this problem: 5 birds are in a tree and 3 more arrive. How many now?",
+      "A box has 9 balls, including 4 red; the rest are yellow. How many yellow, and why subtract?"
+    ],
+    "mt_yK51ZnKA8m": [
+      "Soy milk uses 2 parts soybeans to 5 parts water. How do I write this as a ratio?",
+      "A table has x values 1, 2, 3 and y values 3, 6, 9. What is the ratio x:y, and how do I write their relationship?",
+      "Can ratio 2:5 be written as fraction 2/5? How is it related to y=(2/5)x?"
+    ],
+    "mt_yTWxkzzoOZ": [
+      "A bus has 45 people; 18 leave and 23 get on. How many now?",
+      "An older brother has 38 cards, 15 fewer than his sister. How many does she have? Write an equation using □ for the unknown.",
+      "A box had some eggs. After using 12 and buying 30, it has 65. How many originally?"
+    ],
+    "mt_yXO7lQ9Yn7": [
+      "Block steps use 3 blocks in layer 1 and 2 more in each next layer. How many in layer 6? Can I write a rule?",
+      "Write the first five terms of the sequence with nth term 3n − 2. Is it arithmetic?",
+      "What rules describe 2, 6, 18, 54 and 2, 6, 12, 20? Which is geometric, and which is neither arithmetic nor geometric?"
+    ],
+    "mt_ylXdiVRAYv": [
+      "April has sunny, cloudy, and rainy days. How can I organize each count into a table?",
+      "A bag has 7 strawberry sweets, 3 lemon, and 5 apple. Put them in a table and order from most to fewest.",
+      "If two categories have equal counts, how should I order them from most to fewest?"
+    ],
+    "mt_yqAL6O5i_v": [
+      "How can I count scattered blocks without missing or double-counting any?",
+      "Teach me to take exactly 14 pencils from a large box. When should I stop counting?",
+      "Eighteen beans form a circle. Where should I start to avoid repeating? How can I mark my progress?"
+    ],
+    "mt_yqZiX6vS7D": [
+      "A 1:50000 map shows two places 6 cm apart. What is the real distance, and how do I write the calculation?",
+      "A tank is 60 cm long and 30 cm wide, filled to depth 25 cm. How many liters are needed? Teach me a diagram and calculation.",
+      "Each of 35 students needs 1.3 meters of ribbon. What is the total? If sold only by whole meters, how much must I buy?"
+    ],
+    "mt_z5iwdZyeDr": [
+      "A phone plan costs 20 yuan monthly plus 5 yuan per 1 GB. How do I express and graph the relationship between data use and cost?",
+      "Tabulate y = 3x + 2 for x from 0 to 4, then plot the graph.",
+      "A pool holds 600 cubic meters and drains 50 per hour. Express the water remaining and find where its graph meets the horizontal axis."
+    ],
+    "mt_zMEvtigoM3": [
+      "Should I measure a pencil with a ruler or grid squares? Why are ruler markings like a number line?",
+      "Teach me 38+25 on a number line. How many tens and then ones should I jump?",
+      "For 62-27, is a number line or small blocks easier? Why?"
+    ],
+    "mt_zOWwLxa77y": [
+      "How do I read × and ÷ in my brother's homework? What does each mean?",
+      "Read 3×4=12 and 12÷3=4 aloud and explain every symbol.",
+      "Does = simply mean here comes the answer? Why is 12=3×4 also correct?"
+    ],
+    "mt_zQfWqImxva": [
+      "Students taller than 140 cm go left, otherwise right. How can a flowchart show this decision?",
+      "Starting at 7, divide even numbers by 2 and add 1 to odd numbers until reaching 1. List each number.",
+      "Starting at 0, keep adding 7 but stop before 80. How do I specify the steps and stopping condition? What pattern results?"
+    ],
+    "mt_zd0YkB3xNj": [
+      "At a market, what does the number on the scale weighing apples represent?",
+      "A book balances 5 blocks. How can I describe the book's weight?",
+      "A book weighs the same as 5 large blocks or 10 small blocks. Why do the counts differ?"
+    ],
+    "mt_zfy1gOEewd": [
+      "A pencil box holds 10 pencils. How many tens and how many pencils are in 5 boxes?",
+      "How many tens and ones make 30? Show it with sticks.",
+      "Why does 50 need a 0 in the ones place? What number results without it?"
+    ],
+    "mt_zkFbMLpu3U": [
+      "Two cups are full. How can I compare which holds more water?",
+      "Water from a large bottle fills a small cup with some still left in the bottle. Which holds more?",
+      "A tall narrow cup and a short wide cup are both half full. Does a higher water level necessarily mean more water?"
+    ],
+    "mt_zuKAX6lcYR": [
+      "A plate has 5 biscuits and I eat 2. How many remain? Does subtraction mean taking away?",
+      "Use blocks to model 7 crayons with 3 lent to a classmate. How many remain?",
+      "Of 8 children, 3 are boys. How many girls? Why use subtraction when nobody leaves?"
+    ],
+    "mt_zuOGOGFAKb": [
+      "A pencil's cross-section looks hexagonal. How many sides and corners does a hexagon have?",
+      "How do I draw a figure with 5 sides, and what is it called?",
+      "Squares, rectangles, and trapezoids all have 4 sides. What shared name describes them?"
+    ],
+    "mt_zxST3MarI9": [
+      "Dad adds 47 yuan and 28 yuan by adding whole tens then the remaining ones. Why does splitting it this way work?",
+      "Why can 56 + 19 be calculated by adding 20 then subtracting 1? Where does that extra 1 come from?",
+      "In column subtraction for 63 − 27, why does borrowing 1 from the tens give 10 ones?"
+    ]
+  }
+}
