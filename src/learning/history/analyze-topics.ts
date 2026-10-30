@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { BridgeRpcError, createUiProtocolBridge, getUiProtocolFeatures, METHODS, type UiProtocolBridge } from '../../runtime/ui-protocol-bridge';
 import { historySha256 } from './identifiers';
 import { historyRequestTimeout } from './request-timeout';
@@ -18,7 +19,7 @@ export const createTopicAnalysisBridge = (identity: HistoryIdentity, origin?: st
   features: [...getUiProtocolFeatures(), 'session.workspace_cwd.v1'] });
 class AnalysisHttpError extends Error {
   readonly status: number;
-  constructor(status: number) { super('知识点分析暂不可用，原始学习记录已保留'); this.status = status; }
+  constructor(status: number) { super(tr("知识点分析暂不可用，原始学习记录已保留")); this.status = status; }
 }
 const safeControl = (value: unknown): value is Control => {
   if (!value || typeof value !== 'object') return false;
@@ -42,17 +43,17 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
 }: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; canContinue?: () => boolean } = {}): Promise<TopicAnalysisProgress> {
   const headers = { Authorization: `Bearer ${identity.token}`, 'X-Learning-Owner': identity.owner, 'Content-Type': 'application/json' };
   const request = async <T,>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> => {
-    if (!isCurrent()) throw new Error('账号已切换，知识点分析已停止');
+    if (!isCurrent()) throw new Error(tr("账号已切换，知识点分析已停止"));
     const response = await fetcher(`${base}/api/learn/history/analysis${path}`, { method, headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'error', signal: historyRequestTimeout(10000) });
-    if (!isCurrent()) throw new Error('账号已切换，知识点分析已停止');
+    if (!isCurrent()) throw new Error(tr("账号已切换，知识点分析已停止"));
     if (!response.ok) throw new AnalysisHttpError(response.status);
     const result = await response.json() as T & { profile_id?: string };
-    if (result.profile_id !== identity.owner) throw new Error('知识点分析账号不符');
+    if (result.profile_id !== identity.owner) throw new Error(tr("知识点分析账号不符"));
     return result;
   };
   const controls = (await request<{ controls: { id: string; control: Control }[] }>('/controls')).controls;
-  if (!Array.isArray(controls) || controls.some(row => !/^[a-f0-9]{64}$/.test(row.id) || !safeControl(row.control))) throw new Error('分析连接的授权记录需要核对');
+  if (!Array.isArray(controls) || controls.some(row => !/^[a-f0-9]{64}$/.test(row.id) || !safeControl(row.control))) throw new Error(tr("分析连接的授权记录需要核对"));
   const purge = async (id: string, control: Control) => {
     const bridge = createBridge();
     try {
@@ -60,7 +61,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
       const result = await bridge.callMethod<{ purged?: boolean; already_purged?: boolean; partial?: boolean; errors?: unknown[]; residual_errors?: unknown[] }>('peer/purge', {
         session_id: control.host, profile_id: identity.owner, peer: control.peer, host_token: control.token,
       });
-      if ((!result.purged && !result.already_purged) || result.partial || result.errors?.length || result.residual_errors?.length) throw new Error('分析临时资料尚未清理完成');
+      if ((!result.purged && !result.already_purged) || result.partial || result.errors?.length || result.residual_errors?.length) throw new Error(tr("分析临时资料尚未清理完成"));
       await request(`/controls/${id}`, undefined, 'DELETE');
     } finally { await bridge.stop(); }
   };

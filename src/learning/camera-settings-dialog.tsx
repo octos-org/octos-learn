@@ -1,3 +1,5 @@
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import {
   CameraOff,
   FlipHorizontal2,
@@ -29,6 +31,7 @@ export function CameraSettingsDialog({
   onReset: () => void;
   onClose: () => void;
 }) {
+  useLocale();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -50,15 +53,15 @@ export function CameraSettingsDialog({
       >
         <header className="learning-camera-dialog-header">
           <div>
-            <span>Camera framing</span>
-            <h2 id="learning-camera-dialog-title">调整老师看到的画面</h2>
-            <p>这里的方向、缩放和取景会原样应用到发送给老师的图片。</p>
+            <span>{tr("Camera framing")}</span>
+            <h2 id="learning-camera-dialog-title">{tr("调整老师看到的画面")}</h2>
+            <p>{tr("这里的方向、缩放和取景会原样应用到发送给老师的图片。")}</p>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            aria-label="关闭摄像头画面设置"
+            aria-label={tr("关闭摄像头画面设置")}
           >
             <X size={22} />
           </button>
@@ -76,18 +79,17 @@ export function CameraSettingsDialog({
             ) : (
               <div className="learning-camera-dialog-placeholder">
                 <CameraOff size={34} />
-                <strong>摄像头预览不可用</strong>
-                <span>{error ?? "仍可先设置方向和清晰度，启用摄像头后即可预览。"}</span>
+                <strong>{tr("摄像头预览不可用")}</strong>
+                <span>{error ?? tr("仍可先设置方向和清晰度，启用摄像头后即可预览。")}</span>
               </div>
             )}
             <div className="learning-camera-dialog-preview-label">
-              <strong>老师看到的画面</strong>
+              <strong>{tr("老师看到的画面")}</strong>
               <span>{settings.rotation}° · {settings.zoom.toFixed(1)}×</span>
             </div>
             {temporaryPreview && (
               <p className="learning-camera-dialog-privacy">
-                摄像头仅用于本次调整，关闭窗口后会自动停止。
-              </p>
+                {tr("摄像头仅用于本次调整，关闭窗口后会自动停止。")}</p>
             )}
           </div>
 
@@ -95,39 +97,39 @@ export function CameraSettingsDialog({
             <div className="learning-camera-dialog-actions">
               <button
                 type="button"
-                aria-label="向左旋转摄像头画面"
+                aria-label={tr("向左旋转摄像头画面")}
                 onClick={() => onChange({
                   rotation: ((settings.rotation + 270) % 360) as CameraRotation,
                 })}
               >
                 <RotateCcw size={19} />
-                <span>左转</span>
+                <span>{tr("左转")}</span>
               </button>
               <button
                 type="button"
-                aria-label="向右旋转摄像头画面"
+                aria-label={tr("向右旋转摄像头画面")}
                 onClick={() => onChange({
                   rotation: ((settings.rotation + 90) % 360) as CameraRotation,
                 })}
               >
                 <RotateCw size={19} />
-                <span>右转</span>
+                <span>{tr("右转")}</span>
               </button>
               <button
                 type="button"
-                aria-label="镜像摄像头画面"
+                aria-label={tr("镜像摄像头画面")}
                 aria-pressed={settings.mirror}
                 onClick={() => onChange({ mirror: !settings.mirror })}
               >
                 <FlipHorizontal2 size={19} />
-                <span>镜像</span>
+                <span>{tr("镜像")}</span>
               </button>
             </div>
 
             <label className="learning-camera-dialog-slider">
-              <span>缩放</span>
+              <span>{tr("缩放")}</span>
               <input
-                aria-label="摄像头画面缩放"
+                aria-label={tr("摄像头画面缩放")}
                 type="range"
                 min="1"
                 max="3"
@@ -138,9 +140,9 @@ export function CameraSettingsDialog({
               <output>{settings.zoom.toFixed(1)}×</output>
             </label>
             <label className="learning-camera-dialog-slider">
-              <span>左右</span>
+              <span>{tr("左右")}</span>
               <input
-                aria-label="摄像头画面水平位置"
+                aria-label={tr("摄像头画面水平位置")}
                 type="range"
                 min="-1"
                 max="1"
@@ -152,9 +154,9 @@ export function CameraSettingsDialog({
               <output>{Math.round(settings.offsetX * 100)}</output>
             </label>
             <label className="learning-camera-dialog-slider">
-              <span>上下</span>
+              <span>{tr("上下")}</span>
               <input
-                aria-label="摄像头画面垂直位置"
+                aria-label={tr("摄像头画面垂直位置")}
                 type="range"
                 min="-1"
                 max="1"
@@ -173,10 +175,10 @@ export function CameraSettingsDialog({
               onClick={() => onChange({ documentMode: !settings.documentMode })}
             >
               <span>
-                <strong>试卷清晰模式</strong>
-                <small>提高发送分辨率与文字清晰度</small>
+                <strong>{tr("试卷清晰模式")}</strong>
+                <small>{tr("提高发送分辨率与文字清晰度")}</small>
               </span>
-              <b>{settings.documentMode ? "已开启" : "已关闭"}</b>
+              <b>{settings.documentMode ? tr("已开启") : tr("已关闭")}</b>
             </button>
 
             <button
@@ -185,8 +187,7 @@ export function CameraSettingsDialog({
               onClick={onReset}
             >
               <RotateCcw size={16} />
-              恢复默认取景
-            </button>
+              {tr("恢复默认取景")}</button>
           </div>
         </div>
       </section>

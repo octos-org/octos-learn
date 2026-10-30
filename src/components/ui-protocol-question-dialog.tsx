@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useMemo, useState } from "react";
 
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
@@ -28,6 +30,7 @@ export function UiProtocolQuestionDialog({
   topic,
   onResolved,
 }: UiProtocolQuestionDialogProps) {
+  useLocale();
   const questions = useMemo(() => question?.questions ?? [], [question]);
   const questionKey = question?.question_id ?? null;
 
@@ -85,7 +88,7 @@ export function UiProtocolQuestionDialog({
       setSubmitting(true);
       try {
         const bridge = getActiveBridge(sessionId, topic);
-        if (!bridge) throw new Error("UI Protocol bridge is not connected");
+        if (!bridge) throw new Error(tr("UI Protocol bridge is not connected"));
         const result = await bridge.respondToUserQuestion(
           question!.question_id,
           buildAnswers(),
@@ -114,7 +117,7 @@ export function UiProtocolQuestionDialog({
       <div className="glass-panel flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-[16px] shadow-lg">
         <div className="border-b border-border px-5 py-4">
           <div className="flex items-center justify-between">
-            <div className="shell-kicker">Your input</div>
+            <div className="shell-kicker">{tr("Your input")}</div>
             {questions.length > 1 && (
               <div className="text-xs font-medium tabular-nums text-muted">
                 {active + 1} / {questions.length}
@@ -210,8 +213,7 @@ export function UiProtocolQuestionDialog({
                   {otherPicked && (multi ? "✓" : "●")}
                 </span>
                 <span className="text-sm font-medium text-text-strong">
-                  Other…
-                </span>
+                  {tr("Other…")}</span>
               </button>
               {otherPicked && (
                 <textarea
@@ -221,7 +223,7 @@ export function UiProtocolQuestionDialog({
                   onChange={(e) =>
                     setFreeText((prev) => ({ ...prev, [active]: e.target.value }))
                   }
-                  placeholder="Type your answer"
+                  placeholder={tr("Type your answer")}
                   className="mt-2 w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent"
                 />
               )}
@@ -237,7 +239,7 @@ export function UiProtocolQuestionDialog({
 
         <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-4">
           <span className="text-xs text-muted">
-            {multi ? "Choose one or more" : "Choose one"}
+            {multi ? tr("Choose one or more") : tr("Choose one")}
           </span>
           <button
             type="button"
@@ -245,7 +247,7 @@ export function UiProtocolQuestionDialog({
             disabled={!answered || submitting}
             className="rounded-[10px] bg-accent px-5 py-2 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
           >
-            {submitting ? "Sending…" : isLast ? "Submit" : "Next"}
+            {submitting ? tr("Sending…") : isLast ? tr("Submit") : tr("Next")}
           </button>
         </div>
       </div>

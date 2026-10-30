@@ -1,3 +1,5 @@
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
@@ -25,6 +27,7 @@ export function OllCourseOutline({
 }: {
   runtime: OllLessonRuntimeController;
 }) {
+  useLocale();
   const { skin } = useTeacherSkin();
   const [open, setOpen] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
@@ -75,13 +78,13 @@ export function OllCourseOutline({
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label="打开本课目录"
-        title="本课目录"
+        aria-label={tr("打开本课目录")}
+        title={tr("本课目录")}
       >
         <ListTree size={15} />
         <span className="oll-course-outline-trigger-copy">
-          <small>本课目录</small>
-          <b>{currentStep?.title ?? "选择讲解步骤"}</b>
+          <small>{tr("本课目录")}</small>
+          <b>{currentStep?.title ?? tr("选择讲解步骤")}</b>
         </span>
         <ChevronDown size={14} />
       </button>
@@ -90,20 +93,20 @@ export function OllCourseOutline({
         <div
           className="oll-course-outline-panel"
           role="dialog"
-          aria-label="本课目录"
+          aria-label={tr("本课目录")}
         >
           <div className="oll-course-outline-heading">
             <div>
-              <small>COURSE OUTLINE</small>
-              <h2>本课目录</h2>
+              <small>{tr("COURSE OUTLINE")}</small>
+              <h2>{tr("本课目录")}</h2>
             </div>
             <span>{runtime.outline.reduce(
               (count, topic) => count + topic.steps.length,
               0,
-            )} 个步骤</span>
+            )} {tr("个步骤")}</span>
           </div>
 
-          <nav className="oll-course-outline-scroll" aria-label="课程步骤">
+          <nav className="oll-course-outline-scroll" aria-label={tr("课程步骤")}>
             {runtime.outline.map((topic, topicIndex) => (
               <section className="oll-course-topic" key={topic.id}>
                 <header>
@@ -129,7 +132,7 @@ export function OllCourseOutline({
                             className="oll-course-step-main"
                             onClick={() => select(() => runtime.viewStep(step.id))}
                             aria-current={state === "current" ? "step" : undefined}
-                            aria-label={`查看步骤：${step.title}`}
+                            aria-label={tr("查看步骤：{{v0}}", { v0: step.title })}
                           >
                             <span className="oll-course-step-status">
                               {state === "completed"
@@ -143,7 +146,7 @@ export function OllCourseOutline({
                               type="button"
                               className="oll-course-expand"
                               onClick={() => toggleStep(step.id)}
-                              aria-label={`${expanded ? "收起" : "展开"}${step.title}的讲解片段`}
+                              aria-label={tr("{{v0}}{{v1}}的讲解片段", { v0: expanded ? tr("收起") : tr("展开"), v1: step.title })}
                               aria-expanded={expanded}
                             >
                               {expanded
@@ -155,7 +158,7 @@ export function OllCourseOutline({
                             type="button"
                             className="oll-course-play"
                             onClick={() => select(() => runtime.playStep(step.id))}
-                            aria-label={`从步骤开始播放：${step.title}`}
+                            aria-label={tr("从步骤开始播放：{{v0}}", { v0: step.title })}
                           >
                             <Play size={12} fill="currentColor" />
                           </button>
@@ -177,7 +180,7 @@ export function OllCourseOutline({
                                     aria-current={
                                       beatState === "current" ? "step" : undefined
                                     }
-                                    aria-label={`查看讲解片段：${beat.title}`}
+                                    aria-label={tr("查看讲解片段：{{v0}}", { v0: beat.title })}
                                   >
                                     <span>{beatIndex + 1}</span>
                                     <b>{beat.title}</b>
@@ -186,7 +189,7 @@ export function OllCourseOutline({
                                     type="button"
                                     className="oll-course-beat-play"
                                     onClick={() => select(() => runtime.playBeat(beat.id))}
-                                    aria-label={`从讲解片段开始播放：${beat.title}`}
+                                    aria-label={tr("从讲解片段开始播放：{{v0}}", { v0: beat.title })}
                                   >
                                     <Play size={10} fill="currentColor" />
                                   </button>
@@ -203,8 +206,7 @@ export function OllCourseOutline({
             ))}
           </nav>
           <p className="oll-course-outline-help">
-            点击查看完成画面，使用播放按钮从该段重新讲解
-          </p>
+            {tr("点击查看完成画面，使用播放按钮从该段重新讲解")}</p>
         </div>
       ) : null}
     </div>

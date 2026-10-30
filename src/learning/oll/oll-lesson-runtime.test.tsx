@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { renderLearning } from "../../test/render-learning";
 import {
   act,
@@ -1232,7 +1233,7 @@ describe("OLL lesson Runtime integration", () => {
 
     expect(await screen.findAllByText("这个互动画面暂时没有生成成功")).toHaveLength(2);
     expect(screen.getByText("展示可旋转的抛物面与水平截面")).toBeTruthy();
-    const retry = screen.getByRole("button", { name: "只重试这个画面" });
+    const retry = screen.getByRole("button", { name: tr("只重试这个画面") });
     fireEvent.click(retry);
 
     await waitFor(() => expect(onRetry).toHaveBeenCalledWith({
@@ -1245,7 +1246,7 @@ describe("OLL lesson Runtime integration", () => {
       title: "这个互动画面暂时没有生成成功",
     }));
     expect(
-      (await screen.findByRole("button", { name: "已发起重试" })).hasAttribute("disabled"),
+      (await screen.findByRole("button", { name: tr("已发起重试") })).hasAttribute("disabled"),
     ).toBe(true);
     expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
   });
@@ -1275,7 +1276,7 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => expect(heights()).toEqual([36, 280]));
     const task = () => screen.getByTestId("oll-student-tasks").querySelector("article");
     expect(task()?.getAttribute("aria-disabled")).toBe("true");
-    expect(screen.getByText("白板上的课程全部播放完后，就可以继续操作。")).toBeTruthy();
+    expect(screen.getByText(tr("白板上的课程全部播放完后，就可以继续操作。"))).toBeTruthy();
     fireEvent.click(screen.getByText("切换练习"));
     await waitFor(() => expect(task()?.getAttribute("aria-disabled")).toBeNull());
     expect(heights()).toEqual([36, 280]);
@@ -1310,7 +1311,7 @@ describe("OLL lesson Runtime integration", () => {
       return article!;
     });
     expect(queued.getAttribute("aria-disabled")).toBe("true");
-    expect(queued.textContent).toContain("先完成前面的练习，这一题就会开放。");
+    expect(queued.textContent).toContain(tr("先完成前面的练习，这一题就会开放。"));
     expect(queued.textContent).not.toContain("全部播放完后");
   });
 
@@ -1517,7 +1518,7 @@ describe("OLL lesson Runtime integration", () => {
     await renderLearning(<InkRuntimeProbe />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("框选多个笔迹") }));
     const board = screen.getByTestId("oll-lesson-board");
     const world = board.querySelector<HTMLElement>(
       "[data-oll-board-runtime-world]",
@@ -2083,11 +2084,11 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
     expect(screen.queryByRole("button", { name: "退出书写模式" })).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
-    fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("书写笔迹") }));
     expect(ink.setMode).toHaveBeenLastCalledWith("draw");
-    expect(screen.queryByRole("group", { name: "笔触粗细" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
-    const widthMenu = screen.getByLabelText("笔触粗细");
+    expect(screen.queryByRole("group", { name: tr("笔触粗细") })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: tr("书写笔迹") }));
+    const widthMenu = screen.getByLabelText(tr("笔触粗细"));
     expect(widthMenu.querySelectorAll(".learning-ink-width-preview > i"))
       .toHaveLength(4);
     expect(widthMenu.querySelectorAll(".learning-ink-width-preview > b"))
@@ -2095,39 +2096,39 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByText("1.3 px")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "笔触粗细：细" }));
     expect(ink.setPenWidth).toHaveBeenLastCalledWith(2);
-    expect(screen.queryByLabelText("笔触粗细")).toBeNull();
+    expect(screen.queryByLabelText(tr("笔触粗细"))).toBeNull();
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
-    expect(screen.getByRole("button", { name: "隐藏调色板" })).toBeTruthy();
-    expect(screen.queryByText("笔色")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: tr("显示调色板") }));
+    expect(screen.getByRole("button", { name: tr("隐藏调色板") })).toBeTruthy();
+    expect(screen.queryByText(tr("笔色"))).toBeNull();
     expect(screen.queryByLabelText("自定义笔色")).toBeNull();
     expect(document.querySelector('input[type="color"]')).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "笔色：蓝色" }));
     expect(ink.setPenColor).toHaveBeenCalledWith("#1769aa");
     expect(ink.options.style.penColor).toBe("#1769aa");
-    fireEvent.click(screen.getByRole("button", { name: "隐藏调色板" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("隐藏调色板") }));
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
 
     expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "擦除笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("擦除笔迹") }));
     expect(ink.setMode).toHaveBeenLastCalledWith("erase");
     expect(screen.getByTestId("oll-lesson-board").dataset.androidInkMode)
       .toBe("erase");
-    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("框选多个笔迹") }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
     expect(screen.getByTestId("oll-lesson-board").dataset.androidInkMode)
       .toBe("select");
-    fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("选择全部笔迹") }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
     expect(screen.getByRole("status").textContent).toContain("已选 2");
-    fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("显示调色板") }));
     fireEvent.click(screen.getByRole("button", { name: "选区颜色：红色" }));
     expect(ink.setSelectionColor).toHaveBeenCalledWith("#c75445");
 
-    fireEvent.click(screen.getByRole("button", { name: "浏览白板" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("浏览白板") }));
     expect(ink.setMode).toHaveBeenLastCalledWith("navigate");
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
-    expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("书写笔迹") })).toBeTruthy();
     expect(ink.destroy).not.toHaveBeenCalled();
   });
 
@@ -2185,7 +2186,7 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.keyDown(window, { key: "a", ctrlKey: true });
     expect(ink.selectAll).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("框选多个笔迹") }));
     fireEvent.keyDown(window, { key: "a", metaKey: true });
     expect(ink.selectAll).toHaveBeenCalledOnce();
 
@@ -2272,12 +2273,12 @@ describe("OLL lesson Runtime integration", () => {
     await renderLearning(<SelectionInkRuntimeProbe onAsk={onAsk} onClassify={onClassify} />);
 
     // No classifier result is available, even after its network request starts.
-    expect(await screen.findByRole("button", { name: "解释这部分" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+    expect(await screen.findByRole("button", { name: tr("解释这部分") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("检查并建议") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("问小章鱼") })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("生成函数图像") })).toBeNull();
     await waitFor(() => expect(onClassify).toHaveBeenCalledOnce());
-    expect(screen.getByText("正在识别选区…")).toBeTruthy();
+    expect(screen.getByText(tr("正在识别选区…"))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: label }));
     await waitFor(() => expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
       snapshot,
@@ -2289,9 +2290,9 @@ describe("OLL lesson Runtime integration", () => {
     })));
 
     await act(async () => resolveClassification({ kind: "math", content: "y=x^2", confidence: "high" }));
-    expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: tr("生成函数图像") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("解释这部分") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("检查并建议") })).toBeTruthy();
     expect(onClassify).toHaveBeenCalledOnce();
 
     const uncertainResults: Array<SelectionClassification | Error> = [
@@ -2308,9 +2309,9 @@ describe("OLL lesson Runtime integration", () => {
         emit(state);
       });
       // Reselection must not reuse the previous formula or hide common actions.
-      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
-      expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
-      expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: tr("生成函数图像") })).toBeNull();
+      expect(screen.getByRole("button", { name: tr("解释这部分") })).toBeTruthy();
+      expect(screen.getByRole("button", { name: tr("检查并建议") })).toBeTruthy();
       fireEvent.click(screen.getByRole("button", { name: label }));
       await waitFor(() => expect(onAsk).toHaveBeenLastCalledWith(expect.objectContaining({
         snapshot,
@@ -2320,9 +2321,9 @@ describe("OLL lesson Runtime integration", () => {
         recognitionConfidence: undefined,
       })));
       await waitFor(() => expect(onClassify).toHaveBeenCalledTimes(index + 2));
-      await waitFor(() => expect(screen.queryByText("正在识别选区…")).toBeNull());
+      await waitFor(() => expect(screen.queryByText(tr("正在识别选区…"))).toBeNull());
       expect(screen.getByRole("button", { name: label })).toBeTruthy();
-      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+      expect(screen.queryByRole("button", { name: tr("生成函数图像") })).toBeNull();
     }
   });
 
@@ -2398,7 +2399,7 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("框选多个笔迹") }));
     await waitFor(() => expect(onVoiceCaptureChange).toHaveBeenCalledWith(
       expect.any(Function),
     ));
@@ -2426,16 +2427,16 @@ describe("OLL lesson Runtime integration", () => {
       }),
       selectionImage: expect.any(File),
     }));
-    expect(screen.getByText("正在识别选区…")).toBeTruthy();
+    expect(screen.getByText(tr("正在识别选区…"))).toBeTruthy();
     await act(async () => resolveClassification({
       kind: "math",
       content: "y=x^2",
       confidence: "high",
     }));
-    expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
-    expect(await screen.findByText("接下来让小章鱼做什么？")).toBeTruthy();
-    expect(screen.getByText("下面是操作，不会改变上面已经确认的选区。")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: tr("生成函数图像") })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: tr("问小章鱼") }));
+    expect(await screen.findByText(tr("接下来让小章鱼做什么？"))).toBeTruthy();
+    expect(screen.getByText(tr("下面是操作，不会改变上面已经确认的选区。"))).toBeTruthy();
     expect(screen.queryByRole("button", { name: "围绕这部分讲一课" }))
       .toBeNull();
     const targets = await screen.findAllByRole("radio");
@@ -2445,10 +2446,10 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(targets[1]!);
     expect(document.querySelectorAll(".learning-selection-target-highlight.is-selected"))
       .toHaveLength(1);
-    fireEvent.change(screen.getByLabelText("我写的内容更像"), {
+    fireEvent.change(screen.getByLabelText(tr("我写的内容更像")), {
       target: { value: "math" },
     });
-    const generatePlot = screen.getAllByRole("button", { name: "生成函数图像" }).at(-1)!;
+    const generatePlot = screen.getAllByRole("button", { name: tr("生成函数图像") }).at(-1)!;
     await waitFor(() => expect((generatePlot as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(generatePlot);
 
@@ -2486,7 +2487,7 @@ describe("OLL lesson Runtime integration", () => {
     onAsk.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
       rejectSelectionRequest = reject;
     }));
-    fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("生成函数图像") }));
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
         snapshot,
@@ -2524,15 +2525,15 @@ describe("OLL lesson Runtime integration", () => {
       state = { ...state, selection_revision: 2 };
       listeners.forEach((listener) => listener(state));
     });
-    expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+    expect(screen.getByRole("button", { name: tr("解释这部分") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("检查并建议") })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("生成函数图像") })).toBeNull();
     await waitFor(() => expect(onClassify).toHaveBeenCalledTimes(2));
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+      expect(screen.queryByRole("button", { name: tr("生成函数图像") })).toBeNull();
     });
-    expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
+    expect(screen.getByRole("button", { name: tr("问小章鱼") })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: tr("问小章鱼") }));
     expect(screen.queryByRole("button", {
       name: "根据当前选区语音生成课程",
     })).toBeNull();
@@ -2939,8 +2940,8 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("button", { name: "等轴" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "俯视" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "复位" })).toBeTruthy();
-    expect(screen.getByText("拖动画面旋转 · 滚动缩放")).toBeTruthy();
-    expect(screen.getByText("直接操作白板上的图形、视角或控制器")).toBeTruthy();
+    expect(screen.getByText(tr("拖动画面旋转 · 滚动缩放"))).toBeTruthy();
+    expect(screen.getByText(tr("直接操作白板上的图形、视角或控制器"))).toBeTruthy();
     expect(screen.getByText("把立方体转到正视图")).toBeTruthy();
     expect(screen.getByText("顶点 A")).toBeTruthy();
     expect(screen.getByText("棱 AB")).toBeTruthy();
@@ -2983,8 +2984,8 @@ describe("OLL lesson Runtime integration", () => {
     expect(Number.parseFloat(tasksCard.style.top)).toBeGreaterThan(
       Number.parseFloat(controlsCard.style.top),
     );
-    expect(screen.getByText("轮到你操作了，完成后这里会立即反馈。")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "给我提示" })).toBeNull();
+    expect(screen.getByText(tr("轮到你操作了，完成后这里会立即反馈。"))).toBeTruthy();
+    expect(screen.queryByRole("button", { name: tr("给我提示") })).toBeNull();
 
     const slider = screen.getByRole("slider", { name: "旋转角 θ" });
     fireEvent.pointerDown(slider, { pointerType: "mouse" });
@@ -2994,10 +2995,10 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => {
       expect(screen.getByText("已尝试 1 次")).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("给我提示") }));
     expect(screen.getByText("观察圆周点的纵坐标怎样随 θ 变化。")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "重新开始" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("重新开始") }));
     expect(screen.getByText("0", { selector: "output" })).toBeTruthy();
 
     const resetSlider = screen.getByRole("slider", { name: "旋转角 θ" });
@@ -3011,7 +3012,7 @@ describe("OLL lesson Runtime integration", () => {
     first.unmount();
     await renderLearning(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
+    expect(screen.queryByRole("button", { name: tr("重新开始") })).toBeNull();
   });
 
   it("takes a typed answer by its card, explains unreadable text and the wrong form, then restores success", async () => {
@@ -3019,26 +3020,26 @@ describe("OLL lesson Runtime integration", () => {
     const card = await screen.findByTestId("oll-answer-task");
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
     expect(screen.getByText("把 6/8 化成最简分数")).toBeTruthy();
-    const input = screen.getByRole("textbox", { name: "你的答案" });
-    const submit = screen.getByRole("button", { name: "提交" });
+    const input = screen.getByRole("textbox", { name: tr("你的答案") });
+    const submit = screen.getByRole("button", { name: tr("提交") });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
 
     fireEvent.change(input, { target: { value: "四分之三" } });
     fireEvent.click(submit);
-    expect(screen.getByText(/请写一个数/)).toBeTruthy();
-    expect(screen.queryByText(/已尝试/)).toBeNull();
+    expect(screen.getByText(new RegExp(tr("请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.queryByText(new RegExp(tr("已尝试").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeNull();
 
     fireEvent.change(input, { target: { value: "6/8" } });
     fireEvent.click(submit);
-    await waitFor(() => expect(screen.getByText("数值对了，再写成最简分数。")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(tr("数值对了，再写成最简分数。"))).toBeTruthy());
     expect(screen.getByText("已尝试 1 次")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("给我提示") }));
     expect(screen.getByText("分子分母同时除以 2。")).toBeTruthy();
 
     fireEvent.change(input, { target: { value: "3/4" } });
     fireEvent.submit(input.closest("form")!);
     await waitFor(() => expect(within(card).getByText("对，6/8 = 3/4。")).toBeTruthy());
-    expect(screen.queryByRole("textbox", { name: "你的答案" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: tr("你的答案") })).toBeNull();
 
     first.unmount();
     await renderLearning(<AnswerTaskRuntimeProbe />);
@@ -3060,7 +3061,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByText(doudou.taskRetry) ?? screen.queryByText(doudou.taskNeedsHint)).toBeTruthy();
     expect(screen.queryByText(NEUTRAL_REACTIONS.taskRetry)).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("给我提示") }));
     const retry = screen.getByRole("slider", { name: "旋转角 θ" });
     fireEvent.pointerDown(retry, { pointerType: "mouse" });
     fireEvent.change(retry, { target: { value: String(Math.PI / 2) } });

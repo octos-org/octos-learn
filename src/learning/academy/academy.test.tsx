@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -45,26 +46,26 @@ afterEach(cleanup);
 
 it("links the academy's places from every page, marking the current one", () => {
   render(<MemoryRouter initialEntries={["/atlas"]}><AcademyHeader /></MemoryRouter>);
-  const places = screen.getByRole("navigation", { name: "学院" });
+  const places = screen.getByRole("navigation", { name: tr("学院") });
   expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"], ["记录", "/records"]]);
-  expect(screen.getByRole("link", { name: "星图" }).getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("link", { name: tr("星图") }).getAttribute("aria-current")).toBe("page");
 });
 
 it("greets with the chosen teacher's own line, offers the last board and sums up the atlas", async () => {
   const latest = { id: "s1", title: "斜率", createdAt: 1, updatedAt: 2, status: "active" } as never;
   const { rerender } = render(<MemoryRouter><HallHero recent={[latest]} /></MemoryRouter>);
   expect(TEACHERS[0].hall.resume).toContain(document.querySelector(".academy-bubble")?.textContent);
-  expect(screen.getByText("观星塔导师")).toBeTruthy();
+  expect(screen.getByText(tr("观星塔导师"))).toBeTruthy();
   // The teacher's living card, the same one as in Settings.
   expect(document.querySelector(".academy-greeting-card .teacher-card")).toBeTruthy();
-  expect(screen.getByRole("link", { name: /继续上次的学习/ })).toBeTruthy();
-  expect(await screen.findByText("颗已点亮")).toBeTruthy();
+  expect(screen.getByRole("link", { name: new RegExp(tr("继续上次的学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") })).toBeTruthy();
+  expect(await screen.findByText(tr("颗已点亮"))).toBeTruthy();
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");
-  expect(screen.getByText("第一个脚印")).toBeTruthy();
+  expect(screen.getByText(tr("第一个脚印"))).toBeTruthy();
   expect((await screen.findByRole("heading", { level: 1 })).textContent).toMatch(/^(夜深了|早上好|上午好|中午好|下午好|晚上好)，启明学徒。$/);
   rerender(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
   expect(TEACHERS[0].hall.welcome).toContain(document.querySelector(".academy-bubble")?.textContent);
-  expect(screen.queryByRole("link", { name: /继续上次的学习/ })).toBeNull();
+  expect(screen.queryByRole("link", { name: new RegExp(tr("继续上次的学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") })).toBeNull();
 });
 
 it("picks one of the teacher's greetings at random and keeps it while the hall is open", () => {
@@ -82,31 +83,31 @@ it("continues the last board or lesson by name, links all records and this week'
   const course = { id: "c1", title: "斜率和截距", createdAt: 1, updatedAt: 2, status: "active", source: { kind: "course-pack", packId: "slope", version: "0.1.6", mode: "instance" } } as never;
   const board = { id: "b1", title: "勾股定理", createdAt: 1, updatedAt: 1, status: "active" } as never;
   render(<MemoryRouter><HallHero recent={[course, board]} /></MemoryRouter>);
-  const resume = screen.getByRole("link", { name: /继续上次的学习/ });
+  const resume = screen.getByRole("link", { name: new RegExp(tr("继续上次的学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") });
   expect(resume.textContent).toContain("斜率和截距");
   expect(resume.getAttribute("href")).toBe("/course/slope?version=0.1.6&title=%E6%96%9C%E7%8E%87%E5%92%8C%E6%88%AA%E8%B7%9D&mode=learn&instance=c1");
-  expect(screen.getByRole("link", { name: /全部学习记录/ }).getAttribute("href")).toBe("/records");
+  expect(screen.getByRole("link", { name: new RegExp(tr("全部学习记录").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") }).getAttribute("href")).toBe("/records");
   // Topics learned on a day of this week; the fixture's October days are not this week.
-  expect((await screen.findByRole("link", { name: /学习周报/ })).getAttribute("href")).toBe("/records?tab=week");
-  expect(screen.getByText(/这周的学习会整理在这里/)).toBeTruthy();
+  expect((await screen.findByRole("link", { name: new RegExp(tr("学习周报").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") })).getAttribute("href")).toBe("/records?tab=week");
+  expect(screen.getByText(new RegExp(tr("这周的学习会整理在这里").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it("leaves the report card out when the report is turned off", async () => {
   showWeeklyReport(false);
   render(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
-  expect(await screen.findByText("颗已点亮")).toBeTruthy();
-  expect(screen.queryByRole("link", { name: /学习周报/ })).toBeNull();
+  expect(await screen.findByText(tr("颗已点亮"))).toBeTruthy();
+  expect(screen.queryByRole("link", { name: new RegExp(tr("学习周报").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") })).toBeNull();
 });
 
 it("keeps every board and lesson on the records page, and what happened in each one view away", async () => {
   adoptLearningSession({ id: "learn-c1", title: "斜率和截距", createdAt: 1, updatedAt: 2, status: "active", source: { kind: "course-pack", packId: "slope", version: "0.1.6", mode: "instance" } } as never);
   render(<MemoryRouter initialEntries={["/records"]}><RecordsPage /></MemoryRouter>);
-  expect(screen.getByRole("heading", { level: 1, name: "记录" })).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 1, name: tr("记录") })).toBeTruthy();
   expect(screen.getAllByRole("tab").map((tab) => [tab.textContent, tab.getAttribute("aria-selected")])).toEqual([["学习记录", "true"], ["周报", "false"], ["月报", "false"]]);
   expect(await screen.findByText("斜率和截距")).toBeTruthy();
-  expect(screen.getByText(/课程学习/)).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "每次学习的经过" }));
-  expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("课程学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: tr("每次学习的经过") }));
+  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it("opens the weekly and monthly reports as tabs of the records page, straight from a link", async () => {
@@ -114,9 +115,9 @@ it("opens the weekly and monthly reports as tabs of the records page, straight f
   api.weeklyReport.mockImplementation(async (week: string) => ({ ...empty, week_start: week, first_week: week }));
   api.monthlyReport.mockImplementation(async (month: string) => ({ ...empty, month, first_month: month, weeks: [] }));
   render(<MemoryRouter initialEntries={["/records?tab=month"]}><RecordsPage /></MemoryRouter>);
-  expect(screen.getByRole("tab", { name: "月报" }).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByRole("tab", { name: tr("月报") }).getAttribute("aria-selected")).toBe("true");
   expect(await screen.findByText(TEACHERS[0].report.monthQuiet)).toBeTruthy();
-  fireEvent.click(screen.getByRole("tab", { name: "周报" }));
+  fireEvent.click(screen.getByRole("tab", { name: tr("周报") }));
   expect(await screen.findByText(TEACHERS[0].report.quiet)).toBeTruthy();
   expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/^本周/);
 });
@@ -149,40 +150,40 @@ it("opens a star's topic evidence on the records page", async () => {
   render(<MemoryRouter initialEntries={["/records?topic=mt_WBdHkc2HTf&name=Linear+Function+Graphs"]}><RecordsPage /></MemoryRouter>);
   expect(await screen.findByRole("heading", { level: 3, name: "一次函数图像" })).toBeTruthy();
   await waitFor(() => expect(api.topic).toHaveBeenCalledWith("mt_WBdHkc2HTf", 9));
-  expect(await screen.findByText(/不代表整个知识点已掌握/)).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
-  expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
+  expect(await screen.findByText(new RegExp(tr("这里仅统计有来源依据的部分内容，不代表整个知识点已掌握。人工确认的课程对应与模型分析分别列出。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: tr("返回列表") }));
+  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it("keeps the board's drawer to switching boards, pointing to the records page for the rest", async () => {
   const onOpenRecords = vi.fn();
   render(<MemoryRouter><LearningHistory onClose={vi.fn()} onSelect={vi.fn()} onNew={vi.fn()} onOpenRecords={onOpenRecords} /></MemoryRouter>);
   expect(screen.queryByRole("tablist")).toBeNull();
-  expect(screen.getByLabelText("搜索学习记录")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: /每次学习的经过与删除/ }));
+  expect(screen.getByLabelText(tr("搜索学习记录"))).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("每次学习的经过与删除").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") }));
   expect(onOpenRecords).toHaveBeenCalledOnce();
-  await waitFor(() => expect(screen.queryByText("正在同步历史记录…")).toBeNull());
+  await waitFor(() => expect(screen.queryByText(tr("正在同步历史记录…"))).toBeNull());
 });
 
 it("keeps the hall usable when the summary is unavailable", async () => {
   api.learningMap.mockRejectedValue(new Error("offline"));
   render(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
-  expect(await screen.findByText(/每学完一段讲解或练习/)).toBeTruthy();
-  expect(screen.getByRole("link", { name: /新建空白白板/ })).toBeTruthy();
+  expect(await screen.findByText(new RegExp(tr("每学完一段讲解或练习，星图上就会留下足迹。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByRole("link", { name: new RegExp(tr("新建空白白板").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") })).toBeTruthy();
 });
 
 it("shows the star atlas as its own page, without a second list of topics", async () => {
   render(<MemoryRouter><AtlasPage /></MemoryRouter>);
   expect(await screen.findByRole("img", { name: /数之星域：点亮 \d+ 颗/ })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "揭开全部迷雾" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: tr("揭开全部迷雾") })).toBeTruthy();
   expect(screen.queryByText(/按星域列出/)).toBeNull();
-  expect(screen.getByText(/这些都不等于已经掌握/)).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
   expect(await screen.findByRole("img", { name: "已点亮 3 / 74 枚" })).toBeTruthy();
-  expect(within(screen.getByRole("list", { name: "最近获得" })).getAllByRole("button").length).toBe(3);
+  expect(within(screen.getByRole("list", { name: tr("最近获得") })).getAllByRole("button").length).toBe(3);
   expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);
   expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByLabelText("进度 3 / 10")).toBeTruthy();
@@ -190,19 +191,19 @@ it("shows every achievement in the hall: earned with who presented it, progress,
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText(/苏绯：夜里九点后还在听讲。记录在案，也请按时休息。/)).toBeTruthy();
   expect(within(dialog).getByText("解锁「星夜学者」")).toBeTruthy();
-  expect(within(dialog).getByText("夜深了，观星塔的灯和你都还亮着。")).toBeTruthy();
-  fireEvent.click(within(dialog).getByRole("button", { name: "关闭" }));
+  expect(within(dialog).getByText(tr("夜深了，观星塔的灯和你都还亮着。"))).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: tr("关闭") }));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 
 it("lets the learner wear an earned title and keeps others locked", async () => {
   api.setTitle.mockResolvedValue({ title: { id: "night-owl", name: "星夜学者" } });
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
-  fireEvent.click(await screen.findByRole("button", { name: /称号衣橱/ }));
+  fireEvent.click(await screen.findByRole("button", { name: new RegExp(tr("称号衣橱").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") }));
   expect(screen.getAllByRole("button", { name: /使用这个称号|正在使用/ }).length).toBe(2);
-  fireEvent.click(screen.getByRole("button", { name: "使用这个称号" }));
+  fireEvent.click(screen.getByRole("button", { name: tr("使用这个称号") }));
   await waitFor(() => expect(api.setTitle).toHaveBeenCalledWith("night-owl"));
-  expect(await screen.findByText("星夜学者", { selector: ".academy-fame-title strong" })).toBeTruthy();
+  expect(await screen.findByText(tr("星夜学者"), { selector: ".academy-fame-title strong" })).toBeTruthy();
 });
 
 it("lays out seasonal windows from the lunar table, soonest first", () => {

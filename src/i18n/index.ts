@@ -20,6 +20,8 @@ export function initialLocale(): Locale {
 }
 
 export const i18n = createInstance();
+const canonicalMessages = new Map<string, string>();
+for (const [source, translation] of [...Object.entries(en), ...Object.entries(zh)]) canonicalMessages.set(translation, source);
 void i18n.use(initReactI18next).init({
   lng: initialLocale(),
   fallbackLng: "en-US",
@@ -35,17 +37,18 @@ export function getLocale(): Locale { return normalizeLocale(i18n.language); }
 
 /** Source text is a stable message key. Values are interpolated, never used as keys. */
 export function tr(source: string, values: Record<string, unknown> = {}, locale = getLocale()): string {
-  return String(i18n.t(source, { ...values, lng: locale, defaultValue: source }));
+  const key = Object.hasOwn(en, source) ? source : canonicalMessages.get(source) ?? source;
+  return String(i18n.t(key, { ...values, lng: locale, defaultValue: source }));
 }
 
 export function setLocale(locale: Locale, persist = true): void {
   if (persist) {
     try { localStorage.setItem(LOCALE_STORAGE_KEY, locale); } catch { /* Keep the in-memory choice. */ }
   }
-  document.documentElement.lang = locale;
+  if (typeof document !== "undefined" && document.documentElement) document.documentElement.lang = locale;
   if (locale === getLocale()) return;
   void i18n.changeLanguage(locale);
-  window.dispatchEvent(new CustomEvent(LOCALE_EVENT, { detail: locale }));
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") window.dispatchEvent(new CustomEvent(LOCALE_EVENT, { detail: locale }));
 }
 
 export function subscribeLocale(listener: () => void): () => void {
@@ -66,4 +69,19 @@ export function formatDate(value: string | number | Date, options?: Intl.DateTim
 
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   return new Intl.NumberFormat(getLocale(), options).format(value);
+}
+
+/** Static product catalogs keep their IDs and identity, with lazy translated
+ * presentation fields. Plain getters remain compatible with structuredClone. */
+export function localizedCatalog<T>(source: T): T {
+  if (!source || typeof source !== "object") return source;
+  if (!Array.isArray(source) && Object.getPrototypeOf(source) !== Object.prototype) return source;
+  const result = (Array.isArray(source) ? [] : {}) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(source)) {
+    if (key === "formerNames") { result[key] = value; continue; }
+    if (typeof value === "string" && (Object.hasOwn(en, value) || Object.hasOwn(zh, value))) {
+      Object.defineProperty(result, key, { enumerable: true, configurable: true, get: () => tr(value) });
+    } else result[key] = localizedCatalog(value);
+  }
+  return result as T;
 }

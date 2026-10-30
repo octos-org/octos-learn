@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -16,7 +17,7 @@ describe("DeveloperTab", () => {
   it("renders the master debug mode switch and sub-feature toggles", () => {
     render(<DeveloperTab />);
 
-    expect(screen.getByText(/Developer Options/i)).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
     expect(screen.getByTestId("toggle-debug-mode")).toBeTruthy();
     expect(screen.getByTestId("toggle-jev-debugger")).toBeTruthy();
     expect(screen.getByTestId("toggle-trace-inspector")).toBeTruthy();
@@ -50,11 +51,11 @@ describe("DeveloperTab", () => {
     const jevPill = screen.getByTestId("jev-debugger-status-pill");
 
     expect(jevSwitch.getAttribute("aria-checked")).toBe("true");
-    expect(jevPill.textContent).toContain("已在白板显示");
+    expect(jevPill.textContent).toContain(tr("已在白板显示"));
 
     fireEvent.click(jevSwitch);
     expect(jevSwitch.getAttribute("aria-checked")).toBe("false");
-    expect(jevPill.textContent).toContain("已隐藏");
+    expect(jevPill.textContent).toContain(tr("已隐藏"));
   });
 
   it("disables sub-switches when master debug mode is turned off", () => {

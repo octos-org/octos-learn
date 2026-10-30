@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -12,6 +14,7 @@ import { useAuth } from "./auth-context";
  * provided, otherwise navigates to `/`.
  */
 export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
+  useLocale();
   const { soloCreate } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -35,7 +38,7 @@ export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
       if (onDone) onDone();
       else navigate("/", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create profile");
+      setError(e instanceof Error ? e.message : tr("Could not create profile"));
       setSubmitting(false);
     }
   }
@@ -48,14 +51,13 @@ export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
       noValidate
     >
       <p className="text-sm text-muted">
-        This stays on this machine — no password, no email code.
-      </p>
+        {tr("This stays on this machine — no password, no email code.")}</p>
       <div>
         <input
           data-testid="solo-name"
           type="text"
-          aria-label="What should we call you?"
-          placeholder="What should we call you?"
+          aria-label={tr("What should we call you?")}
+          placeholder={tr("What should we call you?")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => setTouched(true)}
@@ -68,8 +70,7 @@ export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
         />
         {showNameHint && (
           <p id="solo-name-hint" className="mt-1 text-xs text-red-400">
-            Keep it under 128 characters.
-          </p>
+            {tr("Keep it under 128 characters.")}</p>
         )}
       </div>
       {error && (
@@ -83,7 +84,7 @@ export function SoloProfileForm({ onDone }: { onDone?: () => void }) {
         disabled={!canSubmit}
         className="workbench-button workbench-button-primary w-full py-3 font-medium disabled:opacity-50"
       >
-        {submitting ? "Creating…" : "Create profile & continue"}
+        {submitting ? tr("Creating…") : tr("Create profile & continue")}
       </button>
     </form>
   );

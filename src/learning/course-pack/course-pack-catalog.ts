@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { OLL_PLAYER_EXECUTION_VERSION } from "octos-lesson-language";
 
 export interface CoursePackCatalogEntry {
@@ -67,7 +68,7 @@ function parseEntry(value: unknown): CoursePackCatalogEntry {
     || !PACK_ID.test(entry.packId) || typeof entry.version !== "string"
     || !VERSION.test(entry.version) || typeof entry.archiveSha256 !== "string"
     || !DIGEST.test(entry.archiveSha256)) {
-    throw new Error("课程目录中存在无效的课程身份");
+    throw new Error(tr("课程目录中存在无效的课程身份"));
   }
   const base = `/api/learn/course-packs/${entry.packId}/${entry.version}`;
   if (entry.archiveUrl !== `${base}/archive.ocpack`
@@ -82,7 +83,7 @@ function parseEntry(value: unknown): CoursePackCatalogEntry {
     || typeof capability.offlineNarration !== "boolean"
     || typeof capability.interactiveWhiteboard !== "boolean"
     || !["none", "optional", "required"].includes(String(capability.liveAi))) {
-    throw new Error("课程目录中存在无效的课程元数据");
+    throw new Error(tr("课程目录中存在无效的课程元数据"));
   }
   return entry as unknown as CoursePackCatalogEntry;
 }
@@ -91,13 +92,13 @@ export function parseCoursePackCatalog(value: unknown): CoursePackCatalog {
   const data = record(value);
   if (!data || data.schemaVersion !== 1 || typeof data.generatedAt !== "string"
     || !Array.isArray(data.packs)) {
-    throw new Error("课程目录格式无效");
+    throw new Error(tr("课程目录格式无效"));
   }
   const packs = data.packs.map(parseEntry);
   const identities = new Set<string>();
   for (const pack of packs) {
     const identity = `${pack.packId}@${pack.version}`;
-    if (identities.has(identity)) throw new Error("课程目录包含重复版本");
+    if (identities.has(identity)) throw new Error(tr("课程目录包含重复版本"));
     identities.add(identity);
   }
   return { schemaVersion: 1, generatedAt: data.generatedAt, packs };
@@ -108,7 +109,7 @@ export async function fetchCoursePackCatalog(signal?: AbortSignal): Promise<Cour
     signal,
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`课程目录暂不可用（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error(tr("课程目录暂不可用（HTTP {{v0}}）", { v0: response.status }));
   return parseCoursePackCatalog(await response.json());
 }
 
@@ -117,7 +118,7 @@ export function embeddedCoursePackArchiveUrl(
   version: string,
 ): string {
   if (!isCoursePackIdentity(packId, version)) {
-    throw new Error("课程包身份无效");
+    throw new Error(tr("课程包身份无效"));
   }
   return `${EMBEDDED_COURSE_PACK_ROOT}/${encodeURIComponent(packId)}`
     + `/${encodeURIComponent(version)}/archive.ocpack`;
@@ -130,7 +131,7 @@ export async function fetchEmbeddedCoursePackCatalog(
     signal,
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`内置课程目录不可用（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error(tr("内置课程目录不可用（HTTP {{v0}}）", { v0: response.status }));
   const catalog = parseCoursePackCatalog(await response.json());
   return {
     ...catalog,

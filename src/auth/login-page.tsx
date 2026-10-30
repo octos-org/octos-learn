@@ -1,3 +1,5 @@
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "./auth-context";
@@ -9,6 +11,7 @@ import type { AuthStatusResponse } from "@/api/types";
 const RESEND_COUNTDOWN_S = 30;
 
 export function LoginPage() {
+  useLocale();
   const { login, loginWithToken, soloLogin, authStatus: initialAuthStatus } =
     useAuth();
   const navigate = useNavigate();
@@ -79,13 +82,13 @@ export function LoginPage() {
     try {
       const resp = await authApi.sendCode(email);
       if (!resp.ok) {
-        setError(resp.message || "Failed to send code");
+        setError(resp.message || tr("Failed to send code"));
         return;
       }
       setStep("code");
       setResendIn(RESEND_COUNTDOWN_S);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to send code");
+      setError(e instanceof Error ? e.message : tr("Failed to send code"));
     } finally {
       setSending(false);
     }
@@ -98,7 +101,7 @@ export function LoginPage() {
       await login(email, code);
       navigate(redirectTo || "/", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Verification failed");
+      setError(e instanceof Error ? e.message : tr("Verification failed"));
     } finally {
       setSending(false);
     }
@@ -113,10 +116,10 @@ export function LoginPage() {
     } catch (e) {
       setError(
         e instanceof ApiError && (e.status === 401 || e.status === 403)
-          ? "That token didn't work — check it and try again."
+          ? tr("That token didn't work — check it and try again.")
           : e instanceof Error
             ? e.message
-            : "Invalid token",
+            : tr("Invalid token"),
       );
     }
   }
@@ -138,7 +141,7 @@ export function LoginPage() {
       if (is404) {
         setStep("solo");
       } else {
-        setError(e instanceof Error ? e.message : "Solo login failed");
+        setError(e instanceof Error ? e.message : tr("Solo login failed"));
       }
     } finally {
       setSending(false);
@@ -146,24 +149,24 @@ export function LoginPage() {
   }
 
   const subtitle = scopedProfile
-    ? "This login is scoped to the addressed account. Use the exact email registered for this sub-account."
+    ? tr("This login is scoped to the addressed account. Use the exact email registered for this sub-account.")
     : soloFirstRun || step === "solo"
-      ? "A local, single-user workspace. Set it up in one step."
+      ? tr("A local, single-user workspace. Set it up in one step.")
       : authStatus === null
         ? statusError
           ? ""
-          : "Sign in to your workspace."
+          : tr("Sign in to your workspace.")
         : authStatus.bootstrap_mode
-          ? "Bootstrap admin access is enabled on this host."
+          ? tr("Bootstrap admin access is enabled on this host.")
           : !emailLoginEnabled
             ? soloEnabled
-              ? "Continue with the local profile on this machine."
+              ? tr("Continue with the local profile on this machine.")
               : tokenModeEnabled
-                ? "Sign in with your admin auth token."
+                ? tr("Sign in with your admin auth token.")
                 : "" // no methods — the warning box below says so
             : authStatus.allow_self_registration
-              ? "输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。"
-              : "Use an allowed or registered email to sign in.";
+              ? tr("输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。")
+              : tr("Use an allowed or registered email to sign in.");
 
   const emailSection = (
     <>
@@ -173,8 +176,8 @@ export function LoginPage() {
             type="email"
             placeholder={
               scopedProfile
-                ? "Registered account email"
-                : "Email address"
+                ? tr("Registered account email")
+                : tr("Email address")
             }
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -192,17 +195,17 @@ export function LoginPage() {
             disabled={!isValidEmail(email) || sending || !emailLoginEnabled}
             className="workbench-button workbench-button-primary w-full py-3 font-medium disabled:opacity-50"
           >
-            {sending ? "Sending..." : "Send Code"}
+            {sending ? tr("Sending...") : tr("Send Code")}
           </button>
         </div>
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted">
-            Code sent to <span className="text-text-strong">{email}</span>
+            {tr("Code sent to") + " "}<span className="text-text-strong">{email}</span>
           </p>
           <input
             type="text"
-            placeholder="6-digit code"
+            placeholder={tr("6-digit code")}
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             onKeyDown={(e) => e.key === "Enter" && handleVerify()}
@@ -217,7 +220,7 @@ export function LoginPage() {
             disabled={code.length < 6 || sending}
             className="workbench-button workbench-button-primary w-full py-3 font-medium disabled:opacity-50"
           >
-            {sending ? "Verifying..." : "Verify"}
+            {sending ? tr("Verifying...") : tr("Verify")}
           </button>
           <div className="flex items-center justify-between text-sm">
             <button
@@ -227,14 +230,13 @@ export function LoginPage() {
               }}
               className="text-muted hover:text-text-strong"
             >
-              Back
-            </button>
+              {tr("Back")}</button>
             <button
               onClick={handleSendCode}
               disabled={resendIn > 0 || sending}
               className="text-muted hover:text-text-strong disabled:opacity-50"
             >
-              {resendIn > 0 ? `Resend code (${resendIn}s)` : "Resend code"}
+              {resendIn > 0 ? tr("Resend code ({{v0}}s)", { v0: resendIn }) : tr("Resend code")}
             </button>
           </div>
         </div>
@@ -247,7 +249,7 @@ export function LoginPage() {
       <input
         data-testid="token-input"
         type="password"
-        placeholder="Admin auth token"
+        placeholder={tr("Admin auth token")}
         value={adminToken}
         onChange={(e) => setAdminToken(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleTokenLogin()}
@@ -259,8 +261,7 @@ export function LoginPage() {
         disabled={!adminToken.trim()}
         className="workbench-button workbench-button-primary w-full py-3 font-medium disabled:opacity-50"
       >
-        Login
-      </button>
+        {tr("Login")}</button>
     </div>
   );
 
@@ -275,9 +276,9 @@ export function LoginPage() {
         />
         <h1 className="text-2xl font-semibold tracking-tight text-text-strong">
           {scopedProfile
-            ? `Sign in to ${scopedProfile.name}`
+            ? tr("Sign in to {{v0}}", { v0: scopedProfile.name })
             : soloFirstRun || step === "solo"
-              ? "Welcome to Octos"
+              ? tr("Welcome to Octos")
               : "Octos"}
         </h1>
         {subtitle ? (
@@ -291,9 +292,7 @@ export function LoginPage() {
           statusError ? (
             <div className="space-y-4">
               <div className="rounded-lg border border-(--workbench-danger-border) bg-(--workbench-danger-bg) p-3 text-sm text-(--workbench-danger-text)">
-                Can't reach the server to load the sign-in options. Check
-                that it is running, then retry.
-              </div>
+                {tr("Can't reach the server to load the sign-in options. Check that it is running, then retry.")}</div>
               <button
                 onClick={() => {
                   setStatusError(false);
@@ -301,13 +300,12 @@ export function LoginPage() {
                 }}
                 className="workbench-button workbench-button-primary w-full py-3 font-medium"
               >
-                Retry
-              </button>
+                {tr("Retry")}</button>
             </div>
           ) : (
             // The available sign-in methods are server-driven; don't flash
             // the wrong set while probing.
-            <p className="text-sm text-muted">Checking sign-in options…</p>
+            <p className="text-sm text-muted">{tr("Checking sign-in options…")}</p>
           )
         ) : (
           <>
@@ -324,8 +322,7 @@ export function LoginPage() {
                   }}
                   className="w-full text-sm text-muted hover:text-text-strong"
                 >
-                  Back
-                </button>
+                  {tr("Back")}</button>
               </div>
             ) : soloFirstRun ? (
               <div className="mb-6">
@@ -341,11 +338,10 @@ export function LoginPage() {
                   disabled={sending}
                   className="workbench-button workbench-button-primary w-full py-3 font-medium disabled:opacity-50"
                 >
-                  {sending ? "Continuing..." : "Continue without a password"}
+                  {sending ? tr("Continuing...") : tr("Continue without a password")}
                 </button>
                 <p className="mt-2 text-center text-xs text-muted">
-                  Solo mode — local, single-user, stays on this machine.
-                </p>
+                  {tr("Solo mode — local, single-user, stays on this machine.")}</p>
               </div>
             ) : null}
 
@@ -378,15 +374,12 @@ export function LoginPage() {
                       onClick={() => setShowToken(true)}
                       className="mt-4 w-full text-center text-sm text-muted hover:text-text-strong"
                     >
-                      Use an auth token
-                    </button>
+                      {tr("Use an auth token")}</button>
                   ))}
 
                 {visibleMethods === 0 && (
                   <div className="rounded-lg border border-(--workbench-warning-border) bg-(--workbench-warning-bg) p-3 text-sm text-(--workbench-warning-text)">
-                    No sign-in method is enabled on this host yet. Check the
-                    server configuration.
-                  </div>
+                    {tr("No sign-in method is enabled on this host yet. Check the server configuration.")}</div>
                 )}
               </>
             )}

@@ -1,5 +1,6 @@
+import { tr } from "@/i18n";
 import type { EarnedAchievement } from "../history/history-api";
-import { ACHIEVEMENT_BY_ID } from "../../../services/learning-history/achievement-catalog.mjs";
+import { ACHIEVEMENT_BY_ID } from "@/learning/academy/achievement-catalog";
 import { getTeacher, isTeacherId, PLAIN_AWARDS, resolveSelectedTeacherId, type AchievementId, type TeacherDefinition, type TitledAchievementId } from "../teachers/teachers";
 import { topicLabel } from "./taxonomy-labels";
 
@@ -36,5 +37,5 @@ export function awardLine(achievement: EarnedAchievement, tone: AwardTone): stri
     : awards ? awards.titled[id as TitledAchievementId] ?? (definition ? awards.rarity[definition.rarity] : awards.other)
       : PLAIN_AWARDS.other;
   return template.replaceAll("{name}", achievementName(id))
-    .replaceAll("{topic}", achievement.topic_name ? topicLabel(achievement.scope, achievement.topic_name) : "这个知识点");
+    .replaceAll("{topic}", achievement.topic_name ? topicLabel(achievement.scope, achievement.topic_name) : tr("这个知识点"));
 }

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 
 import { findOpenWhiteboardPosition } from "./whiteboard-placement";
 
@@ -17,7 +18,7 @@ let fontPromise: Promise<OutlineFont> | undefined;
 export function prepareBoardWritingFont(): Promise<OutlineFont> {
   fontPromise ??= fetch("/fonts/handwriting/board-writing.woff", { priority: "low" })
     .then(async (response) => {
-      if (!response.ok) throw new Error("手写字体加载失败，请重试。");
+      if (!response.ok) throw new Error(tr("手写字体加载失败，请重试。"));
       const { default: opentype } = await import("opentype.js");
       return opentype.parse(await response.arrayBuffer()) as OutlineFont;
     }).catch((cause: unknown) => { fontPromise = undefined; throw cause; });
@@ -68,7 +69,7 @@ export function findWritingPosition(source: WritingBounds, width: number, height
 export async function layoutBoardWriting(lines: string[], source: WritingBounds,
   occupied: WritingBounds[]): Promise<{ paths: string[]; bounds: WritingBounds }> {
   if (!lines.length || lines.length > 8 || lines.join("\n").length > 500) {
-    throw new Error("板书内容过长，请缩小问题范围。");
+    throw new Error(tr("板书内容过长，请缩小问题范围。"));
   }
   const font = await prepareBoardWritingFont();
   const size = 25, lineHeight = 38, maxWidth = 480;
@@ -87,7 +88,7 @@ export async function layoutBoardWriting(lines: string[], source: WritingBounds,
       }
       if (!/^[0-9]$/.test(character)) script = false;
       const glyph = font.charToGlyph(character);
-      if (!glyph.index && !/\s/u.test(character)) throw new Error(`手写字体暂不支持“${character}”，未写入不完整板书。`);
+      if (!glyph.index && !/\s/u.test(character)) throw new Error(tr("手写字体暂不支持“{{v0}}”，未写入不完整板书。", { v0: character }));
       const glyphSize = script ? size * .65 : size;
       const advance = glyph.advanceWidth / font.unitsPerEm * glyphSize;
       if (x + advance > maxWidth && x > 0) { x = 0; y += lineHeight; }

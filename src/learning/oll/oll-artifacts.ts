@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { buildApiHeaders } from "@/api/client";
 import { buildFileUrl } from "@/api/files";
 import type { SessionFileInfo } from "@/api/sessions";
@@ -21,6 +22,7 @@ export interface OllLessonArtifactRef {
 }
 
 export interface OllLessonTopic {
+  language?: string;
   id: string;
   title: string;
   stepIds: string[];
@@ -304,7 +306,7 @@ export async function loadOllLessonArtifact(
     signal,
   });
   if (!response.ok) {
-    throw new Error(`OLL 课程读取失败 (${response.status})`);
+    throw new Error(tr("OLL 课程读取失败 ({{v0}})", { v0: response.status }));
   }
   const authoring = (await response.json()) as AuthoringLesson;
   const started = performance.now();
@@ -323,8 +325,8 @@ export async function loadOllLessonArtifact(
     status = "completed";
     return events;
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "未知格式错误";
-    throw new Error(`OLL 课程格式无效：${message}`, { cause });
+    const message = cause instanceof Error ? cause.message : tr("未知格式错误");
+    throw new Error(tr("OLL 课程格式无效：{{v0}}", { v0: message }), { cause });
   } finally {
     // Diagnostic observers must never change artifact acceptance or playback.
     try { onMaterialized?.({ elapsedMs: performance.now() - started, status }); } catch { /* observer only */ }
@@ -436,7 +438,8 @@ export function buildOllLessonTopics(
       : `v${stableIdentifierHash(open.lesson_id)}`;
     return [{
       id: open.board?.region_id ?? open.lesson_id,
-      title: open.lesson?.title ?? `课程主题 ${index + 1}`,
+      title: open.lesson?.title ?? tr("课程主题 {{v0}}", { v0: index + 1 }),
+      language: open.lesson?.language,
       stepIds,
       nodeIds: [...new Set(nodeIds)],
       nodeSections: Object.fromEntries(events.flatMap(event => event.event === "lesson.step" && event.step

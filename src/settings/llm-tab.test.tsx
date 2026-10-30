@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { LlmTab } from "./llm-tab";
@@ -14,7 +15,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 it("keeps an unsupported saved selection and explains course support", async () => {
   const profile = normalizeProfile({ id: "p", config: { llm: { primary: { family_id: "openai", model_id: "gpt-5" } } } });
   render(<LlmTab profile={profile} onProfileUpdated={vi.fn()} />);
-  expect(screen.getByText("暂不支持课程生成")).toBeTruthy();
+  expect(screen.getByText(tr("暂不支持课程生成"))).toBeTruthy();
   expect(screen.getByDisplayValue("GPT-5")).toBeTruthy();
   await waitFor(() => expect(mocks.models).toHaveBeenCalled());
   expect(mocks.save).not.toHaveBeenCalled();
@@ -24,13 +25,13 @@ it("recommends the tuned model without replacing an older saved Gemini model", a
   const profile = normalizeProfile({ id: "p", config: { llm: { primary: { family_id: "google", model_id: "gemini-3-flash-preview" } } } });
   mocks.save.mockImplementation(async (p, config) => ({ ...p, config: { ...p.config, ...config } }));
   render(<LlmTab profile={profile} onProfileUpdated={vi.fn()} />);
-  expect(screen.getByText("可用于课程生成")).toBeTruthy();
-  expect(screen.getByText("课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型")).toBeTruthy();
+  expect(screen.getByText(tr("可用于课程生成"))).toBeTruthy();
+  expect(screen.getByText(tr("课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型"))).toBeTruthy();
   const selector = screen.getByDisplayValue("Gemini 3 Flash");
   expect(mocks.save).not.toHaveBeenCalled();
   fireEvent.change(selector, { target: { value: "gemini-3.6-flash" } });
-  fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
-  expect(await screen.findByText("已保存，下一次生成课程时生效")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
+  expect(await screen.findByText(tr("已保存，下一次生成课程时生效"))).toBeTruthy();
   expect(mocks.save.mock.calls[0][1].llm.primary.model_id).toBe("gemini-3.6-flash");
 });
 
@@ -47,7 +48,7 @@ for (const [runtime_disposition, message] of [
     mocks.save.mockImplementation(async (p, config) => normalizeProfile({ ...p, config: { ...p.config, ...config }, runtime_disposition, config_revision: "revision" }));
     render(<LlmTab profile={profile} onProfileUpdated={vi.fn()} />);
     fireEvent.change(screen.getByDisplayValue("Gemini 3 Flash"), { target: { value: "gemini-3.6-flash" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
     await waitFor(() => expect(screen.getAllByRole("status").find((node) => node.textContent === message)?.textContent).toBe(message));
   });
 }
@@ -58,11 +59,11 @@ it("keeps the save status beyond the button timer and clears it when the form ch
   mocks.save.mockImplementation(async (p, config) => normalizeProfile({ ...p, config: { ...p.config, ...config }, runtime_disposition: "persisted_but_not_live" }));
   render(<LlmTab profile={profile} onProfileUpdated={vi.fn()} />);
   fireEvent.change(screen.getByDisplayValue("Gemini 3 Flash"), { target: { value: "gemini-3.6-flash" } });
-  fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
-  await waitFor(() => expect(screen.getByText("已保存。当前任务结束后，下一次生成将使用新模型").textContent).toBe("已保存。当前任务结束后，下一次生成将使用新模型"));
-  expect(screen.getByRole("button", { name: "Saved" })).toBeTruthy();
-  await screen.findByRole("button", { name: "Save Changes" }, { timeout: 4000 });
-  expect(screen.getByText("已保存。当前任务结束后，下一次生成将使用新模型").textContent).toBe("已保存。当前任务结束后，下一次生成将使用新模型");
+  fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
+  await waitFor(() => expect(screen.getByText(tr("已保存。当前任务结束后，下一次生成将使用新模型")).textContent).toBe(tr("已保存。当前任务结束后，下一次生成将使用新模型")));
+  expect(screen.getByRole("button", { name: tr("Saved") })).toBeTruthy();
+  await screen.findByRole("button", { name: tr("Save Changes") }, { timeout: 4000 });
+  expect(screen.getByText(tr("已保存。当前任务结束后，下一次生成将使用新模型")).textContent).toBe(tr("已保存。当前任务结束后，下一次生成将使用新模型"));
   fireEvent.change(screen.getByDisplayValue("Gemini 3.6 Flash（推荐）"), { target: { value: "gemini-3.5-flash" } });
-  expect(screen.queryByText("已保存。当前任务结束后，下一次生成将使用新模型")).toBeNull();
+  expect(screen.queryByText(tr("已保存。当前任务结束后，下一次生成将使用新模型"))).toBeNull();
 });

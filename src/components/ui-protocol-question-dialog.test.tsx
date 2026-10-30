@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 
@@ -53,7 +54,7 @@ describe("UiProtocolQuestionDialog", () => {
     expect(screen.getByText("Ship the clean fixes now")).toBeTruthy();
     // Submit disabled until something is chosen.
     expect(
-      (screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: tr("Submit") }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
   });
@@ -74,7 +75,7 @@ describe("UiProtocolQuestionDialog", () => {
     );
     fireEvent.click(screen.getByText("Merge the three"));
     const submit = screen.getByRole("button", {
-      name: "Submit",
+      name: tr("Submit"),
     }) as HTMLButtonElement;
     expect(submit.disabled).toBe(false);
     fireEvent.click(submit);
@@ -116,16 +117,16 @@ describe("UiProtocolQuestionDialog", () => {
         onResolved={() => {}}
       />,
     );
-    fireEvent.click(screen.getByText("Other…"));
+    fireEvent.click(screen.getByText(tr("Other…")));
     // Still disabled — Other chosen but empty.
     expect(
-      (screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement)
+      (screen.getByRole("button", { name: tr("Submit") }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
-    fireEvent.change(screen.getByPlaceholderText("Type your answer"), {
+    fireEvent.change(screen.getByPlaceholderText(tr("Type your answer")), {
       target: { value: "a third way" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Submit") }));
     await waitFor(() =>
       expect(respondToUserQuestion).toHaveBeenCalledWith("q-1", [
         { selected_labels: [], free_text: "a third way" },
@@ -175,11 +176,11 @@ describe("UiProtocolQuestionDialog", () => {
     fireEvent.click(screen.getByText("A"));
     fireEvent.click(screen.getByText("C"));
     expect(screen.getByText("1 / 2")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Next") }));
     // Second question.
     expect(screen.getByText("Ship now?")).toBeTruthy();
     fireEvent.click(screen.getByText("Yes"));
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Submit") }));
     await waitFor(() =>
       expect(respondToUserQuestion).toHaveBeenCalledWith("q-1", [
         { selected_labels: ["A", "C"] },

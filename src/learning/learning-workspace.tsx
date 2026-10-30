@@ -1,3 +1,5 @@
+import { getLocale, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
@@ -255,12 +257,12 @@ function lessonJobError(job: SkillActionJob): string {
   if (modelMessage) return modelMessage;
   const detail = `${job.error ?? ""} ${job.output ?? ""}`.trim();
   if (/\b429\b|resource exhausted|rate.?limit|quota/iu.test(detail)) {
-    return "课程生成服务当前比较繁忙，请稍后再试。";
+    return tr("课程生成服务当前比较繁忙，请稍后再试。");
   }
   if (/timeout|timed out|超时/iu.test(detail)) {
-    return "课程生成超时，请稍后再试。";
+    return tr("课程生成超时，请稍后再试。");
   }
-  return "课程生成失败，请重试。";
+  return tr("课程生成失败，请重试。");
 }
 
 function lessonJobNonLessonResponse(job: SkillActionJob): {
@@ -288,8 +290,8 @@ function lessonJobNonLessonResponse(job: SkillActionJob): {
   };
 }
 
-const INSUFFICIENT_LESSON_REQUEST_MESSAGE =
-  "提问信息不足，无法生成课程。请告诉我你想学习的具体内容。";
+const INSUFFICIENT_LESSON_REQUEST_MESSAGE = () =>
+  tr("提问信息不足，无法生成课程。请告诉我你想学习的具体内容。");
 
 function lessonJobArtifacts(
   job: SkillActionJob,
@@ -478,6 +480,7 @@ export function LearningWorkspace({
   courseAccessMode = "instance",
   onStartCourseInteraction,
 }: LearningWorkspaceProps) {
+  useLocale();
   const { isJevDebuggerVisible, isTraceInspectorVisible } = useDebugSettings();
   const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const history = useLearningHistoryRecorder(sessionId, !coursePreview && !ollFixture);
@@ -533,7 +536,7 @@ export function LearningWorkspace({
   // That is not a missing model configuration and must not block text input.
   const aiUnavailable = !modelConfigured;
   const modelIssue = useContext(LearningModelIssueContext);
-  const aiUnavailableMessage = modelIssue ?? "请先在设置中连接模型，笔迹和已有课程仍可使用。";
+  const aiUnavailableMessage = modelIssue ?? tr("请先在设置中连接模型，笔迹和已有课程仍可使用。");
   const isEmbeddedCourse = Boolean(coursePack?.isEmbedded);
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
@@ -1048,6 +1051,7 @@ export function LearningWorkspace({
           turnId: topic.questionId,
           beatId: operation.beat_id,
           text: operation.narration.text,
+          language: topic.language,
         }
       : null;
   }, [
@@ -1278,6 +1282,7 @@ export function LearningWorkspace({
     // The teacher is fixed when the question is submitted; switching later
     // does not change a lesson already being generated.
     const lessonTeacher = teacher;
+    const lessonLanguage = getLocale();
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
       : visualContext?.kind === "ink_selection"
@@ -1316,7 +1321,7 @@ export function LearningWorkspace({
           turn_id: turnId,
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
-          language: "zh-CN",
+          language: lessonLanguage,
           ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
@@ -1335,7 +1340,7 @@ export function LearningWorkspace({
         const code = lessonModelErrorCode(failedResult);
         if (code) throw new LessonModelError(code);
         throw new Error(
-          failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
+          failedResult?.output?.trim() || tr("课程生成任务启动失败，请重试"),
         );
       }
       const jobs = invocation.jobs ?? [];
@@ -1383,7 +1388,7 @@ export function LearningWorkspace({
     }
   }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, rememberLessonTeacher, learnerBackground, teacher, currentLesson]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
-    const message = error.message.trim() || "课程生成失败，请稍后再试";
+    const message = error.message.trim() || tr("课程生成失败，请稍后再试");
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
     setSendErrorCode(errorCode);
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1459,7 +1464,7 @@ export function LearningWorkspace({
                 contentKind: pending.contentKind,
                 lessonTitle: ollLesson?.title,
                 boardSummary: ollLesson
-                  ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+                  ? tr("{{v0}}；进度 {{v1}}/{{v2}}", { v0: ollLesson.title, v1: ollLesson.cursor, v2: ollLesson.totalOperations })
                   : undefined,
                 boardContext: pending.boardContext,
                 toolId: "custom-question",
@@ -1555,7 +1560,7 @@ export function LearningWorkspace({
                   gate_source: admission.source,
                 },
               });
-              const clarifyText = admission.reason || INSUFFICIENT_LESSON_REQUEST_MESSAGE;
+              const clarifyText = admission.reason || INSUFFICIENT_LESSON_REQUEST_MESSAGE();
               setPlainReply({ turnId: context.turnId, text: clarifyText });
               setPlainReplySpoken(false);
               return true;
@@ -1610,7 +1615,7 @@ export function LearningWorkspace({
               }
               const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
               if (!sendSelectionQuestion) {
-                throw new Error("选区语音功能尚未就绪");
+                throw new Error(tr("选区语音功能尚未就绪"));
               }
               await sendSelectionQuestion(
                 {
@@ -2026,7 +2031,7 @@ export function LearningWorkspace({
           setFileListError(
             cause instanceof Error
               ? cause.message
-              : "无法读取已保存的白板课程",
+              : tr("无法读取已保存的白板课程"),
           );
         }
         setOllArtifactListChecked(true);
@@ -2119,7 +2124,7 @@ export function LearningWorkspace({
           handleTurnComplete(pending.turnId);
           const learnerResponse = nonLesson.learnerResponse || (
             nonLesson.disposition === "ignore"
-              ? INSUFFICIENT_LESSON_REQUEST_MESSAGE
+              ? INSUFFICIENT_LESSON_REQUEST_MESSAGE()
               : ""
           );
           if (learnerResponse) {
@@ -2138,7 +2143,7 @@ export function LearningWorkspace({
         // message. Jobs without a result are kept as a legacy-server fallback.
         if (job.result && !hasLessonArtifact) {
           recordFailedRequest(historyRecorder, pending.turnId, job.job_id, "failed", "missing-artifact");
-          const message = "课程已经生成，但白板没有收到课程内容，请重试。";
+          const message = tr("课程已经生成，但白板没有收到课程内容，请重试。");
           failedQuestionErrorsRef.current.set(pending.turnId, message);
           updateWhiteboardQuestion(pending.turnId, {
             status: "failed",
@@ -2156,7 +2161,7 @@ export function LearningWorkspace({
       }
       if (hasLessonArtifact) {
         setWhiteboardQuestionStatus(pending.turnId, "answered");
-        setSendError("后续课程内容没有生成完成，已经保留并展示成功生成的部分。");
+        setSendError(tr("后续课程内容没有生成完成，已经保留并展示成功生成的部分。"));
         handleTurnComplete(pending.turnId);
         return;
       }
@@ -2375,7 +2380,7 @@ export function LearningWorkspace({
             return next;
           });
           setArtifactError(
-            cause instanceof Error ? cause.message : "OLL 课程读取失败",
+            cause instanceof Error ? cause.message : tr("OLL 课程读取失败"),
           );
         })
         .finally(() => {
@@ -2410,7 +2415,7 @@ export function LearningWorkspace({
           // generated result disappear after refresh or on another browser.
           // When a source is present, keep enforcing its immutable checksum.
           if (source && !selectionArtifactMatchesSource(loaded, source)) {
-            throw new Error("选区辅助内容无法对应到已保存的原稿快照");
+            throw new Error(tr("选区辅助内容无法对应到已保存的原稿快照"));
           }
           setLoadedSelectionArtifacts((current) => ({
             ...current,
@@ -2421,7 +2426,7 @@ export function LearningWorkspace({
           requestedSelectionArtifactsRef.current.delete(artifact.path);
           if (controller.signal.aborted) return;
           setArtifactError(
-            cause instanceof Error ? cause.message : "选区辅助内容读取失败",
+            cause instanceof Error ? cause.message : tr("选区辅助内容读取失败"),
           );
         })
         .finally(() => {
@@ -2455,7 +2460,7 @@ export function LearningWorkspace({
         return true;
       } catch (error) {
         ollAppendBlockedRef.current = true;
-        setArtifactError(`课程追加已暂停：${error instanceof Error ? error.message : String(error)}`);
+        setArtifactError(tr("课程追加已暂停：{{v0}}", { v0: error instanceof Error ? error.message : String(error) }));
         return false;
       }
     };
@@ -2493,7 +2498,7 @@ export function LearningWorkspace({
     if (ollLesson) {
       onBoardContextChange?.({
         lastAppliedAction: ollLesson.currentOperation?.action?.action_id,
-        boardSummary: `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`,
+        boardSummary: tr("{{v0}}；进度 {{v1}}/{{v2}}", { v0: ollLesson.title, v1: ollLesson.cursor, v2: ollLesson.totalOperations }),
       });
       return;
     }
@@ -2571,6 +2576,9 @@ export function LearningWorkspace({
     settled: lessonTeachersSettled,
   });
   const ollNarrationTts = useOllNarrationTts({
+    language: lessonOwnsNarration ? ollLesson?.language : undefined,
+    upcomingLanguage: ollLesson?.nextNarration?.language,
+    prewarmLanguage: startupNarration?.language,
     enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled
       && (Boolean(ollLesson) || Boolean(plainReply)),
@@ -2687,7 +2695,7 @@ export function LearningWorkspace({
         const mediaPath = delivery?.uploadedMediaPath
           ?? (await uploadFiles([contextImage], "upload"))[0];
         if (!selectionScope.active) return;
-        if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+        if (!mediaPath) throw new Error(tr("选区图片上传后没有可用路径"));
         if (toolId === "explain") {
           // “解释这部分” is the one-tap equivalent of typing this exact
           // request into the bottom composer while the selection is active.
@@ -2716,7 +2724,7 @@ export function LearningWorkspace({
           return;
         }
         if (answerPresentation === "lesson") {
-          throw new Error("课程请求没有进入课程生成流程");
+          throw new Error(tr("课程请求没有进入课程生成流程"));
         }
         selectionRequests.begin(turnId);
         const actionArguments = buildSelectionEnhancementActionArguments({
@@ -2730,7 +2738,7 @@ export function LearningWorkspace({
           learnerRequest: question,
           lessonTitle: ollLesson?.title,
           boardSummary: ollLesson
-            ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+            ? tr("{{v0}}；进度 {{v1}}/{{v2}}", { v0: ollLesson.title, v1: ollLesson.cursor, v2: ollLesson.totalOperations })
             : undefined,
           boardContext,
           toolId,
@@ -2750,7 +2758,7 @@ export function LearningWorkspace({
           if (code) throw new LessonModelError(code);
           throw new Error(
             failedResult?.output?.trim()
-              || "选区辅助内容生成失败，请重试",
+              || tr("选区辅助内容生成失败，请重试"),
           );
         }
         const files = await getSessionFiles(sessionId);
@@ -2759,13 +2767,13 @@ export function LearningWorkspace({
         const resultArtifact = artifacts.find((artifact) => artifact.turnId === turnId);
         if (!resultArtifact) {
           throw new Error(
-            "没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。",
+            tr("没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。"),
           );
         }
         const loaded = await loadSelectionEnhancementArtifact(resultArtifact, sessionId);
         if (!selectionScope.active) return;
         if (!selectionArtifactMatchesSource(loaded, snapshot)) {
-          throw new Error("选区辅助内容无法对应到已保存的原稿快照");
+          throw new Error(tr("选区辅助内容无法对应到已保存的原稿快照"));
         }
         if (!selectionRequests.accept(turnId)) return;
         requestedSelectionArtifactsRef.current.add(resultArtifact.path);
@@ -2784,7 +2792,7 @@ export function LearningWorkspace({
         if (!selectionScope.active) return;
         const message = cause instanceof Error
           ? cause.message
-          : "选区问题发送失败";
+          : tr("选区问题发送失败");
         setTextTurnPending(false);
         recordFailedRequest(historyRecorder, turnId);
         updateWhiteboardQuestion(turnId, { status: "failed", error: message, errorCode: cause instanceof LessonModelError ? cause.code : undefined });
@@ -2846,7 +2854,7 @@ export function LearningWorkspace({
     }): Promise<SelectionClassification> => {
       const paths = await uploadFiles([selectionImage], "upload");
       const mediaPath = paths[0];
-      if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+      if (!mediaPath) throw new Error(tr("选区图片上传后没有可用路径"));
       const invocation = await invokeSkillAction(
         sessionId,
         "learning.selection.classify",
@@ -2858,12 +2866,12 @@ export function LearningWorkspace({
         }),
       );
       if (!invocation.ok || (invocation.results ?? []).some((candidate) => !candidate.success)) {
-        throw new Error("暂时无法识别选区内容");
+        throw new Error(tr("暂时无法识别选区内容"));
       }
       const result = invocation.results?.find((candidate) =>
         candidate.success && candidate.structured_metadata !== undefined,
       );
-      if (!result) throw new Error("选区识别没有返回可用结果");
+      if (!result) throw new Error(tr("选区识别没有返回可用结果"));
       return parseSelectionClassificationMetadata(result.structured_metadata);
     },
     [sessionId],
@@ -3001,7 +3009,7 @@ export function LearningWorkspace({
           return;
         }
         if (admission.disposition === "clarify") {
-          setSendError(admission.reason || "输入内容不够明确，请描述你想学习的具体知识点或题目。");
+          setSendError(admission.reason || tr("输入内容不够明确，请描述你想学习的具体知识点或题目。"));
           return;
         }
       }
@@ -3054,7 +3062,7 @@ export function LearningWorkspace({
             lessonSelection.boardContext,
             ollLesson?.board ?? null,
           )) {
-            throw new Error("引用的白板内容已经变化，请重新框选后再发送");
+            throw new Error(tr("引用的白板内容已经变化，请重新框选后再发送"));
           }
           lessonSelection.recordSelection();
           await rememberSelectionSource(lessonSelection.snapshot);
@@ -3066,7 +3074,7 @@ export function LearningWorkspace({
           );
           clientTiming.media_upload_completed_at_epoch_ms = Date.now();
           if (!selectionMediaPath) {
-            throw new Error("选区图片上传失败，请重新框选后再试");
+            throw new Error(tr("选区图片上传失败，请重新框选后再试"));
           }
           const effectiveText = formatSelectionLessonRequest(
             text,
@@ -3103,7 +3111,7 @@ export function LearningWorkspace({
             ollLesson?.board ?? null,
           ),
         )) {
-          throw new Error("引用的白板内容已经变化，请重新框选后再发送");
+          throw new Error(tr("引用的白板内容已经变化，请重新框选后再发送"));
         }
         const mediaPaths = references.length > 0
           ? await uploadFiles(
@@ -3112,7 +3120,7 @@ export function LearningWorkspace({
             )
           : [];
         if (mediaPaths.length !== references.length) {
-          throw new Error("白板引用上传不完整");
+          throw new Error(tr("白板引用上传不完整"));
         }
         const referenceContext = buildComposerBoardReferenceContext(
           references.map((reference, index) => ({
@@ -3128,14 +3136,14 @@ export function LearningWorkspace({
             const frame = await conv.captureCurrentFrame();
             clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
             if (!frame) {
-              throw new Error("摄像头画面没有截取成功，请确认预览正常后重试");
+              throw new Error(tr("摄像头画面没有截取成功，请确认预览正常后重试"));
             }
             clientTiming.camera_media_bytes = frame.size;
             clientTiming.media_upload_started_at_epoch_ms = Date.now();
             [cameraMediaPath] = await uploadFiles([frame], "upload");
             clientTiming.media_upload_completed_at_epoch_ms = Date.now();
             if (!cameraMediaPath) {
-              throw new Error("摄像头画面上传失败，请重试");
+              throw new Error(tr("摄像头画面上传失败，请重试"));
             }
             updateWhiteboardQuestion(turnId, {
               imagePath: cameraMediaPath,
@@ -3179,7 +3187,7 @@ export function LearningWorkspace({
             setTextTurnPending(false);
             recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
-            setSendError(error.message || "发送失败");
+            setSendError(error.message || tr("发送失败"));
           },
         });
       } catch (cause) {
@@ -3187,7 +3195,7 @@ export function LearningWorkspace({
         recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
         setSendErrorCode(cause instanceof LessonModelError ? cause.code : undefined);
-        setSendError(cause instanceof Error ? cause.message : "发送失败");
+        setSendError(cause instanceof Error ? cause.message : tr("发送失败"));
         throw cause;
       }
     },
@@ -3224,7 +3232,7 @@ export function LearningWorkspace({
       setSendError(null);
       setSendErrorCode(undefined);
       const turnId = crypto.randomUUID();
-      const prompt = "请看我上传的题目，把题目和关键步骤整理到白板上。";
+      const prompt = tr("请看我上传的题目，把题目和关键步骤整理到白板上。");
       recordHistoryQuestion(turnId, prompt, "image");
       addWhiteboardQuestion({
         id: turnId,
@@ -3257,14 +3265,14 @@ export function LearningWorkspace({
             setTextTurnPending(false);
             recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
-            setSendError(error.message || "图片发送失败");
+            setSendError(error.message || tr("图片发送失败"));
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
         recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
-        setSendError(cause instanceof Error ? cause.message : "图片发送失败");
+        setSendError(cause instanceof Error ? cause.message : tr("图片发送失败"));
       }
     },
     [setSendError, setSendErrorCode, setTextTurnPending,
@@ -3331,7 +3339,7 @@ export function LearningWorkspace({
       setSendError(
         cause instanceof Error
           ? cause.message
-          : "无法启用语音",
+          : tr("无法启用语音"),
       );
     }
   };
@@ -3419,17 +3427,17 @@ export function LearningWorkspace({
       ? "speaking"
       : conv.state;
   const teacherStateLabel = selectionPending
-    ? "正在看选区"
+    ? tr("正在看选区")
     : textTurnPending
-    ? "正在想"
+    ? tr("正在想")
     : lessonOwnsNarration
-      ? "课程播放中"
+      ? tr("课程播放中")
       : plainReply
-        ? "老师回复"
+        ? tr("老师回复")
       : ollLesson
         ? lessonDeliverySettled
-          ? "课程完成"
-          : "继续播放"
+          ? tr("课程完成")
+          : tr("继续播放")
         : undefined;
   const pendingLessonQuestion = [...whiteboardQuestions].reverse().find(
     (question) => isCourseWhiteboardQuestion(question)
@@ -3493,16 +3501,16 @@ export function LearningWorkspace({
     ? {
         id: startupCourseTurnId ?? `lesson:${sessionId}`,
         kind: "lesson",
-        title: "正在搭建这节课",
-        detail: "先整理重点，再把讲解和互动画面放到白板上。",
+        title: tr("正在搭建这节课"),
+        detail: tr("先整理重点，再把讲解和互动画面放到白板上。"),
       }
     : null;
 
   return (
     <div className="learning-workspace">
       {historyRecorder && <div className="learning-history-sync-status" data-learning-board-occlusion="" role="status">
-        {history.localStatus.error || history.status.error || (historySavingShown ? "课堂记录保存中…" : history.status.syncing ? "学习记录同步中…" : history.status.pending ? "学习记录已保存在本机，等待同步" : history.status.conversationPending ? "学习记录已同步，问答仍待交给老师" : !history.status.checked ? "正在确认记录同步状态…" : "学习记录已同步")}
-        {(history.localStatus.error || history.status.error || history.status.pending || history.status.conversationPending > 0) && <button onClick={() => { void history.coordinator?.retry(); }}>重试同步</button>}
+        {history.localStatus.error || history.status.error || (historySavingShown ? tr("课堂记录保存中…") : history.status.syncing ? tr("学习记录同步中…") : history.status.pending ? tr("学习记录已保存在本机，等待同步") : history.status.conversationPending ? tr("学习记录已同步，问答仍待交给老师") : !history.status.checked ? tr("正在确认记录同步状态…") : tr("学习记录已同步"))}
+        {(history.localStatus.error || history.status.error || history.status.pending || history.status.conversationPending > 0) && <button onClick={() => { void history.coordinator?.retry(); }}>{tr("重试同步")}</button>}
       </div>}
       <header
         className="learning-workspace-topbar"
@@ -3510,8 +3518,8 @@ export function LearningWorkspace({
       >
         <LanguageSwitch />
         <div>
-          <span>Octos Learning Canvas</span>
-          <strong>{ollLesson?.title ?? "新的学习白板"}</strong>
+          <span>{tr("Octos Learning Canvas")}</span>
+          <strong>{ollLesson?.title ?? tr("新的学习白板")}</strong>
         </div>
         {ollLesson ? (
           <div className="learning-demo-controls" data-testid="oll-controls">
@@ -3522,7 +3530,7 @@ export function LearningWorkspace({
                 if (controlledOllLesson?.playing) controlledOllLesson.pause();
                 else controlledOllLesson?.play();
               }}
-              aria-label={ollLesson.playing ? "暂停 OLL 课程" : "播放 OLL 课程"}
+              aria-label={ollLesson.playing ? tr("暂停 OLL 课程") : tr("播放 OLL 课程")}
               disabled={lessonDeliverySettled}
             >
               {ollLesson.playing ? <Pause size={17} /> : <Play size={17} />}
@@ -3533,7 +3541,7 @@ export function LearningWorkspace({
                 unlockAudio();
                 controlledOllLesson?.nextBeat();
               }}
-              aria-label="下一 OLL Beat"
+              aria-label={tr("下一 OLL Beat")}
               disabled={lessonDeliverySettled}
             >
               <ChevronRight size={17} />
@@ -3544,7 +3552,7 @@ export function LearningWorkspace({
                 unlockAudio();
                 controlledOllLesson?.restart();
               }}
-              aria-label="重新播放 OLL 课程"
+              aria-label={tr("重新播放 OLL 课程")}
             >
               <RotateCcw size={16} />
             </button>
@@ -3556,8 +3564,8 @@ export function LearningWorkspace({
               }}
               aria-label={
                 narrationAudioEnabled
-                  ? "关闭课程旁白语音"
-                  : "开启课程旁白语音"
+                  ? tr("关闭课程旁白语音")
+                  : tr("开启课程旁白语音")
               }
               aria-pressed={narrationAudioEnabled}
             >
@@ -3569,10 +3577,10 @@ export function LearningWorkspace({
               <div
                 className="learning-course-generation-status"
                 role="status"
-                aria-label="课程内容仍在生成"
+                aria-label={tr("课程内容仍在生成")}
               >
                 <i aria-hidden="true" />
-                <span>继续生成中</span>
+                <span>{tr("继续生成中")}</span>
               </div>
             ) : null}
           </div>
@@ -3586,7 +3594,7 @@ export function LearningWorkspace({
               disabled={!onStartCourseInteraction}
             >
               <Play size={15} />
-              <span>开始互动学习</span>
+              <span>{tr("开始互动学习")}</span>
             </button>
           ) : (
             <>
@@ -3596,8 +3604,8 @@ export function LearningWorkspace({
             onClick={voiceEnabled ? onUseTextMode : () => void handleUseVoiceMode()}
             aria-label={
               voiceEnabled && conv.state === "starting"
-                ? "语音准备中，点击关闭"
-                : voiceEnabled ? "关闭语音" : "启用语音"
+                ? tr("语音准备中，点击关闭")
+                : voiceEnabled ? tr("关闭语音") : tr("启用语音")
             }
             aria-pressed={voiceEnabled}
             aria-busy={voiceEnabled && conv.state === "starting"}
@@ -3605,19 +3613,19 @@ export function LearningWorkspace({
             {voiceEnabled ? <Mic size={16} /> : <MicOff size={16} />}
             <span>
               {voiceEnabled && conv.state === "starting"
-                ? "语音准备中"
-                : voiceEnabled ? "关闭语音" : "启用语音"}
+                ? tr("语音准备中")
+                : voiceEnabled ? tr("关闭语音") : tr("启用语音")}
             </span>
           </button>
           <button
             type="button"
             className={`learning-mode-button ${conv.cameraActive ? "is-active" : ""}`}
             onClick={conv.toggleCamera}
-            aria-label={conv.cameraActive ? "关闭摄像头" : "启用摄像头"}
+            aria-label={conv.cameraActive ? tr("关闭摄像头") : tr("启用摄像头")}
             aria-pressed={conv.cameraActive}
           >
             {conv.cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
-            <span>{conv.cameraActive ? "关闭摄像头" : "启用摄像头"}</span>
+            <span>{conv.cameraActive ? tr("关闭摄像头") : tr("启用摄像头")}</span>
           </button>
             </>
           )}
@@ -3629,13 +3637,13 @@ export function LearningWorkspace({
           className="learning-voice-startup"
           role="status"
           aria-live="polite"
-          aria-label="正在准备语音识别"
+          aria-label={tr("正在准备语音识别")}
         >
           <span className="learning-voice-startup-spinner" aria-hidden="true" />
           <span className="learning-voice-startup-copy">
-            <strong>正在准备语音识别</strong>
-            <small>{conv.startupDetail ?? "正在初始化语音组件…"}</small>
-            <small>首次使用需要加载约 17 MB，请保持页面打开。</small>
+            <strong>{tr("正在准备语音识别")}</strong>
+            <small>{conv.startupDetail ?? tr("正在初始化语音组件…")}</small>
+            <small>{tr("首次使用需要加载约 17 MB，请保持页面打开。")}</small>
           </span>
           <span className="learning-voice-startup-progress" aria-hidden="true" />
         </div>
@@ -3685,7 +3693,7 @@ export function LearningWorkspace({
       </main>
 
       {(conv.cameraStream || conv.lastSentFrameUrl) && (
-        <div className="learning-camera-monitor" aria-label="摄像头画面">
+        <div className="learning-camera-monitor" aria-label={tr("摄像头画面")}>
           {conv.cameraStream && (
             <div className="learning-camera-frame">
               <CameraPreview
@@ -3696,19 +3704,19 @@ export function LearningWorkspace({
                 type="button"
                 className="learning-camera-frame-settings"
                 onClick={openCameraSettings}
-                aria-label="调整摄像头画面"
+                aria-label={tr("调整摄像头画面")}
                 aria-expanded={cameraSettingsOpen}
-                title="调整画面"
+                title={tr("调整画面")}
               >
                 <Settings2 size={16} />
               </button>
-              <span>老师看到的画面</span>
+              <span>{tr("老师看到的画面")}</span>
             </div>
           )}
           {conv.lastSentFrameUrl && (
             <div className="learning-camera-frame is-sent">
-              <img src={conv.lastSentFrameUrl} alt="本轮已发送给老师的画面" />
-              <span>本轮已发送</span>
+              <img src={conv.lastSentFrameUrl} alt={tr("本轮已发送给老师的画面")} />
+              <span>{tr("本轮已发送")}</span>
             </div>
           )}
         </div>
@@ -3745,7 +3753,7 @@ export function LearningWorkspace({
         textOnly={import.meta.env.MODE === "android"}
         initialText={initialDraft}
         suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
-          ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
+          ? [tr("斜率是什么？"), tr("圆的面积为什么是 πr²？"), tr("二次函数看不懂")]
           : []}
         voiceState={
           textTurnPending
@@ -3784,28 +3792,28 @@ export function LearningWorkspace({
             fileListError ??
             artifactError ??
             activeOllCompilation.error ??
-            (ollLesson?.failure ? `课程已暂停：${ollLesson.failure.message}` : null) ??
+            (ollLesson?.failure ? tr("课程已暂停：{{v0}}", { v0: ollLesson.failure.message }) : null) ??
             conv.error ??
             conv.cameraError ??
             ollNarrationTts.error}
           {sendError && lessonModelErrorMessage(sendErrorCode) && (
-            <> <button onClick={() => openCapabilitySettings("lesson")}>前往设置</button></>
+            <> <button onClick={() => openCapabilitySettings("lesson")}>{tr("前往设置")}</button></>
           )}
           {!sendError && ollNarrationTts.error && (
-            <> <button onClick={() => openCapabilitySettings("tts")}>检查旁白设置</button></>
+            <> <button onClick={() => openCapabilitySettings("tts")}>{tr("检查旁白设置")}</button></>
           )}
         </div>
       )}
       {aiUnavailable && !isEmbeddedCourse && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
           {modelIssue
-            ? <>{modelIssue} <button onClick={() => openCapabilitySettings("lesson")}>前往设置</button></>
-            : <>连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <button onClick={() => openCapabilitySettings("lesson")}>去连接模型</button></>}
+            ? <>{modelIssue} <button onClick={() => openCapabilitySettings("lesson")}>{tr("前往设置")}</button></>
+            : <>{tr("连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。") + " "}<button onClick={() => openCapabilitySettings("lesson")}>{tr("去连接模型")}</button></>}
         </div>
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
-          语音暂不可用，你可以继续打字、上传题目和阅读课程。 <button onClick={() => openCapabilitySettings("asr")}>配置语音输入</button>
+          {tr("语音暂不可用，你可以继续打字、上传题目和阅读课程。") + " "}<button onClick={() => openCapabilitySettings("asr")}>{tr("配置语音输入")}</button>
         </div>
       )}
       {import.meta.env.DEV && import.meta.env.MODE !== "test" && isTraceInspectorVisible ? (

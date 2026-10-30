@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { NextStep } from '../history/history-api';
@@ -27,11 +28,11 @@ it('resumes the original board, or fills a new board without sending, in the cho
   const onSelect = vi.fn(), onNew = vi.fn();
   render(<NextSteps onSelect={onSelect} onNew={onNew} />);
   expect(await screen.findByText(`窦鸢：${TEACHERS[1].suggestions.continue.replace('{topic}', '一次函数图像')}`)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: '回到那节课' }));
+  fireEvent.click(screen.getByRole('button', { name: tr("回到那节课") }));
   expect(onSelect).toHaveBeenCalledWith(session);
   // A double click opens one board.
-  fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));
-  fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));
+  fireEvent.click(screen.getByRole('button', { name: tr("在新白板上问问") }));
+  fireEvent.click(screen.getByRole('button', { name: tr("在新白板上问问") }));
   const draft = await nextStepDraft(STEPS[1]);
   await waitFor(() => expect(onNew).toHaveBeenCalledWith(draft));
   expect(onNew).toHaveBeenCalledTimes(1);
@@ -43,7 +44,7 @@ it('hides a dismissed step and records it; plain wording when playful lines are 
   render(<NextSteps onNew={vi.fn()} />);
   expect(await screen.findByText(PLAIN_SUGGESTIONS.continue.replace('{topic}', '一次函数图像'))).toBeTruthy();
   expect(screen.queryByText('为什么推荐这个')).toBeNull();
-  fireEvent.click(screen.getAllByRole('button', { name: '不感兴趣' })[0]);
+  fireEvent.click(screen.getAllByRole('button', { name: tr("不感兴趣") })[0]);
   expect(screen.queryByText(PLAIN_SUGGESTIONS.continue.replace('{topic}', '一次函数图像'))).toBeNull();
   expect(api.dismissSuggestion).toHaveBeenCalledWith('continue:mt_WBdHkc2HTf:');
 });

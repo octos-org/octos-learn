@@ -1,7 +1,8 @@
+import { localizedCatalog } from "@/i18n";
 import topicNames from "./topic-names-zh.json";
 
 /** Chinese labels for the pinned os-taxonomy subjects and domains. */
-export const SUBJECT_LABELS: Readonly<Record<string, string>> = {
+export const SUBJECT_LABELS: Readonly<Record<string, string>> = localizedCatalog({
   Mathematics: "数学",
   Science: "科学",
   English: "英语",
@@ -11,9 +12,9 @@ export const SUBJECT_LABELS: Readonly<Record<string, string>> = {
   "Life Skills": "生活技能",
   Geography: "地理",
   "Learning to Learn": "学会学习",
-};
+});
 
-export const DOMAIN_LABELS: Readonly<Record<string, string>> = {
+export const DOMAIN_LABELS: Readonly<Record<string, string>> = localizedCatalog({
   "Algorithms & Programming": "算法与编程",
   "Artificial Intelligence": "人工智能",
   "Data Representation": "数据表示",
@@ -80,7 +81,7 @@ export const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   "Volcanoes & Earthquakes": "火山与地震",
   "Waves, Light & Sound": "波、光与声",
   "Weather & Climate": "天气与气候",
-};
+});
 
 export const subjectLabel = (subject: string) => SUBJECT_LABELS[subject] ?? subject;
 export const domainLabel = (domain: string) => DOMAIN_LABELS[domain] ?? domain;

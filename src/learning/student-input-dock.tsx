@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import {
   Camera,
   CameraOff,
@@ -47,6 +49,7 @@ export function StudentInputDock({
   /** Prefilled text the learner may edit or send. */
   initialText?: string;
 }) {
+  useLocale();
   const [text, setText] = useState(initialText);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -83,7 +86,7 @@ export function StudentInputDock({
   return (
     <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
       {suggestions.length > 0 && !text && !sending && !sendDisabled && references.length === 0 ? (
-        <div className="learning-input-suggestions" aria-label="试着从一个主题开始">
+        <div className="learning-input-suggestions" aria-label={tr("试着从一个主题开始")}>
           {suggestions.map((suggestion) => (
             <button key={suggestion} type="button" onClick={() => {
               setText(suggestion);
@@ -93,14 +96,14 @@ export function StudentInputDock({
         </div>
       ) : null}
       {references.length > 0 ? (
-        <div className="learning-input-references" aria-label="已引用的白板内容">
+        <div className="learning-input-references" aria-label={tr("已引用的白板内容")}>
           {references.map((reference) => (
             <span key={reference.id}>
-              已引用：{reference.label}
+              {tr("已引用：")}{reference.label}
               <button
                 type="button"
                 onClick={() => onRemoveReference?.(reference.id)}
-                aria-label={`移除引用：${reference.label}`}
+                aria-label={tr("移除引用：{{v0}}", { v0: reference.label })}
               >
                 ×
               </button>
@@ -121,7 +124,7 @@ export function StudentInputDock({
             type="button"
             className="learning-input-button"
             onClick={() => fileRef.current?.click()}
-            aria-label="上传题目图片"
+            aria-label={tr("上传题目图片")}
             disabled={sendDisabled || sending}
           >
             <ImagePlus size={19} />
@@ -130,7 +133,7 @@ export function StudentInputDock({
             type="button"
             className={`learning-input-button ${cameraActive ? "is-active" : ""}`}
             onClick={onToggleCamera}
-            aria-label={cameraActive ? "关闭摄像头" : "打开摄像头"}
+            aria-label={cameraActive ? tr("关闭摄像头") : tr("打开摄像头")}
             disabled={cameraDisabled}
           >
             {cameraActive ? <Camera size={19} /> : <CameraOff size={19} />}
@@ -140,7 +143,7 @@ export function StudentInputDock({
             className={`learning-mic-button is-${voiceState}`}
             onClick={onMic}
             aria-label={
-              voiceStarting ? "语音准备中" : busy ? "打断 Octos" : "语音提问"
+              voiceStarting ? tr("语音准备中") : busy ? tr("打断 Octos") : tr("语音提问")
             }
             disabled={voiceDisabled || voiceStarting}
           >
@@ -152,14 +155,14 @@ export function StudentInputDock({
         ref={textRef}
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="问一个问题，或告诉 Octos 你卡在哪里…"
-        aria-label="输入学习问题"
+        placeholder={tr("问一个问题，或告诉 Octos 你卡在哪里…")}
+        aria-label={tr("输入学习问题")}
         disabled={sendDisabled || sending}
       />
       <button
         type="submit"
         className="learning-send-button"
-        aria-label="发送问题"
+        aria-label={tr("发送问题")}
         disabled={sendDisabled || sending || text.trim().length === 0}
       >
         <Send size={18} />

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { getMessages, getSessionFiles, listSessions, type SessionFileInfo } from "@/api/sessions";
 import { DeviceHistoryQueue } from "./history/device-queue";
 import { getSelectedProfileId } from "@/api/client";
@@ -68,7 +69,7 @@ export async function discoverServerLearningSessions(options: { recoverTitles?: 
       if (!files.some(file => isOllLessonArtifact(file) || isSelectionEnhancementArtifact(file))) return null;
       const createdAt = sessionTimestamp(session.id);
       return { id: session.id, status: "paused" as const,
-        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? (recoverTitles ? await recoverTitle(session.id, files) : null) ?? "已保存的学习",
+        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? (recoverTitles ? await recoverTitle(session.id, files) : null) ?? tr("已保存的学习"),
         createdAt, updatedAt: createdAt };
     }));
     for (const session of batch) if (session) result.push(session);

@@ -1,10 +1,12 @@
+import { formatDate, getLocale, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { ArrowRight, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { getToken } from "@/api/client";
 
-import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS } from "../../../services/learning-history/achievement-catalog.mjs";
+import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS } from "@/learning/academy/achievement-catalog";
 import { openHistoryApi, type EarnedAchievement, type LearningMap } from "../history/history-api";
 import { learningSessionHref } from "../learning-history";
 import { updateLearningSession, type LearningSessionRecord } from "../learning-session-store";
@@ -23,7 +25,7 @@ import { Medal } from "./medal";
 // every recorded topic leaves a footprint.
 type Summary = { lit: number; footprints: number; days: Set<string>; topicDays: string[][]; earned: number; recent: EarnedAchievement[]; title: string | null };
 
-const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
+const weekday = (index: number) => new Intl.DateTimeFormat(getLocale(), { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 0, 5 + index)));
 
 /** One greeting per visit; the same pick holds while the hall stays open,
  * and follows the teacher if the learner switches. */
@@ -49,6 +51,7 @@ function summarize(map: LearningMap, awards: EarnedAchievement[], title: string 
  * ledger of the star map, this week, the report and the latest awards, and
  * what to do next. The ledger is optional; the hall works the same without it. */
 export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
+  useLocale();
   const { teacher } = useSelectedTeacher();
   const navigate = useNavigate();
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -80,7 +83,7 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
   return (
     <section className="academy-hall-wrap" aria-labelledby="academy-hello">
       <div className="academy-hall-intro">
-        <p className="academy-date">{now.getMonth() + 1} 月 {now.getDate()} 日 · 星期{WEEKDAYS[(now.getDay() + 6) % 7]}</p>
+        <p className="academy-date">{formatDate(now, { month: "long", day: "numeric", weekday: "long" })}</p>
         <h1 id="academy-hello" className="academy-hello">{timeGreeting(now.getHours())}{summary?.title ? `，${summary.title}` : ""}。</h1>
       </div>
       <div className="academy-hall">
@@ -94,51 +97,50 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
             <div className="academy-actions">
               {latest && (
                 <Link to={learningSessionHref(latest)} className="academy-primary academy-resume-link" onClick={() => updateLearningSession(latest.id, { status: "active" })}>
-                  <span>继续上次的学习<small>{latest.title}</small></span>
+                  <span>{tr("继续上次的学习")}<small>{latest.title}</small></span>
                   <ArrowRight size={18} aria-hidden="true" />
                 </Link>
               )}
               <Link to="/board?new-board=1" className={latest ? "academy-secondary" : "academy-primary"}>
-                <Plus size={18} aria-hidden="true" /> 新建空白白板
-              </Link>
+                <Plus size={18} aria-hidden="true" /> {tr("新建空白白板")}</Link>
             </div>
-            <Link to="/records" className="academy-more academy-records-link">全部学习记录 <ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link to="/records" className="academy-more academy-records-link">{tr("全部学习记录") + " "}<ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
         </div>
         <div className="academy-ledger">
           <div className="academy-ledger-row academy-atlas-card">
             <Link to="/atlas" className="academy-card-link">
-              <span className="academy-eyebrow">星图</span>
+              <span className="academy-eyebrow">{tr("星图")}</span>
               {summary ? (
                 <span className="academy-stats">
-                  <span><b>{summary.lit}</b>颗已点亮</span>
-                  <span><b>{summary.footprints}</b>个知识点留下足迹</span>
+                  <span><b>{summary.lit}</b>{tr("颗已点亮")}</span>
+                  <span><b>{summary.footprints}</b>{tr("个知识点留下足迹")}</span>
                 </span>
-              ) : <span className="academy-muted">每学完一段讲解或练习，星图上就会留下足迹。</span>}
+              ) : <span className="academy-muted">{tr("每学完一段讲解或练习，星图上就会留下足迹。")}</span>}
             </Link>
             <div className="academy-week-row">
-              <ol className="academy-week" aria-label={`这一周来过 ${weekDays} 天`}>
+              <ol className="academy-week" aria-label={tr("这一周来过 {{v0}} 天", { v0: weekDays })}>
                 {week.map((day, index) => (
                   <li key={day} data-came={summary?.days.has(day) || undefined} data-today={day === today || undefined} data-future={day > today || undefined}>
-                    <i aria-hidden="true" />{WEEKDAYS[index]}
+                    <i aria-hidden="true" />{weekday(index)}
                   </li>
                 ))}
               </ol>
-              <span className="academy-muted">{weekDays ? `这周来过 ${weekDays} 天` : "这周还没来过"}<br />回来就好，不用天天来</span>
+              <span className="academy-muted">{weekDays ? tr("这周来过 {{v0}} 天", { v0: weekDays }) : tr("这周还没来过")}<br />{tr("回来就好，不用天天来")}</span>
             </div>
-            <Link to="/atlas" className="academy-more">打开星图 <ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link to="/atlas" className="academy-more">{tr("打开星图") + " "}<ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
           {reportShown && (
             <Link to="/records?tab=week" className="academy-ledger-row academy-ledger-link">
-              <span className="academy-eyebrow">学习周报</span>
+              <span className="academy-eyebrow">{tr("学习周报")}</span>
               <span className="academy-ledger-line">
-                {weekTopics ? `这周学过 ${weekTopics} 个知识点` : "这周的学习会整理在这里"}
+                {weekTopics ? tr("这周学过 {{v0}} 个知识点", { v0: weekTopics }) : tr("这周的学习会整理在这里")}
                 <ArrowRight size={15} aria-hidden="true" />
               </span>
             </Link>
           )}
           <Link to="/achievements" className="academy-ledger-row academy-ledger-link">
-            <span className="academy-eyebrow">成就{summary ? ` · ${summary.earned} / ${ACHIEVEMENTS.length}` : ""}</span>
+            <span className="academy-eyebrow">{tr("成就")}{summary ? ` · ${summary.earned} / ${ACHIEVEMENTS.length}` : ""}</span>
             {summary?.recent.length ? (
               <ul className="academy-awards">
                 {summary.recent.map((award) => {
@@ -150,12 +152,12 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
                         {achievementName(award.achievement_id)}
                         {award.topic_name ? ` · ${topicLabel(award.scope, award.topic_name)}` : ""}
                       </span>
-                      <time dateTime={award.earned_at}>{new Date(award.earned_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}</time>
+                      <time dateTime={award.earned_at}>{new Date(award.earned_at).toLocaleDateString(getLocale(), { month: "numeric", day: "numeric" })}</time>
                     </li>
                   );
                 })}
               </ul>
-            ) : <span className="academy-muted">还没有成就。完成课程片段或练习后会出现在这里。</span>}
+            ) : <span className="academy-muted">{tr("还没有成就。完成课程片段或练习后会出现在这里。")}</span>}
           </Link>
         </div>
       </div>

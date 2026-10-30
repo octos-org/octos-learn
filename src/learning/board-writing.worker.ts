@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { layoutBoardWriting, prepareBoardWritingFont, type WritingBounds } from "./board-writing-layout";
 
 self.onmessage = async (event: MessageEvent<{ id: number; kind: "prepare" | "layout"; lines: string[]; source: WritingBounds; occupied: WritingBounds[] }>) => {
@@ -7,6 +8,6 @@ self.onmessage = async (event: MessageEvent<{ id: number; kind: "prepare" | "lay
       : await layoutBoardWriting(lines, source, occupied);
     self.postMessage({ id, result });
   } catch (cause) {
-    self.postMessage({ id, error: cause instanceof Error ? cause.message : "无法生成手写板书。" });
+    self.postMessage({ id, error: cause instanceof Error ? cause.message : tr("无法生成手写板书。") });
   }
 };

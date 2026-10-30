@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
@@ -30,6 +32,7 @@ export function StudioTopbar({
   actions?: ReactNode;
   afterTitle?: ReactNode;
 }) {
+  useLocale();
   const navigate = useNavigate();
   const backButton = backTo || onBack;
   const titleClass = "studio-headline truncate text-lg";
@@ -44,8 +47,8 @@ export function StudioTopbar({
             type="button"
             onClick={() => (onBack ? onBack() : navigate(backTo!))}
             className="studio-ghost-button p-2"
-            title="Go back"
-            aria-label="Go back"
+            title={tr("Go back")}
+            aria-label={tr("Go back")}
           >
             <ArrowLeft size={18} />
           </button>

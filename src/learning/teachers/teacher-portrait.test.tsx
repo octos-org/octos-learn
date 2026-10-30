@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, cleanup, render, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
@@ -58,7 +59,7 @@ it("frames the bust as a soft glow by default and as a named card on request", (
   expect(portrait().getAttribute("data-frame")).toBe("card");
   expect(container.querySelector(".teacher-portrait-glow")).toBeNull();
   expect(container.querySelector<HTMLImageElement>(".teacher-portrait-scene")?.src).toContain("/teachers/alan/arch-bg.webp");
-  expect(container.querySelector(".teacher-portrait-plate")?.textContent).toBe("阿澜");
+  expect(container.querySelector(".teacher-portrait-plate")?.textContent).toBe(tr("阿澜"));
 });
 
 it("builds the teacher card from a background layer and a cut-out figure", () => {

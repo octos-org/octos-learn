@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 /** The RPC outcome, not file discovery, authorizes selection delivery. */
 export type SelectionRequestStatus = "pending" | "accepted" | "timed-out";
 
@@ -38,7 +39,7 @@ export class SelectionRequestState {
   }
 
   begin(turnId: string): void {
-    if (this.status(turnId) !== null) throw new Error("选区请求编号已使用，请重新提问。");
+    if (this.status(turnId) !== null) throw new Error(tr("选区请求编号已使用，请重新提问。"));
     // Refuse to send if we cannot persist the delivery barrier first.
     this.write(turnId, "pending");
   }

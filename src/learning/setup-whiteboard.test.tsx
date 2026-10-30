@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   render,
@@ -132,9 +133,9 @@ describe("first-run setup whiteboard", () => {
         <LocationProbe />
       </MemoryRouter>,
     );
-    await screen.findByRole("heading", { name: "把白板准备好，就可以开始了" });
+    await screen.findByRole("heading", { name: tr("把白板准备好，就可以开始了") });
     expect(screen.getByTestId("path").textContent).toContain("/setup?redirect=");
-    fireEvent.click(await screen.findByText("先用白板，稍后设置 AI"));
+    fireEvent.click(await screen.findByText(tr("先用白板，稍后设置 AI")));
     await screen.findByText("learning-board");
     expect(screen.getByTestId("path").textContent).toBe(destination);
   });
@@ -184,11 +185,11 @@ describe("first-run setup whiteboard", () => {
         <SetupWhiteboard />
       </MemoryRouter>,
     );
-    await screen.findByText("先用白板，稍后设置 AI");
+    await screen.findByText(tr("先用白板，稍后设置 AI"));
     fireEvent.change(screen.getByLabelText("API Key"), {
       target: { value: "test-secret-do-not-store" },
     });
-    fireEvent.click(screen.getByText("测试连接并保存"));
+    fireEvent.click(screen.getByText(tr("测试连接并保存")));
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
     expect(mocks.save.mock.calls[0][1].env_vars.GEMINI_API_KEY).toBe(
       "test-secret-do-not-store",
@@ -199,7 +200,7 @@ describe("first-run setup whiteboard", () => {
         "",
       ),
     );
-    expect(screen.getByText("进入我的白板")).toBeTruthy();
+    expect(screen.getByText(tr("进入我的白板"))).toBeTruthy();
   });
 
   it("lets the learner choose the whiteboard teacher without leaving onboarding", async () => {
@@ -211,7 +212,7 @@ describe("first-run setup whiteboard", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("heading", { name: "选择右下角老师形象" });
+    await screen.findByRole("heading", { name: tr("选择右下角老师形象") });
     expect(screen.queryByRole("link", {
       name: /选择右下角的老师形象/,
     })).toBeNull();
@@ -247,13 +248,13 @@ for (const [runtime_disposition, message] of [
     mocks.request.mockResolvedValue({ ok: true });
     mocks.save.mockImplementation(async (p, patch) => ({ ...p, config: { ...p.config, ...patch }, runtime_disposition }));
     render(<MemoryRouter><SetupWhiteboard /></MemoryRouter>);
-    fireEvent.click(await screen.findByText("测试连接并保存"));
+    fireEvent.click(await screen.findByText(tr("测试连接并保存")));
     await screen.findByText(message);
     expect(screen.getByText(message).getAttribute("role")).toBe("status");
     // Advancing time must not hide the status as it used to in the settings button.
     await new Promise((resolve) => setTimeout(resolve, 2100));
     expect(screen.getByText(message)).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("模型名称"), { target: { value: "gemini-3.5-flash" } });
+    fireEvent.change(screen.getByLabelText(tr("模型名称")), { target: { value: "gemini-3.5-flash" } });
     expect(screen.queryByText(message)).toBeNull();
   });
 }
@@ -263,8 +264,8 @@ it("clears onboarding's save status when the credential changes", async () => {
   mocks.request.mockResolvedValue({ ok: true });
   mocks.save.mockImplementation(async (p, patch) => ({ ...p, config: { ...p.config, ...patch }, runtime_disposition: "reloaded" }));
   render(<MemoryRouter><SetupWhiteboard /></MemoryRouter>);
-  fireEvent.click(await screen.findByText("测试连接并保存"));
-  await screen.findByText("已生效，下一次生成使用新模型");
+  fireEvent.click(await screen.findByText(tr("测试连接并保存")));
+  await screen.findByText(tr("已生效，下一次生成使用新模型"));
   fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "new-test-key" } });
-  expect(screen.queryByText("已生效，下一次生成使用新模型")).toBeNull();
+  expect(screen.queryByText(tr("已生效，下一次生成使用新模型"))).toBeNull();
 });

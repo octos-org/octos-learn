@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { IAgoraRTCClient, ILocalAudioTrack } from "agora-rtc-sdk-ng";
 import type { LocalAudioTrack, Room } from "livekit-client";
@@ -45,7 +46,7 @@ describe("private ASR same-origin routing", () => {
       },
     }), { status: 409 });
     expect((await responseError(response)).message).toBe(
-      "语音服务正在使用中，你可以继续打字",
+      tr("语音服务正在使用中，你可以继续打字"),
     );
   });
 

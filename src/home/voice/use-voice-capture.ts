@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicVAD } from "@ricky0123/vad-web";
 import { describeCaptureError } from "./capture-errors";
@@ -194,7 +195,7 @@ export function useVoiceCapture(): VoiceCapture {
         return;
       }
       if (detail.type === "error") {
-        setError(detail.message || "Android 原生麦克风读取失败");
+        setError(detail.message || tr("Android 原生麦克风读取失败"));
         setCapturing(false);
         nativeCaptureActiveRef.current = false;
         return;
@@ -287,7 +288,7 @@ export function useVoiceCapture(): VoiceCapture {
       if (!nativeCaptureActiveRef.current) {
         const result = startNativeAudioCapture();
         if (!result.ok) {
-          const message = result.error || "Android 原生麦克风无法启动";
+          const message = result.error || tr("Android 原生麦克风无法启动");
           setError(message);
           setCapturing(false);
           return false;

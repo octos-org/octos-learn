@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useMemo, useState } from "react";
 import {
   Cpu,
@@ -186,6 +188,7 @@ const labelClass = "mb-1.5 block text-xs font-medium text-muted";
 /* ─── Component ─── */
 
 export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
+  useLocale();
   const [form, setFormState] = useState<LlmFormState>(() => profileToForm(profile));
   const [original, setOriginal] = useState<LlmFormState>(() =>
     profileToForm(profile),
@@ -283,7 +286,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       })
       .catch((err) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setModelCatalogError("Live model catalog unavailable; using saved/static options.");
+        setModelCatalogError(tr("Live model catalog unavailable; using saved/static options."));
       })
       .finally(() => {
         if (!controller.signal.aborted) setModelCatalogLoading(false);
@@ -316,7 +319,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
     if (!effectiveFamilyId) return;
     if (!effectiveModelId.trim()) {
       setTestStatus("failed");
-      setTestMessage("Select or enter a model ID before testing.");
+      setTestMessage(tr("Select or enter a model ID before testing."));
       return;
     }
     setTestStatus("testing");
@@ -344,15 +347,15 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       });
       if (resp.ok) {
         setTestStatus("connected");
-        setTestMessage(resp.message || "Connected");
+        setTestMessage(resp.message || tr("Connected"));
       } else {
         setTestStatus("failed");
-        setTestMessage(resp.error || resp.message || "Connection failed");
+        setTestMessage(resp.error || resp.message || tr("Connection failed"));
       }
     } catch (err) {
       setTestStatus("failed");
       setTestMessage(
-        formatSettingsError(err, "Connection test endpoint unavailable"),
+        formatSettingsError(err, tr("Connection test endpoint unavailable")),
       );
     }
     setTimeout(() => {
@@ -411,7 +414,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       setSaveMessage(profileModelSaveMessage(result));
       setSaved(true);
     } catch (err) {
-      setError(formatSettingsError(err, "Failed to update LLM config."));
+      setError(formatSettingsError(err, tr("Failed to update LLM config.")));
     } finally {
       setSaving(false);
     }
@@ -432,24 +435,22 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              LLM Configuration
-            </h3>
+              {tr("LLM Configuration")}</h3>
             <p className="text-xs text-muted">
-              Select a provider and model for this profile
-            </p>
+              {tr("Select a provider and model for this profile")}</p>
           </div>
         </div>
 
         <div className="space-y-5">
           {/* Provider Family */}
           <div>
-            <label className={labelClass}>Provider</label>
+            <label className={labelClass}>{tr("Provider")}</label>
             <select
               value={form.family_id}
               onChange={(e) => handleProviderChange(e.target.value)}
               className={selectClass}
             >
-              <option value="">Select a provider...</option>
+              <option value="">{tr("Select a provider...")}</option>
               {AVAILABLE_LLM_PROVIDERS.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -460,19 +461,19 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
 
           <div role="status" className="text-xs text-muted">
             <p>{isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true")
-              ? "可用于课程生成" : "暂不支持课程生成"}</p>
+              ? tr("可用于课程生成") : tr("暂不支持课程生成")}</p>
             {effectiveFamilyId && !isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true") && (
-              <p>当前模型平台暂不支持生成课程，请选择 Gemini。原设置会保留，直到你保存新的选择。</p>
+              <p>{tr("当前模型平台暂不支持生成课程，请选择 Gemini。原设置会保留，直到你保存新的选择。")}</p>
             )}
             {["google", "gemini"].includes(effectiveFamilyId) && effectiveModelId !== "gemini-3.6-flash" && (
-              <p>课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型</p>
+              <p>{tr("课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型")}</p>
             )}
           </div>
 
           {/* Custom provider ID (only when Custom selected) */}
           {isCustom && (
             <div>
-              <label className={labelClass}>Custom Provider ID</label>
+              <label className={labelClass}>{tr("Custom Provider ID")}</label>
               <input
                 type="text"
                 value={form.custom_family_id}
@@ -488,7 +489,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           {/* Model selector (when provider has models) */}
           {!isCustom && providerModels.length > 0 && (
             <div>
-              <label className={labelClass}>Model</label>
+              <label className={labelClass}>{tr("Model")}</label>
               <select
                 value={form.model_id}
                 onChange={(e) =>
@@ -501,11 +502,11 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     {m.name}
                   </option>
                 ))}
-                <option value="__custom__">Custom model...</option>
+                <option value="__custom__">{tr("Custom model...")}</option>
               </select>
               {(modelCatalogLoading || modelCatalogError) && (
                 <p className="mt-2 text-xs text-muted">
-                  {modelCatalogLoading ? "Loading live model catalog..." : modelCatalogError}
+                  {modelCatalogLoading ? tr("Loading live model catalog...") : modelCatalogError}
                 </p>
               )}
             </div>
@@ -518,8 +519,8 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
             <div>
               <label className={labelClass}>
                 {isCustom || providerModels.length === 0
-                  ? "Model ID"
-                  : "Custom Model ID"}
+                  ? tr("Model ID")
+                  : tr("Custom Model ID")}
               </label>
               <input
                 type="text"
@@ -536,7 +537,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           {/* Inline JSON credential (e.g. Vertex service-account JSON) */}
           {isJsonCredential && (
             <div>
-              <label className={labelClass}>Service Account JSON</label>
+              <label className={labelClass}>{tr("Service Account JSON")}</label>
               <textarea
                 value={form.sa_json}
                 onChange={(e) =>
@@ -544,8 +545,8 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 }
                 placeholder={
                   credentialAlreadyConfigured
-                    ? "Stored in keychain — paste new JSON to replace"
-                    : "Paste the full service-account JSON…"
+                    ? tr("Stored in keychain — paste new JSON to replace")
+                    : tr("Paste the full service-account JSON…")
                 }
                 rows={6}
                 spellCheck={false}
@@ -555,14 +556,11 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 {credentialAlreadyConfigured ? (
                   <>
                     <CheckCircle2 size={13} className="text-green-400" />
-                    Configured (stored in macOS Keychain). Leave blank to keep.
-                  </>
+                    {tr("Configured (stored in macOS Keychain). Leave blank to keep.")}</>
                 ) : (
                   <>
                     <AlertCircle size={13} className="text-amber-400" />
-                    The private key is stored in the macOS Keychain, never in
-                    plaintext config. macOS only.
-                  </>
+                    {tr("The private key is stored in the macOS Keychain, never in plaintext config. macOS only.")}</>
                 )}
               </p>
             </div>
@@ -591,7 +589,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     className="mt-0.5 shrink-0 text-amber-400"
                   />
                   <span className="text-xs text-muted">
-                    Requires{" "}
+                    {tr("Requires")}{" "}
                     <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-text">
                       {selectedProvider.envKey}
                     </code>{" "}
@@ -605,10 +603,10 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           {/* Base URL (ollama / vllm / custom) */}
           {needsBaseUrl && (
             <div>
-              <label className={labelClass}>Base URL</label>
+              <label className={labelClass}>{tr("Base URL")}</label>
               <input
                 type="text"
-                aria-label="Base URL"
+                aria-label={tr("Base URL")}
                 value={form.base_url}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, base_url: e.target.value }))
@@ -620,9 +618,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               />
               {selectedProvider?.id === "moonshot" && (
                 <p className="mt-2 text-xs text-muted">
-                  China API keys use https://api.moonshot.cn/v1. Global API
-                  keys use https://api.moonshot.ai/v1.
-                </p>
+                  {tr("China API keys use https://api.moonshot.cn/v1. Global API keys use https://api.moonshot.ai/v1.")}</p>
               )}
             </div>
           )}
@@ -640,18 +636,18 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 ) : (
                   <Plug size={14} />
                 )}
-                {testStatus === "testing" ? "Testing..." : "Test Connection"}
+                {testStatus === "testing" ? tr("Testing...") : tr("Test Connection")}
               </button>
               {testStatus === "connected" && (
                 <span className="flex items-center gap-1.5 text-xs font-medium text-green-400">
                   <CheckCircle2 size={14} />
-                  {testMessage || "Connected"}
+                  {testMessage || tr("Connected")}
                 </span>
               )}
               {testStatus === "failed" && (
                 <span className="flex items-center gap-1.5 text-xs font-medium text-red-400">
                   <XCircle size={14} />
-                  {testMessage || "Connection failed"}
+                  {testMessage || tr("Connection failed")}
                 </span>
               )}
             </div>
@@ -667,19 +663,16 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Fallback Models
-            </h3>
+              {tr("Fallback Models")}</h3>
             <p className="text-xs text-muted">
-              Ordered list of fallback providers tried if the primary fails
-            </p>
+              {tr("Ordered list of fallback providers tried if the primary fails")}</p>
           </div>
         </div>
 
         <div className="space-y-3">
           {form.fallbacks.length === 0 && (
             <p className="text-xs text-muted py-2">
-              No fallbacks configured. Add one below.
-            </p>
+              {tr("No fallbacks configured. Add one below.")}</p>
           )}
 
           {form.fallbacks.map((entry, idx) => {
@@ -719,7 +712,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     }}
                     className={selectClass}
                   >
-                    <option value="">Select provider...</option>
+                    <option value="">{tr("Select provider...")}</option>
                     {AVAILABLE_LLM_PROVIDERS.filter(
                       (p) => p.id !== "__custom_family__",
                     ).map((p) => (
@@ -764,7 +757,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                           return { ...f, fallbacks: updated };
                         })
                       }
-                      placeholder="Model ID..."
+                      placeholder={tr("Model ID...")}
                       className={inputClass}
                     />
                   )}
@@ -786,7 +779,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     }
                     disabled={idx === 0}
                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted hover:text-text-strong hover:border-accent/30 disabled:opacity-20 transition"
-                    title="Move up"
+                    title={tr("Move up")}
                   >
                     <ChevronUp size={13} />
                   </button>
@@ -804,7 +797,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     }
                     disabled={idx === form.fallbacks.length - 1}
                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted hover:text-text-strong hover:border-accent/30 disabled:opacity-20 transition"
-                    title="Move down"
+                    title={tr("Move down")}
                   >
                     <ChevronDown size={13} />
                   </button>
@@ -818,7 +811,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     }))
                   }
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-muted hover:text-red-400 hover:border-red-400/30 transition mt-0.5"
-                  title="Remove fallback"
+                  title={tr("Remove fallback")}
                 >
                   <Trash2 size={13} />
                 </button>
@@ -839,8 +832,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
             className="flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition w-full justify-center"
           >
             <Plus size={14} />
-            Add Fallback
-          </button>
+            {tr("Add Fallback")}</button>
         </div>
       </div>
 
@@ -852,18 +844,16 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Adaptive Routing
-            </h3>
+              {tr("Adaptive Routing")}</h3>
             <p className="text-xs text-muted">
-              Automatically route between primary and fallbacks based on latency and error rates
-            </p>
+              {tr("Automatically route between primary and fallbacks based on latency and error rates")}</p>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Toggle row */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text">Enable adaptive routing</span>
+            <span className="text-sm text-text">{tr("Enable adaptive routing")}</span>
             <button
               role="switch"
               aria-checked={form.adaptive_routing_enabled}
@@ -895,13 +885,12 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               <Info size={14} className="mt-0.5 shrink-0 text-accent" />
               <div className="space-y-1">
                 <p className="text-xs font-medium text-text-strong">
-                  How adaptive routing works
-                </p>
+                  {tr("How adaptive routing works")}</p>
                 <ul className="list-disc list-inside space-y-0.5 text-xs text-muted">
-                  <li>Tracks p50/p95 latency per model over a rolling window</li>
-                  <li>Automatically shifts traffic away from slow or erroring models</li>
-                  <li>Primary model is preferred when healthy; fallbacks are tried in order</li>
-                  <li>No manual intervention needed — weights adjust in real time</li>
+                  <li>{tr("Tracks p50/p95 latency per model over a rolling window")}</li>
+                  <li>{tr("Automatically shifts traffic away from slow or erroring models")}</li>
+                  <li>{tr("Primary model is preferred when healthy; fallbacks are tried in order")}</li>
+                  <li>{tr("No manual intervention needed — weights adjust in real time")}</li>
                 </ul>
               </div>
             </div>
@@ -917,24 +906,22 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Prompt & Output
-            </h3>
+              {tr("Prompt & Output")}</h3>
             <p className="text-xs text-muted">
-              System prompt and output token limit
-            </p>
+              {tr("System prompt and output token limit")}</p>
           </div>
         </div>
 
         <div className="space-y-5">
           {/* System prompt */}
           <div>
-            <label className={labelClass}>System Prompt</label>
+            <label className={labelClass}>{tr("System Prompt")}</label>
             <textarea
               value={form.system_prompt}
               onChange={(e) =>
                 setForm((f) => ({ ...f, system_prompt: e.target.value }))
               }
-              placeholder="Optional system prompt override..."
+              placeholder={tr("Optional system prompt override...")}
               rows={4}
               className="w-full resize-y rounded-xl bg-surface-container px-4 py-3 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 transition"
             />
@@ -942,7 +929,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
 
           {/* Max Output Tokens */}
           <div>
-            <label className={labelClass}>Max Output Tokens</label>
+            <label className={labelClass}>{tr("Max Output Tokens")}</label>
             <input
               type="number"
               min={256}
@@ -952,7 +939,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, max_output_tokens: e.target.value }))
               }
-              placeholder="Leave empty for default"
+              placeholder={tr("Leave empty for default")}
               className={inputClass}
             />
           </div>
@@ -967,18 +954,16 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-text-strong">
-              Gateway Parameters
-            </h3>
+              {tr("Gateway Parameters")}</h3>
             <p className="text-xs text-muted">
-              Advanced session and iteration limits
-            </p>
+              {tr("Advanced session and iteration limits")}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           {/* Max History */}
           <div>
-            <label className={labelClass}>Max History</label>
+            <label className={labelClass}>{tr("Max History")}</label>
             <input
               type="number"
               min={1}
@@ -987,14 +972,14 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, max_history: e.target.value }))
               }
-              placeholder="Default"
+              placeholder={tr("Default")}
               className={inputClass}
             />
           </div>
 
           {/* Max Iterations */}
           <div>
-            <label className={labelClass}>Max Iterations</label>
+            <label className={labelClass}>{tr("Max Iterations")}</label>
             <input
               type="number"
               min={1}
@@ -1003,14 +988,14 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, max_iterations: e.target.value }))
               }
-              placeholder="Default"
+              placeholder={tr("Default")}
               className={inputClass}
             />
           </div>
 
           {/* Max Concurrent Sessions */}
           <div>
-            <label className={labelClass}>Max Concurrent Sessions</label>
+            <label className={labelClass}>{tr("Max Concurrent Sessions")}</label>
             <input
               type="number"
               min={1}
@@ -1022,14 +1007,14 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                   max_concurrent_sessions: e.target.value,
                 }))
               }
-              placeholder="Default"
+              placeholder={tr("Default")}
               className={inputClass}
             />
           </div>
 
           {/* Browser Timeout */}
           <div>
-            <label className={labelClass}>Browser Timeout (seconds)</label>
+            <label className={labelClass}>{tr("Browser Timeout (seconds)")}</label>
             <input
               type="number"
               min={5}
@@ -1041,7 +1026,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                   browser_timeout_secs: e.target.value,
                 }))
               }
-              placeholder="Default"
+              placeholder={tr("Default")}
               className={inputClass}
             />
           </div>
@@ -1063,7 +1048,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           ) : (
             <Save size={14} />
           )}
-          {saved ? "Saved" : "Save Changes"}
+          {saved ? tr("Saved") : tr("Save Changes")}
         </button>
         {saveMessage && <span role="status" className="text-sm text-muted">{saveMessage}</span>}
         {isDirty && (
@@ -1072,8 +1057,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
             className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"
           >
             <RotateCcw size={14} />
-            Reset
-          </button>
+            {tr("Reset")}</button>
         )}
         {error && (
           <span role="alert" className="text-xs text-red-400">{error}</span>

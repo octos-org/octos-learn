@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 export interface WhiteboardLoadingState {
   id: string;
   kind: "lesson" | "selection";
@@ -14,6 +16,7 @@ export function WhiteboardLoadingBlock({
   left: number;
   top: number;
 }) {
+  useLocale();
   return (
     <article
       className={`learning-whiteboard-loading-block is-${state.kind}`}
@@ -31,7 +34,7 @@ export function WhiteboardLoadingBlock({
       </div>
       <div className="learning-whiteboard-loading-beam" aria-hidden="true" />
       <div className="learning-whiteboard-loading-copy">
-        <span>{state.kind === "selection" ? "小章鱼正在看" : "Octos 正在准备"}</span>
+        <span>{state.kind === "selection" ? tr("小章鱼正在看") : tr("Octos 正在准备")}</span>
         <strong>{state.title}</strong>
         <p>{state.detail}</p>
       </div>

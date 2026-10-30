@@ -1,3 +1,4 @@
+import { localizedCatalog, tr } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import type { MapState } from "../history/history-api";
@@ -8,7 +9,7 @@ export interface TopicPrompt { kind: PromptKind; label: string; text: string; re
 export type PromptBank = Readonly<Record<string, readonly string[]>>;
 
 const KINDS: readonly PromptKind[] = ["hook", "try", "stretch"];
-const LABEL: Record<PromptKind, string> = { hook: "从生活里问起", try: "试一道题", stretch: "挑战一下" };
+const LABEL: Record<PromptKind, string> = localizedCatalog({ hook: "从生活里问起", try: "试一道题", stretch: "挑战一下" });
 
 // About 185 KB of question text, loaded only where questions are shown.
 let loading: Promise<PromptBank> | null = null;
@@ -42,7 +43,7 @@ export function recommendedPrompt(state: MapState | undefined): PromptKind {
  * board's input box and the learner decides to send it. */
 export function topicPrompts(bank: PromptBank | null, topicId: string, name: string, first: PromptKind = "hook"): TopicPrompt[] {
   const texts = bank?.[topicId];
-  if (texts?.length !== 3) return [{ kind: "hook", label: LABEL.hook, text: `${name}是什么？生活里哪里会用到它？`, recommended: true }];
+  if (texts?.length !== 3) return [{ kind: "hook", label: LABEL.hook, text: tr("{{v0}}是什么？生活里哪里会用到它？", { v0: name }), recommended: true }];
   return [first, ...KINDS.filter((kind) => kind !== first)]
     .map((kind) => ({ kind, label: LABEL[kind], text: texts[KINDS.indexOf(kind)]!, recommended: kind === first }));
 }
@@ -55,5 +56,5 @@ export async function topicDraft(topicId: string, name: string, kind: "hook" | "
   const label = topicLabel(topicId, name);
   const [first] = topicPrompts(bank, topicId, label, kind);
   // Without starter questions, continuing a topic keeps the plain request.
-  return first!.kind === kind || kind === "hook" ? first!.text : `我想再学一下${label}`;
+  return first!.kind === kind || kind === "hook" ? first!.text : tr("我想再学一下{{v0}}", { v0: label });
 }

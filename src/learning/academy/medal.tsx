@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-import type { AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
+import type { AchievementDefinition } from "@/learning/academy/achievement-catalog";
 
 import { BADGE_ART } from "./achievement-display";
 

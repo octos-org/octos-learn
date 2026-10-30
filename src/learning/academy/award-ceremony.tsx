@@ -1,7 +1,9 @@
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 
-import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
+import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "@/learning/academy/achievement-catalog";
 import type { EarnedAchievement } from "../history/history-api";
 import { awardLine, awardPresenter, readAwardTone } from "../map/award-line";
 import { TeacherPortrait } from "../teachers/teacher-portrait";
@@ -36,9 +38,9 @@ const awardKey = (item: EarnedAchievement) => `${item.achievement_id}:${item.sco
 
 function kicker(definition: AchievementDefinition, item: EarnedAchievement): string {
   const rarity = RARITY_NAME[definition.rarity];
-  if (definition.hidden) return `发现隐藏成就 · ${rarity}`;
-  if (definition.season && /^\d{4}$/.test(item.scope)) return `限时成就 · ${item.scope} · ${rarity}`;
-  return `获得成就 · ${rarity}`;
+  if (definition.hidden) return tr("发现隐藏成就 · {{v0}}", { v0: rarity });
+  if (definition.season && /^\d{4}$/.test(item.scope)) return tr("限时成就 · {{v0}} · {{v1}}", { v0: item.scope, v1: rarity });
+  return tr("获得成就 · {{v0}}", { v0: rarity });
 }
 
 /** A full-screen award ceremony that grows with rarity. The rarest award
@@ -46,6 +48,7 @@ function kicker(definition: AchievementDefinition, item: EarnedAchievement): str
  * plays its arrival again. It stays until the learner closes it (the corner ✕
  * or Escape), then returns focus to where it was. */
 export default function AwardCeremony({ items, onShown, onDone }: { items: EarnedAchievement[]; onShown?: () => void; onDone: () => void }) {
+  useLocale();
   const [awards] = useState(() => arrange(items));
   const [focus, setFocus] = useState(0);
   const lead = awards[focus];
@@ -173,22 +176,22 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
           <div className="award-kicker">{kicker(definition, item)}</div>
           <h2 id="award-ceremony-name" className="award-name">{definition.name}</h2>
           <p className="award-condition">{definition.condition}</p>
-          {definition.title && <div className="award-banner">解锁称号 · {definition.title}</div>}
+          {definition.title && <div className="award-banner">{tr("解锁称号 ·") + " "}{definition.title}</div>}
         </Fragment>
         {rest.length > 0 && (
           <div className="award-more">
-            <span>同时获得 · 点一枚看看</span>
+            <span>{tr("同时获得 · 点一枚看看")}</span>
             <ul ref={list}>
               {rest.slice(0, MORE_SHOWN).map(({ item: other, definition: more }) => (
                 <li key={awardKey(other)}>
-                  <button type="button" data-rarity={more.rarity} data-award={awardKey(other)} onClick={() => choose(awardKey(other))} aria-label={`查看「${more.name}」`}>
+                  <button type="button" data-rarity={more.rarity} data-award={awardKey(other)} onClick={() => choose(awardKey(other))} aria-label={tr("查看「{{v0}}」", { v0: more.name })}>
                     <Medal achievement={more} />
                     <span>{more.name}</span>
                   </button>
                 </li>
               ))}
             </ul>
-            {rest.length > MORE_SHOWN && <span>还有 {rest.length - MORE_SHOWN} 枚，去成就页看看</span>}
+            {rest.length > MORE_SHOWN && <span>{tr("还有") + " "}{rest.length - MORE_SHOWN} {tr("枚，去成就页看看")}</span>}
           </div>
         )}
       </div>
@@ -200,7 +203,7 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
           </span>
         )}
       </div>
-      <button ref={close} type="button" className="award-close" onClick={() => done.current()} aria-label="关闭"><X size={20} aria-hidden="true" /></button>
+      <button ref={close} type="button" className="award-close" onClick={() => done.current()} aria-label={tr("关闭")}><X size={20} aria-hidden="true" /></button>
     </div>
   );
 }

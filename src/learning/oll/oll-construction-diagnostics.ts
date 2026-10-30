@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   evaluateMathExpression,
   referencedMathVariables,
@@ -21,7 +22,7 @@ export function analyzeOllConstruction(source: AuthoringLesson): OllConstruction
   if (!source.board_context?.references.length && first?.say?.trim()
     && !first.actions.some(action => action.do === "write" && action.when !== "after_speech")) {
     diagnostics.push({ code: "OPENING_WITHOUT_VISIBLE_CONTENT", severity: "warning", proofStatus: "proven",
-      scope: "authoring_intent", path: "/steps/0/beats/0", message: "新课程首段旁白开始时没有同步板书；请确认是有意延迟揭示，或声明介绍板书/标题开场策略。" });
+      scope: "authoring_intent", path: "/steps/0/beats/0", message: tr("新课程首段旁白开始时没有同步板书；请确认是有意延迟揭示，或声明介绍板书/标题开场策略。") });
   }
   const variables = source.lesson.variables ?? [];
   const initial = Object.fromEntries(variables.map(variable => [variable.as, variable.initial]));
@@ -35,7 +36,7 @@ export function analyzeOllConstruction(source: AuthoringLesson): OllConstruction
     if (beat.actions.some(action => action.do === "animate")
       && /(?:请你|你来|你可以|你试着|你来手动|请(?:拖动|调整|移动))/.test(beat.say ?? "")) {
       diagnostics.push({ code: "TEACHER_STUDENT_VOICE", severity: "warning", proofStatus: "not_proven",
-        scope: "authoring_intent", path: `${beatPath}/say`, message: "教师动画配有邀请学生操作的口吻，请核对教学角色。" });
+        scope: "authoring_intent", path: `${beatPath}/say`, message: tr("教师动画配有邀请学生操作的口吻，请核对教学角色。") });
     }
     beat.actions.forEach((action, ai) => {
       const path = `${beatPath}/actions/${ai}`;
@@ -86,9 +87,9 @@ export function analyzeOllConstruction(source: AuthoringLesson): OllConstruction
           severity: failure ? "error" : complete && grid.length ? "info" : "warning",
           proofStatus: failure ? "disproven" : complete && grid.length ? "proven" : "not_proven",
           scope: "slider_grid", path: bindingPath, samples,
-          message: failure ?? (complete && grid.length ? "已枚举此绑定引用变量的有限滑块网格。" : "缺少有限步长或超出枚举预算，不能证明整个滑块域。") });
+          message: failure ?? (complete && grid.length ? tr("已枚举此绑定引用变量的有限滑块网格。") : tr("缺少有限步长或超出枚举预算，不能证明整个滑块域。")) });
         if (aliases.length) diagnostics.push({ code: "CONTINUOUS_BINDING_UNPROVEN", severity: "warning", proofStatus: "not_proven",
-          scope: "continuous_domain", path: bindingPath, message: "有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。" });
+          scope: "continuous_domain", path: bindingPath, message: tr("有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。") });
       });
     });
   }));
@@ -96,7 +97,7 @@ export function analyzeOllConstruction(source: AuthoringLesson): OllConstruction
     const aliases = key.split("\u0000");
     if (focus.count >= 2 && aliases.every(alias => visualAliases.has(alias)) && !related.has(key)) {
       diagnostics.push({ code: "RELATED_VISUALS_SUGGESTION", severity: "warning", proofStatus: "not_proven",
-        scope: "authoring_intent", path: focus.path, message: `图形 ${aliases.join("、")} 反复共同聚焦，但未声明直接布局关联；请核对，不自动分组。` });
+        scope: "authoring_intent", path: focus.path, message: tr("图形 {{v0}} 反复共同聚焦，但未声明直接布局关联；请核对，不自动分组。", { v0: aliases.join("、") }) });
     }
   }
   return diagnostics;

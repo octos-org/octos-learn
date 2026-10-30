@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSelectedProfileId } from "@/api/client";
@@ -30,6 +32,7 @@ import "./setup-whiteboard.css";
 /** Credentials are regular authenticated settings forms, never OLL cards,
  * canvas snapshots, conversation attachments, or localStorage values. */
 export function LearningSetupGate({ children }: { children: ReactNode }) {
+  useLocale();
   const location = useLocation();
   const [embeddedCourse, setEmbeddedCourse] = useState(
     () => isKnownEmbeddedCourseLocation(location),
@@ -72,7 +75,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
     );
   }
   if (required === null)
-    return <div className="setup-board setup-loading">正在打开白板…</div>;
+    return <div className="setup-board setup-loading">{tr("正在打开白板…")}</div>;
   return required ? (
     <Navigate
       to={`/setup?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
@@ -88,6 +91,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
 }
 
 export function SetupWhiteboard() {
+  useLocale();
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -118,53 +122,47 @@ export function SetupWhiteboard() {
       <header className="setup-header">
         <LanguageSwitch />
         <div>
-          <p className="setup-eyebrow">OCTOS LEARN · 第一块白板</p>
-          <h1>把白板准备好，就可以开始了</h1>
+          <p className="setup-eyebrow">{tr("OCTOS LEARN · 第一块白板")}</p>
+          <h1>{tr("把白板准备好，就可以开始了")}</h1>
         </div>
-        <Link to="/settings">完整设置</Link>
+        <Link to="/settings">{tr("完整设置")}</Link>
       </header>
       <p className="setup-intro">
-        写下问题、拍下纸上的题目，或直接开口问。Octos
-        会在同一块白板上讲解，并陪你一起推导。
-      </p>
+        {tr("写下问题、拍下纸上的题目，或直接开口问。Octos 会在同一块白板上讲解，并陪你一起推导。")}</p>
       {error && <p role="alert">{error}</p>}
       {!profile ? (
-        <p role="status">正在读取你的设置…</p>
+        <p role="status">{tr("正在读取你的设置…")}</p>
       ) : (
         <>
           <div className="setup-cards">
             <section className="setup-card">
-              <span className="setup-tag">01 · AI 讲解需要</span>
-              <h2>连接你的模型</h2>
+              <span className="setup-tag">{tr("01 · AI 讲解需要")}</span>
+              <h2>{tr("连接你的模型")}</h2>
               <p>
-                使用自己的 API
-                Key，模型费用由你的供应商账户承担。没有配置也能先写白板。
-              </p>
+                {tr("使用自己的 API Key，模型费用由你的供应商账户承担。没有配置也能先写白板。")}</p>
               <ModelCard profile={profile} onSaved={setProfile} />
             </section>
             <section className="setup-card">
-              <span className="setup-tag">02 · 可选</span>
-              <h2>听老师讲，也可以只看文字</h2>
+              <span className="setup-tag">{tr("02 · 可选")}</span>
+              <h2>{tr("听老师讲，也可以只看文字")}</h2>
               <p>
-                连接自己的语音服务，费用由供应商账户承担。可稍后设置，先看文字讲解。
-              </p>
+                {tr("连接自己的语音服务，费用由供应商账户承担。可稍后设置，先看文字讲解。")}</p>
               <ServiceSettings compact />
             </section>
             <section className="setup-card">
-              <span className="setup-tag">03 · 随时再开</span>
-              <h2>语音和摄像头不影响打字</h2>
+              <span className="setup-tag">{tr("03 · 随时再开")}</span>
+              <h2>{tr("语音和摄像头不影响打字")}</h2>
               <ul>
-                <li>进入白板后点击「启用语音」，准备完成后再说话。</li>
-                <li>语音服务忙碌时，可以继续打字，无需等待。</li>
-                <li>启用摄像头后，发送问题时可附上纸上的题目。</li>
-                <li>框选笔迹后提问，Octos 会围绕选中内容辅助你。</li>
+                <li>{tr("进入白板后点击「启用语音」，准备完成后再说话。")}</li>
+                <li>{tr("语音服务忙碌时，可以继续打字，无需等待。")}</li>
+                <li>{tr("启用摄像头后，发送问题时可附上纸上的题目。")}</li>
+                <li>{tr("框选笔迹后提问，Octos 会围绕选中内容辅助你。")}</li>
               </ul>
               <p className="setup-note">
-                浏览器只会在你主动启用时申请设备权限。
-              </p>
+                {tr("浏览器只会在你主动启用时申请设备权限。")}</p>
               <div className="setup-companion-picker">
-                <h3>选择右下角老师形象</h3>
-                <p>点击形象即可保存，并立即应用到学习白板。</p>
+                <h3>{tr("选择右下角老师形象")}</h3>
+                <p>{tr("点击形象即可保存，并立即应用到学习白板。")}</p>
                 <TeacherSkinPicker compact />
               </div>
             </section>
@@ -172,12 +170,11 @@ export function SetupWhiteboard() {
           <footer className="setup-footer">
             <button onClick={enter}>
               {hasLearningModel(profile)
-                ? "进入我的白板"
-                : "先用白板，稍后设置 AI"}
+                ? tr("进入我的白板")
+                : tr("先用白板，稍后设置 AI")}
             </button>
             <p>
-              以后可从设置随时调整。Key 由 Octos 管理；语音和 Jev 同步至本人设备后直连供应商，不写进白板或课程内容。
-            </p>
+              {tr("以后可从设置随时调整。Key 由 Octos 管理；语音和 Jev 同步至本人设备后直连供应商，不写进白板或课程内容。")}</p>
           </footer>
         </>
       )}
@@ -192,6 +189,7 @@ function ModelCard({
   profile: Profile;
   onSaved: (p: Profile) => void;
 }) {
+  useLocale();
   const providers = LLM_PROVIDERS.filter((p) =>
     isLessonCapable(p.id, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true")
       && p.credentialKind !== "json",
@@ -230,7 +228,7 @@ function ModelCard({
         throw new Error(
           test.error ||
             test.message ||
-            "连接测试失败，请检查模型名称和 API Key。",
+            tr("连接测试失败，请检查模型名称和 API Key。"),
         );
       const result = await updateMyProfileConfig(profile, {
         llm: {
@@ -273,22 +271,19 @@ function ModelCard({
     >
       {import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true" && (
         <p>
-          本站课程生成目前使用 Gemini。请提供已开通相应模型的 Gemini API
-          Key；课程将使用你在设置中保存的主模型。
-        </p>
+          {tr("本站课程生成目前使用 Gemini。请提供已开通相应模型的 Gemini API Key；课程将使用你在设置中保存的主模型。")}</p>
       )}
       {!isLessonCapable(providerId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true") && (
-        <p>当前模型平台暂不支持生成课程，请选择 Gemini。原设置尚未更改。</p>
+        <p>{tr("当前模型平台暂不支持生成课程，请选择 Gemini。原设置尚未更改。")}</p>
       )}
       <div className="setup-handwritten" aria-hidden="true">
-        <span>先连模型，其他的以后再说也行</span>
+        <span>{tr("先连模型，其他的以后再说也行")}</span>
         <svg viewBox="0 0 72 42">
           <path d="M4 5 Q38 8 56 30 M44 24 L56 30 L50 18" />
         </svg>
       </div>
       <label>
-        模型平台
-        <select
+        {tr("模型平台")}<select
           value={providerId}
           onChange={(e) => {
             setProviderId(e.target.value);
@@ -299,7 +294,7 @@ function ModelCard({
           }}
         >
           {!providers.some((p) => p.id === providerId) && providerId && (
-            <option value={providerId}>{providerId}（请在完整设置中检查课程支持）</option>
+            <option value={providerId}>{providerId}{tr("（请在完整设置中检查课程支持）")}</option>
           )}
           {providers.map((p) => (
             <option key={p.id} value={p.id}>
@@ -309,8 +304,7 @@ function ModelCard({
         </select>
       </label>
       <label>
-        模型名称
-        <input
+        {tr("模型名称")}<input
           value={model}
           onChange={(e) => { setModel(e.target.value); setMessage(""); }}
           required
@@ -325,8 +319,8 @@ function ModelCard({
           onChange={(e) => { setKey(e.target.value); setMessage(""); }}
           placeholder={
             provider && profile.config.env_vars[provider.envKey]
-              ? "已保存；留空继续使用"
-              : "粘贴你的 API Key"
+              ? tr("已保存；留空继续使用")
+              : tr("粘贴你的 API Key")
           }
           autoComplete="new-password"
           spellCheck={false}
@@ -334,11 +328,11 @@ function ModelCard({
       </label>
       <div className="setup-model-actions">
         <button disabled={busy || !provider} type="submit">
-          {busy ? "正在测试并保存…" : "测试连接并保存"}
+          {busy ? tr("正在测试并保存…") : tr("测试连接并保存")}
         </button>
         <p role="status">{message}</p>
       </div>
-      <Link to="/settings?tab=llm">打开完整模型设置 →</Link>
+      <Link to="/settings?tab=llm">{tr("打开完整模型设置 →")}</Link>
     </form>
   );
 }

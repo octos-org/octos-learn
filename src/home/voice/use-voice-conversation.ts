@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { createRequestId } from "@/lib/request-id";
 import {
   useCallback,
@@ -56,18 +57,18 @@ function privateAsrErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
   if (message === "语音服务正在使用中，你可以继续打字" || normalized.includes("busy") || normalized.includes("in use") || normalized.includes("single-session capacity")) {
-    return "语音服务正在使用中，你可以继续打字";
+    return tr("语音服务正在使用中，你可以继续打字");
   }
   if (normalized.includes("bridge") || normalized.includes("offline")) {
-    return "本地语音服务暂时离线，已尝试使用备用识别。";
+    return tr("本地语音服务暂时离线，已尝试使用备用识别。");
   }
   if (normalized.includes("expired")) {
-    return "语音识别会话已过期，请重新开启语音。";
+    return tr("语音识别会话已过期，请重新开启语音。");
   }
   if (normalized.includes("disconnect") || normalized.includes("closed")) {
-    return "语音识别连接已断开，请重新开启语音。";
+    return tr("语音识别连接已断开，请重新开启语音。");
   }
-  return `私有语音识别暂不可用：${message}`;
+  return tr("私有语音识别暂不可用：{{v0}}", { v0: message });
 }
 
 const RETAINED_NATIVE_ASR_MS = 2 * 60_000;
@@ -975,7 +976,7 @@ export function useVoiceConversation(
           if (cameraRequested && cameraAllowed) {
             clientTiming.camera_capture_started_at_epoch_ms = Date.now();
           }
-          if (!applicationTranscript) throw new Error("请先配置自己的语音输入服务，可继续打字。");
+          if (!applicationTranscript) throw new Error(tr("请先配置自己的语音输入服务，可继续打字。"));
           const frame = cameraRequested && cameraAllowed ? await cameraGrab() : null;
           capturedFiles = frame ? [frame] : [];
           if (cameraRequested && cameraAllowed) {
@@ -1188,7 +1189,7 @@ export function useVoiceConversation(
       } catch (e) {
         if (generation !== startGenRef.current) return;
         console.error("[voice] upload/send failed", e);
-        setSubmissionError(e instanceof Error ? e.message : "语音问题发送失败，请重试。");
+        setSubmissionError(e instanceof Error ? e.message : tr("语音问题发送失败，请重试。"));
         const failedTurnId = activeTurnIdRef.current;
         if (failedTurnId) {
           setProvisionalTurnIds((current) =>
@@ -1452,7 +1453,7 @@ export function useVoiceConversation(
       await failed.stop();
       if (generation !== startGenRef.current) return false;
 
-      setStartupDetail("正在恢复语音识别…");
+      setStartupDetail(tr("正在恢复语音识别…"));
       const replacement = new PrivateAsrClient((nextError: Error) => {
         void recoverPrivateAsrRef.current(
           replacement,
@@ -1471,7 +1472,7 @@ export function useVoiceConversation(
           return false;
         }
         setStartupDetail(null);
-        setPrivateAsrError("刚才没有识别清楚，语音识别已自动恢复，请再说一次。");
+        setPrivateAsrError(tr("刚才没有识别清楚，语音识别已自动恢复，请再说一次。"));
         if (bargeInCandidateRef.current) {
           restoreBargeInCandidate();
           return true;
@@ -1648,7 +1649,7 @@ export function useVoiceConversation(
     startOptions?: VoiceConversationStartOptions,
   ) => {
     if (!availableService("asr")) {
-      setPrivateAsrError(getServiceStatus("asr").detail + " 可在设置中连接语音输入，或继续打字。");
+      setPrivateAsrError(getServiceStatus("asr").detail + tr(" 可在设置中连接语音输入，或继续打字。"));
       setState("error"); return;
     }
     // Capture this start's generation. A later stop() (unmount, exit) or a
@@ -1660,7 +1661,7 @@ export function useVoiceConversation(
     setPrivateAsrError(null);
     stateRef.current = "starting";
     setState("starting");
-    setStartupDetail("正在加载语音组件…");
+    setStartupDetail(tr("正在加载语音组件…"));
     // These two downloads used to begin one after the other: first Agora,
     // then Silero/ONNX. Start both immediately; their consumers reuse the
     // same promises and browser cache below.
@@ -1726,7 +1727,7 @@ export function useVoiceConversation(
     // refresh" footgun. Poll the runtime's active-bridge connection state;
     // proceed anyway after a ceiling so a missing bridge can't wedge us.
     const deadline = Date.now() + 12000;
-    setStartupDetail("正在连接白板服务…");
+    setStartupDetail(tr("正在连接白板服务…"));
     while (Date.now() < deadline) {
       const b = getActiveBridge(sessionId, historyTopic);
       if (b?.getConnectionState?.() === "connected") break;
@@ -1740,7 +1741,7 @@ export function useVoiceConversation(
     const routeResult = await routingPromise;
     if (startGenRef.current !== gen) return;
     if (!("routing" in routeResult)) {
-      setPrivateAsrError("语音服务状态检查失败，请检查网络后重试。");
+      setPrivateAsrError(tr("语音服务状态检查失败，请检查网络后重试。"));
       stateRef.current = "error";
       setState("error");
       setStartupDetail(null);
@@ -1797,7 +1798,7 @@ export function useVoiceConversation(
       // otherwise initialize independently. Starting them together removes
       // the previous 40–50 second serial gap seen on the public deployment.
       privateAsrRef.current = privateAsr;
-      setStartupDetail("正在连接语音识别服务并启动人声检测…");
+      setStartupDetail(tr("正在连接语音识别服务并启动人声检测…"));
       const shouldPrepareListening = !startOptions?.initialAudio;
       listeningAttempted = shouldPrepareListening;
       const preparedListening = shouldPrepareListening
@@ -1895,7 +1896,7 @@ export function useVoiceConversation(
       // microphone prompt. Surface that failure now and let the already-started
       // local VAD become the fallback asynchronously; start() must not remain
       // blocked behind an unanswered permission dialog.
-      setStartupDetail("正在启动麦克风和人声检测…");
+      setStartupDetail(tr("正在启动麦克风和人声检测…"));
       void listeningPreparation.then((ready) => {
         if (startGenRef.current !== gen) return;
         setStartupDetail(null);
@@ -1923,7 +1924,7 @@ export function useVoiceConversation(
       }
       return;
     }
-    setStartupDetail("正在启动麦克风和人声检测…");
+    setStartupDetail(tr("正在启动麦克风和人声检测…"));
     await beginListening();
     setStartupDetail(null);
   }, [

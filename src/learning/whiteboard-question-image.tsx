@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -9,10 +11,11 @@ export function WhiteboardQuestionImage({
 }: {
   question: WhiteboardQuestionRecord;
 }) {
+  useLocale();
   const isSelectionContext = Boolean(question.source);
   const imageDescription = isSelectionContext
-    ? "本次问题引用的白板选区"
-    : "本次问题随附的摄像头画面";
+    ? tr("本次问题引用的白板选区")
+    : tr("本次问题随附的摄像头画面");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [loadedImage, setLoadedImage] = useState<{
     path: string;
@@ -70,8 +73,8 @@ export function WhiteboardQuestionImage({
         event.stopPropagation();
         setPreviewOpen(true);
       }}
-      aria-label="放大查看本次问题图片"
-      title="放大查看"
+      aria-label={tr("放大查看本次问题图片")}
+      title={tr("放大查看")}
     >
       <Maximize2 size={inContextHeader ? 14 : 16} aria-hidden="true" />
     </button>
@@ -97,10 +100,9 @@ export function WhiteboardQuestionImage({
       <div
         className="learning-whiteboard-question-camera is-error"
         role="img"
-        aria-label={`${imageDescription}暂时无法显示`}
+        aria-label={tr("{{v0}}暂时无法显示", { v0: imageDescription })}
       >
-        图片暂时无法显示
-      </div>
+        {tr("图片暂时无法显示")}</div>
     );
   }
   if (!imageUrl) {
@@ -109,8 +111,7 @@ export function WhiteboardQuestionImage({
         className="learning-whiteboard-question-camera is-loading"
         role="status"
       >
-        正在加载图片…
-      </div>
+        {tr("正在加载图片…")}</div>
     );
   }
 
@@ -120,8 +121,7 @@ export function WhiteboardQuestionImage({
         {isSelectionContext ? (
           <div className="learning-whiteboard-question-context-header">
             <div className="learning-whiteboard-question-context-label">
-              引用的白板选区
-            </div>
+              {tr("引用的白板选区")}</div>
             {expandButton(true)}
           </div>
         ) : null}
@@ -140,7 +140,7 @@ export function WhiteboardQuestionImage({
               className="learning-question-image-preview-backdrop"
               role="dialog"
               aria-modal="true"
-              aria-label="本次问题图片预览"
+              aria-label={tr("本次问题图片预览")}
               onPointerDown={(event) => event.stopPropagation()}
               onWheel={(event) => event.stopPropagation()}
               onClick={(event) => {
@@ -153,15 +153,15 @@ export function WhiteboardQuestionImage({
                 <img
                   src={imageUrl}
                   alt={isSelectionContext
-                    ? "放大的本次问题引用白板选区"
-                    : "放大的本次问题随附摄像头画面"}
+                    ? tr("放大的本次问题引用白板选区")
+                    : tr("放大的本次问题随附摄像头画面")}
                 />
                 <button
                   ref={closeRef}
                   type="button"
                   onClick={() => setPreviewOpen(false)}
-                  aria-label="关闭图片预览"
-                  title="关闭"
+                  aria-label={tr("关闭图片预览")}
+                  title={tr("关闭")}
                 >
                   <X size={20} aria-hidden="true" />
                 </button>

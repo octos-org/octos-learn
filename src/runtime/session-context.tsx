@@ -1,3 +1,4 @@
+import { getLocale } from "@/i18n";
 /* eslint-disable react-refresh/only-export-components -- This context module intentionally exports hooks and shared types. */
 
 import {
@@ -1142,7 +1143,7 @@ function formatSessionName(id: string): string {
       const ts = parseInt(parts[1], 10);
       if (!isNaN(ts)) {
         const d = new Date(ts);
-        return d.toLocaleDateString(undefined, {
+        return d.toLocaleDateString(getLocale(), {
           month: "short",
           day: "numeric",
           hour: "2-digit",

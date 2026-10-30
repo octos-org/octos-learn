@@ -1,3 +1,5 @@
+import { localizedCatalog, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -9,14 +11,15 @@ import { igniteDuration, paintAtlas, RING_NAMES, toScreen, toWorld, type PaintSt
 import "./star-atlas.css";
 
 const atlas = buildAtlas();
-const STATE_TEXT = { explored: "已探索", practising: "正在破印", "did-it": "做出来过" } as const;
-const FRAME_TEXT = ["", "练过两天，多了一圈星环", "练过三天以上，星环开始转动", "练过五天以上，星环长出花框"];
+const STATE_TEXT = localizedCatalog({ explored: "已探索", practising: "正在破印", "did-it": "做出来过" } as const);
+const FRAME_TEXT = localizedCatalog(["", "练过两天，多了一圈星环", "练过三天以上，星环开始转动", "练过五天以上，星环长出花框"]);
 const ease = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 /** The learner's lit topics on the academy's star atlas (Mathematics for
  * now). Stars only reflect recorded facts: lighting one means "did it once
  * without hints", never mastery, and a lit star never dims. */
 export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk?: (draft: string) => void }) {
+  useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const placed = useMemo(() => placeTopics(atlas, topics), [topics]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -142,52 +145,52 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
     </button>)}</div>
   </div> : null;
 
-  return <section className="star-atlas" aria-label="星图">
+  return <section className="star-atlas" aria-label={tr("星图")}>
     <canvas ref={canvasRef} className="star-atlas-sky" role="img"
-      aria-label={`数之星域：点亮 ${counts.lit} 颗，正在破印 ${counts.sealed} 颗，显现 ${counts.seen} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情。`} />
+      aria-label={tr("数之星域：点亮 {{v0}} 颗，正在破印 {{v1}} 颗，显现 {{v2}} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情。", { v0: counts.lit, v1: counts.sealed, v2: counts.seen })} />
     <div className="star-atlas-top">
-      <div className="star-atlas-title"><span>Star Atlas Academy</span><strong>数之星域</strong></div>
+      <div className="star-atlas-title"><span>{tr("Star Atlas Academy")}</span><strong>{tr("数之星域")}</strong></div>
       <div className="star-atlas-tally" aria-live="polite">
-        <span className="lit"><b>{counts.lit}</b>点亮</span><span><b>{counts.sealed}</b>正在破印</span><span><b>{counts.seen}</b>显现</span>
+        <span className="lit"><b>{counts.lit}</b>{tr("点亮")}</span><span><b>{counts.sealed}</b>{tr("正在破印")}</span><span><b>{counts.seen}</b>{tr("显现")}</span>
       </div>
-      <button type="button" className="star-atlas-chip" aria-pressed={unveil} onClick={toggleUnveil}>{unveil ? "恢复迷雾" : "揭开全部迷雾"}</button>
+      <button type="button" className="star-atlas-chip" aria-pressed={unveil} onClick={toggleUnveil}>{unveil ? tr("恢复迷雾") : tr("揭开全部迷雾")}</button>
     </div>
     <div className="star-atlas-zoom">
-      <button type="button" aria-label="放大" onClick={() => zoom(1.5)}>+</button>
-      <button type="button" aria-label="缩小" onClick={() => zoom(1 / 1.5)}>−</button>
-      <button type="button" aria-label="回到我点亮的星辰" onClick={() => home()}>✦</button>
+      <button type="button" aria-label={tr("放大")} onClick={() => zoom(1.5)}>+</button>
+      <button type="button" aria-label={tr("缩小")} onClick={() => zoom(1 / 1.5)}>−</button>
+      <button type="button" aria-label={tr("回到我点亮的星辰")} onClick={() => home()}>✦</button>
     </div>
     {star && <div className="star-atlas-card" role="dialog" aria-label={name}>
-      <button type="button" className="star-atlas-close" aria-label="关闭" onClick={() => setSelected(null)}>×</button>
+      <button type="button" className="star-atlas-close" aria-label={tr("关闭")} onClick={() => setSelected(null)}>×</button>
       <h3>{name}</h3>
       {topic && topic.name !== name && <p className="star-atlas-en">{topic.name}</p>}
-      <span className={`star-atlas-state is-${topic?.state ?? "mist"}`}>{topic ? STATE_TEXT[topic.state] : "迷雾中"}</span>
+      <span className={`star-atlas-state is-${topic?.state ?? "mist"}`}>{topic ? STATE_TEXT[topic.state] : tr("迷雾中")}</span>
       <dl>
-        <dt>星域</dt><dd>{domainLabel(atlas.domains[star.domain])}</dd>
-        <dt>学部</dt><dd>{RING_NAMES[star.ring].name}（{RING_NAMES[star.ring].note}）</dd>
+        <dt>{tr("星域")}</dt><dd>{domainLabel(atlas.domains[star.domain])}</dd>
+        <dt>{tr("学部")}</dt><dd>{RING_NAMES[star.ring].name}（{RING_NAMES[star.ring].note}）</dd>
         {topic && <>
-          <dt>听过的讲解</dt><dd>{topic.evidence.played_beats} 段</dd>
-          <dt>练习作答</dt><dd>{topic.evidence.task_attempts} 次</dd>
-          <dt>不看提示做对</dt><dd>{topic.evidence.unassisted_successes} 次</dd>
-          <dt>学过的日子</dt><dd>{topic.evidence.days.length} 天</dd>
+          <dt>{tr("听过的讲解")}</dt><dd>{topic.evidence.played_beats} {tr("段")}</dd>
+          <dt>{tr("练习作答")}</dt><dd>{topic.evidence.task_attempts} {tr("次")}</dd>
+          <dt>{tr("不看提示做对")}</dt><dd>{topic.evidence.unassisted_successes} {tr("次")}</dd>
+          <dt>{tr("学过的日子")}</dt><dd>{topic.evidence.days.length} {tr("天")}</dd>
         </>}
       </dl>
-      {topic && <Link className="star-atlas-evidence" to={`/records?${new URLSearchParams({ topic: topic.topic_id, name: topic.name })}`}>查看这颗星的学习依据 →</Link>}
+      {topic && <Link className="star-atlas-evidence" to={`/records?${new URLSearchParams({ topic: topic.topic_id, name: topic.name })}`}>{tr("查看这颗星的学习依据 →")}</Link>}
       {frameLevel(topic) > 0 && <p className="star-atlas-note">{FRAME_TEXT[frameLevel(topic)]}</p>}
-      {topic?.state === "did-it" && <p className="star-atlas-note">“做出来过”表示不看提示做对过，不等于已经掌握。点亮的星辰不会熄灭。</p>}
-      {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? "它就在你去过的星辰旁边，迷雾已经变薄。" : "这片星空还被迷雾遮着。"}</p>}
-      {onAsk && <div className="star-atlas-asks" role="group" aria-label="在新白板上问问">
-        <h4>在新白板上问问</h4>
+      {topic?.state === "did-it" && <p className="star-atlas-note">{tr("“做出来过”表示不看提示做对过，不等于已经掌握。点亮的星辰不会熄灭。")}</p>}
+      {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? tr("它就在你去过的星辰旁边，迷雾已经变薄。") : tr("这片星空还被迷雾遮着。")}</p>}
+      {onAsk && <div className="star-atlas-asks" role="group" aria-label={tr("在新白板上问问")}>
+        <h4>{tr("在新白板上问问")}</h4>
         {/* The real questions, once loaded; never a stand-in to be tapped meanwhile. */}
-        {!prompts && <p className="star-atlas-note">正在准备问题……</p>}
+        {!prompts && <p className="star-atlas-note">{tr("正在准备问题……")}</p>}
         {prompts && topicPrompts(prompts, star.id, name, recommendedPrompt(topic?.state)).map((prompt) => (
           <button key={prompt.kind} type="button" className="star-atlas-ask" data-recommended={prompt.recommended || undefined} onClick={() => onAsk(prompt.text)}>
-            <span>{prompt.label}{prompt.recommended && <em>推荐</em>}</span>{prompt.text}
+            <span>{prompt.label}{prompt.recommended && <em>{tr("推荐")}</em>}</span>{prompt.text}
           </button>
         ))}
       </div>}
-      {links(atlas.prerequisites[selected!], "前置星辰")}
-      {links(atlas.leadsTo[selected!], "由此通往")}
+      {links(atlas.prerequisites[selected!], tr("前置星辰"))}
+      {links(atlas.leadsTo[selected!], tr("由此通往"))}
     </div>}
   </section>;
 }

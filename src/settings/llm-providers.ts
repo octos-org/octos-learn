@@ -1,3 +1,4 @@
+import { localizedCatalog } from "@/i18n";
 export interface LlmProvider {
   id: string;
   name: string;
@@ -13,7 +14,7 @@ export interface LlmProvider {
   credentialKind?: "apiKey" | "json";
 }
 
-export const LLM_PROVIDERS: LlmProvider[] = [
+export const LLM_PROVIDERS: LlmProvider[] = localizedCatalog([
   {
     id: "openai",
     name: "OpenAI",
@@ -114,7 +115,7 @@ export const LLM_PROVIDERS: LlmProvider[] = [
     models: [],
   },
   { id: "__custom_family__", name: "Custom Provider", envKey: "", models: [] },
-];
+]);
 
 /**
  * Public Linux hosts cannot persist Vertex service-account JSON with the

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,10 +59,10 @@ describe("LoginPage registration guidance", () => {
     renderLogin(true);
 
     expect(
-      screen.getByText(/新邮箱验证后会自动注册/),
+      screen.getByText(new RegExp(tr("输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "")),
     ).toBeTruthy();
     expect(
-      screen.queryByText(/use an allowed or registered email/i),
+      screen.queryByText(new RegExp(tr("Use an allowed or registered email to sign in.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")),
     ).toBeNull();
   });
 
@@ -69,7 +70,7 @@ describe("LoginPage registration guidance", () => {
     renderLogin(false);
 
     expect(
-      screen.getByText(/use an allowed or registered email to sign in/i),
+      screen.getByText(new RegExp(tr("Use an allowed or registered email to sign in.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")),
     ).toBeTruthy();
   });
 
@@ -100,7 +101,7 @@ describe("LoginPage registration guidance", () => {
     await waitFor(() => expect(apiMocks.status).toHaveBeenCalledOnce());
     expect(
       await screen.findByText(
-        /新邮箱验证后会自动注册/,
+        new RegExp(tr("输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""),
       ),
     ).toBeTruthy();
     expect(
@@ -126,7 +127,7 @@ describe("LoginPage registration guidance", () => {
     );
 
     expect(
-      await screen.findByText(/continue with the local profile/i),
+      await screen.findByText(new RegExp(tr("Continue with the local profile on this machine.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")),
     ).toBeTruthy();
     expect(screen.queryByText(/email/i)).toBeNull();
   });
@@ -142,9 +143,9 @@ describe("LoginPage registration guidance", () => {
     );
 
     expect(
-      await screen.findByText(/can't reach the server/i),
+      await screen.findByText(new RegExp(tr("Can't reach the server to load the sign-in options. Check that it is running, then retry.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")),
     ).toBeTruthy();
-    expect(screen.queryByText(/checking sign-in options/i)).toBeNull();
+    expect(screen.queryByText(new RegExp(tr("Checking sign-in options…").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeNull();
 
     // The probe recovers on retry.
     apiMocks.status.mockResolvedValue({
@@ -155,11 +156,11 @@ describe("LoginPage registration guidance", () => {
       local_solo_enabled: false,
       scoped_profile: null,
     } satisfies AuthStatusResponse);
-    screen.getByText("Retry").click();
+    screen.getByText(tr("Retry")).click();
 
     expect(
       await screen.findByText(
-        /新邮箱验证后会自动注册/,
+        new RegExp(tr("输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""),
       ),
     ).toBeTruthy();
     expect(apiMocks.status).toHaveBeenCalledTimes(2);

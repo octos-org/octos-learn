@@ -1,3 +1,4 @@
+import { localizedCatalog, tr } from "@/i18n";
 import type { SelectionContentKind } from "./selection-enhancements";
 import type { BoardTargetKind } from "octos-lesson-language/web-runtime";
 
@@ -18,8 +19,8 @@ function normalizeSelectionLessonRequest(request: string): string {
   return request
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/課程/gu, "课程")
-    .replace(/課/gu, "课")
+    .replace(/課程/gu, tr("课程"))
+    .replace(/課/gu, tr("课"))
     .replace(/[\s，。！？、；：,.!?;:"'“”‘’（）()【】[\]…—–-]+/gu, "");
 }
 
@@ -73,7 +74,7 @@ export interface SelectionToolDefinition {
  * and the learning-coach validates the selected id before producing an
  * enhancement artifact.
  */
-export const selectionToolRegistry: SelectionToolDefinition[] = [
+export const selectionToolRegistry: SelectionToolDefinition[] = localizedCatalog([
   {
     id: "explain",
     label: "解释这部分",
@@ -112,7 +113,7 @@ export const selectionToolRegistry: SelectionToolDefinition[] = [
     changesSource: false,
     action: "local-enhancement",
   },
-];
+]);
 
 export function availableSelectionTools(
   contentKind: SelectionContentKind,

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiKeysTab } from "./api-keys-tab";
@@ -55,9 +56,9 @@ describe("ApiKeysTab", () => {
   it("renders the three groups with fields for every documented key", () => {
     render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
 
-    expect(screen.getByText("LLM Providers")).toBeTruthy();
-    expect(screen.getByText("Channels")).toBeTruthy();
-    expect(screen.getByText("Infrastructure")).toBeTruthy();
+    expect(screen.getByText(tr("LLM Providers"))).toBeTruthy();
+    expect(screen.getByText(tr("Channels"))).toBeTruthy();
+    expect(screen.getByText(tr("Infrastructure"))).toBeTruthy();
 
     for (const key of [
       "OPENAI_API_KEY",
@@ -90,7 +91,7 @@ describe("ApiKeysTab", () => {
     expect(openaiInput.value).toBe("sk-p***xyz");
 
     const saveBtn = screen.getByRole("button", {
-      name: /save changes/i,
+      name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
     }) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
   });
@@ -104,7 +105,7 @@ describe("ApiKeysTab", () => {
     fireEvent.change(screen.getByLabelText("NGROK_AUTHTOKEN"), {
       target: { value: "ngrok-token-1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() =>
       expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled(),
@@ -124,7 +125,7 @@ describe("ApiKeysTab", () => {
     fireEvent.change(screen.getByLabelText("OPENAI_API_KEY"), {
       target: { value: "" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() =>
       expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled(),
@@ -135,11 +136,11 @@ describe("ApiKeysTab", () => {
   });
   it("saving a speech key connects the service without changing model env vars", async () => {
     render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    const input = await screen.findByLabelText("Volcano TTS API Key");
+    const input = await screen.findByLabelText(tr("Volcano TTS API Key"));
     fireEvent.change(input, { target: { value: "synthetic-own-speech-key" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
     await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "synthetic-own-speech-key", enabled: true }), undefined));
-    await screen.findByRole("button", { name: "Saved" });
+    await screen.findByRole("button", { name: tr("Saved") });
     expect(input).toHaveProperty("value", "••••••••");
     expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
     expect(serviceMocks.save).toHaveBeenCalledOnce();
@@ -147,22 +148,22 @@ describe("ApiKeysTab", () => {
   it("clearing a stored service key disables it while preserving its parameters", async () => {
     serviceMocks.list.mockResolvedValue({ profile_id: "p1", services: { tts: { provider: "volcano", enabled: true, has_credential: true, revision: "r1", params: { auth_mode: "api-key", resource_id: "my-resource", voice: "my-voice" } } } });
     render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    const input = await screen.findByLabelText("Volcano TTS API Key");
+    const input = await screen.findByLabelText(tr("Volcano TTS API Key"));
     expect(input).toHaveProperty("value", "••••••••");
     fireEvent.change(input, { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
     await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", { provider: "volcano", key: "", enabled: false, params: { auth_mode: "api-key", resource_id: "my-resource", voice: "my-voice" } }, "r1"));
     expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
   });
   it("keeps a rejected key draft until reset, without changing other saved keys", async () => {
     serviceMocks.save.mockRejectedValue(new Error("Configuration changed; reload before saving"));
     render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    const input = await screen.findByLabelText("TypeSafe Jev API Key");
+    const input = await screen.findByLabelText(tr("TypeSafe Jev API Key"));
     fireEvent.change(input, { target: { value: "synthetic-jev-draft" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
     await screen.findByText("Configuration changed; reload before saving");
     expect(input).toHaveProperty("value", "synthetic-jev-draft");
-    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Reset") }));
     expect(input).toHaveProperty("value", "");
     expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
   });

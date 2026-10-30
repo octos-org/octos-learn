@@ -1,18 +1,19 @@
+import { tr } from "@/i18n";
 import type { DegradedVisualRetryRequest } from "./oll/oll-lesson-runtime";
 
 export function buildDegradedVisualRetryPrompt(
   degraded: DegradedVisualRetryRequest,
 ): string {
   const surfaceNames: Record<string, string> = {
-    geometry: "二维几何",
-    plot: "函数图像",
-    scene3d: "三维场景",
-    diagram: "关系图",
-    image: "图片",
-    table: "表格",
+    geometry: tr("二维几何"),
+    plot: tr("函数图像"),
+    scene3d: tr("三维场景"),
+    diagram: tr("关系图"),
+    image: tr("图片"),
+    table: tr("表格"),
   };
   const surface = surfaceNames[degraded.surface] ?? degraded.surface;
-  return `请重新生成没有成功展示的${surface}“${degraded.purpose}”。只补充这个画面，不要重做整堂课。`;
+  return tr("请重新生成没有成功展示的{{v0}}“{{v1}}”。只补充这个画面，不要重做整堂课。", { v0: surface, v1: degraded.purpose });
 }
 
 function line(name: string, value: string | number): string {
@@ -36,7 +37,7 @@ export function buildDegradedVisualRetryContext(
     line("visual_id", degraded.visualId),
     line("surface", degraded.surface),
     line("purpose", degraded.purpose),
-    line("board_summary", `一个${degraded.surface}画面生成失败；只补充该画面`),
+    line("board_summary", tr("一个{{v0}}画面生成失败；只补充该画面", { v0: degraded.surface })),
     line("board_targets", JSON.stringify([{
       as: "failed-visual",
       type: "node",

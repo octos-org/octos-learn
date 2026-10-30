@@ -1,3 +1,5 @@
+import { localizedCatalog, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -10,17 +12,18 @@ import { ReportPanel } from "../report/report-panel";
 import { AcademyHeader } from "./academy-header";
 import "../learning-history.css";
 
-const TABS = [
+const TABS = localizedCatalog([
   { id: "records", label: "学习记录" },
   { id: "week", label: "周报" },
   { id: "month", label: "月报" },
-] as const;
+] as const);
 type Tab = (typeof TABS)[number]["id"];
 
 /** Records, the weekly report and the monthly report, one tab each. Links name
  * the tab: `?tab=week`, `?tab=month`, `?tab=facts` for what each lesson
  * recorded, and `?topic=` from a star for why it is lit. */
 export function RecordsPage() {
+  useLocale();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const topicId = params.get("topic");
@@ -56,8 +59,8 @@ export function RecordsPage() {
         <AcademyHeader />
         <section className="academy-records" aria-labelledby="academy-records-title">
           <div className="academy-records-head">
-            <h1 id="academy-records-title" className="academy-title">记录</h1>
-            <div className="academy-records-tabs" role="tablist" aria-label="记录与报告">
+            <h1 id="academy-records-title" className="academy-title">{tr("记录")}</h1>
+            <div className="academy-records-tabs" role="tablist" aria-label={tr("记录与报告")}>
               {TABS.map((item, index) => (
                 <button key={item.id} ref={(node) => { tabRefs.current[index] = node; }} id={`academy-records-tab-${item.id}`} type="button" role="tab"
                   aria-selected={tab === item.id} tabIndex={tab === item.id ? 0 : -1} aria-controls="academy-records-panel"
@@ -67,9 +70,9 @@ export function RecordsPage() {
           </div>
           <div id="academy-records-panel" role="tabpanel" aria-labelledby={`academy-records-tab-${tab}`} className="academy-records-panel">
             {tab === "records" ? <>
-              <div className="academy-records-views" role="group" aria-label="记录内容">
-                <button type="button" aria-pressed={!facts} onClick={() => show("records")}>白板与课程</button>
-                <button type="button" aria-pressed={facts} onClick={() => show("facts")}>每次学习的经过</button>
+              <div className="academy-records-views" role="group" aria-label={tr("记录内容")}>
+                <button type="button" aria-pressed={!facts} onClick={() => show("records")}>{tr("白板与课程")}</button>
+                <button type="button" aria-pressed={facts} onClick={() => show("facts")}>{tr("每次学习的经过")}</button>
               </div>
               {facts
                 ? <AccountHistoryPanel onSelect={open} topic={topicId ? { id: topicId, name: params.get("name") ?? "" } : undefined}

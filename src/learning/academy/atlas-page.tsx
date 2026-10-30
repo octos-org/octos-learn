@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,6 +13,7 @@ import { AcademyHeader } from "./academy-header";
 
 /** The star atlas as its own place in the academy, full width. */
 export function AtlasPage() {
+  useLocale();
   const navigate = useNavigate();
   const [map, setMap] = useState<LearningMap>();
   const [analysis, setAnalysis] = useState<AnalysisStatus>();
@@ -32,13 +35,13 @@ export function AtlasPage() {
       <div className="course-launcher-inner academy-wide">
         <AcademyHeader />
         <section className="academy-atlas" aria-labelledby="academy-atlas-title">
-          <h1 id="academy-atlas-title" className="academy-title">星图</h1>
+          <h1 id="academy-atlas-title" className="academy-title">{tr("星图")}</h1>
           {notice && <p role="status" className="academy-muted">{notice}</p>}
-          {error && <p role="status">暂时读不到星图，请稍后再试。</p>}
-          {!error && !map && <p role="status">正在读取星图…</p>}
+          {error && <p role="status">{tr("暂时读不到星图，请稍后再试。")}</p>}
+          {!error && !map && <p role="status">{tr("正在读取星图…")}</p>}
           {map && <>
             <StarAtlas topics={map.topics} onAsk={(draft) => navigate(newBoardHref(draft))} />
-            <p className="academy-muted">已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。</p>
+            <p className="academy-muted">{tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。")}</p>
           </>}
         </section>
       </div>

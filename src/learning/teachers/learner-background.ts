@@ -1,3 +1,4 @@
+import { localizedCatalog, tr } from "@/i18n";
 import type { LearningMap, LearningRunSummary } from "../history/history-api";
 import { domainLabel, subjectLabel, topicLabel } from "../map/taxonomy-labels";
 
@@ -13,7 +14,7 @@ export interface LearnerBackgroundSources {
 const MAX_MEMORY_CHARS = 1500;
 const MAX_RUNS = 5;
 const MAX_MAP_TOPICS = 6;
-const MAP_STATE: Record<LearningMap["topics"][number]["state"], string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
+const MAP_STATE: Record<LearningMap["topics"][number]["state"], string> = localizedCatalog({ explored: "已探索", practising: "正在练习", "did-it": "做出来过" });
 
 /** Formats facts for `learner_background`. Only states what the sources say;
  * counts are program-computed and playback is never described as mastery. */
@@ -21,25 +22,25 @@ export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Dat
   const sections: string[] = [];
   const memory = sources.memory?.long_term?.trim();
   if (memory) {
-    const clipped = memory.length > MAX_MEMORY_CHARS ? `${memory.slice(0, MAX_MEMORY_CHARS)}…（已截断）` : memory;
-    sections.push(`【Octos 长期记忆】（由 Octos 整理${sources.memory?.long_term_updated_at ? `，更新于 ${sources.memory.long_term_updated_at}` : ""}；未注明老师的内容不能当作你亲历）\n${clipped}`);
+    const clipped = memory.length > MAX_MEMORY_CHARS ? tr("{{v0}}…（已截断）", { v0: memory.slice(0, MAX_MEMORY_CHARS) }) : memory;
+    sections.push(tr("【Octos 长期记忆】（由 Octos 整理{{v0}}；未注明老师的内容不能当作你亲历）\n{{v1}}", { v0: sources.memory?.long_term_updated_at ? `，更新于 ${sources.memory.long_term_updated_at}` : "", v1: clipped }));
   }
   const runs = (sources.runs ?? []).filter((run) => run.question_preview?.trim()).slice(0, MAX_RUNS);
   if (runs.length) {
-    sections.push(`【最近的学习记录】（Octos Learn 程序统计；播放不代表掌握）\n${runs.map((run) =>
-      `- ${run.first_occurred_at.slice(0, 10)} “${run.question_preview!.trim().slice(0, 80)}”：提问 ${run.question_count} 次，播放 ${run.completed_beats} 个片段，练习作答 ${run.task_attempts} 次`).join("\n")}`);
+    sections.push(tr("【最近的学习记录】（Octos Learn 程序统计；播放不代表掌握）\n{{v0}}", { v0: runs.map((run) =>
+      `- ${run.first_occurred_at.slice(0, 10)} “${run.question_preview!.trim().slice(0, 80)}”：提问 ${run.question_count} 次，播放 ${run.completed_beats} 个片段，练习作答 ${run.task_attempts} 次`).join("\n") }));
   }
   const topics = [...(sources.map?.topics ?? [])].sort((a, b) => (b.evidence.last_at ?? "").localeCompare(a.evidence.last_at ?? "")).slice(0, MAX_MAP_TOPICS);
   if (topics.length) {
-    sections.push(`【学习地图】（Octos Learn 程序统计，与学生看到的地图一致；已探索=播放过相关讲解，正在练习=做过相关练习，做出来过=不用提示达到过练习要求，只表示做对过，不要说成总能做到；都不等于掌握，不要说成已经学会）\n${topics.map((topic) => {
+    sections.push(tr("【学习地图】（Octos Learn 程序统计，与学生看到的地图一致；已探索=播放过相关讲解，正在练习=做过相关练习，做出来过=不用提示达到过练习要求，只表示做对过，不要说成总能做到；都不等于掌握，不要说成已经学会）\n{{v0}}", { v0: topics.map((topic) => {
       const { evidence } = topic;
       const detail = [`${evidence.days.length} 天学过`, evidence.task_attempts ? `练习作答 ${evidence.task_attempts} 次` : "", evidence.unassisted_successes ? `其中不用提示达到要求 ${evidence.unassisted_successes} 次` : ""].filter(Boolean).join("，");
       const label = topicLabel(topic.topic_id, topic.name);
       return `- ${label === topic.name ? label : `${label}（${topic.name}）`}，${subjectLabel(topic.subject)}·${domainLabel(topic.domain)}：${MAP_STATE[topic.state]}；${detail}`;
-    }).join("\n")}`);
+    }).join("\n") }));
   }
   if (!sections.length) return undefined;
-  return `以下是学习应用提供的学生背景，截至 ${asOf.toISOString()}。只使用与本次问题相关的部分。\n${sections.join("\n")}`;
+  return tr("以下是学习应用提供的学生背景，截至 {{v0}}。只使用与本次问题相关的部分。\n{{v1}}", { v0: asOf.toISOString(), v1: sections.join("\n") });
 }
 
 /** Keeps the latest background per account so submitting a question never

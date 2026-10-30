@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOllNarrationTts } from "./use-oll-narration-tts";
@@ -91,7 +92,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
         "先从三出发。",
         expect.any(AbortSignal),
-        null,
+        null, undefined,
       ),
     );
     await waitFor(() =>
@@ -132,7 +133,7 @@ describe("useOllNarrationTts", () => {
       onPlaybackComplete,
     }));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
-      "Continue the narration.", expect.any(AbortSignal), null,
+      "Continue the narration.", expect.any(AbortSignal), null, undefined,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     expect(nativePlay).not.toHaveBeenCalled();
@@ -256,7 +257,7 @@ describe("useOllNarrationTts", () => {
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "第一段旁白。",
       expect.any(AbortSignal),
-      null,
+      null, undefined,
     ));
     expect(mocks.playAudioBlob).not.toHaveBeenCalled();
 
@@ -383,7 +384,7 @@ describe("useOllNarrationTts", () => {
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     act(() => resolvePlaybackStart?.(true));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2));
-    expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith("苏绯的第一句。", expect.any(AbortSignal), sufeiVoices);
+    expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith("苏绯的第一句。", expect.any(AbortSignal), sufeiVoices, undefined);
     rerender({ text: "苏绯的第一句。", narrationId: "sufei-first", voices: sufeiVoices, upcomingText: "" });
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledTimes(2));
     expect(mocks.synthesizeSpeech.mock.calls.filter(([text]) => text === "苏绯的第一句。")).toHaveLength(1);
@@ -423,7 +424,7 @@ describe("useOllNarrationTts", () => {
     rerender({ voicePending: false, voices });
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
-    expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("第一句。", expect.any(AbortSignal), voices);
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("第一句。", expect.any(AbortSignal), voices, undefined);
   });
 
   it("completes narration with audio off at once, even while the teacher's voice is still unknown", async () => {
@@ -451,7 +452,7 @@ describe("useOllNarrationTts", () => {
     const warm = { "seed-tts-2.0": { id: "sufei-voice" } };
     renderHook(() => useOllNarrationTts({ enabled: true, playing: false, text: "", prefetchEnabled: true,
       prewarmText: "苏绯的第一句。", prewarmNarrationId: "sufei-1", voices: { "seed-tts-2.0": { id: "alan-voice" } }, prewarmVoices: warm }));
-    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("苏绯的第一句。", expect.any(AbortSignal), warm));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("苏绯的第一句。", expect.any(AbortSignal), warm, undefined));
   });
 
   it("cancels stale synthesis and playback when the Beat changes", async () => {
@@ -489,7 +490,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith(
         "第二段。",
         expect.any(AbortSignal),
-        null,
+        null, undefined,
       ),
     );
   });
@@ -516,7 +517,7 @@ describe("useOllNarrationTts", () => {
 
     await waitFor(() =>
       expect(result.current.error).toBe(
-        "课程语音暂时不可用，旁白仍会显示。",
+        tr("课程语音暂时不可用，旁白仍会显示。"),
       ),
     );
     expect(mocks.playAudioBlob).not.toHaveBeenCalled();
@@ -524,7 +525,7 @@ describe("useOllNarrationTts", () => {
 
     rerender({ playing: false, text: "", narrationId: undefined });
     expect(result.current.error).toBe(
-      "课程语音暂时不可用，旁白仍会显示。",
+      tr("课程语音暂时不可用，旁白仍会显示。"),
     );
 
     mocks.synthesizeSpeech.mockResolvedValue(
@@ -599,7 +600,7 @@ describe("useOllNarrationTts", () => {
     ));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "这是小模型即时生成的追问课程讲解。",
-      expect.any(AbortSignal), null,
+      expect.any(AbortSignal), null, undefined,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
       liveAudio,

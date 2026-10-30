@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   act,
   cleanup,
@@ -207,7 +208,7 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview");
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
     expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeTypeOf("function");
-    expect(screen.getByRole("button", { name: "返回首页" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("返回首页") })).toBeTruthy();
   });
 
   it("creates an isolated instance only when a preview starts interactive learning", async () => {
@@ -331,7 +332,7 @@ describe("LearningPage", () => {
     render(<LearningPage />);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "返回首页" }),
+      await screen.findByRole("button", { name: tr("返回首页") }),
     );
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
@@ -346,7 +347,7 @@ describe("LearningPage", () => {
     render(<LearningPage />);
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
     act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
-    fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("返回首页") }));
 
     expect(save).toHaveBeenCalledOnce();
     expect(navigateMock).not.toHaveBeenCalledWith("/");
@@ -369,10 +370,10 @@ describe("LearningPage", () => {
     render(<LearningPage />);
     await waitFor(() => expect(learningWorkspaceMock.props?.coursePack).toBeTruthy());
     act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
-    const back = screen.getByRole("button", { name: "返回", exact: true });
-    expect(back.getAttribute("title")).toBe("返回课程集");
+    const back = screen.getByRole("button", { name: tr("返回"), exact: true });
+    expect(back.getAttribute("title")).toBe(tr("返回课程集"));
     expect(back.querySelector(".lucide-arrow-left")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "返回首页" })).toBeNull();
+    expect(screen.queryByRole("button", { name: tr("返回首页") })).toBeNull();
     fireEvent.click(back);
     expect(save).toHaveBeenCalledOnce();
     expect(navigateMock).not.toHaveBeenCalled();
@@ -389,8 +390,8 @@ describe("LearningPage", () => {
     const save = vi.fn(async () => {});
     act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
     expect(screen.queryByRole("button", { name: "打开设置" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "打开学习记录" }));
-    expect(screen.getByRole("dialog", { name: "学习记录" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: tr("打开学习记录") }));
+    expect(screen.getByRole("dialog", { name: tr("学习记录") })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /之前的数学课/u }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith(`/board?session=${previous.id}`));
     expect(save).toHaveBeenCalledOnce();
@@ -402,8 +403,8 @@ describe("LearningPage", () => {
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
     const save = vi.fn(async () => {});
     act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
-    fireEvent.click(screen.getByRole("button", { name: "打开学习记录" }));
-    fireEvent.click(screen.getByRole("button", { name: /每次学习的经过与删除/u }));
+    fireEvent.click(screen.getByRole("button", { name: tr("打开学习记录") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("每次学习的经过与删除").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/records?tab=facts"));
     expect(save).toHaveBeenCalledOnce();
   });
@@ -463,7 +464,7 @@ describe("LearningPage", () => {
     });
     expect(getLearningSession(sessionId)?.status).toBe("active");
     fireEvent.click(
-      screen.getByRole("button", { name: "返回首页" }),
+      screen.getByRole("button", { name: tr("返回首页") }),
     );
     await waitFor(() => {
       expect(getLearningSession(sessionId)?.status).toBe("paused");
@@ -655,7 +656,7 @@ describe("LearningPage", () => {
     );
     expect(learningWorkspaceMock.props?.playbackMode).toBe("review");
     fireEvent.click(
-      screen.getByRole("button", { name: "返回首页" }),
+      screen.getByRole("button", { name: tr("返回首页") }),
     );
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
@@ -796,7 +797,7 @@ describe("LearningPage", () => {
     expect(getLearningSession(instance.id)).toEqual(instance);
     expect(learningWorkspaceMock.props?.sessionId).not.toBe(instance.id);
 
-    expect(screen.getByRole("button", { name: "返回首页" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("返回首页") })).toBeTruthy();
   });
 
   it("keeps a local whiteboard with saved ink when the server has no lesson", async () => {
@@ -833,7 +834,7 @@ describe("LearningPage", () => {
       expect.objectContaining({ status: "active", title: "手写白板" }),
     );
     act(() => learningWorkspaceMock.props?.onLearnerInput?.("生成函数图像"));
-    expect(getLearningSession(sessionId)?.title).toBe("生成函数图像");
+    expect(getLearningSession(sessionId)?.title).toBe(tr("生成函数图像"));
   });
 
   it("completes the session after a spoken exit review", async () => {

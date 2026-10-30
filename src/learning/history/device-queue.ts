@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { canonicalHistoryJson, validateHistoryEvent, type HistoryEvent } from '../../../services/learning-history/event-contract.mjs';
 import { openLearningDatabase } from '../learning-document-store';
 
@@ -9,11 +10,11 @@ export interface HistoryMaterialWrite { eventId: string; snapshotJson: string }
 export interface HistoryReceipt { id: string; status: 'accepted' | 'exists' | 'deleted' | 'conflict'; seq?: number }
 export interface HistoryDocumentWrite { key: string; value: unknown }
 const ownerId = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
-function assertOwner(owner: string) { if (!ownerId.test(owner)) throw new Error('无法确定学习记录所属账号'); }
+function assertOwner(owner: string) { if (!ownerId.test(owner)) throw new Error(tr("无法确定学习记录所属账号")); }
 function done(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
-    tx.onabort = () => reject(tx.error ?? new Error('学习记录事务未提交'));
+    tx.onabort = () => reject(tx.error ?? new Error(tr("学习记录事务未提交")));
     tx.onerror = () => { /* abort is the final outcome, including a failed request */ };
   });
 }
@@ -63,7 +64,7 @@ export class DeviceHistoryQueue {
     for (const candidate of candidates) {
       const event = validateHistoryEvent(candidate);
       const prior = unique.get(event.id);
-      if (prior && canonicalHistoryJson(prior) !== canonicalHistoryJson(event)) throw new Error('同一学习记录编号对应不同内容');
+      if (prior && canonicalHistoryJson(prior) !== canonicalHistoryJson(event)) throw new Error(tr("同一学习记录编号对应不同内容"));
       unique.set(event.id, event);
     }
     const events = [...unique.values()];
@@ -71,7 +72,7 @@ export class DeviceHistoryQueue {
     for (const material of materials) {
       const event = unique.get(material.eventId);
       if (event?.kind !== 'course_delivered' || typeof material.snapshotJson !== 'string'
-        || (snapshots.has(material.eventId) && snapshots.get(material.eventId) !== material.snapshotJson)) throw new Error('课程材料与交付记录不符');
+        || (snapshots.has(material.eventId) && snapshots.get(material.eventId) !== material.snapshotJson)) throw new Error(tr("课程材料与交付记录不符"));
       snapshots.set(material.eventId, material.snapshotJson);
     }
     const copies = structuredClone(documents);
@@ -92,17 +93,17 @@ export class DeviceHistoryQueue {
             prior.onsuccess = () => {
               const old = prior.result as QueuedHistoryEvent | undefined;
               if (old && canonicalHistoryJson(old.event) !== canonicalHistoryJson(event)) {
-                conflict = new Error('同一学习记录编号对应不同内容，已停止保存'); tx.abort(); return;
+                conflict = new Error(tr("同一学习记录编号对应不同内容，已停止保存")); tx.abort(); return;
               }
               try {
                 const snapshotJson = snapshots.get(event.id);
                 if (old?.snapshotJson !== undefined && snapshotJson !== undefined && old.snapshotJson !== snapshotJson) {
-                  conflict = new Error('同一交付记录对应不同课程材料'); tx.abort(); return;
+                  conflict = new Error(tr("同一交付记录对应不同课程材料")); tx.abort(); return;
                 }
                 if (!old) store.add({ owner, event, state: 'pending', ...(snapshotJson === undefined ? {} : { snapshotJson }) } satisfies QueuedHistoryEvent, [owner, event.id]);
                 else if (snapshotJson !== undefined && old.snapshotJson === undefined) store.put({ ...old, snapshotJson }, [owner, event.id]);
               } catch (error) {
-                conflict = error instanceof Error ? error : new Error('本机学习记录尚未保存');
+                conflict = error instanceof Error ? error : new Error(tr("本机学习记录尚未保存"));
                 tx.abort();
               }
             };
@@ -132,7 +133,7 @@ export class DeviceHistoryQueue {
     if (ids.size !== sent.length || receipts.length !== sent.length || new Set(receipts.map(row => row.id)).size !== ids.size
       || receipts.some(row => !ids.has(row.id) || !['accepted', 'exists', 'deleted', 'conflict'].includes(row.status)
         || (['accepted', 'exists'].includes(row.status) && (!Number.isSafeInteger(row.seq) || Number(row.seq) < 1)))) {
-      throw new Error('同步回执不完整，保留本机记录等待重试');
+      throw new Error(tr("同步回执不完整，保留本机记录等待重试"));
     }
     const db = await this.database();
     const tx = db.transaction([EVENTS, META], 'readwrite');

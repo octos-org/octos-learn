@@ -1,4 +1,4 @@
-import type { AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
+import type { AchievementDefinition } from "@/learning/academy/achievement-catalog";
 
 export type Rarity = AchievementDefinition["rarity"];
 

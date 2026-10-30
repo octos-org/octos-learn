@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/use-locale";
+import { tr } from "@/i18n";
 import { useState, useEffect, useRef } from "react";
 import { Puzzle, Loader2, Wrench, RefreshCw, Trash2, Plus, Download, Package, Search, Check, Tag } from "lucide-react";
 import {
@@ -27,6 +29,7 @@ function installFailureMessage(result: {
 }
 
 export function SkillsTab() {
+  useLocale();
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +59,7 @@ export function SkillsTab() {
       }
     } catch (err) {
       if (mountedRef.current) {
-        setError(formatSettingsError(err, "Failed to load installed skills."));
+        setError(formatSettingsError(err, tr("Failed to load installed skills.")));
       }
     }
   };
@@ -71,12 +74,12 @@ export function SkillsTab() {
         if (skillResult.status === "fulfilled") {
           setSkills(skillResult.value);
         } else {
-          errors.push(formatSettingsError(skillResult.reason, "Failed to load installed skills."));
+          errors.push(formatSettingsError(skillResult.reason, tr("Failed to load installed skills.")));
         }
         if (registryResult.status === "fulfilled") {
           setHubPackages(registryResult.value);
         } else {
-          errors.push(formatSettingsError(registryResult.reason, "Failed to load Octos Hub registry."));
+          errors.push(formatSettingsError(registryResult.reason, tr("Failed to load Octos Hub registry.")));
         }
         if (errors.length > 0) setError(errors.join("\n"));
         setLoading(false);
@@ -99,7 +102,7 @@ export function SkillsTab() {
       }
     } catch (err) {
       if (mountedRef.current) {
-        setError(formatSettingsError(err, `Failed to remove skill '${name}'.`));
+        setError(formatSettingsError(err, tr("Failed to remove skill '{{v0}}'.", { v0: name })));
       }
     } finally {
       if (mountedRef.current) setRemovingSkill(null);
@@ -116,17 +119,17 @@ export function SkillsTab() {
       const result = await installSkill(source);
       if (!result.ok) {
         throw new Error(
-          installFailureMessage(result, "Skill install was rejected by the server."),
+          installFailureMessage(result, tr("Skill install was rejected by the server.")),
         );
       }
       if (mountedRef.current) {
         setInstallSource("");
-        setInstallMessage("Skill installed. Restart gateway to load new skills.");
+        setInstallMessage(tr("Skill installed. Restart gateway to load new skills."));
         await refreshSkills();
       }
     } catch (err) {
       if (mountedRef.current) {
-        setError(formatSettingsError(err, `Failed to install skill from '${source}'.`));
+        setError(formatSettingsError(err, tr("Failed to install skill from '{{v0}}'.", { v0: source })));
       }
     } finally {
       if (mountedRef.current) setInstalling(false);
@@ -141,16 +144,16 @@ export function SkillsTab() {
       const result = await installSkill(pkg.repo);
       if (!result.ok) {
         throw new Error(
-          installFailureMessage(result, "Skill package install was rejected by the server."),
+          installFailureMessage(result, tr("Skill package install was rejected by the server.")),
         );
       }
       if (mountedRef.current) {
-        setInstallMessage(`Skill package '${pkg.name}' installed. Restart gateway to load new skills.`);
+        setInstallMessage(tr("Skill package '{{v0}}' installed. Restart gateway to load new skills.", { v0: pkg.name }));
         await refreshSkills();
       }
     } catch (err) {
       if (mountedRef.current) {
-        setError(formatSettingsError(err, `Failed to install skill package '${pkg.name}'.`));
+        setError(formatSettingsError(err, tr("Failed to install skill package '{{v0}}'.", { v0: pkg.name })));
       }
     } finally {
       if (mountedRef.current) setInstallingHub(null);
@@ -193,18 +196,18 @@ export function SkillsTab() {
               <Puzzle size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-text-strong">Installed Skills</h3>
+              <h3 className="text-sm font-semibold text-text-strong">{tr("Installed Skills")}</h3>
               <p className="text-xs text-muted">
                 {skills.length > 0
                   ? `${skills.length} skill${skills.length === 1 ? "" : "s"} installed`
-                  : "Skills extend agent capabilities"}
+                  : tr("Skills extend agent capabilities")}
               </p>
             </div>
           </div>
           <button
             onClick={refreshSkills}
             className="glass-icon-button rounded-xl p-2.5"
-            title="Refresh"
+            title={tr("Refresh")}
           >
             <RefreshCw size={14} />
           </button>
@@ -225,10 +228,9 @@ export function SkillsTab() {
         {skills.length === 0 ? (
           <div className="rounded-xl bg-surface-dark/50 px-6 py-10 text-center">
             <Puzzle size={32} className="mx-auto mb-3 text-muted/40" />
-            <p className="text-sm text-muted">No skills installed yet</p>
+            <p className="text-sm text-muted">{tr("No skills installed yet")}</p>
             <p className="mt-1 text-xs text-muted/60">
-              Install a skill below to get started
-            </p>
+              {tr("Install a skill below to get started")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -262,7 +264,7 @@ export function SkillsTab() {
                   onClick={() => setPendingRemoveSkill(skill.name)}
                   disabled={removingSkill === skill.name}
                   className="shrink-0 rounded-lg p-2 text-muted hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40 transition"
-                  title={`Remove ${skill.name}`}
+                  title={tr("Remove {{v0}}", { v0: skill.name })}
                 >
                   {removingSkill === skill.name ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -283,8 +285,8 @@ export function SkillsTab() {
             <Download size={20} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-text-strong">Install Skill</h3>
-            <p className="text-xs text-muted">Add a new skill from a repository or local path</p>
+            <h3 className="text-sm font-semibold text-text-strong">{tr("Install Skill")}</h3>
+            <p className="text-xs text-muted">{tr("Add a new skill from a repository or local path")}</p>
           </div>
         </div>
 
@@ -307,7 +309,7 @@ export function SkillsTab() {
             ) : (
               <Plus size={14} />
             )}
-            {installing ? "Installing..." : "Install"}
+            {installing ? tr("Installing...") : tr("Install")}
           </button>
         </div>
       </div>
@@ -321,7 +323,7 @@ export function SkillsTab() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-text-strong">Octos Hub</h3>
-              <p className="text-xs text-muted">Browse and install skill packages from the registry</p>
+              <p className="text-xs text-muted">{tr("Browse and install skill packages from the registry")}</p>
             </div>
           </div>
           {!hubLoading && hubPackages.length > 0 && (
@@ -339,7 +341,7 @@ export function SkillsTab() {
               type="text"
               value={hubSearch}
               onChange={(e) => setHubSearch(e.target.value)}
-              placeholder="Search packages, skills, or tags..."
+              placeholder={tr("Search packages, skills, or tags...")}
               className="w-full rounded-xl bg-surface-container pl-9 pr-4 py-2.5 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 transition"
             />
           </div>
@@ -352,13 +354,13 @@ export function SkillsTab() {
         ) : hubPackages.length === 0 ? (
           <div className="rounded-xl bg-surface-dark/50 px-6 py-10 text-center">
             <Package size={32} className="mx-auto mb-3 text-muted/40" />
-            <p className="text-sm text-muted">No packages in registry</p>
-            <p className="mt-1 text-xs text-muted/60">The registry returned no results</p>
+            <p className="text-sm text-muted">{tr("No packages in registry")}</p>
+            <p className="mt-1 text-xs text-muted/60">{tr("The registry returned no results")}</p>
           </div>
         ) : filteredPackages.length === 0 ? (
           <div className="rounded-xl bg-surface-dark/50 px-6 py-8 text-center">
             <Search size={24} className="mx-auto mb-3 text-muted/40" />
-            <p className="text-sm text-muted">No packages match "{hubSearch}"</p>
+            <p className="text-sm text-muted">{tr("No packages match \"")}{hubSearch}"</p>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -385,8 +387,7 @@ export function SkillsTab() {
                         {installed && (
                           <span className="shrink-0 flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
                             <Check size={9} strokeWidth={3} />
-                            Installed
-                          </span>
+                            {tr("Installed")}</span>
                         )}
                       </div>
                       <p className="mt-0.5 text-xs text-muted truncate">{pkg.repo}</p>
@@ -394,8 +395,7 @@ export function SkillsTab() {
                     {installed ? (
                       <div className="shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-accent bg-accent/10 cursor-default select-none">
                         <Check size={12} strokeWidth={2.5} />
-                        Installed
-                      </div>
+                        {tr("Installed")}</div>
                     ) : (
                       <button
                         onClick={() => handleHubInstall(pkg)}
@@ -407,7 +407,7 @@ export function SkillsTab() {
                         ) : (
                           <Download size={12} />
                         )}
-                        {isInstalling ? "Installing…" : "Install"}
+                        {isInstalling ? tr("Installing…") : tr("Install")}
                       </button>
                     )}
                   </div>
@@ -463,9 +463,9 @@ export function SkillsTab() {
       </div>
       <ConfirmDialog
         open={pendingRemoveSkill != null}
-        title="Remove Skill"
-        body={pendingRemoveSkill ? `Remove skill '${pendingRemoveSkill}'?` : "Remove this skill?"}
-        confirmLabel="Remove Skill"
+        title={tr("Remove Skill")}
+        body={pendingRemoveSkill ? tr("Remove skill '{{v0}}'?", { v0: pendingRemoveSkill }) : tr("Remove this skill?")}
+        confirmLabel={tr("Remove Skill")}
         variant="danger"
         onConfirm={() => void confirmRemove()}
         onCancel={() => setPendingRemoveSkill(null)}

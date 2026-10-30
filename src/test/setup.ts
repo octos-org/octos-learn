@@ -1,4 +1,14 @@
 import "fake-indexeddb/auto";
+import { beforeEach } from "vitest";
+import { setLocale } from "../i18n";
+
+// Keep the legacy Chinese teaching fixtures deterministic. Tests for another
+// language set it explicitly; visible text assertions use the message catalog.
+beforeEach(() => setLocale("zh-CN", false));
+if (typeof navigator !== "undefined") {
+  Object.defineProperty(navigator, "languages", { configurable: true, value: ["zh-CN"] });
+  Object.defineProperty(navigator, "language", { configurable: true, value: "zh-CN" });
+}
 
 function createMemoryStorage(): Storage {
   const data = new Map<string, string>();

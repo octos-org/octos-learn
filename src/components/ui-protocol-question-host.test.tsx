@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   render,
@@ -69,7 +70,7 @@ describe("UiProtocolQuestionHost", () => {
 
     // Answer the first → the second pops into view (not dropped).
     fireEvent.click(screen.getByText("Yes"));
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Submit") }));
     await waitFor(() => expect(respondToUserQuestion).toHaveBeenCalledTimes(1));
     await waitFor(() =>
       expect(screen.getByText("Second question?")).toBeTruthy(),
@@ -77,7 +78,7 @@ describe("UiProtocolQuestionHost", () => {
 
     // Answer the second → dialog closes.
     fireEvent.click(screen.getByText("No"));
-    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Submit") }));
     await waitFor(() => expect(respondToUserQuestion).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

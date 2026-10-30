@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -60,28 +61,28 @@ describe("AuthenticationTab", () => {
     expect(await screen.findByDisplayValue("smtp.example.com")).toBeTruthy();
     expect(
       (screen.getByRole("radio", {
-        name: /restricted registration/i,
+        name: new RegExp(tr("Restricted registration").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
       }) as HTMLInputElement).checked,
     ).toBe(true);
-    expect((screen.getByLabelText(/SMTP password/i) as HTMLInputElement).value).toBe("");
-    expect(screen.getByText(/password is already configured/i)).toBeTruthy();
+    expect((screen.getByLabelText(new RegExp(tr("SMTP Password").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")) as HTMLInputElement).value).toBe("");
+    expect(screen.getByText(new RegExp(tr("A password is already configured. It is never returned to the browser.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
   });
 
   it("enables open registration and preserves the stored password when saving", async () => {
     render(<AuthenticationTab />);
     await screen.findByDisplayValue("smtp.example.com");
 
-    fireEvent.click(screen.getByRole("radio", { name: /open registration/i }));
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(tr("Open registration").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
 
     const warning = screen.getByRole("note", {
-      name: /open registration warning/i,
+      name: new RegExp(tr("Open registration warning").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
     });
     expect(warning.className).toContain(
       "[color:var(--workbench-warning-text)]",
     );
-    expect(screen.getByText(/anyone with an email address can register/i)).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("Anyone with an email address can register").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /save authentication settings/i }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() => {
       expect(apiMocks.saveAuthenticationSettings).toHaveBeenCalledWith({
@@ -105,7 +106,7 @@ describe("AuthenticationTab", () => {
     await screen.findByDisplayValue("smtp.example.com");
 
     fireEvent.click(
-      screen.getByRole("button", { name: /save authentication settings/i }),
+      screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }),
     );
 
     const error = await screen.findByRole("alert");
@@ -119,10 +120,10 @@ describe("AuthenticationTab", () => {
     render(<AuthenticationTab />);
     await screen.findByDisplayValue("smtp.example.com");
 
-    fireEvent.change(screen.getByLabelText(/test recipient/i), {
+    fireEvent.change(screen.getByLabelText(new RegExp(tr("Test recipient").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")), {
       target: { value: "new-user@example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /send test email/i }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Send test email").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() => {
       expect(apiMocks.sendAuthenticationTestEmail).toHaveBeenCalledWith(
@@ -138,18 +139,18 @@ describe("AuthenticationTab", () => {
     expect(await screen.findByText("invited@example.com")).toBeTruthy();
     expect(screen.getByText("GOSIM reviewer")).toBeTruthy();
     expect(screen.getByText("member@example.com")).toBeTruthy();
-    expect(screen.getByText("Registered as Member")).toBeTruthy();
+    expect(screen.getByText(tr("Registered as {{v0}}", {v0:"Member"}))).toBeTruthy();
     expect(
-      screen.queryByRole("button", { name: "Remove member@example.com" }),
+      screen.queryByRole("button", { name: tr("Remove {{v0}}", {v0:"member@example.com"}) }),
     ).toBeNull();
 
-    fireEvent.change(screen.getByLabelText("Allowed email"), {
+    fireEvent.change(screen.getByLabelText(tr("Allowed email")), {
       target: { value: "new@example.com" },
     });
-    fireEvent.change(screen.getByLabelText("Invitation note"), {
+    fireEvent.change(screen.getByLabelText(tr("Invitation note")), {
       target: { value: "Pilot learner" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add allowed email" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("Add allowed email") }));
 
     await waitFor(() => {
       expect(apiMocks.addAllowedEmail).toHaveBeenCalledWith(
@@ -159,7 +160,7 @@ describe("AuthenticationTab", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Remove invited@example.com" }),
+      screen.getByRole("button", { name: tr("Remove {{v0}}", {v0:"invited@example.com"}) }),
     );
     await waitFor(() => {
       expect(apiMocks.removeAllowedEmail).toHaveBeenCalledWith(

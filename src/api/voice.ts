@@ -82,10 +82,11 @@ export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
   voices?: LessonVoices | null,
+  language?: string,
 ): Promise<Blob> {
-  return synthesizeDirect(text, signal, undefined, voices);
+  return synthesizeDirect(text, signal, undefined, voices, language);
 }
 
-export function synthesizeCloudSpeech(text: string, signal?: AbortSignal, voices?: LessonVoices | null): Promise<Blob> {
-  return synthesizeDirect(text, signal, undefined, voices);
+export function synthesizeCloudSpeech(text: string, signal?: AbortSignal, voices?: LessonVoices | null, language?: string): Promise<Blob> {
+  return synthesizeDirect(text, signal, undefined, voices, language);
 }

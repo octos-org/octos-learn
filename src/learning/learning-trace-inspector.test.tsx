@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LearnTraceRecorder } from "./learn-trace";
@@ -32,21 +33,21 @@ describe("LearningTraceInspector", () => {
 
     render(<LearningTraceInspector recorder={recorder} />);
 
-    const trigger = screen.getByRole("button", { name: "Trace 1" });
+    const trigger = screen.getByRole("button", { name: `${tr("Trace")} 1` });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(trigger);
 
     expect(screen.getByRole("region", {
-      name: "Learn Trace Inspector",
+      name: tr("Learn Trace Inspector"),
     })).toBeTruthy();
     expect(screen.getByText("request-submitted")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "复制 JSONL" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("复制 JSONL") }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(recorder.toJsonl()));
-    expect(screen.getByRole("button", { name: "已复制" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: tr("已复制") })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "清空" }));
-    expect(screen.getByRole("button", { name: "Trace 0" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: tr("清空") }));
+    expect(screen.getByRole("button", { name: `${tr("Trace")} 0` })).toBeTruthy();
     expect(screen.queryByText("request-submitted")).toBeNull();
   });
 
@@ -69,7 +70,7 @@ describe("LearningTraceInspector", () => {
     event.trace_id = traceId;
 
     render(<LearningTraceInspector recorder={recorder} />);
-    fireEvent.click(screen.getByRole("button", { name: "Trace 1" }));
+    fireEvent.click(screen.getByRole("button", { name: `${tr("Trace")} 1` }));
 
     const turn = screen.getByRole("region", { name: `Turn ${turnId}` });
     expect(within(turn).getByText("trace_id")).toBeTruthy();
@@ -81,9 +82,9 @@ describe("LearningTraceInspector", () => {
     await waitFor(() => expect(writeText).toHaveBeenLastCalledWith(traceId));
     fireEvent.click(within(turn).getByRole("button", { name: `复制 turn_id ${turnId}` }));
     await waitFor(() => expect(writeText).toHaveBeenLastCalledWith(turnId));
-    expect(within(turn).getAllByText("已复制")).toHaveLength(2);
+    expect(within(turn).getAllByText(tr("已复制"))).toHaveLength(2);
 
-    const details = within(turn).getByText("完整事件 JSON").closest("details");
+    const details = within(turn).getByText(tr("完整事件 JSON")).closest("details");
     expect(details?.querySelector("pre")?.textContent).toBe(JSON.stringify(event, null, 2));
   });
 
@@ -100,9 +101,9 @@ describe("LearningTraceInspector", () => {
     });
 
     render(<LearningTraceInspector recorder={recorder} />);
-    fireEvent.click(screen.getByRole("button", { name: "Trace 3" }));
+    fireEvent.click(screen.getByRole("button", { name: `${tr("Trace")} 3` }));
 
-    const panel = screen.getByRole("region", { name: "Learn Trace Inspector" });
+    const panel = screen.getByRole("region", { name: tr("Learn Trace Inspector") });
     expect(within(panel).getAllByRole("region").map((turn) => turn.getAttribute("aria-label")))
       .toEqual(["Turn turn-a", "Turn turn-b"]);
     const firstTurn = screen.getByRole("region", { name: "Turn turn-a" });
@@ -129,10 +130,10 @@ describe("LearningTraceInspector", () => {
     const recorder = new LearnTraceRecorder("learn-session");
     recorder.record({ turnId: "turn-1", source: "octos-web", stage: "request-submitted" });
     render(<LearningTraceInspector recorder={recorder} />);
-    fireEvent.click(screen.getByRole("button", { name: "Trace 1" }));
+    fireEvent.click(screen.getByRole("button", { name: `${tr("Trace")} 1` }));
     fireEvent.click(screen.getByRole("button", { name: "复制 trace_id turn-1" }));
 
-    await waitFor(() => expect(screen.getByText("复制失败")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(tr("复制失败"))).toBeTruthy());
     expect(screen.getAllByText("turn-1")).toHaveLength(2);
   });
 });

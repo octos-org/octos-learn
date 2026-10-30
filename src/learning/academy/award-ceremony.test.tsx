@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -40,31 +41,31 @@ describe("award ceremony", () => {
   it("brings another award earned at the same time to the front and keeps focus in the list", async () => {
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-question"), award("leap-day", { scope: "2028" }), award("alan-1")]));
-    expect(await screen.findByRole("dialog", { name: "闰日旅人" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: tr("闰日旅人") })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "查看「第一个问题」" }));
-    const dialog = screen.getByRole("dialog", { name: "第一个问题" });
+    const dialog = screen.getByRole("dialog", { name: tr("第一个问题") });
     // The former lead joins the list; the teacher's line follows the award in front.
     expect(screen.getByRole("button", { name: "查看「闰日旅人」" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "查看「第一个问题」" })).toBeNull();
     expect(dialog.textContent).toContain("阿澜「第一个问题」");
     // Focus moves to the award that left the front, so pressing it goes back.
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "查看「闰日旅人」" }));
-    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("关闭") }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("a ceremony already on screen stays when a lesson starts meanwhile", async () => {
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-question")]));
-    const dialog = await screen.findByRole("dialog", { name: "第一个问题" });
+    const dialog = await screen.findByRole("dialog", { name: tr("第一个问题") });
     act(() => holdAwards("classroom:busy", true));
-    expect(screen.getByRole("dialog", { name: "第一个问题" })).toBe(dialog);
+    expect(screen.getByRole("dialog", { name: tr("第一个问题") })).toBe(dialog);
     // The next batch waits for the lesson.
     act(() => announceNewAwards([award("first-star")]));
-    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    fireEvent.click(screen.getByRole("button", { name: tr("关闭") }));
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => holdAwards("classroom:busy", false));
-    expect(await screen.findByRole("dialog", { name: "初见星光" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: tr("初见星光") })).toBeTruthy();
   });
 
   it("stops the line when a lesson starts while the ceremony is open", async () => {
@@ -75,19 +76,19 @@ describe("award ceremony", () => {
     vi.stubGlobal("Audio", class { pause() {} async play() { speech.played.push("played"); } });
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-star")]));
-    await screen.findByRole("dialog", { name: "初见星光" });
+    await screen.findByRole("dialog", { name: tr("初见星光") });
     await waitFor(() => expect(speech.synthesize).toHaveBeenCalled());
     act(() => holdAwards("classroom:busy", true));
     await act(async () => { finish(new Blob(["x"])); });
     expect(speech.played).toEqual([]);
-    expect(screen.getByRole("dialog", { name: "初见星光" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: tr("初见星光") })).toBeTruthy();
     act(() => holdAwards("classroom:busy", false));
   });
 
   it("under StrictMode, a batch the app cannot show does not drop the next one", async () => {
     render(<StrictMode><AwardHost /></StrictMode>);
     act(() => { announceNewAwards([award("from-the-future")]); announceNewAwards([award("first-star")]); });
-    expect(await screen.findByRole("dialog", { name: "初见星光" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: tr("初见星光") })).toBeTruthy();
   });
 
   it("does not read the line on a board where the learner muted the teacher", async () => {
@@ -95,7 +96,7 @@ describe("award ceremony", () => {
     muteAwardVoice("classroom:muted", true);
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-star")]));
-    await screen.findByRole("dialog", { name: "初见星光" });
+    await screen.findByRole("dialog", { name: tr("初见星光") });
     await act(async () => {});
     expect(speech.synthesize).not.toHaveBeenCalled();
     muteAwardVoice("classroom:muted", false);
@@ -109,23 +110,23 @@ describe("award ceremony", () => {
     await act(async () => {});
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => holdAwards("classroom:test", false));
-    expect(await screen.findByRole("dialog", { name: "第一个问题" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: tr("第一个问题") })).toBeTruthy();
   });
 
   it("plays the rarest new award, lists the others and closes on ✕", async () => {
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-question"), award("leap-day", { scope: "2028" }), award("alan-1"), award("ten-stars", { new: false })]));
-    const dialog = await screen.findByRole("dialog", { name: "闰日旅人" });
+    const dialog = await screen.findByRole("dialog", { name: tr("闰日旅人") });
     expect(dialog.dataset.rarity).toBe("x");
     expect(dialog.textContent).toContain("限时成就 · 2028 · 星耀");
     expect(dialog.textContent).toContain("解锁称号 · 闰日旅人");
     expect(dialog.textContent).toContain("同时获得");
-    expect(dialog.textContent).toContain("第一个问题");
-    expect(dialog.textContent).toContain("初次夜课");
-    expect(dialog.textContent).not.toContain("十星成列");
+    expect(dialog.textContent).toContain(tr("第一个问题"));
+    expect(dialog.textContent).toContain(tr("初次夜课"));
+    expect(dialog.textContent).not.toContain(tr("十星成列"));
     expect(dialog.textContent).toContain("阿澜二月二十九日，四年才有一次。这节课，值得记住。");
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "关闭" }));
-    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: tr("关闭") }));
+    fireEvent.click(screen.getByRole("button", { name: tr("关闭") }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -134,11 +135,11 @@ describe("award ceremony", () => {
     render(<AwardHost />);
     const owl = award("night-owl");
     act(() => { announceNewAwards([owl]); announceNewAwards([owl]); });
-    const dialog = await screen.findByRole("dialog", { name: "星夜学者" });
+    const dialog = await screen.findByRole("dialog", { name: tr("星夜学者") });
     expect(dialog.textContent).toContain("发现隐藏成就 · 银");
     act(() => { vi.advanceTimersByTime(60_000); });
-    expect(screen.getByRole("dialog", { name: "星夜学者" })).toBe(dialog);
-    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(screen.getByRole("dialog", { name: tr("星夜学者") })).toBe(dialog);
+    fireEvent.click(screen.getByRole("button", { name: tr("关闭") }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -146,7 +147,7 @@ describe("award ceremony", () => {
     localStorage.setItem("octos-learn-award-tone", "plain");
     render(<AwardHost />);
     act(() => announceNewAwards([award("hundred-stars")]));
-    const dialog = await screen.findByRole("dialog", { name: "百星观测者" });
+    const dialog = await screen.findByRole("dialog", { name: tr("百星观测者") });
     expect(dialog.textContent).toContain("获得成就「百星观测者」。");
     expect(dialog.querySelector(".award-arch")).toBeNull();
     fireEvent.keyDown(window, { key: "Escape" });
@@ -161,12 +162,12 @@ describe("award ceremony", () => {
     render(<AwardHost />);
     // An award without a recorded teacher is presented by the learner's current teacher.
     act(() => announceNewAwards([award("hundred-stars", { teacher_id: "sufei" }), award("first-star", { teacher_id: null })]));
-    await screen.findByRole("dialog", { name: "百星观测者" });
+    await screen.findByRole("dialog", { name: tr("百星观测者") });
     await waitFor(() => expect(speech.synthesize).toHaveBeenCalledWith("一百颗星，每一颗都有来处。记录在案。", getTeacher("sufei").voices, expect.any(AbortSignal)));
     await waitFor(() => expect(speech.played).toHaveLength(1));
     fireEvent.click(screen.getByRole("button", { name: "查看「初见星光」" }));
     await waitFor(() => expect(speech.synthesize).toHaveBeenLastCalledWith("「初见星光」。从这里开始，一步一步来。", getTeacher("alan").voices, expect.any(AbortSignal)));
-    expect(screen.getByRole("dialog", { name: "初见星光" }).textContent).toContain("阿澜");
+    expect(screen.getByRole("dialog", { name: tr("初见星光") }).textContent).toContain(tr("阿澜"));
     await waitFor(() => expect(speech.played).toHaveLength(2));
   });
 
@@ -174,7 +175,7 @@ describe("award ceremony", () => {
     localStorage.setItem("octos-learn-award-tone", "plain");
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-star")]));
-    await screen.findByRole("dialog", { name: "初见星光" });
+    await screen.findByRole("dialog", { name: tr("初见星光") });
     await act(async () => {});
     expect(speech.synthesize).not.toHaveBeenCalled();
   });
@@ -182,7 +183,7 @@ describe("award ceremony", () => {
   it("plays batches in turn and skips ids the app does not know", async () => {
     render(<AwardHost />);
     act(() => { announceNewAwards([award("from-the-future")]); announceNewAwards([award("first-star")]); });
-    const dialog = await screen.findByRole("dialog", { name: "初见星光" });
+    const dialog = await screen.findByRole("dialog", { name: tr("初见星光") });
     expect(dialog.textContent).toContain("获得成就 · 铜");
   });
 });

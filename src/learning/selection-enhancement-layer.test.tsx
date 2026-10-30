@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import {
   act,
   cleanup,
@@ -702,7 +703,7 @@ describe("SelectionEnhancementLayer", () => {
     );
 
     expect(screen.getByRole("status").textContent)
-      .toContain("正在生成小章鱼辅助");
+      .toContain(tr("正在生成小章鱼辅助"));
 
     rerender(
       <SelectionEnhancementLayer
@@ -713,7 +714,7 @@ describe("SelectionEnhancementLayer", () => {
         onDelete={vi.fn()}
       />,
     );
-    expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+    expect(screen.queryByText(tr("正在生成小章鱼辅助"))).toBeNull();
 
     rerender(
       <SelectionEnhancementLayer
@@ -724,7 +725,7 @@ describe("SelectionEnhancementLayer", () => {
         onDelete={vi.fn()}
       />,
     );
-    expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+    expect(screen.queryByText(tr("正在生成小章鱼辅助"))).toBeNull();
     expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
   });
 
@@ -795,7 +796,7 @@ describe("SelectionEnhancementLayer", () => {
       ?.getAttribute("data-oll-ink-input")).toBe("ignore");
 
     fireEvent.click(screen.getByRole("button", {
-      name: "删除这条辅助内容",
+      name: tr("删除这条辅助内容"),
     }));
 
     expect(onDelete).toHaveBeenCalledOnce();
@@ -838,7 +839,7 @@ describe("SelectionEnhancementLayer", () => {
       />,
     );
 
-    expect(screen.getByText("引用的白板对象已失效，请重新选择")).toBeTruthy();
+    expect(screen.getByText(tr("引用的白板对象已失效，请重新选择"))).toBeTruthy();
     expect(screen.getByText("原来的说明")).toBeTruthy();
     expect(container.querySelector(".is-invalid-target")).toBeTruthy();
   });
@@ -855,7 +856,7 @@ describe("SelectionEnhancementLayer", () => {
     );
 
     fireEvent.click(screen.getByRole("button", {
-      name: "最小化这条辅助内容",
+      name: tr("最小化这条辅助内容"),
     }));
 
     expect(screen.queryByText("原来的说明")).toBeNull();
@@ -868,7 +869,7 @@ describe("SelectionEnhancementLayer", () => {
 
     expect(screen.getByText("原来的说明")).toBeTruthy();
     expect(screen.getByRole("button", {
-      name: "删除这条辅助内容",
+      name: tr("删除这条辅助内容"),
     })).toBeTruthy();
     expect(onDelete).not.toHaveBeenCalled();
   });
@@ -1059,13 +1060,13 @@ describe("SelectionEnhancementLayer", () => {
       ".learning-selection-enhancement",
     );
 
-    expect(screen.getByText("我的问题")).toBeTruthy();
+    expect(screen.getByText(tr("我的问题"))).toBeTruthy();
     expect(screen.getByText("请解释我圈出的这一部分。")).toBeTruthy();
     expect(resultCard).toBeTruthy();
     expect(container.querySelector(".learning-whiteboard-question-card")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", {
-      name: "最小化问题和辅助内容",
+      name: tr("最小化问题和辅助内容"),
     }));
 
     expect(screen.queryByText("请解释我圈出的这一部分。")).toBeNull();
@@ -1166,7 +1167,7 @@ describe("SelectionEnhancementLayer", () => {
     );
 
     expect(screen.getByRole("alert").textContent).toContain(
-      "当前无法生成这个图像",
+      tr("当前无法生成这个图像"),
     );
     expect(screen.getByText("固定其中一个变量后绘制三维切片")).toBeTruthy();
   });

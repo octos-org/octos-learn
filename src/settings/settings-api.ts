@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { request } from "@/api/client";
 import { BridgeRpcError, METHODS } from "@/runtime/ui-protocol-bridge";
 import { ensureAuxBridge } from "@/runtime/ui-protocol-runtime";
@@ -195,10 +196,10 @@ export interface Profile {
 
 export function profileModelSaveMessage(profile: Profile): string {
   switch (profile.runtime_disposition) {
-    case "reloaded": return "已生效，下一次生成使用新模型";
-    case "restart_required": return "已保存，服务重启后生效";
-    case "persisted_but_not_live": return "已保存。当前任务结束后，下一次生成将使用新模型";
-    default: return "已保存，下一次生成课程时生效";
+    case "reloaded": return tr("已生效，下一次生成使用新模型");
+    case "restart_required": return tr("已保存，服务重启后生效");
+    case "persisted_but_not_live": return tr("已保存。当前任务结束后，下一次生成将使用新模型");
+    default: return tr("已保存，下一次生成课程时生效");
   }
 }
 

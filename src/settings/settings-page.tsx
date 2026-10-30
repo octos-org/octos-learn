@@ -1,3 +1,5 @@
+import { localizedCatalog, tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
 import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -48,14 +50,14 @@ interface TabDef {
   group: TabGroup;
 }
 
-const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = [
+const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = localizedCatalog([
   { id: "personal", label: "Personal" },
   { id: "learning", label: "Learning" },
   { id: "system", label: "Access" },
   { id: "developer", label: "Developer" },
-];
+]);
 
-const TABS: TabDef[] = [
+const TABS: TabDef[] = localizedCatalog([
   { id: "profile", label: "Profile", icon: User, group: "personal" },
   { id: "teachers", label: "我的老师", icon: GraduationCap, group: "personal" },
   { id: "memory", label: "老师记得的事", icon: BookHeart, group: "personal" },
@@ -64,11 +66,12 @@ const TABS: TabDef[] = [
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true, group: "system" },
   { id: "developer", label: "Developer Options", icon: Bug, group: "developer" },
-];
+]);
 
 function SettingsThemeButton() {
+  useLocale();
   const { theme, toggleTheme } = useTheme();
-  const label = theme === "dark" ? "Light mode" : "Dark mode";
+  const label = theme === "dark" ? tr("Light mode") : tr("Dark mode");
   return (
     <button
       type="button"
@@ -100,6 +103,7 @@ function accessibleTabId(
 }
 
 export function AdminSettingsPage() {
+  useLocale();
   const { portal } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -162,11 +166,11 @@ export function AdminSettingsPage() {
     ? accessibleTabs.filter(
         (t) =>
           t.label.toLowerCase().includes(q) ||
-          (TAB_GROUPS.find((g) => g.id === t.group)?.label ?? "")
-            .toLowerCase()
-            .includes(q) ||
+          tr(t.label, {}, "zh-CN").toLowerCase().includes(q) ||
+          tr(t.label, {}, "en-US").toLowerCase().includes(q) ||
+          ["zh-CN", "en-US"].some(language => tr(TAB_GROUPS.find(g => g.id === t.group)?.label ?? "", {}, language as "zh-CN" | "en-US").toLowerCase().includes(q)) ||
           (t.id === "developer" &&
-            (q.includes("debug") || q.includes("jev") || q.includes("调"))),
+            (q.includes("debug") || q.includes("jev") || q.includes(tr("调")))),
       )
     : accessibleTabs;
 
@@ -181,8 +185,7 @@ export function AdminSettingsPage() {
       {label}
       {adminOnly && (
         <span className="ml-auto shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-accent">
-          Admin
-        </span>
+          {tr("Admin")}</span>
       )}
     </button>
   );
@@ -196,10 +199,10 @@ export function AdminSettingsPage() {
         onBack={() => navigate("/")}
         icon={SettingsIcon}
         context="Octos Learn"
-        title="Settings"
-        subtitle="Profile, teachers, models, voice, and access"
+        title={tr("Settings")}
+        subtitle={tr("Profile, teachers, models, voice, and access")}
         actions={
-          <><button className="text-sm text-accent" onClick={()=>navigate("/setup")}>新手设置白板</button><SettingsThemeButton /></>
+          <><button className="text-sm text-accent" onClick={()=>navigate("/setup")}>{tr("新手设置白板")}</button><SettingsThemeButton /></>
         }
       />
 
@@ -220,8 +223,8 @@ export function AdminSettingsPage() {
                   data-testid="settings-tab-search"
                   value={tabQuery}
                   onChange={(e) => setTabQuery(e.target.value)}
-                  placeholder="Find a setting..."
-                  aria-label="Find a setting"
+                  placeholder={tr("Find a setting...")}
+                  aria-label={tr("Find a setting")}
                   className="w-full rounded-[12px] border border-border bg-surface-container py-2 pl-8 pr-3 text-sm text-text outline-none placeholder:text-muted/60 focus:border-accent"
                 />
               </div>
@@ -229,7 +232,7 @@ export function AdminSettingsPage() {
             <div className="settings-tab-strip space-y-1 max-md:flex max-md:min-w-max max-md:gap-2 max-md:space-y-0">
               {matchedTabs.length === 0 ? (
                 <div className="whitespace-nowrap px-3 py-4 text-xs text-muted/70">
-                  No settings match "{tabQuery}"
+                  {tr("No settings match \"")}{tabQuery}"
                 </div>
               ) : searching ? (
                 matchedTabs.map(renderTabButton)
@@ -294,10 +297,9 @@ export function AdminSettingsPage() {
                 </>
               ) : !isAdminOnlyTab ? (
                 <div className="flex flex-col items-center justify-center py-20">
-                  <p className="text-sm text-muted">No profile available</p>
+                  <p className="text-sm text-muted">{tr("No profile available")}</p>
                   <p className="mt-1 text-xs text-muted/60">
-                    Create a profile on the server to get started
-                  </p>
+                    {tr("Create a profile on the server to get started")}</p>
                 </div>
               ) : null}
             </div>
@@ -305,14 +307,14 @@ export function AdminSettingsPage() {
         </div>
       )}
       <footer
-        aria-label="应用版本"
+        aria-label={tr("应用版本")}
         className="flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border px-4 py-3 text-xs text-muted"
       >
         <span>
-          当前版本 <span className="font-medium text-text-strong">{import.meta.env.VITE_APP_VERSION ? `v${import.meta.env.VITE_APP_VERSION}` : "开发版"}</span>
+          {tr("当前版本") + " "}<span className="font-medium text-text-strong">{import.meta.env.VITE_APP_VERSION ? `v${import.meta.env.VITE_APP_VERSION}` : tr("开发版")}</span>
         </span>
         {import.meta.env.VITE_BUILD_REVISION && (
-          <span>构建 {import.meta.env.VITE_BUILD_REVISION}</span>
+          <span>{tr("构建") + " "}{import.meta.env.VITE_BUILD_REVISION}</span>
         )}
       </footer>
     </div>
