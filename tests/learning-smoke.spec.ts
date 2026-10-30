@@ -59,7 +59,10 @@ test.describe("in an English browser", () => {
 
     await expect(page.getByRole("button", { name: "返回首页" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+    await expect(page.getByRole("button", { name: "English", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "返回首页" }).click();
     await page.getByRole("button", { name: "English", exact: true }).click();
+    await page.goto("/?oll-fixture=unit-circle-sine");
     await expect(page.getByText("Octos Learning Canvas")).toBeVisible();
     await expect(page.getByRole("button", { name: "Back to home" })).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
