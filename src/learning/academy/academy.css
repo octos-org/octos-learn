@@ -143,14 +143,15 @@
   letter-spacing: 0.06em;
 }
 
-/* The teacher stands in the night band, and beside them what they say. The
-   figure is cut off at the thigh, so it stands on the band's lower edge and
-   the cut disappears into it. */
+/* Keep the portrait and words at their natural height: a taller ledger must
+   not stretch this grid and push the bottom-aligned figure downward. The
+   portrait's cut edge fades into the night band. */
 .academy-greeting {
   --greeting-pad: clamp(24px, 3.2vw, 44px);
   display: grid;
   grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
   gap: clamp(20px, 3vw, 40px);
+  align-self: start;
   align-items: center;
   padding: var(--greeting-pad);
   padding-left: clamp(8px, 1.6vw, 24px);
