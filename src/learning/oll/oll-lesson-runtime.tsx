@@ -65,8 +65,8 @@ import {
 } from "./board-occlusion-observer";
 import {
   boardChromeInsets,
-  isAndroidRuntime,
   teachingCameraCeiling,
+  teachingCameraFloor,
   teachingReadingScale,
 } from "./board-chrome-insets";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
@@ -2386,12 +2386,10 @@ export function LearningWhiteboard({
     const mounted = mountInfiniteBoard(viewport);
     (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
-    if (isAndroidRuntime()) {
-      // Meeting displays are viewed from much farther away than laptops.
-      // Large compositions may be cropped, but automatic framing must not
-      // reduce teaching cards to an unreadable whole-course thumbnail.
-      mounted.view.setAutomaticCameraMinimumScale(.55);
-    }
+    // Automatic framing must not reduce teaching cards to an unreadable
+    // thumbnail: large compositions are cropped instead. Meeting displays are
+    // viewed from farther away and keep their own floor.
+    mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     // Keep automatic close-ups near the teaching layout's reading scale so a
     // single diagram is never magnified until the rest of its row is cut off.
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());

@@ -15,6 +15,16 @@ export function teachingReadingScale(android = isAndroidRuntime()): number {
   return android ? .68 : .9;
 }
 
+/**
+ * Readability floor for automatic teaching focus during a lesson. On desktop
+ * it is the reading scale, so body text never shrinks below the size the
+ * layout was planned for; related cards that do not fit are framed with the
+ * newest kept readable. Meeting displays keep their own floor.
+ */
+export function teachingCameraFloor(android = isAndroidRuntime()): number {
+  return android ? .55 : teachingReadingScale(false);
+}
+
 /** Zoom ceiling for automatic teaching focus: a modest close-up above the reading scale. */
 export function teachingCameraCeiling(android = isAndroidRuntime()): number {
   return android ? .8 : 1.1;
