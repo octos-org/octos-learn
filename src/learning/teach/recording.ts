@@ -11,8 +11,8 @@ export type TopicType = "on_map_lit" | "on_map_unlit" | "math_off_map" | "other"
 export interface RecordingTopic {
   text: string;
   type: TopicType;
-  /** Course topic id when the topic is on the star map. */
-  courseTopic?: string;
+  /** Star map topic id when the topic is on the star map. */
+  starTopicId?: string;
 }
 
 /** A selection of the learner's own ink, frozen when it is used. */

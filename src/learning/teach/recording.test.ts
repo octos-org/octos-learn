@@ -19,7 +19,7 @@ function slopeLesson(): LearnerRecording {
   const recording = createRecording({
     id: "rec-1",
     now,
-    topic: { text: " slope ", type: "on_map_lit", courseTopic: "linear-intro-and-slope" },
+    topic: { text: " slope ", type: "on_map_lit", starTopicId: "mt_-3udyo6VyB" },
     goals: ["Find the slope from any two points", " "],
   });
   return planCards(recording, now, [
