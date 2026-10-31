@@ -1,0 +1,250 @@
+// A learner's lesson recording: the cards they planned, every take of each
+// card, and the timed board actions of a take. The recording is the source the
+// deterministic compiler turns into an OLL learner-taught lesson; it never
+// holds raw audio.
+
+export const LEARNER_RECORDING_SCHEMA = "octos.learner-recording.v1" as const;
+
+/** How the chosen topic relates to the star map; it sets help, checks and sharing. */
+export type TopicType = "on_map_lit" | "on_map_unlit" | "math_off_map" | "other";
+
+export interface RecordingTopic {
+  text: string;
+  type: TopicType;
+  /** Course topic id when the topic is on the star map. */
+  courseTopic?: string;
+}
+
+/** A selection of the learner's own ink, frozen when it is used. */
+export interface InkTarget {
+  inkSelection: string;
+}
+
+/** A board node, or one addressable part of it. */
+export interface NodeTarget {
+  node: string;
+  part?: string;
+}
+
+export type BoardTarget = InkTarget | NodeTarget;
+
+export type ComponentPanel =
+  | "graph"
+  | "coordinate_grid"
+  | "unit_circle"
+  | "number_line"
+  | "shape"
+  | "solid_3d"
+  | "surface_3d"
+  | "table";
+
+/** One board action of a take, `t` milliseconds after the take started. */
+export type RecordingEvent =
+  | { t: number; type: "ink.stroke"; componentIds: string[] }
+  | { t: number; type: "tool.laser" | "tool.highlighter"; target: BoardTarget }
+  | { t: number; type: "tool.arrow"; from: string; to: string; label?: string }
+  | { t: number; type: "component.insert"; panel: ComponentPanel; alias: string; settings: Record<string, unknown> }
+  | { t: number; type: "point_tool.place"; node: string; point: string; x: number; y: number; label: string }
+  | { t: number; type: "variable.drag"; variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }
+  | { t: number; type: "view.rotate"; node: string; yaw: number; pitch: number }
+  | { t: number; type: "make_neat.confirmed"; selection: string; latex: string; alias: string }
+  | { t: number; type: "graph_it.confirmed"; from: string[]; expression: string; alias: string }
+  | { t: number; type: "make_point.confirmed"; selection: string; node: string; point: string; x: number; y: number; label: string }
+  | { t: number; type: "ink.hide"; node: string };
+
+export type TakeStatus = "recording" | "kept" | "superseded";
+
+export interface Take {
+  take: number;
+  status: TakeStatus;
+  startedAt: string;
+  durationMs?: number;
+  /** Transcript as recognised, before the learner's corrections. */
+  asrText?: string;
+  /** Transcript the lesson narrates; personal details are removed before publishing. */
+  text?: string;
+  /** Start and end of speech inside the take, for action phases. */
+  speechSpanMs?: [number, number];
+  events: RecordingEvent[];
+}
+
+/** The learner's ink of a card, frozen when the card stops. It belongs to the card, not a take. */
+export interface CardInk {
+  snapshotId: string;
+  sha256: string;
+  selections: string[];
+}
+
+export interface RecordingCard {
+  key: string;
+  title: string;
+  kind: "teach" | "your_turn";
+  takes: Take[];
+  ink?: CardInk;
+}
+
+export interface LearnerRecording {
+  schema: typeof LEARNER_RECORDING_SCHEMA;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  topic: RecordingTopic;
+  goals: string[];
+  cards: RecordingCard[];
+}
+
+export class RecordingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecordingError";
+  }
+}
+
+const MAX_CARDS = 6;
+
+export function createRecording(input: { id: string; now: string; topic: RecordingTopic; goals: string[] }): LearnerRecording {
+  if (!input.topic.text.trim()) throw new RecordingError("A recording needs a topic");
+  return {
+    schema: LEARNER_RECORDING_SCHEMA,
+    id: input.id,
+    createdAt: input.now,
+    updatedAt: input.now,
+    topic: { ...input.topic, text: input.topic.text.trim() },
+    goals: input.goals.map((goal) => goal.trim()).filter(Boolean),
+    cards: [],
+  };
+}
+
+function cardKey(index: number): string {
+  return `card-${index + 1}`;
+}
+
+function touch(recording: LearnerRecording, now: string, cards: RecordingCard[]): LearnerRecording {
+  return { ...recording, updatedAt: now, cards };
+}
+
+function findCard(recording: LearnerRecording, key: string): RecordingCard {
+  const card = recording.cards.find((candidate) => candidate.key === key);
+  if (!card) throw new RecordingError(`Unknown card ${key}`);
+  return card;
+}
+
+function replaceCard(recording: LearnerRecording, key: string, update: (card: RecordingCard) => RecordingCard): RecordingCard[] {
+  return recording.cards.map((card) => (card.key === key ? update(card) : card));
+}
+
+/** Plans the cards. Keys follow the final order; cards without takes may be reordered or removed freely. */
+export function planCards(
+  recording: LearnerRecording,
+  now: string,
+  cards: Array<{ title: string; kind?: RecordingCard["kind"]; from?: string }>,
+): LearnerRecording {
+  if (cards.length === 0) throw new RecordingError("A lesson needs at least one card");
+  if (cards.length > MAX_CARDS) throw new RecordingError(`A lesson has at most ${MAX_CARDS} cards`);
+  const kept = new Set(cards.map((card) => card.from).filter(Boolean));
+  const dropped = recording.cards.filter((card) => !kept.has(card.key) && card.takes.length > 0);
+  if (dropped.length) throw new RecordingError(`Card ${dropped[0]!.key} already has a recording`);
+  const next = cards.map((card, index): RecordingCard => {
+    const previous = card.from ? findCard(recording, card.from) : undefined;
+    const title = card.title.trim();
+    if (!title) throw new RecordingError("Every card needs a title");
+    return {
+      key: cardKey(index),
+      title,
+      kind: card.kind ?? previous?.kind ?? "teach",
+      takes: previous?.takes ?? [],
+      ...(previous?.ink ? { ink: previous.ink } : {}),
+    };
+  });
+  return touch(recording, now, next);
+}
+
+export function currentTake(card: RecordingCard): Take | undefined {
+  return card.takes.find((take) => take.status === "recording");
+}
+
+/** The take the lesson uses: the latest kept one. */
+export function keptTake(card: RecordingCard): Take | undefined {
+  return [...card.takes].reverse().find((take) => take.status === "kept");
+}
+
+/** Starts a take. Re-recording a card replaces its speech and pointing, never its ink. */
+export function startTake(recording: LearnerRecording, key: string, now: string): LearnerRecording {
+  const card = findCard(recording, key);
+  if (currentTake(card)) throw new RecordingError(`Card ${key} is already recording`);
+  if (recording.cards.some((other) => currentTake(other))) {
+    throw new RecordingError("Another card is recording");
+  }
+  const take: Take = { take: card.takes.length + 1, status: "recording", startedAt: now, events: [] };
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, takes: [...existing.takes, take] })));
+}
+
+export function appendEvent(recording: LearnerRecording, key: string, event: RecordingEvent, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!Number.isFinite(event.t) || event.t < 0) throw new RecordingError("Event time must be a non-negative number");
+  const last = take.events.at(-1);
+  if (last && event.t < last.t) throw new RecordingError("Events must be in time order");
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, events: [...take.events, event] } : candidate)),
+  })));
+}
+
+/** Ends the take, keeps it, and marks the card's earlier kept take as superseded. */
+export function finishTake(
+  recording: LearnerRecording,
+  key: string,
+  now: string,
+  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk },
+): LearnerRecording {
+  const card = findCard(recording, key);
+  const take = currentTake(card);
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!(result.durationMs > 0)) throw new RecordingError("A take must have a duration");
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({
+    ...existing,
+    ...(result.ink ? { ink: result.ink } : {}),
+    takes: existing.takes.map((candidate): Take => {
+      if (candidate === take) {
+        return {
+          ...take,
+          status: "kept",
+          durationMs: result.durationMs,
+          asrText: result.asrText,
+          text: result.asrText,
+          ...(result.speechSpanMs ? { speechSpanMs: result.speechSpanMs } : {}),
+        };
+      }
+      return candidate.status === "kept" ? { ...candidate, status: "superseded" } : candidate;
+    }),
+  })));
+}
+
+/** Discards an unfinished take, for example when the learner cancels. */
+export function cancelTake(recording: LearnerRecording, key: string, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) return recording;
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.filter((candidate) => candidate !== take),
+  })));
+}
+
+/** The learner fixes what speech recognition heard. */
+export function correctTranscript(recording: LearnerRecording, key: string, text: string, now: string): LearnerRecording {
+  const take = keptTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} has no recording to correct`);
+  const corrected = text.trim();
+  if (!corrected) throw new RecordingError("The transcript cannot be empty");
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, text: corrected } : candidate)),
+  })));
+}
+
+/** Whether every card has a kept take and nothing is still recording. */
+export function recordingComplete(recording: LearnerRecording): boolean {
+  return recording.cards.length > 0
+    && recording.cards.every((card) => !currentTake(card) && keptTake(card));
+}
