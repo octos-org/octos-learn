@@ -69,6 +69,8 @@
 - [老师与记忆最小切片：实施进展](personalized-teachers-slice/PROGRESS.md)：两位预设老师、老师设定与学生背景进入课程生成、兼容旧技能安装、验证与已知限制。
 
 - [学院大厅与成就系统计划](ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md)：主页改为学院大厅，星图、成就殿、我的老师独立成页；74 个成就、称号、限时成就和获得动画的分步计划与清单。
+- [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)：孩子录课、用虚拟形象和合成声音发布的方案（面向美国 K–12）；分阶段、录制流程、互动组件、与 OLL 的对应和待决事项。样例与发现见 OLL 仓库 `docs/LEARNER-TAUGHT-V1-FINDINGS.md`。
+- [学生当老师模式实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)：从测试修复、OLL 合同扩展、录课工作室、编译器、小章鱼与检查、声音与隐私、我的课程，到账号同意、班级分享和公开社区的里程碑、验收标准与待决事项。
 - [三位老师定稿与素材更新](TEACHER_ART_REFRESH.md)：2026-10-30 三张用户定稿、人物卡/胸像/横版素材、程序接入及创建 PR 前的本地验收。
 - [三位老师 Q 版表情素材](TEACHER_CHIBI_PACK.md)：每位八张、共 24 张透明表情；独立素材、提示词与清单，尚未接入产品界面。
 - [学习记录放在哪里](LEARNING_RECORDS_PLACEMENT.md)：学习记录支撑星图和成就；“继续学习”和周报进大厅，学习经过在 `/records` 并从星辰直达，删除重复的学习地图标签。
