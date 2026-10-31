@@ -3218,8 +3218,9 @@ describe("OLL lesson Runtime integration", () => {
       transforms.push(world?.style.transform ?? "");
     }
 
-    const scales = transforms.map((transform) => transform.match(/scale\(([^)]+)\)/)?.[1]);
-    expect(new Set(scales).size).toBeGreaterThanOrEqual(4);
+    // The desktop camera now stays between the reading scale and a modest
+    // close-up, so Beats are told apart by where the camera frames, not zoom.
+    expect(new Set(transforms).size).toBeGreaterThanOrEqual(4);
     expect(transforms[5]).not.toBe(transforms[6]);
     // Consecutive targets can now settle on the same camera at the larger
     // automatic zoom limit; a duplicate transform is not a dropped Beat.

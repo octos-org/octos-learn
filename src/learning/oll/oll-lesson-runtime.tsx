@@ -58,15 +58,15 @@ import {
 } from "./ink-camera-gate";
 import { lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 import { visibleReflections } from "./visible-reflections";
-import { planHostTeachingFocus } from "./host-camera-policy";
+import { compositionTargetsRendered, planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
   mutationsTouchBoardOcclusion,
 } from "./board-occlusion-observer";
 import {
   boardChromeInsets,
-  isAndroidRuntime,
   teachingCameraCeiling,
+  teachingCameraFloor,
   teachingReadingScale,
 } from "./board-chrome-insets";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
@@ -2386,12 +2386,10 @@ export function LearningWhiteboard({
     const mounted = mountInfiniteBoard(viewport);
     (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
-    if (isAndroidRuntime()) {
-      // Meeting displays are viewed from much farther away than laptops.
-      // Large compositions may be cropped, but automatic framing must not
-      // reduce teaching cards to an unreadable whole-course thumbnail.
-      mounted.view.setAutomaticCameraMinimumScale(.55);
-    }
+    // Automatic framing must not reduce teaching cards to an unreadable
+    // thumbnail: large compositions are cropped instead. Meeting displays are
+    // viewed from farther away and keep their own floor.
+    mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     // Keep automatic close-ups near the teaching layout's reading scale so a
     // single diagram is never magnified until the rest of its row is cut off.
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
@@ -2906,7 +2904,16 @@ export function LearningWhiteboard({
     if (hostFocus) view?.focusTargets(hostFocus.targets);
     renderedAttentionRef.current = attentionKey;
     renderedFocusRef.current = [...boardFocus];
-    renderedCompositionRef.current = compositionKey;
+    // A Beat names its targets before it creates them. Until one exists the
+    // composition request frames nothing, so it stays pending; otherwise a
+    // skip to the next Beat, which applies the creation in the same batch as
+    // the Beat end, would never frame the new card.
+    if (
+      activeRuntime.compositionTargets.length === 0
+      || compositionTargetsRendered(activeRuntime.board, activeRuntime.compositionTargets)
+    ) {
+      renderedCompositionRef.current = compositionKey;
+    }
     renderedCompositionCursorRef.current = activeRuntime.cursor;
     renderedAnimationActiveRef.current = variableAnimationActive;
   }, [
