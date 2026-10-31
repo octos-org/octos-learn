@@ -35,7 +35,7 @@ describe("topic choice", () => {
     expect(topicFromChoice({ kind: "star", starTopicId: "mt_slope", name: "Slope of a line", lit: false }).type).toBe("on_map_unlit");
   });
 
-  it("classifies a free topic by whether the learner says it is maths", () => {
+  it("classifies a free topic by whether the learner says it is math", () => {
     expect(topicFromChoice({ kind: "free", text: " Prime numbers in nature ", isMath: true }))
       .toEqual({ text: "Prime numbers in nature", type: "math_off_map" });
     expect(topicFromChoice({ kind: "free", text: "Dinosaurs", isMath: false }).type).toBe("other");

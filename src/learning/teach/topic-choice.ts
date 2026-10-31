@@ -1,7 +1,7 @@
 // A learner may teach any topic. Typing a topic suggests matching stars from
 // the star map; choosing one makes the topic "on the map", lit when the learner
 // already has activity on it. Anything else is a free topic the learner marks
-// as maths or not. No model is involved.
+// as math or not. No model is involved.
 
 import type { RecordingTopic } from "./recording";
 

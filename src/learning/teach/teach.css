@@ -1,0 +1,18 @@
+/* Learner lesson studio: planning and recording. Matches the academy pages. */
+.teach-step { display: grid; gap: 14px; max-width: 640px; }
+.teach-step h2 { margin: 0; color: #1b2457; font-size: 20px; font-weight: 600; }
+.teach-input { width: 100%; min-height: 44px; box-sizing: border-box; padding: 10px 14px; border: 1px solid rgba(40, 65, 67, 0.22); border-radius: 12px; color: #213238; background: #fffef9; font: inherit; font-size: 16px; }
+textarea.teach-input { min-height: 88px; resize: vertical; }
+.teach-step button, .teach-actions button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border: 1px solid #1b2457; border-radius: 999px; color: #f6dfa0; background: #1b2457; font: inherit; font-size: 15px; cursor: pointer; }
+.teach-step button.teach-secondary { border-color: rgba(40, 65, 67, 0.22); color: #3d5a63; background: #fffef9; }
+.teach-step button:disabled { opacity: 0.5; cursor: default; }
+.teach-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.teach-suggestions, .teach-cards { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.teach-suggestions button { justify-content: space-between; width: 100%; border-color: rgba(40, 65, 67, 0.18); color: #213238; background: #fffef9; text-align: left; }
+.teach-cards { counter-reset: card; }
+.teach-cards li { display: flex; align-items: center; gap: 8px; }
+.teach-cards li::before { counter-increment: card; content: counter(card); flex: none; width: 28px; color: #6b7d82; font-variant-numeric: tabular-nums; text-align: center; }
+.teach-step button.teach-icon { flex: none; justify-content: center; width: 44px; padding: 0; border-color: rgba(40, 65, 67, 0.18); color: #6b7d82; background: #fffef9; }
+.teach-chip { flex: none; padding: 2px 10px; border-radius: 999px; color: #6a4f12; background: #f6e7bf; font-size: 12px; }
+.teach-question { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.teach-question p { flex-basis: 100%; margin: 0; }
