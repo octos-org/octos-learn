@@ -58,7 +58,7 @@ import {
 } from "./ink-camera-gate";
 import { lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 import { visibleReflections } from "./visible-reflections";
-import { planHostTeachingFocus } from "./host-camera-policy";
+import { compositionTargetsRendered, planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
   mutationsTouchBoardOcclusion,
@@ -2904,7 +2904,16 @@ export function LearningWhiteboard({
     if (hostFocus) view?.focusTargets(hostFocus.targets);
     renderedAttentionRef.current = attentionKey;
     renderedFocusRef.current = [...boardFocus];
-    renderedCompositionRef.current = compositionKey;
+    // A Beat names its targets before it creates them. Until one exists the
+    // composition request frames nothing, so it stays pending; otherwise a
+    // skip to the next Beat, which applies the creation in the same batch as
+    // the Beat end, would never frame the new card.
+    if (
+      activeRuntime.compositionTargets.length === 0
+      || compositionTargetsRendered(activeRuntime.board, activeRuntime.compositionTargets)
+    ) {
+      renderedCompositionRef.current = compositionKey;
+    }
     renderedCompositionCursorRef.current = activeRuntime.cursor;
     renderedAnimationActiveRef.current = variableAnimationActive;
   }, [

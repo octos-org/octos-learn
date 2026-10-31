@@ -29,10 +29,10 @@ node docs/course-runtime-quality/readable-camera-2026-10-31/measure-readability.
 | linear-simultaneous-intersections | 1920×1080 | 9 | 17.60 | 1.10 | 26.4 |
 | slope-and-intercept | 1366×768 | 13 | 14.40 | 0.90 | 15.9 |
 | slope-and-intercept | 1920×1080 | 13 | 17.60 | 1.10 | 17.6 |
-| surface-paraboloid-level-sets | 1366×768 | 12 | 13.91 | 0.92 | 13.75 |
-| surface-paraboloid-level-sets | 1920×1080 | 12 | 10.93 | 0.78 | 17.6 |
-| surface-partial-derivative-slice | 1366×768 | 12 | 14.40 | 0.78 | 5.32 |
-| surface-partial-derivative-slice | 1920×1080 | 12 | 14.40 | 0.78 | 10.82 |
+| surface-paraboloid-level-sets | 1366×768 | 12 | 14.73 | 0.92 | 13.75 |
+| surface-paraboloid-level-sets | 1920×1080 | 12 | 15.41 | 1.10 | 17.6 |
+| surface-partial-derivative-slice | 1366×768 | 12 | 14.40 | 0.90 | 5.32 |
+| surface-partial-derivative-slice | 1920×1080 | 12 | 14.40 | 0.90 | 10.82 |
 | surface-saddle-point-analysis | 1366×768 | 14 | 14.40 | 0.90 | 4.18 |
 | surface-saddle-point-analysis | 1920×1080 | 14 | 13.62 | 0.90 | 7.75 |
 | trig-cosine-and-phase-shift | 1366×768 | 13 | 12.61 | 0.90 | 7.73 |
@@ -42,10 +42,10 @@ node docs/course-runtime-quality/readable-camera-2026-10-31/measure-readability.
 | trig-unit-circle-to-sine | 1366×768 | 7 | 12.62 | 0.90 | 8.89 |
 | trig-unit-circle-to-sine | 1920×1080 | 7 | 15.42 | 1.10 | 15.43 |
 
-除下文一处例外，全部 9 门课程、两种尺寸下，课程进行中的 Beat 正文都不低于 12.5 px。结束全览在长课程上仍会很小（例如马鞍面 1366 × 768 约 4 px），按用户决定不作门槛。
+全部 9 门课程、两种尺寸下，课程进行中的 Beat 正文都不低于 12.5 px。结束全览在长课程上仍会很小（例如马鞍面 1366 × 768 约 4 px），按用户决定不作门槛。
 
 说明：
 
 - 修改前，同一方法下 `slope-and-intercept` 在 1366 × 768 的镜头约 0.79、正文约 12.6 px（16 px 正文）；14 px 正文会降到约 11 px。修改后桌面镜头不低于 0.9。
-- **已知例外**：`surface-paraboloid-level-sets` 1920 × 1080 第 1 个 Beat 在 3 次重测中 2 次为 10.9 px（镜头 0.78），1 次为 15.4 px。该 Beat 没有自己的焦点，镜头停留在打开课程时的整课画面（`course-restore`，按设计不设下限），之后的 Beat 有焦点后恢复正常。需要单独决定：课程打开时的整课画面是否也算“课程进行中”，或要求第一个 Beat 必须有焦点。
+- **已修复**： 第 1 个 Beat 曾有 2/3 次停在空白板的默认镜头 0.78（1920 × 1080 正文 10.9 px）。原因：Beat 开始时宿主请求框选本 Beat 的卡片，但卡片尚未创建，请求落空；正常播放时卡片创建会再次触发，而“下一 Beat”一次跳过多个操作，创建与 Beat 结束在同一批更新中，第二次请求不会发生。现在在本 Beat 的目标出现之前保持请求待定（），修复后 4/4 次框选到第一张卡片。
 - 三门三角函数课程的焦点有时落在连线或无外框分组上，脚本无法定位到卡片；这些 Beat 改用画面内完整可见的卡片测量。
