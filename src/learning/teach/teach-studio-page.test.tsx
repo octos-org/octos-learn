@@ -29,6 +29,26 @@ vi.mock("./teach-board", async () => {
     }),
   };
 });
+const voice = vi.hoisted(() => ({
+  listening: true,
+  onUtterance: undefined as ((wav: Blob) => void) | undefined,
+  onSpeechStart: undefined as (() => void) | undefined,
+  available: true,
+  transcripts: [] as string[],
+}));
+vi.mock("@/home/voice/use-voice-capture", () => ({
+  useVoiceCapture: () => ({
+    capturing: false, error: null, getError: () => null,
+    start: async (onUtterance: (wav: Blob) => void, options?: { onSpeechStart?: () => void }) => {
+      voice.onUtterance = onUtterance; voice.onSpeechStart = options?.onSpeechStart; return voice.listening;
+    },
+    stop: async () => undefined,
+  }),
+}));
+vi.mock("@/api/cloud-asr", () => ({
+  fetchCloudAsrStatus: async () => ({ available: voice.available, detail: "" }),
+  transcribeCloudSpeech: async () => ({ status: "speech", transcript: voice.transcripts.shift() ?? "" }),
+}));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
@@ -47,6 +67,9 @@ beforeEach(() => {
   board.frozen = null;
   board.pen = [];
   board.inkDocuments = [];
+  voice.listening = true;
+  voice.available = true;
+  voice.transcripts = [];
   const recording = planCards(
     createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Finding slope", type: "math_off_map" }, goals: ["Find slope"] }),
     "2026-10-31T12:00:00.000Z",
@@ -144,4 +167,41 @@ it("freezes the take's handwriting onto the card, as an annotation when written 
   expect(ink!.annotates).toEqual({ node: "grid-1", x: 0.3, y: 0.5, width: 0.1, height: 0.1 });
   expect(JSON.parse(localStorage.getItem("octos-learn:learner-ink:v1:learner-1")!)["ink-snap:rec-1-card-1-t1@v1"].width).toBe(40);
   expect(board.pen.at(-1)).toBe(false);
+});
+
+it("turns what the learner says into the card's captions, timed from the take start", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  time = 1_600; voice.onSpeechStart!();
+  time = 4_000; voice.onUtterance!(new Blob(["a"]));
+  time = 4_500; voice.onSpeechStart!();
+  time = 7_000; voice.onUtterance!(new Blob(["b"]));
+  voice.transcripts = ["Here is a grid.", "Point A is at one two."];
+  time = 8_000;
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
+  const take = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
+  expect(take.text).toBe("Here is a grid. Point A is at one two.");
+  expect(take.speechSpanMs).toEqual([600, 6_000]);
+  expect((screen.getByRole("textbox", { name: "What you said on this card" }) as HTMLTextAreaElement).value).toBe("Here is a grid. Point A is at one two.");
+});
+
+it("asks the learner to type the words when recognition is not connected", async () => {
+  voice.available = false;
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  voice.onSpeechStart!(); voice.onUtterance!(new Blob(["a"]));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  expect(await screen.findByText("Speech recognition isn't connected yet. Please type what you said on this card below.")).toBeTruthy();
+});
+
+it("tells the learner when the microphone cannot be used", async () => {
+  voice.listening = false;
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  expect(await screen.findByText("The microphone isn't available. You can still record, then type what you said below.")).toBeTruthy();
 });

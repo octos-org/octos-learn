@@ -2329,5 +2329,9 @@
   "移动白板": "Move the board",
   "笔": "Pen",
   "直接在白板上写。写在图上的会贴在那张图上。": "Write right on the board. Anything you write on a graph or grid sticks to it.",
-  "书写和指点": "Writing and pointing"
+  "书写和指点": "Writing and pointing",
+  "麦克风不能用。可以照常录，录完在下面输入你说的话。": "The microphone isn't available. You can still record, then type what you said below.",
+  "还没有连接语音识别。请在下面输入你在这张卡片说的话。": "Speech recognition isn't connected yet. Please type what you said on this card below.",
+  "有 {{v0}} 段话没听清。请在下面补上。": "{{v0}} part(s) of what you said weren't caught. Please add them below.",
+  "正在整理字幕…": "Writing captions…"
 }

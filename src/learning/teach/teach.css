@@ -39,3 +39,4 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
   .teach-studio-body { grid-template-columns: 1fr; }
   .teach-board { height: 56vh; }
 }
+.teach-notice { margin: 0; padding: 10px 12px; border-radius: 12px; color: #6a4f12; background: #fbf1d6; font-size: 14px; }

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { getSelectedProfileId } from "@/api/client";
+import { fetchCloudAsrStatus, transcribeCloudSpeech } from "@/api/cloud-asr";
+import { useVoiceCapture } from "@/home/voice/use-voice-capture";
 
 import { AcademyHeader } from "../academy/academy-header";
 import { compileRecording, type CompiledLesson } from "./compile-recording";
@@ -25,6 +27,7 @@ import {
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { gridRanges, learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
+import { TakeSpeech } from "./take-speech";
 import { TeachBoard, type TeachBoardHandle } from "./teach-board";
 import "./teach.css";
 
@@ -49,6 +52,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [saveFailed, setSaveFailed] = useState(false);
   const takeStartedAt = useRef<number | null>(null);
   const boardRef = useRef<TeachBoardHandle>(null);
+  const capture = useVoiceCapture();
+  const speechRef = useRef<TakeSpeech | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
   const resolveAsset = useCallback((id: string) => inkSnapshotResolver(snapshots.current)(id), []);
 
@@ -93,8 +100,14 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!recording || !card) return;
     takeStartedAt.current = clock();
     const key = card.key;
+    setNotice(null);
     update((current) => startTake(current, key, now()));
     void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
+    const speech = new TakeSpeech(elapsed);
+    speechRef.current = speech;
+    void capture.start((wav) => speech.utterance(wav), { onSpeechStart: () => speech.speechStarted() }).then((listening) => {
+      if (!listening && speechRef.current === speech) setNotice(tr("麦克风不能用。可以照常录，录完在下面输入你说的话。"));
+    });
   };
   const stop = async () => {
     if (!recording || !card || !recordingTake) return;
@@ -103,6 +116,17 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const key = card.key;
     chooseTool("none");
     setForm(null);
+    setTranscribing(true);
+    const speech = speechRef.current;
+    speechRef.current = null;
+    await capture.stop();
+    let spoken: Awaited<ReturnType<TakeSpeech["finish"]>> = { text: "", failed: 0 };
+    if (speech) {
+      const available = await fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
+      spoken = await speech.finish(available ? transcribeCloudSpeech : null, new AbortController().signal);
+      if (!available && spoken.failed) setNotice(tr("还没有连接语音识别。请在下面输入你在这张卡片说的话。"));
+      else if (spoken.failed) setNotice(tr("有 {{v0}} 段话没听清。请在下面补上。", { v0: spoken.failed }));
+    }
     const frozen = await boardRef.current?.freezeInk();
     let ink: CardInk[] = [];
     if (frozen) {
@@ -112,15 +136,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
       ink = [{ snapshotId, sha256: await inkChecksum(frozen.svg), selections: [], ...(frozen.annotates ? { annotates: frozen.annotates } : {}) }];
     }
-    // Speech recognition fills the transcript once connected; until then the
-    // learner types or corrects what they said below.
-    update((current) => finishTake(current, key, now(), { durationMs: duration, asrText: "", speechSpanMs: [0, duration], ink }));
+    // The learner corrects what recognition heard, or types it, below.
+    update((current) => finishTake(current, key, now(), {
+      durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], ink,
+    }));
+    setTranscribing(false);
   };
   const cancel = () => {
     if (!recording || !card) return;
     takeStartedAt.current = null;
     const key = card.key;
     chooseTool("none");
+    speechRef.current = null;
+    void capture.stop();
     void boardRef.current?.discardInk();
     update((current) => cancelTake(current, key, now()));
   };
@@ -173,10 +201,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             )}
             {isRecording && (
               <div className="teach-actions">
-                <button type="button" className="teach-record recording" onClick={() => void stop()}>{tr("停止")}</button>
-                <button type="button" className="teach-secondary" onClick={cancel}>{tr("放弃这次")}</button>
+                <button type="button" className="teach-record recording" disabled={transcribing} onClick={() => void stop()}>{transcribing ? tr("正在整理字幕…") : tr("停止")}</button>
+                <button type="button" className="teach-secondary" disabled={transcribing} onClick={cancel}>{tr("放弃这次")}</button>
               </div>
             )}
+            {notice && <p role="status" className="teach-notice">{notice}</p>}
 
             {isRecording && (
               <>
