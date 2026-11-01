@@ -2,6 +2,7 @@ import { tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
 
@@ -30,6 +31,7 @@ function newRecordingId(): string {
 /** Plans a learner-taught lesson: any topic, what the viewer will learn, and its cards. */
 export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRecording) => void }) {
   const locale = useLocale();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("topic");
   const [query, setQuery] = useState("");
   const [litTopics, setLitTopics] = useState<ReadonlySet<string>>(new Set());
@@ -86,6 +88,7 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
     setPlanned(recording);
     setStep("ready");
     onPlanned?.(recording);
+    navigate(`/teach/${recording.id}`);
   };
 
   return (
