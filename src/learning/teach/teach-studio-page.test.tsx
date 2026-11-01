@@ -14,6 +14,7 @@ const board = vi.hoisted(() => ({
   frozen: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
   pen: [] as string[],
   values: {} as Record<string, number>,
+  peek: null as null | { svg: string; width: number; height: number },
   inkDocuments: [] as string[],
 }));
 vi.mock("./teach-board", async () => {
@@ -30,6 +31,7 @@ vi.mock("./teach-board", async () => {
         freezeInk: async () => board.frozen,
         discardInk: async () => undefined,
         variableValue: (alias: string) => board.values[alias],
+        peekInk: async () => board.peek,
       }));
       return <div data-testid="teach-board" />;
     }),
@@ -55,6 +57,21 @@ vi.mock("@/api/cloud-asr", () => ({
   fetchCloudAsrStatus: async () => ({ available: voice.available, detail: "" }),
   transcribeCloudSpeech: async () => ({ status: "speech", transcript: voice.transcripts.shift() ?? "" }),
 }));
+const assist = vi.hoisted(() => ({
+  question: "Why did you pick that point?" as string | Error,
+  neat: { latex: "\\dfrac{6}{3}=2", confidence: "high", readable: true } as { latex: string; confidence: string; readable: boolean },
+  review: { cards: [] as Array<{ key: string; status: string; kind: string; message: string }>, overall: "Nice work." },
+  octoCalls: [] as string[],
+}));
+vi.mock("./teach-assist", () => ({
+  askOcto: vi.fn(async (_recording: unknown, _compiled: unknown, key: string) => {
+    assist.octoCalls.push(key);
+    if (assist.question instanceof Error) throw assist.question;
+    return assist.question;
+  }),
+  inkToMath: vi.fn(async () => assist.neat),
+  reviewLesson: vi.fn(async () => assist.review),
+}));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
@@ -73,6 +90,9 @@ beforeEach(() => {
   board.frozen = null;
   board.pen = [];
   board.values = {};
+  board.peek = null;
+  assist.question = "Why did you pick that point?";
+  assist.octoCalls = [];
   board.inkDocuments = [];
   voice.listening = true;
   voice.available = true;
@@ -305,4 +325,75 @@ it("records a back-and-forth drag as moves in order", () => {
   });
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes[0]!;
   expect(take.events.filter((event) => event.type === "variable.drag").map((event) => [event.t, event.type === "variable.drag" && event.to])).toEqual([[2_000, 1.2], [4_000, 0.6], [4_400, 1.57]]);
+});
+
+it("Octo asks about a card once it is recorded, and the learner's answer stays on the card", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  expect(await screen.findByText("Why did you pick that point?")).toBeTruthy();
+  expect(assist.octoCalls).toEqual(["card-1"]);
+  fireEvent.change(screen.getByRole("textbox", { name: "Your answer (only you can see it)" }), { target: { value: "It is easy to count." } });
+  fireEvent.click(screen.getByRole("button", { name: "Answer Octo" }));
+  const card = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!;
+  expect(card.octo).toEqual({ question: "Why did you pick that point?", answer: "It is easy to count." });
+  expect(JSON.stringify(board.compiled!.lesson)).not.toContain("easy to count");
+});
+
+it("keeps recording when Octo cannot ask", async () => {
+  assist.question = new Error("model unavailable");
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  expect(await screen.findByText("Octo couldn't think of a question this time. You can go on to the next card.")).toBeTruthy();
+});
+
+it("makes handwriting neat: the confirmed formula replaces the take's ink when it stops", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  board.peek = { svg: "<svg/>", width: 50, height: 30 };
+  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  const formula = await screen.findByRole("textbox", { name: "Formula (you can edit it)" });
+  fireEvent.change(formula, { target: { value: "\\dfrac{8-2}{4-1}=2" } });
+  fireEvent.click(screen.getByRole("button", { name: "Use this" }));
+  board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", width: 50, height: 30 };
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
+  const card = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!;
+  expect(card.ink![0]!.selections).toEqual(["sel-card-1-t1-all"]);
+  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write" && action.kind === "math"))
+    .toMatchObject({ content: { fragments: [{ latex: "\\dfrac{8-2}{4-1}=2" }] }, place: { relation: "replaces", anchor: "ink-card-1" }, source: { selection: "sel-card-1-t1-all", confirmed_by: "learner" } }));
+});
+
+it("asks for writing first when there is no handwriting to tidy", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  expect(await screen.findByText("Write something first, then ask Octo to tidy it.")).toBeTruthy();
+});
+
+it("Octo reviews the whole lesson card by card and points to the card to fix", async () => {
+  assist.review = { cards: [
+    { key: "card-1", status: "good", kind: "none", message: "Clear points." },
+    { key: "card-2", status: "check", kind: "slip", message: "You said one half; the board shows 2." },
+  ], overall: "Fix how you read card 2." };
+  renderStudio();
+  for (const name of [/Pick two points/, /Rise over run/]) {
+    fireEvent.click(screen.getByRole("button", { name }));
+    fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+    fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+    fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    await screen.findByRole("button", { name: "Re-record this card" });
+  }
+  fireEvent.click(screen.getByRole("button", { name: "Ask Octo" }));
+  expect(await screen.findByText("You said one half; the board shows 2.")).toBeTruthy();
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.review?.overall).toBe("Fix how you read card 2.");
+  const fixButtons = screen.getAllByRole("button", { name: "Fix this card" });
+  fireEvent.click(fixButtons.at(-1)!);
+  expect(screen.getByRole("button", { name: /Rise over run/ }).getAttribute("aria-pressed")).toBe("true");
 });

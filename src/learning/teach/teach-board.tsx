@@ -31,6 +31,8 @@ export interface TeachBoardHandle {
   discardInk(): Promise<void>;
   /** The value a lesson variable shows on the board now. */
   variableValue(alias: string): number | undefined;
+  /** The take's handwriting so far, without freezing it; null when nothing is drawn. */
+  peekInk(): Promise<{ svg: string; width: number; height: number } | null>;
 }
 
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
@@ -229,6 +231,16 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     },
     variableValue(alias) {
       return boardStateRef.current?.variables?.[alias]?.value;
+    },
+    async peekInk() {
+      const ink = inkRef.current;
+      if (!ink || !ink.state.component_count) return null;
+      const mode = ink.state.mode;
+      ink.selectAll();
+      const snapshot = await ink.captureSelectionSnapshot();
+      ink.clearSelection();
+      ink.setMode(mode === "select" ? "navigate" : mode);
+      return { svg: snapshot.svg, width: Math.max(1, snapshot.bounds.width), height: Math.max(1, snapshot.bounds.height) };
     },
   }), []);
 

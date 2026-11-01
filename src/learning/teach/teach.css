@@ -45,3 +45,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-readability-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .teach-readability-list > li { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; background: #fbf1d6; }
 .teach-readability-list ul { margin: 0; padding-left: 18px; color: #6a4f12; font-size: 14px; }
+.teach-octo p { margin: 0; }
+.teach-octo { padding: 12px; border-radius: 14px; background: #eef3fb; }
+.teach-neat-preview { overflow-x: auto; padding: 8px 12px; border-radius: 12px; background: #fffef9; }
+.teach-review-good { background: #e8f3ef !important; }

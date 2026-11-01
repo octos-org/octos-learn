@@ -83,12 +83,26 @@ export interface CardInk {
   annotates?: { node: string; x: number; y: number; width: number; height: number };
 }
 
+/** Octo's question after a card, and the learner's answer; private, never part of the lesson. */
+export interface OctoExchange {
+  question: string;
+  answer?: string;
+}
+
 export interface RecordingCard {
   key: string;
   title: string;
   kind: "teach" | "your_turn";
   takes: Take[];
   ink?: CardInk[];
+  octo?: OctoExchange;
+}
+
+/** The review of the recorded lesson, kept with the draft for the learner. */
+export interface RecordingReview {
+  at: string;
+  cards: Array<{ key: string; status: "good" | "check"; kind: "none" | "slip" | "misconception" | "unclear"; message: string }>;
+  overall: string;
 }
 
 export interface LearnerRecording {
@@ -99,6 +113,7 @@ export interface LearnerRecording {
   topic: RecordingTopic;
   goals: string[];
   cards: RecordingCard[];
+  review?: RecordingReview;
 }
 
 export class RecordingError extends Error {
@@ -256,4 +271,20 @@ export function correctTranscript(recording: LearnerRecording, key: string, text
 export function recordingComplete(recording: LearnerRecording): boolean {
   return recording.cards.length > 0
     && recording.cards.every((card) => !currentTake(card) && keptTake(card));
+}
+
+/** Octo asked about a card; a new question replaces an earlier one and its answer. */
+export function setOctoQuestion(recording: LearnerRecording, key: string, question: string, now: string): LearnerRecording {
+  findCard(recording, key);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({ ...card, octo: { question: question.trim() } })));
+}
+
+export function answerOcto(recording: LearnerRecording, key: string, answer: string, now: string): LearnerRecording {
+  const card = findCard(recording, key);
+  if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+export function setReview(recording: LearnerRecording, review: RecordingReview, now: string): LearnerRecording {
+  return { ...recording, updatedAt: now, review };
 }

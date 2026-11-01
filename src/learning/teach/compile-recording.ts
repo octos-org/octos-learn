@@ -293,6 +293,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           break;
         case "make_neat.confirmed": {
           const ink = inkOfSelection.get(event.selection);
+          // The take's own ink is frozen when it stops; until then its neat
+          // version waits instead of failing the live board.
+          if (!ink && take.status === "recording") break;
           if (!ink) throw new CompileError(`Selection '${event.selection}' is not part of this lesson's ink`);
           const alias = requireAlias(event.alias, "Formula");
           actions.push({

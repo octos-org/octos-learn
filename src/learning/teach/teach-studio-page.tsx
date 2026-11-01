@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Spline, Square } from "lucide-react";
+import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Sparkles, Spline, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -16,8 +16,11 @@ import {
   correctTranscript,
   currentTake,
   finishTake,
+  answerOcto,
   keptTake,
   recordingComplete,
+  setOctoQuestion,
+  setReview,
   startTake,
   type BoardTarget,
   type CardInk,
@@ -28,12 +31,25 @@ import {
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { gridPoints, gridRanges, learnerAuthor, lineThrough, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
+import { NeatFormulaPanel, OctoQuestionPanel, ReviewPanel } from "./assist-panels";
 import { ReadabilityPanel } from "./readability-panel";
+import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech } from "./take-speech";
 import { TeachBoard, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
 type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
+
+/** The selection naming all of one take's ink, which "Make it neat" replaces. */
+function neatSelectionId(cardKey: string, take: number): string {
+  return `sel-${cardKey}-t${take}-all`;
+}
+
+function without(set: Set<string>, value: string): Set<string> {
+  const next = new Set(set);
+  next.delete(value);
+  return next;
+}
 type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | null;
 
 function numberField(value: string): number | undefined {
@@ -58,6 +74,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const speechRef = useRef<TakeSpeech | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [octo, setOcto] = useState<{ pending: Set<string>; failed: Set<string> }>({ pending: new Set(), failed: new Set() });
+  const [neat, setNeat] = useState<{ pending: boolean; result?: { latex: string; confidence: "high" | "medium" | "low" } }>({ pending: false });
+  const [review, setReviewState] = useState<{ pending: boolean; failed: boolean; compiledAt?: string }>({ pending: false, failed: false });
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
   const resolveAsset = useCallback((id: string) => inkSnapshotResolver(snapshots.current)(id), []);
 
@@ -137,13 +156,84 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height };
       snapshots.current = { ...snapshots.current, [snapshotId]: stored };
       if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
-      ink = [{ snapshotId, sha256: await inkChecksum(frozen.svg), selections: [], ...(frozen.annotates ? { annotates: frozen.annotates } : {}) }];
+      // "Make it neat" referred to all of this take's ink.
+      const neatSelection = neatSelectionId(key, recordingTake.take);
+      const madeNeat = (latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.events ?? [])
+        .some((event) => event.type === "make_neat.confirmed" && event.selection === neatSelection);
+      ink = [{ snapshotId, sha256: await inkChecksum(frozen.svg), selections: madeNeat ? [neatSelection] : [], ...(frozen.annotates ? { annotates: frozen.annotates } : {}) }];
     }
     // The learner corrects what recognition heard, or types it, below.
     update((current) => finishTake(current, key, now(), {
       durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], ink,
     }));
     setTranscribing(false);
+    setNeat({ pending: false });
+    if (card.kind === "teach") void askOctoAbout(key);
+  };
+
+  // Octo, as a curious student, asks about the card just recorded. It never blocks recording.
+  const askOctoAbout = async (key: string) => {
+    const current = latest.current;
+    if (!current) return;
+    setOcto((state) => ({ pending: new Set(state.pending).add(key), failed: without(state.failed, key) }));
+    try {
+      const question = await askOcto(current, compileQuietly(current), key, getLocale());
+      update((latestRecording) => setOctoQuestion(latestRecording, key, question, now()));
+      setOcto((state) => ({ ...state, pending: without(state.pending, key) }));
+    } catch {
+      setOcto((state) => ({ pending: without(state.pending, key), failed: new Set(state.failed).add(key) }));
+    }
+  };
+  const compileQuietly = (current: LearnerRecording) => {
+    try {
+      return compileRecording(current, { author: learnerAuthor(profileId), language: getLocale() });
+    } catch {
+      return null;
+    }
+  };
+
+  const makeNeat = async () => {
+    if (!recording) return;
+    setNeat({ pending: true });
+    try {
+      const ink = await boardRef.current?.peekInk();
+      if (!ink) {
+        setNotice(tr("先写一点，再请小章鱼整理。"));
+        setNeat({ pending: false });
+        return;
+      }
+      const result = await inkToMath(recording, ink, getLocale());
+      if (!result.readable) {
+        setNotice(tr("小章鱼没看清这段手写。可以写清楚一点再试。"));
+        setNeat({ pending: false });
+        return;
+      }
+      setNeat({ pending: false, result: { latex: result.latex, confidence: result.confidence } });
+    } catch {
+      setNotice(tr("这次没能整理，请再试一次。"));
+      setNeat({ pending: false });
+    }
+  };
+  const useNeat = (latex: string) => {
+    if (!card || !recordingTake) return;
+    record(withTime({
+      type: "make_neat.confirmed" as const, selection: neatSelectionId(card.key, recordingTake.take), latex,
+      alias: nextComponentAlias(latest.current ?? recording!, "formula"), replacesInk: true,
+    }));
+    setNeat({ pending: false });
+  };
+
+  const runReview = async () => {
+    const current = latest.current;
+    if (!current) return;
+    setReviewState({ pending: true, failed: false });
+    try {
+      const result = await reviewLesson(current, compileQuietly(current), getLocale());
+      update((latestRecording) => setReview(latestRecording, { at: now(), cards: result.cards, overall: result.overall }, now()));
+      setReviewState({ pending: false, failed: false, compiledAt: current.updatedAt });
+    } catch {
+      setReviewState({ pending: false, failed: true });
+    }
   };
   const cancel = () => {
     if (!recording || !card) return;
@@ -247,6 +337,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 {tool === "arrow" && <p className="academy-muted">{arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。")}</p>}
                 {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
                 {tool === "none" && <p className="academy-muted">{tr("拖动单位圆上的点或滑杆、转动长方体，都会录进这张卡片。")}</p>}
+                {!neat.result && (
+                  <button type="button" className="teach-secondary" disabled={neat.pending} onClick={() => void makeNeat()}>
+                    <Sparkles size={16} aria-hidden="true" /> {neat.pending ? tr("小章鱼在看你的手写…") : tr("整理一下")}
+                  </button>
+                )}
+                {neat.result && <NeatFormulaPanel latex={neat.result.latex} confidence={neat.result.confidence} onUse={useNeat} onCancel={() => setNeat({ pending: false })} />}
                 <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
                   {([["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box]] as const).map(([value, label, Icon]) => (
                     <button key={value} type="button" aria-pressed={form === value} onClick={() => setForm(form === value ? null : value)}><Icon size={16} aria-hidden="true" /> {label}</button>
@@ -282,6 +378,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               </>
             )}
 
+            {card && kept && !isRecording && card.kind === "teach" && (
+              <OctoQuestionPanel
+                key={`${card.key}-${card.octo?.question ?? ""}`}
+                card={card}
+                pending={octo.pending.has(card.key)}
+                failed={octo.failed.has(card.key)}
+                onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
+              />
+            )}
             {card && kept && !isRecording && (
               <TranscriptEditor
                 key={`${card.key}-${kept.take}`}
@@ -292,6 +397,17 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
             {!isRecording && compiled.lesson && recordingComplete(recording) && (
               <ReadabilityPanel compiled={compiled.lesson} cards={recording.cards} resolveAsset={resolveAsset} onOpenCard={setSelected} />
+            )}
+            {!isRecording && compiled.lesson && recordingComplete(recording) && (
+              <ReviewPanel
+                cards={recording.cards}
+                review={recording.review}
+                pending={review.pending}
+                failed={review.failed}
+                stale={Boolean(recording.review) && recording.cards.some((candidate) => (keptTake(candidate)?.startedAt ?? "") > recording.review!.at)}
+                onReview={() => void runReview()}
+                onOpenCard={setSelected}
+              />
             )}
             {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
           </aside>
