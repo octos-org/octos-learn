@@ -63,6 +63,38 @@ function phaseOf(take: Take, t: number): Phase {
   return "during_speech";
 }
 
+const PHASES = ["before_speech", "during_speech", "after_speech"] as const;
+const phaseRank = (action: Action) => PHASES.indexOf((action.when as Phase | undefined) ?? "during_speech");
+
+/** The aliases an action refers to: its anchor, target, ends and focus. */
+function referencedAliases(action: Action): string[] {
+  const place = action.place as { anchor?: unknown } | undefined;
+  const references = [place?.anchor, action.target, action.from, action.to, ...(Array.isArray(action.targets) ? action.targets : [])];
+  return references.flatMap((reference) => (typeof reference === "string" ? [reference.split("#")[0]!] : []));
+}
+
+/**
+ * Playback runs a card's actions phase by phase. Something the learner made
+ * before speaking (neat math replacing writing, a card placed below it) may
+ * refer to ink that has no phase of its own; whatever an action refers to is
+ * brought forward to that action's phase, so nothing refers ahead in time.
+ */
+function bringReferencesForward(actions: Action[]): void {
+  const creators = new Map(actions.flatMap((action) => (typeof action.as === "string" ? [[action.as, action] as const] : [])));
+  for (let changed = true, rounds = 0; changed && rounds < actions.length; rounds += 1) {
+    changed = false;
+    for (const action of actions) {
+      for (const alias of referencedAliases(action)) {
+        const creator = creators.get(alias);
+        if (creator && creator !== action && phaseRank(creator) > phaseRank(action)) {
+          creator.when = PHASES[phaseRank(action)];
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
 /** Card ink aliases: one card may hold several pieces of ink. */
 function inkAlias(card: RecordingCard, index: number): string {
   return index === 0 ? `ink-${card.key}` : `ink-${card.key}-${index + 1}`;
@@ -142,6 +174,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     return value.part ? `${value.node}#${value.part}` : value.node;
   };
   const owner = (reference: string) => reference.split("#")[0]!;
+  const pointsAtMissingInk = (value: BoardTarget) => "inkSelection" in value && !inkSelections.has(value.inkSelection);
 
   const insert = (component: ComponentInsert, cardTitle: string): Action => {
     const alias = requireAlias(component.alias, "Component");
@@ -295,15 +328,19 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           focus = [event.node];
           break;
         }
+        // Pointing at writing that is no longer on the board (erased, or not frozen yet) points at nothing.
         case "tool.laser":
+          if (pointsAtMissingInk(event.target)) break;
           actions.push({ do: "point", target: target(event.target), when } as Action);
           focus = [owner(target(event.target))];
           break;
         case "tool.highlighter":
+          if (pointsAtMissingInk(event.target)) break;
           actions.push({ do: "emphasize", target: target(event.target), emphasis: "focus", when } as Action);
           focus = [owner(target(event.target))];
           break;
         case "tool.arrow": {
+          if (pointsAtMissingInk(event.from) || pointsAtMissingInk(event.to)) break;
           const from = target(event.from); const to = target(event.to);
           const alias = `arrow-${card.key}-${actions.filter((action) => action.do === "connect").length + 1}`;
           actions.push({ do: "connect", as: alias, from, to, relation: "points_to", ...(event.label ? { label: event.label } : {}), when } as Action);
@@ -403,6 +440,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       actions.push({ do: "focus", targets: focus, intent: "learner_card_end", when: "after_speech" } as Action);
       lastFocus = focus;
     }
+    bringReferencesForward(actions);
+
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);

@@ -4,7 +4,7 @@ import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
 import { compileRecording, CompileError } from "./compile-recording";
-import { appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
+import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
 const author = { kind: "learner" as const, learner_ref: "learner:demo-jordan", presented_by: { avatar_ref: "avatar:fox", voice_ref: "voice:learner-warm-1" } };
@@ -84,6 +84,20 @@ describe("compileRecording", () => {
       mounted.destroy();
       host.remove();
     }
+  });
+
+  it("plays a card whose writing was made neat before the learner started talking", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "Rise over run" }]);
+    recording = startTake(recording, "card-1", now);
+    recording = addTakeInk(recording, "card-1", { snapshotId: "ink-snap:c1-n1@v1", sha256: SHA, selections: ["sel-n1"], neat: { selection: "sel-n1", latex: "m=2", alias: "formula-1" } }, now);
+    recording = appendEvent(recording, "card-1", { t: 1_000, type: "make_neat.confirmed", selection: "sel-n1", latex: "m=2", alias: "formula-1", replacesInk: true }, now);
+    recording = appendEvent(recording, "card-1", { t: 2_000, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now);
+    recording = finishTake(recording, "card-1", now, { durationMs: 12_000, asrText: "Rise over run is 6 over 3.", speechSpanMs: [5_000, 11_000] });
+    const { lesson, state } = check(recording);
+    expect(state.nodes["l:node:formula-1"]).toBeTruthy();
+    expect(state.nodes["l:node:ink-card-1"]!.hidden).toBe(true);
+    const actions = lesson.steps[0]!.beats[0]!.actions as Array<{ do: string; as?: string; when?: string }>;
+    expect(actions.find((action) => action.as === "ink-card-1")?.when).toBe("before_speech");
   });
 
   it("puts each action in the speech phase it happened in", () => {
