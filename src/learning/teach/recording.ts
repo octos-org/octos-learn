@@ -29,13 +29,16 @@ export interface NodeTarget {
 export type BoardTarget = InkTarget | NodeTarget;
 
 /** Components the insert panel offers, with the settings the learner chose. */
-export type ComponentInsert =
+/** Where an inserted component goes: by default a new row; or beside a card in the current row. */
+export interface ComponentPlacement { nextTo?: string }
+
+export type ComponentInsert = ComponentPlacement & (
   | { panel: "graph"; alias: string; expression: string; x: [number, number]; y: [number, number]; title?: string;
       /** Shows the point (v, f(v)) for a lesson variable v, so the graph follows a slider or dragged point. */
       linkedVariable?: string }
   | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
   | { panel: "unit_circle"; alias: string; variable: string; title?: string }
-  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string };
+  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string });
 
 export type ComponentPanel = ComponentInsert["panel"];
 

@@ -316,7 +316,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       switch (event.type) {
         case "component.insert": {
           const action = insert(event, card.title);
-          actions.push({ ...action, when } as Action);
+          // Put next to a card in the current row: it joins that row beside it.
+          const beside = event.nextTo ? { place: { relation: "right_of", anchor: event.nextTo }, role: "supporting_visual" } : {};
+          actions.push({ ...action, ...beside, when } as Action);
           if (event.panel === "coordinate_grid") createdGrids.push({ alias: event.alias, index: actions.length - 1 });
           lastNode = event.alias;
           focus = [event.alias];

@@ -3,14 +3,18 @@ import type { RegionLayoutConstraint } from "octos-lesson-language/web-runtime";
 
 import { teachingReadingScale } from "../oll/board-chrome-insets";
 
-/** Each node's creation Step, so the teaching layout forms step columns. */
+/**
+ * Each node's creation card (Beat), so the teaching layout treats every card
+ * as a step: a card that adds a graph or grid starts a row; a card that only
+ * writes or explains continues the current row.
+ */
 export function nodeSections(events: CanonicalEvent[]): Record<string, string> {
   const sections: Record<string, string> = {};
   for (const event of events) {
     for (const beat of event.step?.beats ?? []) {
       for (const actions of Object.values(beat.stage ?? {})) {
         for (const action of actions as Array<{ node?: { id?: string } }>) {
-          if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = event.step!.id;
+          if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = String(beat.id ?? event.step!.id);
         }
       }
     }
