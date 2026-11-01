@@ -1,6 +1,6 @@
 import { formatDate, getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, Presentation } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -103,6 +103,8 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
               )}
               <Link to="/board?new-board=1" className={latest ? "academy-secondary" : "academy-primary"}>
                 <Plus size={18} aria-hidden="true" /> {tr("新建空白白板")}</Link>
+              <Link to="/teach" className="academy-secondary">
+                <Presentation size={18} aria-hidden="true" /> {tr("我来讲一课")}</Link>
             </div>
             <Link to="/records" className="academy-more academy-records-link">{tr("全部学习记录") + " "}<ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
