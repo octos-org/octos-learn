@@ -9,7 +9,7 @@ import type { BoardTarget } from "./recording";
 const board = vi.hoisted(() => ({
   compiled: null as CompiledLesson | null,
   onTarget: undefined as ((target: BoardTarget) => void) | undefined,
-  onVariableGesture: undefined as ((gesture: { variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }) => void) | undefined,
+  onVariableGesture: undefined as ((gesture: { variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number; startedAgoMs: number }) => void) | undefined,
   onSceneGesture: undefined as ((gesture: { node: string; yaw: number; pitch: number }) => void) | undefined,
   frozen: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
   pen: [] as string[],
@@ -224,7 +224,7 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   expect(board.onVariableGesture).toBeTypeOf("function");
   time = 4_000;
-  act(() => board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 0, to: 1.2, durationMs: 2_000 }));
+  act(() => board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 0, to: 1.2, durationMs: 2_000, startedAgoMs: 2_000 }));
   time = 5_000;
   act(() => board.onSceneGesture!({ node: "box-1", yaw: 0.05, pitch: 1.45 }));
   fireEvent.click(screen.getByRole("button", { name: /Pen/ }));
@@ -290,4 +290,19 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
     allowed_operations: [{ kind: "variable_change", variable: "theta", controls: ["slider", "geometry_point"] }],
     hints: ["Where is the point lowest?"],
   });
+});
+
+it("records a back-and-forth drag as moves in order", () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  time = 6_000;
+  act(() => {
+    board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 0, to: 1.2, durationMs: 2_000, startedAgoMs: 3_000 });
+    board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 1.2, to: 0.6, durationMs: 400, startedAgoMs: 1_000 });
+    board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 0.6, to: 1.57, durationMs: 600, startedAgoMs: 600 });
+  });
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes[0]!;
+  expect(take.events.filter((event) => event.type === "variable.drag").map((event) => [event.t, event.type === "variable.drag" && event.to])).toEqual([[2_000, 1.2], [4_000, 0.6], [4_400, 1.57]]);
 });

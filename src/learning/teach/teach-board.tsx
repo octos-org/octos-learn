@@ -8,6 +8,7 @@ import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-
 import type { CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
+import { segmentDrag, unwrapAngle, type DragSample } from "./studio-helpers";
 import { teachingRegionLayout } from "./teaching-board-setup";
 
 
@@ -66,13 +67,15 @@ function annotationFor(viewport: HTMLElement, ink: { x: number; y: number; width
   return undefined;
 }
 
-/** A finished drag of a lesson variable (unit circle point or slider). */
+/** One move of a finished drag of a lesson variable (unit circle point or slider). */
 export interface VariableGesture {
   variable: string;
   via: "slider" | "geometry_point";
   from: number;
   to: number;
   durationMs: number;
+  /** How long before the report this move started. */
+  startedAgoMs: number;
 }
 
 /** A finished turn of a 3D scene by the learner. */
@@ -106,7 +109,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   // The compiled board, and what the learner's drags show on top of it until
   // the recording catches up.
   const boardStateRef = useRef<SemanticBoardState | null>(null);
-  const gestureRef = useRef<{ variable: string; from: number; startedAt: number } | null>(null);
+  const gestureRef = useRef<{ variable: string; samples: DragSample[] } | null>(null);
   const gesturesRef = useRef({ onVariableGesture, onSceneGesture });
   useEffect(() => {
     gesturesRef.current = { onVariableGesture, onSceneGesture };
@@ -145,17 +148,22 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     const variableInput = (alias: string, value: number, event: { phase: "start" | "update" | "commit"; control: string }) => {
       if (!gesturesRef.current.onVariableGesture) return;
       const current = boardStateRef.current?.variables?.[alias]?.value;
+      const at = performance.now();
       if (event.phase === "start" || !gestureRef.current) {
-        gestureRef.current = { variable: alias, from: current ?? value, startedAt: performance.now() };
+        gestureRef.current = { variable: alias, samples: [{ value: current ?? value, at }] };
       }
+      gestureRef.current.samples.push({ value: event.control === "geometry_point" ? unwrapAngle(gestureRef.current.samples.at(-1)!.value, value, boardStateRef.current?.variables?.[alias]) : value, at });
       showVariable(alias, value);
-      if (event.phase === "commit" && gestureRef.current) {
-        const { from, startedAt } = gestureRef.current;
+      if (event.phase === "commit") {
+        const { samples } = gestureRef.current;
         gestureRef.current = null;
-        if (from !== value) {
+        // A back-and-forth drag plays back as the moves the learner made.
+        for (const segment of segmentDrag(samples)) {
           gesturesRef.current.onVariableGesture?.({
             variable: alias, via: event.control === "geometry_point" ? "geometry_point" : "slider",
-            from, to: value, durationMs: Math.round(performance.now() - startedAt),
+            from: segment.from, to: segment.to,
+            durationMs: Math.max(1, Math.round(segment.endAt - segment.startAt)),
+            startedAgoMs: Math.round(at - segment.startAt),
           });
         }
       }

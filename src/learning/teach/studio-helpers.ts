@@ -118,3 +118,54 @@ export function lineThrough(a: { x: number; y: number }, b: { x: number; y: numb
   if (Math.abs(intercept) < 1e-12) return term;
   return `${term}${intercept < 0 ? "-" : "+"}${plain(Math.abs(intercept))}`;
 }
+
+export interface DragSample {
+  value: number;
+  at: number;
+}
+
+export interface DragSegment {
+  from: number;
+  to: number;
+  startAt: number;
+  endAt: number;
+}
+
+/**
+ * Splits one drag into the moves a viewer should see: a new segment starts
+ * when the direction reverses or after a pause of `pauseMs` without movement.
+ */
+export function segmentDrag(samples: DragSample[], pauseMs = 300): DragSegment[] {
+  const segments: DragSegment[] = [];
+  let start: DragSample | undefined = samples[0];
+  let last = start;
+  let direction = 0;
+  for (const sample of samples.slice(1)) {
+    if (!start || !last) break;
+    const delta = sample.value - last.value;
+    if (delta === 0) continue;
+    const step = Math.sign(delta);
+    const paused = sample.at - last.at >= pauseMs;
+    if ((direction !== 0 && step !== direction) || paused) {
+      if (last.value !== start.value) segments.push({ from: start.value, to: last.value, startAt: start.at, endAt: last.at });
+      start = last;
+      direction = step;
+    } else if (direction === 0) {
+      direction = step;
+    }
+    last = sample;
+  }
+  if (start && last && last.value !== start.value) segments.push({ from: start.value, to: last.value, startAt: start.at, endAt: last.at });
+  return segments;
+}
+
+/**
+ * A point dragged around a circle reports its angle within one turn, so
+ * crossing 0 jumps by a full turn. Read each sample as the nearest equivalent
+ * of the previous one, kept within the variable's range.
+ */
+export function unwrapAngle(previous: number, value: number, range?: { min: number; max: number }): number {
+  const turn = 2 * Math.PI;
+  const nearest = value - turn * Math.round((value - previous) / turn);
+  return range ? Math.min(range.max, Math.max(range.min, nearest)) : nearest;
+}

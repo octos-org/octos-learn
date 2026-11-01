@@ -176,3 +176,34 @@ describe("Your turn demonstrations", () => {
     expect(lesson.steps[0]!.beats[1]!.actions.some((action) => action.do === "animate")).toBe(false);
   });
 });
+
+describe("segmentDrag", () => {
+  it("splits a drag where it reverses, keeping each move's timing", async () => {
+    const { segmentDrag } = await import("./studio-helpers");
+    const samples = [0, 0.4, 0.8, 1.2, 1.0, 0.6, 0.9, 1.57].map((value, index) => ({ value, at: index * 100 }));
+    expect(segmentDrag(samples)).toEqual([
+      { from: 0, to: 1.2, startAt: 0, endAt: 300 },
+      { from: 1.2, to: 0.6, startAt: 300, endAt: 500 },
+      { from: 0.6, to: 1.57, startAt: 500, endAt: 700 },
+    ]);
+  });
+
+  it("splits after a pause and ignores samples that do not move", async () => {
+    const { segmentDrag } = await import("./studio-helpers");
+    expect(segmentDrag([{ value: 0, at: 0 }, { value: 1, at: 100 }, { value: 1, at: 300 }, { value: 2, at: 700 }, { value: 3, at: 800 }])).toEqual([
+      { from: 0, to: 1, startAt: 0, endAt: 100 },
+      { from: 1, to: 3, startAt: 100, endAt: 800 },
+    ]);
+    expect(segmentDrag([{ value: 2, at: 0 }, { value: 2, at: 500 }])).toEqual([]);
+  });
+});
+
+describe("unwrapAngle", () => {
+  it("reads crossing zero on a circle as a small move, within the variable's range", async () => {
+    const { unwrapAngle } = await import("./studio-helpers");
+    const range = { min: 0, max: 2 * Math.PI };
+    expect(unwrapAngle(0, 6.27, range)).toBe(0);
+    expect(unwrapAngle(6.2, 0.05, range)).toBeCloseTo(2 * Math.PI);
+    expect(unwrapAngle(1.0, 1.2, range)).toBeCloseTo(1.2);
+  });
+});

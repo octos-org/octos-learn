@@ -157,9 +157,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   // A drag happened over time; it is placed at its start, never before the take's last action.
-  const lastEventTime = () => recordingTake?.events.at(-1)?.t ?? 0;
+  const lastEventTime = () => {
+    const latestCard = latest.current?.cards.find((candidate) => candidate.key === selected);
+    return (latestCard ? currentTake(latestCard)?.events.at(-1)?.t : undefined) ?? 0;
+  };
   const onVariableGesture = (gesture: VariableGesture) => {
-    record({ type: "variable.drag", ...gesture, t: Math.max(lastEventTime(), elapsed() - gesture.durationMs) });
+    const { startedAgoMs, ...drag } = gesture;
+    record({ type: "variable.drag", ...drag, t: Math.max(lastEventTime(), elapsed() - startedAgoMs) });
   };
   const onSceneGesture = (gesture: SceneGesture) => {
     record({ type: "view.rotate", ...gesture, t: Math.max(lastEventTime(), elapsed()) });
