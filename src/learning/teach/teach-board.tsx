@@ -1,3 +1,4 @@
+import { getLocale, subscribeLocale } from "@/i18n";
 import { useEffect, useRef } from "react";
 import { normalizeAuthoringLesson, reduceCanonicalEvents, type CanonicalEvent } from "octos-lesson-language";
 import { mountInfiniteBoard, type ImageAssetResolver, type MountedInfiniteBoard } from "octos-lesson-language/web-runtime";
@@ -48,6 +49,9 @@ export function TeachBoard({
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport, (id) => resolveAsset(id));
+    const setLocale = () => (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
+    setLocale();
+    const unsubscribeLocale = subscribeLocale(setLocale);
     mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     mountedRef.current = mounted;
@@ -60,6 +64,7 @@ export function TeachBoard({
     viewport.addEventListener("click", handleClick);
     return () => {
       viewport.removeEventListener("click", handleClick);
+      unsubscribeLocale();
       mounted.destroy();
       mountedRef.current = null;
     };
