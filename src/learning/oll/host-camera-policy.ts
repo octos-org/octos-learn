@@ -50,7 +50,7 @@ export function planHostTeachingFocus(
 
 /** Whether any Beat composition target already exists on the board. */
 export function compositionTargetsRendered(
-  board: { nodes?: Record<string, unknown>; groups?: Record<string, unknown>; connections?: Record<string, unknown> } | undefined,
+  board: { nodes?: Record<string, unknown>; groups?: Record<string, unknown>; connections?: Record<string, unknown> } | null | undefined,
   targets: readonly string[],
 ): boolean {
   return targets.some((id) => Boolean(board?.nodes?.[id] ?? board?.groups?.[id] ?? board?.connections?.[id]));
