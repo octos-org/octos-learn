@@ -2412,5 +2412,8 @@
   "正在听你说…": "Hearing you…",
   "正在把你的话变成文字…": "Turning your words into text…",
   "在听，开始说吧": "Listening. Start talking.",
-  "麦克风音量": "Microphone level"
+  "麦克风音量": "Microphone level",
+  "在网格上画出 {{v0}}": "Draws {{v0}} on the grid",
+  "请选两个不同的点。": "Pick two different points.",
+  "画在网格上": "Draw it on the grid"
 }

@@ -48,7 +48,10 @@ export type RecordingEvent =
   | { t: number; type: "variable.drag"; variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }
   | { t: number; type: "view.rotate"; node: string; yaw: number; pitch: number }
   | { t: number; type: "make_neat.confirmed"; selection: string; latex: string; alias: string; replacesInk: boolean }
+  /** Older drafts: a line through two points as its own graph card. New lines are drawn on the grid (line_tool.draw). */
   | { t: number; type: "graph_it.confirmed"; points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }
+  /** A line through two points of a coordinate grid, drawn across that grid. */
+  | { t: number; type: "line_tool.draw"; node: string; from: string; to: string; alias: string }
   | { t: number; type: "make_point.confirmed"; selection: string; node: string; point: string; x: number; y: number; label: string }
   | { t: number; type: "ink.hide"; node: string }
   | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
@@ -199,6 +202,11 @@ export function planCards(
   return touch(recording, now, next);
 }
 
+/** The take whose board a card shows now: the one being recorded, else the kept one. */
+export function boardTake(card: RecordingCard): Take | undefined {
+  return currentTake(card) ?? keptTake(card);
+}
+
 export function currentTake(card: RecordingCard): Take | undefined {
   return card.takes.find((take) => take.status === "recording");
 }
@@ -210,7 +218,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 
 /** What a card's board is built from, as opposed to the learner's words and pointing. */
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
-  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "ink.hide",
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
 ]);
 

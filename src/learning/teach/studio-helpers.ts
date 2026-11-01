@@ -1,6 +1,11 @@
 import type { LessonAuthor } from "octos-lesson-language";
 
-import type { LearnerRecording, RecordingEvent } from "./recording";
+import { boardTake, type LearnerRecording, type RecordingEvent } from "./recording";
+
+/** The events of the take each card shows now, in card order. */
+function boardEvents(recording: LearnerRecording): RecordingEvent[] {
+  return recording.cards.flatMap((card) => (boardTake(card)?.events ?? []) as RecordingEvent[]);
+}
 
 /** Aliases already used by components and points anywhere in the recording. */
 function usedAliases(recording: LearnerRecording): Set<string> {
@@ -40,10 +45,9 @@ export function nextPointLabel(recording: LearnerRecording, node: string): { poi
 /** Lesson variables a component introduced (unit circles), in insertion order. */
 export function recordingVariables(recording: LearnerRecording): string[] {
   const variables: string[] = [];
-  for (const card of recording.cards) {
-    for (const take of card.takes) {
-      if (take.status === "superseded") continue;
-      for (const event of take.events as RecordingEvent[]) {
+  {
+    {
+      for (const event of boardEvents(recording)) {
         if (event.type === "component.insert" && event.panel === "unit_circle" && !variables.includes(event.variable)) variables.push(event.variable);
       }
     }
@@ -71,10 +75,9 @@ export function learnerAuthor(profileId: string): LessonAuthor {
 /** The axis ranges of every coordinate grid the learner has put on the board. */
 export function gridRanges(recording: LearnerRecording): Map<string, { x: [number, number]; y: [number, number] }> {
   const ranges = new Map<string, { x: [number, number]; y: [number, number] }>();
-  for (const card of recording.cards) {
-    for (const take of card.takes) {
-      if (take.status === "superseded") continue;
-      for (const event of take.events as RecordingEvent[]) {
+  {
+    {
+      for (const event of boardEvents(recording)) {
         if (event.type === "component.insert" && event.panel === "coordinate_grid") ranges.set(event.alias, { x: event.x, y: event.y });
       }
     }
@@ -92,10 +95,9 @@ export interface GridPoint {
 /** The points placed on each coordinate grid, in the order they were placed. */
 export function gridPoints(recording: LearnerRecording): Map<string, GridPoint[]> {
   const points = new Map<string, GridPoint[]>();
-  for (const card of recording.cards) {
-    for (const take of card.takes) {
-      if (take.status === "superseded") continue;
-      for (const event of take.events as RecordingEvent[]) {
+  {
+    {
+      for (const event of boardEvents(recording)) {
         if (event.type !== "point_tool.place" && event.type !== "make_point.confirmed") continue;
         points.set(event.node, [...(points.get(event.node) ?? []), { point: event.point, label: event.label, x: event.x, y: event.y }]);
       }
@@ -106,6 +108,31 @@ export function gridPoints(recording: LearnerRecording): Map<string, GridPoint[]
 
 function plain(value: number): string {
   return String(Math.round(value * 10_000) / 10_000);
+}
+
+/** How a line through two points reads: y = m·x + b, or x = c when it is vertical. */
+export function lineLabel(a: { x: number; y: number }, b: { x: number; y: number }): string {
+  const expression = lineThrough(a, b);
+  return expression === undefined ? `x = ${plain(a.x)}` : `y = ${expression.replaceAll("*", "")}`;
+}
+
+/**
+ * Where the line through two points enters and leaves a grid, so it is drawn
+ * across the whole grid; undefined when the two points are the same.
+ */
+export function lineAcross(
+  a: { x: number; y: number }, b: { x: number; y: number }, range: { x: [number, number]; y: [number, number] },
+): [{ x: number; y: number }, { x: number; y: number }] | undefined {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  if (dx === 0 && dy === 0) return undefined;
+  // Parameters t where a + t·(b − a) meets each side of the grid, kept when the meeting point is on that side.
+  const hits: number[] = [];
+  const within = (value: number, [low, high]: [number, number]) => value >= low - 1e-9 && value <= high + 1e-9;
+  if (dx !== 0) for (const x of range.x) { const t = (x - a.x) / dx; if (within(a.y + t * dy, range.y)) hits.push(t); }
+  if (dy !== 0) for (const y of range.y) { const t = (y - a.y) / dy; if (within(a.x + t * dx, range.x)) hits.push(t); }
+  if (hits.length < 2) return undefined;
+  const at = (t: number) => ({ x: Math.round((a.x + t * dx) * 1e6) / 1e6, y: Math.round((a.y + t * dy) * 1e6) / 1e6 });
+  return [at(Math.min(...hits)), at(Math.max(...hits))];
 }
 
 /** y = m·x + b through two points, or undefined for a vertical line (not a function). */

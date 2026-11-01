@@ -15,6 +15,7 @@ import {
   addInkMark,
   addTakeInk,
   appendEvent,
+  boardTake,
   cancelTake,
   correctTranscript,
   currentTake,
@@ -33,7 +34,7 @@ import {
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { gridPoints, gridRanges, learnerAuthor, lineThrough, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
+import { gridPoints, gridRanges, learnerAuthor, lineLabel, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { NeatFormulaPanel, OctoQuestionPanel, ReviewPanel } from "./assist-panels";
 import { ReadabilityPanel } from "./readability-panel";
@@ -403,8 +404,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   }
 
   const kept = card ? keptTake(card) : undefined;
-  const grids = recording.cards.flatMap((candidate) => candidate.takes.filter((take) => take.status !== "superseded").flatMap((take) =>
-    (take.events as RecordingEvent[]).flatMap((event) => (event.type === "component.insert" && event.panel === "coordinate_grid" ? [event.alias] : []))));
+  const grids = recording.cards.flatMap((candidate) => ((boardTake(candidate)?.events ?? []) as RecordingEvent[])
+    .flatMap((event) => (event.type === "component.insert" && event.panel === "coordinate_grid" ? [event.alias] : [])));
 
   return (
     <main className="course-launcher academy-page teach-page teach-studio">
@@ -506,7 +507,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                     grids={grids}
                     onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); setForm(null); }}
                     onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); setForm(null); }}
-                    onLine={(line) => { record(withTime({ type: "graph_it.confirmed" as const, ...line })); setForm(null); }}
+                    onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); setForm(null); }}
                   />
                 )}
                 {card?.kind === "your_turn" && (
@@ -583,7 +584,7 @@ function InsertPanel({
   grids: string[];
   onInsert: (component: ComponentInsert) => void;
   onPoint: (point: { node: string; point: string; x: number; y: number; label: string }) => void;
-  onLine: (line: { points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }) => void;
+  onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
   const [expression, setExpression] = useState("2*x");
   const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
@@ -696,7 +697,7 @@ function InsertPanel({
 
 function LineForm({ recording, onLine }: {
   recording: LearnerRecording;
-  onLine: (line: { points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }) => void;
+  onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
   const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 2);
   const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
@@ -705,8 +706,7 @@ function LineForm({ recording, onLine }: {
   const [second, setSecond] = useState(points[1]?.point ?? "");
   const a = points.find((candidate) => candidate.point === first);
   const b = points.find((candidate) => candidate.point === second);
-  const expression = a && b && a !== b ? lineThrough(a, b) : undefined;
-  const range = gridRanges(recording).get(grid);
+  const ready = Boolean(a && b && (a.x !== b.x || a.y !== b.y));
   const choose = (value: string, set: (value: string) => void) => (
     <select className="teach-input" value={value} onChange={(event) => set(event.target.value)}>
       {points.map((candidate) => <option key={candidate.point} value={candidate.point}>{candidate.label}</option>)}
@@ -715,7 +715,7 @@ function LineForm({ recording, onLine }: {
   return (
     <form className="teach-step" onSubmit={(event) => {
       event.preventDefault();
-      if (expression && range) onLine({ points: [`${grid}#${first}`, `${grid}#${second}`], expression, alias: nextComponentAlias(recording, "line"), x: range.x, y: range.y });
+      if (ready) onLine({ node: grid, from: first, to: second, alias: nextComponentAlias(recording, "line") });
     }}>
       {all.length > 1 && (
         <label className="teach-label">{tr("用哪个网格的点")}
@@ -728,9 +728,9 @@ function LineForm({ recording, onLine }: {
         {choose(first, setFirst)}
         {choose(second, setSecond)}
       </div>
-      {expression && <p className="academy-muted">y = {expression.replaceAll("*", "·")}</p>}
-      {a && b && a.x === b.x && <p role="alert">{tr("这两个点上下对齐，画出的是竖直线，不是函数图。")}</p>}
-      <button type="submit" disabled={!expression}>{tr("放到白板上")}</button>
+      {ready && <p className="academy-muted">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
+      {a && b && !ready && <p role="alert">{tr("请选两个不同的点。")}</p>}
+      <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
     </form>
   );
 }

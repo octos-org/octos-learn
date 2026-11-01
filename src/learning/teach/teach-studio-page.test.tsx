@@ -349,21 +349,37 @@ function placeGridWithPoints(points: Array<[string, string]>) {
   }
 }
 
-it("draws the line through two placed points and points an arrow at it", () => {
+it("draws the line through two placed points on their grid, and points an arrow at it", () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
   placeGridWithPoints([["1", "2"], ["2", "4"]]);
   fireEvent.click(screen.getByRole("button", { name: "Line through two points" }));
-  expect(screen.getByText("y = 2·x")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  expect(screen.getByText("Draws y = 2x on the grid")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Draw it on the grid" }));
   fireEvent.click(screen.getByRole("button", { name: /Arrow/ }));
   expect(screen.getByText("Tap where the arrow starts.")).toBeTruthy();
   act(() => board.onTarget!({ node: "grid-1", part: "point-a" }));
   expect(screen.getByText("Now tap where the arrow points.")).toBeTruthy();
-  act(() => board.onTarget!({ node: "line-1", part: "line" }));
+  act(() => board.onTarget!({ node: "grid-1", part: "line-1" }));
   const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
-  expect(actions.find((action) => action.do === "write" && action.as === "line-1")).toMatchObject({ kind: "plot", content: { curves: [{ expression: "2*x" }] } });
-  expect(actions.find((action) => action.do === "connect")).toMatchObject({ from: "grid-1#point-a", to: "line-1#line" });
+  // No new card: the grid itself shows the line, from edge to edge.
+  expect(actions.filter((action) => action.do === "write").map((action) => (action as { kind?: string }).kind)).toEqual(["geometry"]);
+  const grid = actions.find((action) => action.do === "write" && action.as === "grid-1") as unknown as { content: { segments: unknown[]; points: Array<{ as: string; x: number; y: number }> } };
+  expect(grid.content.segments).toEqual([{ as: "line-1", from: "line-1-start", to: "line-1-end", label: "y = 2x" }]);
+  expect(grid.content.points.filter((point) => point.as.startsWith("line-1")).map(({ x, y }) => [x, y])).toEqual([[-2.5, -5], [2.5, 5]]);
+  expect(actions.find((action) => action.do === "connect")).toMatchObject({ from: "grid-1#point-a", to: "grid-1#line-1" });
+});
+
+it("lists each grid point once while a card with points is re-recorded", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  placeGridWithPoints([["1", "2"], ["2", "4"]]);
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Line through two points" }));
+  expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["A (1, 2)", "B (2, 4)", "A (1, 2)", "B (2, 4)"]);
+  fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+  expect(screen.getByText("This point is called C")).toBeTruthy();
 });
 
 it("sets up a Your turn exercise from the learner's demonstration", async () => {

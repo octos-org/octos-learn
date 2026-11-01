@@ -45,6 +45,12 @@ function fragments(content: Record<string, unknown>): string {
   return ((content.fragments as Array<{ latex?: string }> | undefined) ?? []).map((fragment) => fragment.latex ?? "").join(" ");
 }
 
+/** Lines drawn across a grid, as the learner sees them labelled. */
+function gridLines(content: Record<string, unknown>): string {
+  const labels = ((content.segments as Array<{ label?: string }> | undefined) ?? []).flatMap((segment) => (segment.label ? [segment.label] : []));
+  return labels.length ? ` and the line${labels.length > 1 ? "s" : ""} ${labels.join(", ")}` : "";
+}
+
 /** What one compiled card shows on the board, in short phrases a reviewer can check. */
 export function describeActions(actions: Action[]): string[] {
   const lines: string[] = [];
@@ -62,14 +68,14 @@ export function describeActions(actions: Action[]): string[] {
       } else if (action.kind === "geometry") {
         const points = ((content.points as Array<{ label?: string; visible?: boolean }> | undefined) ?? []).filter((point) => point.visible !== false && point.label);
         const circle = Array.isArray(content.circles) && content.circles.length > 0;
-        lines.push(circle ? `unit circle ${action.as} with a draggable angle` : `coordinate grid ${action.as}${points.length ? ` with points ${points.map((point) => point.label).join(", ")}` : ""}`);
+        lines.push(circle ? `unit circle ${action.as} with a draggable angle` : `coordinate grid ${action.as}${points.length ? ` with points ${points.map((point) => point.label).join(", ")}` : ""}${gridLines(content)}`);
       } else if (action.kind === "scene3d") {
         const size = ((content.objects as Array<{ size?: { x: number; y: number; z: number } }> | undefined) ?? [])[0]?.size;
         lines.push(size ? `3D box ${action.as}: ${size.x} × ${size.y} × ${size.z}` : `3D scene ${action.as}`);
       }
     } else if (action.do === "revise") {
       const points = ((content.points as Array<{ label?: string; visible?: boolean }> | undefined) ?? []).filter((point) => point.visible !== false && point.label);
-      lines.push(`${action.target} now shows points ${points.map((point) => point.label).join(", ")}`);
+      lines.push(`${action.target} now shows points ${points.map((point) => point.label).join(", ")}${gridLines(content)}`);
     } else if (action.do === "animate") lines.push(`moves ${action.variable} to ${Math.round(Number(action.value) * 100) / 100}`);
     else if (action.do === "view") lines.push(`turns ${action.target} to the ${action.preset ?? "shown"} view`);
     else if (action.do === "point") lines.push(`points at ${action.target}`);

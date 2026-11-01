@@ -15,6 +15,7 @@ import {
   type RecordingEvent,
   type Take,
 } from "./recording";
+import { lineAcross, lineLabel } from "./studio-helpers";
 
 type Action = AuthoringAction & Record<string, unknown>;
 type Phase = "before_speech" | "during_speech" | "after_speech";
@@ -151,6 +152,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const variables = new Map<string, { as: string; initial: number; min: number; max: number; label: string; unit: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
+  // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
+  const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
   const scenes = new Set<string>();
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
@@ -251,11 +254,13 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
 
   /** A grid created with no points yet keeps a hidden origin so it is a valid diagram. */
   const gridContent = (alias: string): Record<string, unknown> => {
-    const points = geometryPoints.get(alias)!;
+    const lines = geometryLines.get(alias) ?? [];
+    const points = [...geometryPoints.get(alias)!, ...lines.flatMap((line) => line.ends)];
     return {
       ...geometryContent.get(alias),
-      // A copy: points placed in later cards must not appear in earlier ones.
+      // Copies: points and lines added in later cards must not appear in earlier ones.
       points: points.length ? points.map((point) => ({ ...point })) : [{ as: "origin", x: 0, y: 0, visible: false }],
+      ...(lines.length ? { segments: lines.map((line) => ({ ...line.segment })) } : {}),
     };
   };
 
@@ -363,6 +368,25 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           if (event.replacesInk) hidden.add(ink);
           lastNode = alias;
           focus = [alias];
+          break;
+        }
+        case "line_tool.draw": {
+          const points = geometryPoints.get(event.node);
+          const range = (geometryContent.get(event.node)?.axes ?? undefined) as { x: { min: number; max: number }; y: { min: number; max: number } } | undefined;
+          const a = points?.find((point) => point.as === event.from);
+          const b = points?.find((point) => point.as === event.to);
+          if (!points || !range || !a || !b) throw new CompileError(`A line needs two points of the grid '${event.node}'`);
+          const ends = lineAcross(a, b, { x: [range.x.min, range.x.max], y: [range.y.min, range.y.max] });
+          if (!ends) throw new CompileError(`The line through ${a.label ?? a.as} and ${b.label ?? b.as} does not cross the grid`);
+          const alias = requireAlias(event.alias, "Line");
+          geometryLines.set(event.node, [...(geometryLines.get(event.node) ?? []), {
+            segment: { as: alias, from: `${alias}-start`, to: `${alias}-end`, label: lineLabel(a, b) },
+            ends: ends.map((end, index) => ({ as: `${alias}-${index ? "end" : "start"}`, x: end.x, y: end.y, visible: false })),
+          }]);
+          if (!createdGrids.some((grid) => grid.alias === event.node)) {
+            actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner drew a line through two points", when } as Action);
+          }
+          focus = [event.node];
           break;
         }
         case "graph_it.confirmed": {

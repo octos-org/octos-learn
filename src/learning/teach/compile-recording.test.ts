@@ -100,6 +100,26 @@ describe("compileRecording", () => {
     expect(actions.find((action) => action.as === "ink-card-1")?.when).toBe("before_speech");
   });
 
+  it("draws a line through two points across a grid from an earlier card, vertical lines included", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Lines", type: "math_off_map" }, goals: [] }), now, [{ title: "Points" }, { title: "Line" }]);
+    recording = record(recording, "card-1", "Two points.", [
+      { t: 0, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 6], y: [-1, 9] },
+      { t: 100, type: "point_tool.place", node: "grid", point: "point-a", x: 1, y: 2, label: "A (1, 2)" },
+      { t: 200, type: "point_tool.place", node: "grid", point: "point-b", x: 1, y: 8, label: "B (1, 8)" },
+    ]);
+    recording = record(recording, "card-2", "Straight up.", [
+      { t: 600, type: "line_tool.draw", node: "grid", from: "point-a", to: "point-b", alias: "line-1" },
+      { t: 900, type: "tool.laser", target: { node: "grid", part: "line-1" } },
+    ]);
+    const { lesson, state } = check(recording);
+    const card2 = lesson.steps[0]!.beats[1]!.actions as Array<Record<string, unknown>>;
+    expect(card2[0]).toMatchObject({ do: "revise", target: "grid", content: { segments: [{ as: "line-1", label: "x = 1" }] } });
+    expect(card2[1]).toMatchObject({ do: "point", target: "grid#line-1" });
+    expect((state.nodes["l:node:grid"]!.content.points as Array<{ id: string; x: number; y: number }>).filter((point) => /line-1-(start|end)$/.test(point.id)).map(({ x, y }) => [x, y])).toEqual([[1, -1], [1, 9]]);
+    // The first card still shows the grid without the line.
+    expect((lesson.steps[0]!.beats[0]!.actions[0] as { content: Record<string, unknown> }).content.segments).toBeUndefined();
+  });
+
   it("puts each action in the speech phase it happened in", () => {
     const { lesson } = check(jordan());
     const card3 = lesson.steps[0]!.beats[2]!.actions as Array<{ do: string; when?: string }>;
