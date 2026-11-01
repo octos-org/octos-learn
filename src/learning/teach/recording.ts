@@ -73,6 +73,17 @@ export interface Take {
   ink?: CardInk[];
   /** The learner started the card over: the card's earlier board and ink are replaced when this take is kept. */
   fresh?: boolean;
+  /**
+   * Strokes of the take's live writing the learner pointed at, by their box on
+   * the board. When the writing is frozen each becomes a selection of that ink.
+   */
+  inkMarks?: InkMark[];
+}
+
+/** A stroke of live writing the learner pointed at: the selection it will become, and its box on the board. */
+export interface InkMark {
+  selection: string;
+  box: { x: number; y: number; width: number; height: number };
 }
 
 /**
@@ -242,6 +253,16 @@ export function addTakeInk(recording: LearnerRecording, key: string, ink: CardIn
   })));
 }
 
+/** Remembers a stroke of live writing the learner pointed at. */
+export function addInkMark(recording: LearnerRecording, key: string, mark: InkMark, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, inkMarks: [...(take.inkMarks ?? []), mark] } : candidate)),
+  })));
+}
+
 /** Ends the take, keeps it, and marks the card's earlier kept take as superseded. */
 export function finishTake(
   recording: LearnerRecording,
@@ -257,6 +278,7 @@ export function finishTake(
   const ink = [...(take.ink ?? []), ...(result.ink ?? [])];
   const kept: Take = { ...take };
   delete kept.ink;
+  delete kept.inkMarks;
   return touch(recording, now, replaceCard(recording, key, (existing) => ({
     ...existing,
     ...(take.fresh ? { ink } : ink.length ? { ink: [...(existing.ink ?? []), ...ink] } : {}),

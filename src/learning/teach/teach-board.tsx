@@ -15,10 +15,16 @@ import { teachingRegionLayout } from "./teaching-board-setup";
 /** Ink frozen when a take stops: its SVG and where on the board it was drawn. */
 export interface FrozenInk {
   svg: string;
+  /** Its box on the board. */
+  x: number;
+  y: number;
   width: number;
   height: number;
   annotates?: CardInk["annotates"];
 }
+
+/** A box on the board, in board coordinates. */
+export interface BoardBox { x: number; y: number; width: number; height: number }
 
 export interface TeachBoardHandle {
   /** Starts a fresh ink document for one take; the ink runtime loads on demand. */
@@ -41,13 +47,17 @@ export interface TeachBoardHandle {
   selectedInk(): Promise<{ svg: string; width: number; height: number } | null>;
   /** Freezes the selected strokes on their own and removes them from the live ink; null when nothing is selected. */
   cutSelectedInk(): Promise<FrozenInk | null>;
-  /** Shows the pointer on what the learner tapped, briefly, or until replaced when `hold` is set; null hides it. */
-  showPointer(target: BoardTarget | null, options?: { hold?: boolean }): void;
+  /** Shows the pointer on what the learner tapped, or at a board point; briefly, or until replaced when `hold` is set; null hides it. */
+  showPointer(target: BoardTarget | { at: { x: number; y: number } } | null, options?: { hold?: boolean }): void;
+  /** Whether a live stroke still covers a board point (it may have been erased or made neat). */
+  hasStrokeAt(point: { x: number; y: number }): boolean;
 }
 
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
 /** How long the pointer stays where the learner tapped with the laser. */
 const POINTER_MS = 1_600;
+/** How close, in board units, a tap must be to a stroke of writing to point at it. */
+const STROKE_TOLERANCE = 10;
 
 /** A board element ID as an OLL target: a card, or a part of one. */
 function canonicalTarget(id: string): CanonicalTarget {
@@ -121,10 +131,12 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   resolveAsset: ImageAssetResolver;
   /** Called with what the learner tapped when a pointing tool is active. */
   onTarget?: (target: BoardTarget) => void;
+  /** Called with the box of a stroke of the take's own writing the learner tapped with a pointing tool. */
+  onStroke?: (stroke: BoardBox) => void;
   /** While set, the learner can drag variables and turn 3D scenes; each finished gesture is reported. */
   onVariableGesture?: (gesture: VariableGesture) => void;
   onSceneGesture?: (gesture: SceneGesture) => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onVariableGesture, onSceneGesture }, ref) {
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -140,11 +152,13 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   }, [onVariableGesture, onSceneGesture]);
   // The last tap, as the board names it, so the pointer lands on exactly what was tapped.
   const tappedRef = useRef<{ target: BoardTarget; canonical: CanonicalTarget } | null>(null);
-  const pointerRef = useRef<{ canonical: CanonicalTarget; timer?: ReturnType<typeof setTimeout> } | null>(null);
+  const pointerRef = useRef<{ canonical?: CanonicalTarget; at?: { x: number; y: number }; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const onTargetRef = useRef(onTarget);
+  const onStrokeRef = useRef(onStroke);
   useEffect(() => {
     onTargetRef.current = onTarget;
-  }, [onTarget]);
+    onStrokeRef.current = onStroke;
+  }, [onTarget, onStroke]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -158,6 +172,14 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     mountedRef.current = mounted;
     const handleClick = (event: MouseEvent) => {
       if (!onTargetRef.current) return;
+      // The take's own writing is not on a card yet: a tap on a stroke points at that stroke.
+      const box = viewport.getBoundingClientRect();
+      const point = mounted.view.viewportToBoard({ x: event.clientX - box.left, y: event.clientY - box.top });
+      const stroke = inkRef.current?.strokeBoundsAt(point, STROKE_TOLERANCE);
+      if (stroke && onStrokeRef.current) {
+        onStrokeRef.current(stroke);
+        return;
+      }
       const element = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
       const target = boardTargetFromId(element?.dataset.id);
       if (!target || !element?.dataset.id) return;
@@ -248,7 +270,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         const snapshot = await ink.captureSelectionSnapshot();
         const { bounds } = snapshot;
         const annotates = annotationFor(mounted.elements.viewport, bounds);
-        return { svg: snapshot.svg, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
       } finally {
         await ink.destroy();
       }
@@ -289,7 +311,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const { bounds } = snapshot;
       const annotates = annotationFor(mounted.elements.viewport, bounds);
       await ink.deleteSelection();
-      return { svg: snapshot.svg, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
     },
     showPointer(target, options) {
       const view = mountedRef.current?.view;
@@ -297,16 +319,24 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       pointerRef.current = null;
       if (!view) return;
       if (!target) { view.showPointer(undefined); return; }
-      const tapped = tappedRef.current;
-      const canonical = tapped && sameTarget(tapped.target, target) ? tapped.canonical
-        : "node" in target ? canonicalTarget(boardIdOf(target)) : undefined;
-      if (!canonical) { view.showPointer(undefined); return; }
       const timer = options?.hold ? undefined : setTimeout(() => {
         pointerRef.current = null;
         mountedRef.current?.view.showPointer(undefined);
       }, POINTER_MS);
+      if ("at" in target) {
+        pointerRef.current = { at: target.at, timer };
+        view.showPointerAt(target.at);
+        return;
+      }
+      const tapped = tappedRef.current;
+      const canonical = tapped && sameTarget(tapped.target, target) ? tapped.canonical
+        : "node" in target ? canonicalTarget(boardIdOf(target)) : undefined;
+      if (!canonical) { clearTimeout(timer); view.showPointer(undefined); return; }
       pointerRef.current = { canonical, timer };
       view.showPointer(canonical);
+    },
+    hasStrokeAt(point) {
+      return Boolean(inkRef.current?.strokeBoundsAt(point, 0));
     },
   }), []);
 
@@ -335,7 +365,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     sliderRef.current?.render(state);
     if (state.focus.length) mounted.view.focusTargets(state.focus);
     // A redraw hides the pointer; the learner's tap still shows until it fades.
-    if (pointerRef.current) mounted.view.showPointer(pointerRef.current.canonical);
+    if (pointerRef.current?.canonical) mounted.view.showPointer(pointerRef.current.canonical);
+    else if (pointerRef.current?.at) mounted.view.showPointerAt(pointerRef.current.at);
   }, [compiled]);
 
   return (

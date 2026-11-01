@@ -13,6 +13,12 @@ export interface TakeSpeechResult {
   failed: number;
 }
 
+/** The words so far, and how many finished sentences are still being turned into text. */
+export interface SpeechUpdate {
+  text: string;
+  transcribing: number;
+}
+
 interface Utterance {
   start: number;
   end: number;
@@ -37,13 +43,13 @@ export class TakeSpeech {
 
   private readonly elapsed: () => number;
   private readonly transcribe: Transcribe | null;
-  private readonly onText?: (text: string) => void;
+  private readonly onUpdate?: (update: SpeechUpdate) => void;
 
   /** Without a transcriber the timing is still kept, so the learner can type the words. */
-  constructor(elapsed: () => number, transcribe: Transcribe | null, onText?: (text: string) => void) {
+  constructor(elapsed: () => number, transcribe: Transcribe | null, onUpdate?: (update: SpeechUpdate) => void) {
     this.elapsed = elapsed;
     this.transcribe = transcribe;
-    this.onText = onText;
+    this.onUpdate = onUpdate;
   }
 
   /** Voice activity began; the utterance that follows starts here. */
@@ -65,8 +71,14 @@ export class TakeSpeech {
       .then((result) => (result.status === "speech" ? result.transcript.trim() : ""), () => null)
       .then((text) => {
         utterance.text = text;
-        if (!this.controller.signal.aborted) this.onText?.(this.text());
+        this.report();
       });
+    this.report();
+  }
+
+  private report(): void {
+    if (this.controller.signal.aborted) return;
+    this.onUpdate?.({ text: this.text(), transcribing: this.utterances.filter((utterance) => utterance.text === undefined).length });
   }
 
   /** The words heard so far, in the order they were said. */

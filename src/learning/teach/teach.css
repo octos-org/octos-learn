@@ -53,3 +53,10 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-live-captions p { margin: 0; min-height: 3em; max-height: 9em; overflow-y: auto; font-size: 16px; line-height: 1.5; }
 .teach-neat-preview { overflow-x: auto; padding: 8px 12px; border-radius: 12px; background: #fffef9; }
 .teach-review-good { background: #e8f3ef !important; }
+.teach-drafts { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.teach-drafts a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 16px; border: 1px solid rgba(40, 65, 67, 0.18); border-radius: 14px; color: #1b2457; background: #fffef9; text-decoration: none; font-size: 16px; }
+.teach-drafts a:hover { border-color: #1b2457; }
+.teach-mic { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 8px; color: #3d5a63; font-size: 14px; }
+.teach-mic meter { width: 100%; height: 10px; }
+.teach-mic [role="status"] { grid-column: 1 / -1; }
+.teach-mic[data-speaking] { color: #0f766e; }

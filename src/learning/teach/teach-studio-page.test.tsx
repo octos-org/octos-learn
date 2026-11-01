@@ -18,14 +18,17 @@ const board = vi.hoisted(() => ({
   onSelect: undefined as ((selected: number) => void) | undefined,
   selected: null as null | { svg: string; width: number; height: number },
   cut: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
-  pointers: [] as Array<BoardTarget | null>,
+  pointers: [] as Array<BoardTarget | { at: { x: number; y: number } } | null>,
+  onStroke: undefined as ((box: { x: number; y: number; width: number; height: number }) => void) | undefined,
+  strokes: [] as Array<{ x: number; y: number }>,
   inkDocuments: [] as string[],
 }));
 vi.mock("./teach-board", async () => {
   const { forwardRef, useImperativeHandle } = await import("react");
   return {
-    TeachBoard: forwardRef((props: { compiled: CompiledLesson | null; onTarget?: (target: BoardTarget) => void; onVariableGesture?: typeof board.onVariableGesture; onSceneGesture?: typeof board.onSceneGesture }, ref) => {
+    TeachBoard: forwardRef((props: { compiled: CompiledLesson | null; onTarget?: (target: BoardTarget) => void; onStroke?: typeof board.onStroke; onVariableGesture?: typeof board.onVariableGesture; onSceneGesture?: typeof board.onSceneGesture }, ref) => {
       board.compiled = props.compiled;
+      board.onStroke = props.onStroke;
       board.onTarget = props.onTarget;
       board.onVariableGesture = props.onVariableGesture;
       board.onSceneGesture = props.onSceneGesture;
@@ -40,7 +43,8 @@ vi.mock("./teach-board", async () => {
         selectAllInk: () => { board.selected ??= { svg: "<svg/>", width: 80, height: 40 }; },
         selectedInk: async () => board.selected,
         cutSelectedInk: async () => board.cut,
-        showPointer: (target: BoardTarget | null) => { board.pointers.push(target); },
+        showPointer: (target: BoardTarget | { at: { x: number; y: number } } | null) => { board.pointers.push(target); },
+        hasStrokeAt: (point: { x: number; y: number }) => board.strokes.some((stroke) => stroke.x === point.x && stroke.y === point.y),
       }));
       return <div data-testid="teach-board" />;
     }),
@@ -50,21 +54,27 @@ const voice = vi.hoisted(() => ({
   listening: true,
   onUtterance: undefined as ((wav: Blob) => void) | undefined,
   onSpeechStart: undefined as (() => void) | undefined,
+  onAudioFrame: undefined as ((frame: Float32Array) => void) | undefined,
+  pending: null as null | Promise<void>,
   available: true,
   transcripts: [] as string[],
 }));
 vi.mock("@/home/voice/use-voice-capture", () => ({
   useVoiceCapture: () => ({
     capturing: false, error: null, getError: () => null,
-    start: async (onUtterance: (wav: Blob) => void, options?: { onSpeechStart?: () => void }) => {
-      voice.onUtterance = onUtterance; voice.onSpeechStart = options?.onSpeechStart; return voice.listening;
+    start: async (onUtterance: (wav: Blob) => void, options?: { onSpeechStart?: () => void; onAudioFrame?: (frame: Float32Array) => void }) => {
+      voice.onUtterance = onUtterance; voice.onSpeechStart = options?.onSpeechStart; voice.onAudioFrame = options?.onAudioFrame; return voice.listening;
     },
     stop: async () => undefined,
   }),
 }));
 vi.mock("@/api/cloud-asr", () => ({
   fetchCloudAsrStatus: async () => ({ available: voice.available, detail: "" }),
-  transcribeCloudSpeech: async () => ({ status: "speech", transcript: voice.transcripts.shift() ?? "" }),
+  transcribeCloudSpeech: async () => {
+    const transcript = voice.transcripts.shift() ?? "";
+    if (voice.pending) await voice.pending;
+    return { status: "speech", transcript };
+  },
 }));
 const assist = vi.hoisted(() => ({
   question: "Why did you pick that point?" as string | Error,
@@ -104,6 +114,8 @@ beforeEach(() => {
   board.selected = null;
   board.cut = null;
   board.pointers = [];
+  board.strokes = [];
+  voice.pending = null;
   assist.question = "Why did you pick that point?";
   assist.octoCalls = [];
   board.inkDocuments = [];
@@ -256,6 +268,46 @@ it("says when nothing was heard during a take", async () => {
   await act(async () => undefined);
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
   expect(await screen.findByText("I didn't hear you this time. Check that your microphone is on, or type what you said below.")).toBeTruthy();
+});
+
+it("shows the microphone level and whether words are heard and being turned into text", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  expect(screen.getByText("Turning on the microphone…")).toBeTruthy();
+  expect(await screen.findByText("Listening. Start talking.")).toBeTruthy();
+  act(() => voice.onAudioFrame!(new Float32Array(512).fill(0.05)));
+  expect(Number((screen.getByRole("meter", { name: "Microphone level" }) as HTMLMeterElement).value)).toBeCloseTo(0.6);
+  act(() => voice.onSpeechStart!());
+  expect(screen.getByText("Hearing you…")).toBeTruthy();
+  let release!: () => void;
+  voice.pending = new Promise((resolve) => { release = resolve; });
+  voice.transcripts = ["Slope is steepness."];
+  act(() => voice.onUtterance!(new Blob(["a"])));
+  expect(await screen.findByText("Turning your words into text…")).toBeTruthy();
+  await act(async () => release());
+  expect(await screen.findByText("Slope is steepness.")).toBeTruthy();
+  expect(screen.getByText("Listening. Start talking.")).toBeTruthy();
+});
+
+it("points at one stroke of the learner's writing, live and in the lesson", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
+  time = 2_000;
+  act(() => board.onStroke!({ x: 140, y: 80, width: 20, height: 40 }));
+  expect(board.pointers.at(-1)).toEqual({ at: { x: 150, y: 100 } });
+  // A second stroke that the learner then erases points at nothing.
+  act(() => board.onStroke!({ x: 300, y: 300, width: 10, height: 10 }));
+  board.strokes = [{ x: 150, y: 100 }];
+  board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", x: 100, y: 60, width: 100, height: 80 } as typeof board.frozen;
+  time = 5_000;
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
+  const ink = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink![0]!;
+  expect(ink.selections).toEqual(["sel-card-1-t1-m1"]);
+  expect(JSON.parse(localStorage.getItem("octos-learn:learner-ink:v1:learner-1")!)[ink.snapshotId].regions).toEqual({ "sel-card-1-t1-m1": { x: 0.4, y: 0.25, width: 0.2, height: 0.5 } });
+  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "point"))
+    .toEqual([expect.objectContaining({ target: expect.stringMatching(/^ink-card-1#/) })]));
 });
 
 it("tells the learner when the microphone cannot be used", async () => {

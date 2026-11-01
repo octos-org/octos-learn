@@ -2404,5 +2404,13 @@
   "整理圈住的手写": "Make the circled writing neat",
   "整理这张卡片上所有手写": "Make all my writing neat",
   "重录时白板上的内容会留着，你重新说、重新指就好。": "When you re-record, what's on the board stays. Just say it and point again.",
-  "这张卡片从头来": "Start this card over"
+  "这张卡片从头来": "Start this card over",
+  "接着讲你的课": "Continue a lesson",
+  "录好 {{v0}}/{{v1}} 张": "{{v0}} of {{v1}} cards recorded",
+  "正在打开麦克风…": "Turning on the microphone…",
+  "麦克风没有打开": "The microphone is off",
+  "正在听你说…": "Hearing you…",
+  "正在把你的话变成文字…": "Turning your words into text…",
+  "在听，开始说吧": "Listening. Start talking.",
+  "麦克风音量": "Microphone level"
 }

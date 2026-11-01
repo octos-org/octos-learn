@@ -3,7 +3,7 @@ import { useLocale } from "@/i18n/use-locale";
 import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Sparkles, Spline, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { normalizeAuthoringLesson } from "octos-lesson-language";
+import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 
 import { getSelectedProfileId } from "@/api/client";
 import { fetchCloudAsrStatus, transcribeCloudSpeech } from "@/api/cloud-asr";
@@ -12,6 +12,7 @@ import { useVoiceCapture } from "@/home/voice/use-voice-capture";
 import { AcademyHeader } from "../academy/academy-header";
 import { compileRecording, EmptyLessonError, type CompiledLesson } from "./compile-recording";
 import {
+  addInkMark,
   addTakeInk,
   appendEvent,
   cancelTake,
@@ -26,6 +27,7 @@ import {
   startTake,
   type BoardTarget,
   type CardInk,
+  type InkMark,
   type ComponentInsert,
   type LearnerRecording,
   type RecordingEvent,
@@ -38,7 +40,8 @@ import { ReadabilityPanel } from "./readability-panel";
 import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
-import { TeachBoard, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
+import { InputLevel, MicStatus, type MicState } from "./mic-status";
+import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
 type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
@@ -49,6 +52,10 @@ type NeatStage =
   | { stage: "selecting"; selected: number }
   | { stage: "reading" }
   | { stage: "confirming"; latex: string; confidence: "high" | "medium" | "low" };
+
+const centre = (box: BoardBox) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+const contains = (box: BoardBox, point: { x: number; y: number }) =>
+  point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height;
 
 function without(set: Set<string>, value: string): Set<string> {
   const next = new Set(set);
@@ -79,6 +86,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const speechRef = useRef<TakeSpeech | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [liveText, setLiveText] = useState("");
+  // How the microphone is doing during a take: on or not, hearing speech, and sentences being turned into text.
+  const [mic, setMic] = useState<MicState>({ listening: null, speaking: false, transcribing: 0 });
+  const [level] = useState(() => new InputLevel());
   const listening = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [octo, setOcto] = useState<{ pending: Set<string>; failed: Set<string> }>({ pending: new Set(), failed: new Set() });
@@ -109,8 +119,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!recording) return { lesson: null };
     try {
       const lesson = compileRecording(recording, { author: learnerAuthor(profileId), language: getLocale(), includeTakeInProgress: true });
-      // Checked the way the board will load it, so a problem is shown instead of breaking the page.
-      normalizeAuthoringLesson(lesson.lesson, { lessonId: STUDIO_LESSON_ID, boardId: "studio-board", baseRevision: 0, resourceContext: lesson.resourceContext });
+      // Loaded the way the board loads it, so a problem is shown instead of breaking the page.
+      reduceCanonicalEvents(normalizeAuthoringLesson(lesson.lesson, { lessonId: STUDIO_LESSON_ID, boardId: "studio-board", baseRevision: 0, resourceContext: lesson.resourceContext }));
       return { lesson };
     } catch (error) {
       if (error instanceof EmptyLessonError) return { lesson: null };
@@ -146,12 +156,24 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       return transcribeCloudSpeech(wav, signal);
     };
     setLiveText("");
-    const speech = new TakeSpeech(elapsed, transcribe, (text) => { if (speechRef.current === speech) setLiveText(text); });
+    setMic({ listening: null, speaking: false, transcribing: 0 });
+    level.reset();
+    const speech = new TakeSpeech(elapsed, transcribe, (update) => {
+      if (speechRef.current !== speech) return;
+      setLiveText(update.text);
+      setMic((state) => ({ ...state, transcribing: update.transcribing }));
+    });
     speechRef.current = speech;
     listening.current = false;
-    void capture.start((wav) => speech.utterance(wav), { onSpeechStart: () => speech.speechStarted() }).then(async (started) => {
+    const current = () => speechRef.current === speech;
+    void capture.start((wav) => { if (current()) setMic((state) => ({ ...state, speaking: false })); speech.utterance(wav); }, {
+      onSpeechStart: () => { speech.speechStarted(); if (current()) setMic((state) => ({ ...state, speaking: true })); },
+      onVADMisfire: () => { if (current()) setMic((state) => ({ ...state, speaking: false })); },
+      onAudioFrame: (frame) => { if (current()) level.push(frame); },
+    }).then(async (started) => {
       if (speechRef.current !== speech) return;
       listening.current = started;
+      setMic((state) => ({ ...state, listening: started }));
       if (!started) setNotice(tr("麦克风不能用。可以照常录，录完在下面输入你说的话。"));
       else if (!(await recognition) && speechRef.current === speech) setNotice(tr("还没有连接语音识别，说的话不会自动变成字幕。可以在设置的 API Keys 里连接，或者录完在下面输入。"));
     });
@@ -176,8 +198,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       else if (!spoken.speechSpanMs && listening.current) setNotice(tr("这次没有听到你说话。看看麦克风有没有打开，或者在下面输入你说的话。"));
     }
     setLiveText("");
-    const frozen = await boardRef.current?.freezeInk();
-    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [])] : [];
+    // Strokes the learner pointed at that are still there become selections of the frozen writing.
+    const board = boardRef.current;
+    const marks = unassignedMarks(key).filter((mark) => board?.hasStrokeAt(centre(mark.box)));
+    const frozen = await board?.freezeInk();
+    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [], undefined, marks)] : [];
     // The learner corrects what recognition heard, or types it, below.
     update((current) => finishTake(current, key, now(), {
       durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], ink,
@@ -186,13 +211,30 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (card.kind === "teach") void askOctoAbout(key);
   };
 
-  /** Stores frozen ink on this device and describes it for the card. */
-  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number): Promise<CardInk> => {
+  /**
+   * Stores frozen ink on this device and describes it for the card. Marks on
+   * its strokes become selections, with their place in the writing as regions.
+   */
+  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number, marks: InkMark[] = []): Promise<CardInk> => {
     const snapshotId = `ink-snap:${recording!.id}-${key}-t${take}${part ? `-n${part}` : ""}@v1`;
-    const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height };
+    const inside = marks.filter((mark) => contains(frozen, centre(mark.box)));
+    const regions = Object.fromEntries(inside.map((mark) => [mark.selection, {
+      x: (mark.box.x - frozen.x) / frozen.width, y: (mark.box.y - frozen.y) / frozen.height,
+      width: mark.box.width / frozen.width, height: mark.box.height / frozen.height,
+    }]));
+    const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height, ...(inside.length ? { regions } : {}) };
     snapshots.current = { ...snapshots.current, [snapshotId]: stored };
     if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
-    return { snapshotId, sha256: await inkChecksum(frozen.svg), selections, ...(frozen.annotates ? { annotates: frozen.annotates } : {}) };
+    return {
+      snapshotId, sha256: await inkChecksum(frozen.svg), selections: [...selections, ...inside.map((mark) => mark.selection)],
+      ...(frozen.annotates ? { annotates: frozen.annotates } : {}),
+    };
+  };
+  /** The take's marks not yet part of a frozen piece of writing. */
+  const unassignedMarks = (key: string): InkMark[] => {
+    const take = latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1);
+    const assigned = new Set((take?.ink ?? []).flatMap((ink) => ink.selections));
+    return (take?.inkMarks ?? []).filter((mark) => !assigned.has(mark.selection));
   };
 
   // Octo, as a curious student, asks about the card just recorded. It never blocks recording.
@@ -268,7 +310,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const part = (latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.ink?.length ?? 0) + 1;
     const selection = `sel-${key}-t${take}-n${part}`;
     const alias = nextComponentAlias(latest.current ?? recording!, "formula");
-    const ink = await keepInk(key, take, frozen, [selection], part);
+    // Marks on the strokes just made neat go with them.
+    const marks = unassignedMarks(key).filter((mark) => contains(frozen, centre(mark.box)) && !board.hasStrokeAt(centre(mark.box)));
+    const ink = await keepInk(key, take, frozen, [selection], part, marks);
     update((current) => addTakeInk(current, key, { ...ink, neat: { selection, latex, alias } }, now()));
     record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }));
   };
@@ -293,6 +337,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     speechRef.current?.cancel();
     speechRef.current = null;
     setLiveText("");
+    setMic({ listening: null, speaking: false, transcribing: 0 });
     endNeat();
     void capture.stop();
     void boardRef.current?.discardInk();
@@ -313,22 +358,36 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
-  const onTarget = (target: BoardTarget) => {
+  /** A pointing tool used on a card, part, or stroke of writing; `at` is where to show the pointer when not on a card. */
+  const onTarget = (target: BoardTarget, at?: { x: number; y: number }) => {
+    const pointer = at ? { at } : target;
     if (tool === "laser") {
       record(withTime({ type: "tool.laser" as const, target }));
-      boardRef.current?.showPointer(target);
+      boardRef.current?.showPointer(pointer);
     }
-    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }));
+    if (tool === "highlighter") {
+      record(withTime({ type: "tool.highlighter" as const, target }));
+      boardRef.current?.showPointer(pointer);
+    }
     if (tool === "arrow") {
       if (!arrowFrom) {
         setArrowFrom(target);
-        boardRef.current?.showPointer(target, { hold: true });
+        boardRef.current?.showPointer(pointer, { hold: true });
         return;
       }
       record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }));
       setArrowFrom(null);
       boardRef.current?.showPointer(null);
     }
+  };
+  // A stroke of the take's own writing becomes a selection when the writing is frozen.
+  const onStroke = (box: BoardBox) => {
+    if (!card || !recordingTake) return;
+    const key = card.key;
+    const marks = latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.inkMarks ?? [];
+    const selection = `sel-${key}-t${recordingTake.take}-m${marks.length + 1}`;
+    update((current) => addInkMark(current, key, { selection, box }, now()));
+    onTarget({ inkSelection: selection }, centre(box));
   };
 
   useEffect(() => {
@@ -371,7 +430,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             ref={boardRef}
             compiled={compiled.lesson}
             resolveAsset={resolveAsset}
-            onTarget={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? onTarget : undefined}
+            onTarget={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? (target) => onTarget(target) : undefined}
+            onStroke={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? onStroke : undefined}
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
           />
@@ -394,6 +454,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             {notice && <p role="status" className="teach-notice">{notice}</p>}
             {isRecording && (
               <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
+                <MicStatus state={mic} level={level} />
                 <h2 className="teach-label">{tr("你正在说的话")}</h2>
                 <p aria-live="polite">{liveText || <span className="academy-muted">{tr("开始说吧，你说的话会出现在这里。")}</span>}</p>
               </section>

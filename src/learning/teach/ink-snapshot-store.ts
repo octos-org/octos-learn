@@ -10,6 +10,8 @@ export interface StoredInkSnapshot {
   svg: string;
   width: number;
   height: number;
+  /** Strokes the learner pointed at, by selection, in fractions of the snapshot. */
+  regions?: Record<string, { x: number; y: number; width: number; height: number }>;
 }
 
 export function inkSnapshotsKey(profileId: string): string {
@@ -33,7 +35,7 @@ export function saveInkSnapshot(storage: Storage, profileId: string, snapshotId:
   return writeRecoverableJson(storage, inkSnapshotsKey(profileId), { ...loadInkSnapshots(storage, profileId), [snapshotId]: snapshot });
 }
 
-/** Resolves stored snapshots for the board; selections are not yet addressable. */
+/** Resolves stored snapshots for the board, with the strokes the learner pointed at as addressable regions. */
 export function inkSnapshotResolver(snapshots: Record<string, StoredInkSnapshot>): ImageAssetResolver {
   return (snapshotId) => {
     const snapshot = snapshots[snapshotId];
@@ -43,7 +45,7 @@ export function inkSnapshotResolver(snapshots: Record<string, StoredInkSnapshot>
       svg: snapshot.svg,
       intrinsic_width: snapshot.width,
       intrinsic_height: snapshot.height,
-      regions: {},
+      regions: snapshot.regions ?? {},
     };
   };
 }

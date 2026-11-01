@@ -27,14 +27,15 @@ describe("TakeSpeech", () => {
       if (said(audio) === "one") await first;
       return { status: "speech", transcript: said(audio) === "one" ? "Point A" : "is at 1, 2." };
     };
-    const heard: string[] = [];
-    const take = new TakeSpeech(clockAt([0, 1, 2, 3]), transcribe, (text) => heard.push(text));
+    const heard: Array<{ text: string; transcribing: number }> = [];
+    const take = new TakeSpeech(clockAt([0, 1, 2, 3]), transcribe, (update) => heard.push(update));
     take.speechStarted(); take.utterance(wav("one"));
     take.speechStarted(); take.utterance(wav("two"));
-    await vi.waitFor(() => expect(heard).toEqual(["is at 1, 2."]));
+    expect(heard.slice(0, 2)).toEqual([{ text: "", transcribing: 1 }, { text: "", transcribing: 2 }]);
+    await vi.waitFor(() => expect(heard.at(-1)).toEqual({ text: "is at 1, 2.", transcribing: 1 }));
     releaseFirst();
     await take.finish();
-    expect(heard.at(-1)).toBe("Point A is at 1, 2.");
+    expect(heard.at(-1)).toEqual({ text: "Point A is at 1, 2.", transcribing: 0 });
   });
 
   it("joins Chinese utterances without a space", async () => {
@@ -66,10 +67,10 @@ describe("TakeSpeech", () => {
   });
 
   it("a discarded take stops reporting words", async () => {
+    const take = new TakeSpeech(clockAt([0, 1]), speech({ one: "Hello." }), (update) => heard.push(update.text));
     const heard: string[] = [];
-    const take = new TakeSpeech(clockAt([0, 1]), speech({ one: "Hello." }), (text) => heard.push(text));
-    take.speechStarted(); take.utterance(wav("one"));
     take.cancel();
+    take.speechStarted(); take.utterance(wav("one"));
     await take.finish();
     expect(heard).toEqual([]);
   });
