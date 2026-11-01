@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { Box, Circle, Crosshair, Grid3x3, Highlighter, LineChart, MousePointer2, Square } from "lucide-react";
+import { Box, Circle, Crosshair, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -17,19 +17,19 @@ import {
   keptTake,
   startTake,
   type BoardTarget,
+  type CardInk,
   type ComponentInsert,
   type LearnerRecording,
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { gridRanges, learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
-import { TeachBoard } from "./teach-board";
+import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
+import { TeachBoard, type TeachBoardHandle } from "./teach-board";
 import "./teach.css";
 
-type Tool = "none" | "laser" | "highlighter";
+type Tool = "none" | "pen" | "laser" | "highlighter";
 type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | null;
-
-const noAssets = () => undefined;
 
 function numberField(value: string): number | undefined {
   const number = Number(value);
@@ -48,6 +48,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [form, setForm] = useState<InsertForm>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const takeStartedAt = useRef<number | null>(null);
+  const boardRef = useRef<TeachBoardHandle>(null);
+  const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
+  const resolveAsset = useCallback((id: string) => inkSnapshotResolver(snapshots.current)(id), []);
 
   // Every change builds on the latest recording, not the copy this render saw,
   // so a tap and an immediate stop can never overwrite each other.
@@ -82,27 +85,43 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
   const withTime = <T extends object>(event: T) => ({ t: elapsed(), ...event }) as T & { t: number };
 
+  const chooseTool = (next: Tool) => {
+    setTool(next);
+    boardRef.current?.setPen(next === "pen");
+  };
   const start = () => {
     if (!recording || !card) return;
     takeStartedAt.current = clock();
     const key = card.key;
     update((current) => startTake(current, key, now()));
+    void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
   };
-  const stop = () => {
+  const stop = async () => {
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
     takeStartedAt.current = null;
+    const key = card.key;
+    chooseTool("none");
+    setForm(null);
+    const frozen = await boardRef.current?.freezeInk();
+    let ink: CardInk[] = [];
+    if (frozen) {
+      const snapshotId = `ink-snap:${recording.id}-${key}-t${recordingTake.take}@v1`;
+      const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height };
+      snapshots.current = { ...snapshots.current, [snapshotId]: stored };
+      if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
+      ink = [{ snapshotId, sha256: await inkChecksum(frozen.svg), selections: [], ...(frozen.annotates ? { annotates: frozen.annotates } : {}) }];
+    }
     // Speech recognition fills the transcript once connected; until then the
     // learner types or corrects what they said below.
-    const key = card.key;
-    update((current) => finishTake(current, key, now(), { durationMs: duration, asrText: "", speechSpanMs: [0, duration] }));
-    setTool("none");
-    setForm(null);
+    update((current) => finishTake(current, key, now(), { durationMs: duration, asrText: "", speechSpanMs: [0, duration], ink }));
   };
   const cancel = () => {
     if (!recording || !card) return;
     takeStartedAt.current = null;
     const key = card.key;
+    chooseTool("none");
+    void boardRef.current?.discardInk();
     update((current) => cancelTake(current, key, now()));
   };
 
@@ -147,26 +166,27 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         </ol>
 
         <div className="teach-studio-body">
-          <TeachBoard compiled={compiled.lesson} resolveAsset={noAssets} onTarget={isRecording && tool !== "none" ? onTarget : undefined} />
+          <TeachBoard ref={boardRef} compiled={compiled.lesson} resolveAsset={resolveAsset} onTarget={isRecording && (tool === "laser" || tool === "highlighter") ? onTarget : undefined} />
           <aside className="teach-controls" aria-label={tr("录课工具")}>
             {card && !isRecording && (
               <button type="button" className="teach-record" onClick={start}>{kept ? tr("重录这张卡片") : tr("开始录这张卡片")}</button>
             )}
             {isRecording && (
               <div className="teach-actions">
-                <button type="button" className="teach-record recording" onClick={stop}>{tr("停止")}</button>
+                <button type="button" className="teach-record recording" onClick={() => void stop()}>{tr("停止")}</button>
                 <button type="button" className="teach-secondary" onClick={cancel}>{tr("放弃这次")}</button>
               </div>
             )}
 
             {isRecording && (
               <>
-                <div className="teach-toolbar" role="group" aria-label={tr("指点工具")}>
-                  {([["none", tr("不指点"), MousePointer2], ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter]] as const).map(([value, label, Icon]) => (
-                    <button key={value} type="button" aria-pressed={tool === value} onClick={() => setTool(value)}><Icon size={16} aria-hidden="true" /> {label}</button>
+                <div className="teach-toolbar" role="group" aria-label={tr("书写和指点")}>
+                  {([["none", tr("移动白板"), MousePointer2], ["pen", tr("笔"), PenLine], ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter]] as const).map(([value, label, Icon]) => (
+                    <button key={value} type="button" aria-pressed={tool === value} onClick={() => chooseTool(value)}><Icon size={16} aria-hidden="true" /> {label}</button>
                   ))}
                 </div>
-                {tool !== "none" && <p className="academy-muted">{tr("在白板上点一张卡片或它的一部分。")}</p>}
+                {(tool === "laser" || tool === "highlighter") && <p className="academy-muted">{tr("在白板上点一张卡片或它的一部分。")}</p>}
+                {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
                 <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
                   {([["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box]] as const).map(([value, label, Icon]) => (
                     <button key={value} type="button" aria-pressed={form === value} onClick={() => setForm(form === value ? null : value)}><Icon size={16} aria-hidden="true" /> {label}</button>

@@ -212,7 +212,8 @@ export function finishTake(
   if (!(result.durationMs > 0)) throw new RecordingError("A take must have a duration");
   return touch(recording, now, replaceCard(recording, key, (existing) => ({
     ...existing,
-    ...(result.ink ? { ink: result.ink } : {}),
+    // Ink belongs to the card: a re-take adds its new strokes to what is already there.
+    ...(result.ink?.length ? { ink: [...(existing.ink ?? []), ...result.ink] } : {}),
     takes: existing.takes.map((candidate): Take => {
       if (candidate === take) {
         return {

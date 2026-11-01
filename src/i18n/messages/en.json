@@ -2325,5 +2325,9 @@
   "放在哪个网格": "Which grid",
   "点的坐标": "Point coordinates",
   "这个点叫 {{v0}}": "This point is called {{v0}}",
-  "这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。": "This point is outside the grid: x goes from {{v0}} to {{v1}}, y from {{v2}} to {{v3}}."
+  "这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。": "This point is outside the grid: x goes from {{v0}} to {{v1}}, y from {{v2}} to {{v3}}.",
+  "移动白板": "Move the board",
+  "笔": "Pen",
+  "直接在白板上写。写在图上的会贴在那张图上。": "Write right on the board. Anything you write on a graph or grid sticks to it.",
+  "书写和指点": "Writing and pointing"
 }
