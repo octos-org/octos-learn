@@ -196,3 +196,12 @@ export function unwrapAngle(previous: number, value: number, range?: { min: numb
   const nearest = value - turn * Math.round((value - previous) / turn);
   return range ? Math.min(range.max, Math.max(range.min, nearest)) : nearest;
 }
+
+/** What the Add panel can put on the board. */
+export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line";
+const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d"]);
+
+/** Whether a kind of component is a figure, which starts a row unless it is put next to a card. */
+export function isFigure(form: InsertForm | null): boolean {
+  return form !== null && FIGURES.has(form);
+}

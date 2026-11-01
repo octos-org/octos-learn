@@ -1,8 +1,8 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Sparkles, Spline, Square } from "lucide-react";
+import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 
 import { getSelectedProfileId } from "@/api/client";
@@ -10,6 +10,7 @@ import { fetchCloudAsrStatus, transcribeCloudSpeech } from "@/api/cloud-asr";
 import { useVoiceCapture } from "@/home/voice/use-voice-capture";
 
 import { AcademyHeader } from "../academy/academy-header";
+
 import { compileRecording, EmptyLessonError, type CompiledLesson } from "./compile-recording";
 import {
   addInkMark,
@@ -29,15 +30,18 @@ import {
   type BoardTarget,
   type CardInk,
   type InkMark,
-  type ComponentInsert,
   type LearnerRecording,
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { gridPoints, gridRanges, learnerAuthor, lineLabel, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
+import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
-import { NeatFormulaPanel, OctoQuestionPanel, ReviewPanel } from "./assist-panels";
-import { ReadabilityPanel } from "./readability-panel";
+import { NeatFormulaPanel, OctoQuestionPanel } from "./assist-panels";
+import { currentRowCards } from "./board-rows";
+import { CheckDialog, type CheckPart, type CheckRun } from "./check-dialog";
+import { cardChecks, lessonReady } from "./lesson-check";
+import { checkReadability } from "./readability-check";
+import { AddPanel } from "./studio-add";
 import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
@@ -46,6 +50,9 @@ import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type Teac
 import "./teach.css";
 
 type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
+
+/** Room the tool dock takes at the bottom of the board, kept clear of cards. */
+const DOCK_SPACE = 96;
 
 /** "Make it neat": the learner circles writing, Octo reads it, the learner confirms it. */
 type NeatStage =
@@ -63,12 +70,7 @@ function without(set: Set<string>, value: string): Set<string> {
   next.delete(value);
   return next;
 }
-type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | null;
 
-function numberField(value: string): number | undefined {
-  const number = Number(value);
-  return value.trim() !== "" && Number.isFinite(number) ? number : undefined;
-}
 
 /** Records a planned lesson card by card on a live board. */
 export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => number }) {
@@ -79,9 +81,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     loadRecordingDrafts(localStorage, profileId).find((draft) => draft.id === id));
   const [selected, setSelected] = useState(() => recording?.cards[0]?.key);
   const [tool, setTool] = useState<Tool>("none");
-  const [form, setForm] = useState<InsertForm>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const takeStartedAt = useRef<number | null>(null);
+  // The same start, for showing the take's clock.
+  const [takeStart, setTakeStart] = useState<number | null>(null);
   const boardRef = useRef<TeachBoardHandle>(null);
   const capture = useVoiceCapture();
   const speechRef = useRef<TakeSpeech | null>(null);
@@ -95,7 +98,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [octo, setOcto] = useState<{ pending: Set<string>; failed: Set<string> }>({ pending: new Set(), failed: new Set() });
   const [neat, setNeat] = useState<NeatStage>({ stage: "idle" });
   const stopSelecting = useRef<(() => void) | null>(null);
-  const [review, setReviewState] = useState<{ pending: boolean; failed: boolean; compiledAt?: string }>({ pending: false, failed: false });
+  const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState<InsertForm | null>(null);
+  const [nextTo, setNextTo] = useState<string | null>(null);
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
   const resolveAsset = useCallback((id: string) => inkSnapshotResolver(snapshots.current)(id), []);
 
@@ -136,8 +142,18 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
   const withTime = <T extends object>(event: T) => ({ t: elapsed(), ...event }) as T & { t: number };
 
+  const openAdd = () => {
+    chooseTool("none");
+    setAddOpen(true);
+  };
+  const closeAdd = () => {
+    setAddOpen(false);
+    setForm(null);
+    setNextTo(null);
+  };
   const chooseTool = (next: Tool) => {
     endNeat();
+    setAddOpen(false);
     setTool(next);
     setArrowFrom(null);
     boardRef.current?.showPointer(null);
@@ -146,6 +162,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const start = (fresh = false) => {
     if (!recording || !card) return;
     takeStartedAt.current = clock();
+    setTakeStart(takeStartedAt.current);
     const key = card.key;
     setNotice(null);
     update((current) => startTake(current, key, now(), { fresh }));
@@ -154,7 +171,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const recognition = fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
     const transcribe: Transcribe = async (wav, signal) => {
       if (!(await recognition)) throw new Error("Speech recognition is not connected");
-      return transcribeCloudSpeech(wav, signal);
+      return transcribeCloudSpeech(wav, signal, { language: getLocale() });
     };
     setLiveText("");
     setMic({ listening: null, speaking: false, transcribing: 0 });
@@ -183,13 +200,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
     takeStartedAt.current = null;
+    setTakeStart(null);
     const key = card.key;
     chooseTool("none");
-    setForm(null);
+    closeAdd();
     setTranscribing(true);
     const speech = speechRef.current;
+    // Words still being spoken when Stop is pressed are kept.
+    await capture.stop({ submitSpeech: true });
     speechRef.current = null;
-    await capture.stop();
     let spoken: Awaited<ReturnType<TakeSpeech["finish"]>> = { text: "", failed: 0 };
     if (speech) {
       spoken = await speech.finish();
@@ -318,21 +337,28 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }));
   };
 
-  const runReview = async () => {
+  // Check my lesson: the screen check and Octo's review run together; what
+  // each found is kept with the draft, so the cards show it until re-checked.
+  const runCheck = async () => {
     const current = latest.current;
-    if (!current) return;
-    setReviewState({ pending: true, failed: false });
-    try {
-      const result = await reviewLesson(current, compileQuietly(current), getLocale());
-      update((latestRecording) => setReview(latestRecording, { at: now(), cards: result.cards, overall: result.overall }, now()));
-      setReviewState({ pending: false, failed: false, compiledAt: current.updatedAt });
-    } catch {
-      setReviewState({ pending: false, failed: true });
-    }
+    const lesson = current ? compileQuietly(current) : null;
+    if (!current || !lesson) return;
+    const at = now();
+    setCheckRun({ screen: "running", octo: "running" });
+    const finished = (part: keyof CheckRun, state: CheckPart) => setCheckRun((run) => (run ? { ...run, [part]: state } : run));
+    const [screen, reviewed] = await Promise.all([
+      checkReadability(lesson, resolveAsset).then((found) => { finished("screen", "done"); return found; }, () => { finished("screen", "failed"); return null; }),
+      reviewLesson(current, lesson, getLocale()).then((found) => { finished("octo", "done"); return found; }, () => { finished("octo", "failed"); return null; }),
+    ]);
+    if (!screen && !reviewed) return;
+    update((latestRecording) => setReview(latestRecording, {
+      at, cards: reviewed?.cards ?? [], overall: reviewed?.overall ?? "", ...(screen ? { screen } : {}),
+    }, now()));
   };
   const cancel = () => {
     if (!recording || !card) return;
     takeStartedAt.current = null;
+    setTakeStart(null);
     const key = card.key;
     chooseTool("none");
     speechRef.current?.cancel();
@@ -394,6 +420,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   useEffect(() => {
     if (!isRecording) takeStartedAt.current = null;
   }, [isRecording]);
+  // The take's clock ticks once a second while recording.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!isRecording) return;
+    const timer = setInterval(() => setTick((tick) => tick + 1), 1_000);
+    return () => clearInterval(timer);
+  }, [isRecording]);
 
   if (!recording) {
     return (
@@ -404,163 +437,239 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   }
 
   const kept = card ? keptTake(card) : undefined;
+  const takeClock = takeStart === null ? 0 : Math.max(0, clock() - takeStart);
+  const cardIndex = recording.cards.findIndex((candidate) => candidate.key === selected);
+  const nextCard = recording.cards[cardIndex + 1];
   const grids = recording.cards.flatMap((candidate) => ((boardTake(candidate)?.events ?? []) as RecordingEvent[])
     .flatMap((event) => (event.type === "component.insert" && event.panel === "coordinate_grid" ? [event.alias] : [])));
+  const checks = cardChecks(recording, compiled.lesson, recording.review);
+  const checkOf = (key: string) => checks.find((check) => check.key === key);
+  const cardCheck = card ? checkOf(card.key) : undefined;
+  const pointing = isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow");
+  const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
+  const hint = !isRecording ? null
+    : addOpen ? null
+      : tool === "laser" || tool === "highlighter" ? tr("在白板上点一张卡片、它的一部分或你写的字。")
+        : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
+          : tool === "pen" ? tr("直接在白板上写。写在图上的会贴在那张图上。")
+            : null;
+  const tools: Array<[Tool | "neat", string, typeof PenLine]> = [
+    ["pen", tr("笔"), PenLine], ["eraser", tr("橡皮"), Eraser], ["neat", tr("整理"), Sparkles],
+  ];
+  const pointers: Array<[Tool, string, typeof PenLine]> = [
+    ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight],
+  ];
+  const dockButton = ([value, label, Icon]: [Tool | "neat", string, typeof PenLine]) => (
+    <button key={value} type="button" className="teach-tool" disabled={!isRecording}
+      aria-pressed={value === "neat" ? neat.stage !== "idle" : tool === value && !addOpen}
+      onClick={() => (value === "neat" ? startNeat() : chooseTool(value))}>
+      <Icon size={20} aria-hidden="true" />{label}
+    </button>
+  );
 
   return (
-    <main className="course-launcher academy-page teach-page teach-studio">
-      <div className="course-launcher-inner academy-wide">
-        <AcademyHeader />
-        <h1 className="academy-title">{recording.topic.text}</h1>
-        <ol className="teach-card-strip" aria-label={tr("卡片")}>
-          {recording.cards.map((candidate, index) => {
-            const status = currentTake(candidate) ? tr("正在录") : keptTake(candidate) ? tr("已录好") : tr("还没录");
-            return (
-              <li key={candidate.key}>
-                <button type="button" aria-pressed={candidate.key === selected} disabled={isRecording && candidate.key !== selected} onClick={() => setSelected(candidate.key)}>
-                  <span>{index + 1}. {candidate.title}</span>
-                  <span className="teach-chip">{status}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+    <main className="teach-page teach-studio" data-recording={isRecording || undefined}>
+      <header className="teach-studio-head">
+        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
+        <h1>{recording.topic.text}</h1>
+        {isRecording ? (
+          <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>
+        ) : (
+          <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
+            <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
+          </button>
+        )}
+      </header>
 
-        <div className="teach-studio-body">
+      <ol className="teach-card-strip" aria-label={tr("卡片")}>
+        {recording.cards.map((candidate, index) => {
+          const recordingThis = Boolean(currentTake(candidate));
+          const flagged = checkOf(candidate.key)?.status === "fix";
+          const state = recordingThis ? "recording" : flagged ? "fix" : keptTake(candidate) ? "recorded" : "empty";
+          const status = { recording: tr("正在录"), fix: tr("要改一下"), recorded: tr("已录好"), empty: tr("还没录") }[state];
+          return (
+            <li key={candidate.key}>
+              <button type="button" aria-pressed={candidate.key === selected} data-state={state} disabled={isRecording && candidate.key !== selected} onClick={() => setSelected(candidate.key)}>
+                <span className="teach-card-mark" aria-hidden="true">{state === "recorded" ? "✓" : state === "fix" ? "!" : state === "recording" ? "●" : ""}</span>
+                <span>{index + 1} · {candidate.title}</span>
+                <span className="teach-visually-hidden">{status}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="teach-studio-body">
+        <section className="teach-stage" aria-label={tr("白板")}>
           <TeachBoard
             ref={boardRef}
             compiled={compiled.lesson}
             resolveAsset={resolveAsset}
-            onTarget={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? (target) => onTarget(target) : undefined}
-            onStroke={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? onStroke : undefined}
+            bottomInset={DOCK_SPACE}
+            {...(!isRecording && kept && selected ? { focusCard: selected } : {})}
+            onTarget={pointing ? (target) => onTarget(target)
+              : row.length ? (target) => { if ("node" in target && row.some((entry) => entry.alias === target.node)) setNextTo(target.node); }
+                : undefined}
+            onStroke={pointing ? onStroke : undefined}
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
           />
-          <aside className="teach-controls" aria-label={tr("录课工具")}>
-            {card && !isRecording && (
-              <button type="button" className="teach-record" onClick={() => start()}>{kept ? tr("重录这张卡片") : tr("开始录这张卡片")}</button>
-            )}
-            {card && kept && !isRecording && (
-              <>
-                <p className="academy-muted">{tr("重录时白板上的内容会留着，你重新说、重新指就好。")}</p>
-                <button type="button" className="teach-secondary" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
-              </>
-            )}
-            {isRecording && (
-              <div className="teach-actions">
-                <button type="button" className="teach-record recording" disabled={transcribing} onClick={() => void stop()}>{transcribing ? tr("正在整理字幕…") : tr("停止")}</button>
-                <button type="button" className="teach-secondary" disabled={transcribing} onClick={cancel}>{tr("放弃这次")}</button>
-              </div>
-            )}
-            {notice && <p role="status" className="teach-notice">{notice}</p>}
-            {isRecording && (
+          {isRecording && addOpen && (
+            <AddPanel
+              recording={recording}
+              grids={grids}
+              row={row}
+              nextTo={nextTo}
+              onNextTo={setNextTo}
+              form={form}
+              onForm={(next) => { setForm(next); setNextTo(null); }}
+              onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); closeAdd(); }}
+              onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); closeAdd(); }}
+              onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); closeAdd(); }}
+            />
+          )}
+          {hint && <p className="teach-dock-hint" role="status">{hint}</p>}
+          <div className="teach-dock" role="toolbar" aria-label={tr("录课工具")} aria-disabled={!isRecording || undefined}>
+            <button type="button" className="teach-tool" disabled={!isRecording} aria-pressed={isRecording && tool === "none" && !addOpen} onClick={() => chooseTool("none")}>
+              <MousePointer2 size={20} aria-hidden="true" />{tr("移动")}
+            </button>
+            {tools.map(dockButton)}
+            <span className="teach-dock-divider" aria-hidden="true" />
+            {pointers.map(dockButton)}
+            <span className="teach-dock-divider" aria-hidden="true" />
+            <button type="button" className="teach-tool teach-tool-add" disabled={!isRecording} aria-pressed={addOpen} onClick={() => (addOpen ? closeAdd() : openAdd())}>
+              <Plus size={20} aria-hidden="true" />{tr("放入")}
+            </button>
+          </div>
+        </section>
+
+        <aside className="teach-panel" aria-label={tr("这张卡片")}>
+          {card && !isRecording && (
+            <div className="teach-panel-title">
+              <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
+              <h2>{card.title}</h2>
+              {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
+            </div>
+          )}
+
+          {isRecording && (
+            <>
+              <button type="button" className="teach-stop" disabled={transcribing} onClick={() => void stop()}>
+                <span aria-hidden="true" />{transcribing ? tr("正在整理字幕…") : tr("停止 · {{v0}}", { v0: clockText(takeClock) })}
+              </button>
+              {notice && <p role="status" className="teach-notice">{notice}</p>}
               <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
                 <MicStatus state={mic} level={level} />
-                <h2 className="teach-label">{tr("你正在说的话")}</h2>
+                <h2 className="teach-group-label">{tr("你正在说的话")}</h2>
                 <p aria-live="polite">{liveText || <span className="academy-muted">{tr("开始说吧，你说的话会出现在这里。")}</span>}</p>
               </section>
-            )}
-
-            {isRecording && (
-              <>
-                <div className="teach-toolbar" role="group" aria-label={tr("书写和指点")}>
-                  {([["none", tr("移动白板"), MousePointer2], ["pen", tr("笔"), PenLine], ["eraser", tr("橡皮"), Eraser], ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight]] as const).map(([value, label, Icon]) => (
-                    <button key={value} type="button" aria-pressed={tool === value} onClick={() => chooseTool(value)}><Icon size={16} aria-hidden="true" /> {label}</button>
-                  ))}
+              {neat.stage === "selecting" && (
+                <div className="teach-step" role="group" aria-label={tr("选要整理的手写")}>
+                  <p className="academy-muted">{tr("在白板上画一个圈，圈住要整理的手写。")}</p>
+                  <button type="button" disabled={!neat.selected} onClick={() => void readNeat(false)}>{tr("整理圈住的手写")}</button>
+                  <button type="button" className="teach-secondary" onClick={() => void readNeat(true)}>{tr("整理这张卡片上所有手写")}</button>
+                  <button type="button" className="teach-secondary" onClick={() => { endNeat(); boardRef.current?.setPen("off"); }}>{tr("取消")}</button>
                 </div>
-                {(tool === "laser" || tool === "highlighter") && <p className="academy-muted">{tr("在白板上点一张卡片或它的一部分。")}</p>}
-                {tool === "arrow" && <p className="academy-muted">{arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。")}</p>}
-                {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
-                {tool === "none" && <p className="academy-muted">{tr("拖动单位圆上的点或滑杆、转动长方体，都会录进这张卡片。")}</p>}
-                {neat.stage === "idle" && (
-                  <button type="button" className="teach-secondary" onClick={startNeat}>
-                    <Sparkles size={16} aria-hidden="true" /> {tr("整理一下")}
-                  </button>
-                )}
-                {neat.stage === "selecting" && (
-                  <div className="teach-step" role="group" aria-label={tr("选要整理的手写")}>
-                    <p className="academy-muted">{tr("在白板上画一个圈，圈住要整理的手写。")}</p>
-                    <button type="button" disabled={!neat.selected} onClick={() => void readNeat(false)}>{tr("整理圈住的手写")}</button>
-                    <button type="button" className="teach-secondary" onClick={() => void readNeat(true)}>{tr("整理这张卡片上所有手写")}</button>
-                    <button type="button" className="teach-secondary" onClick={() => { endNeat(); boardRef.current?.setPen("off"); }}>{tr("取消")}</button>
-                  </div>
-                )}
-                {neat.stage === "reading" && <p role="status" className="academy-muted">{tr("小章鱼在看你的手写…")}</p>}
-                {neat.stage === "confirming" && (
-                  <NeatFormulaPanel latex={neat.latex} confidence={neat.confidence} onUse={(latex) => void confirmNeat(latex)} onCancel={() => { endNeat(); boardRef.current?.setPen("off"); }} />
-                )}
-                <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
-                  {([["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box]] as const).map(([value, label, Icon]) => (
-                    <button key={value} type="button" aria-pressed={form === value} onClick={() => setForm(form === value ? null : value)}><Icon size={16} aria-hidden="true" /> {label}</button>
-                  ))}
-                  {grids.length > 0 && (
-                    <button type="button" aria-pressed={form === "point"} onClick={() => setForm(form === "point" ? null : "point")}><Square size={16} aria-hidden="true" /> {tr("放一个点")}</button>
-                  )}
-                  {[...gridPoints(recording).values()].some((points) => points.length >= 2) && (
-                    <button type="button" aria-pressed={form === "line"} onClick={() => setForm(form === "line" ? null : "line")}><Spline size={16} aria-hidden="true" /> {tr("过两点画直线")}</button>
-                  )}
-                </div>
-                {form && (
-                  <InsertPanel
-                    form={form}
-                    recording={recording}
-                    grids={grids}
-                    onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); setForm(null); }}
-                    onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); setForm(null); }}
-                    onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); setForm(null); }}
-                  />
-                )}
-                {card?.kind === "your_turn" && (
-                  <YourTurnPanel
-                    variables={recordingVariables(recording)}
-                    valueOf={(alias) => boardRef.current?.variableValue(alias)}
-                    onSave={(exercise) => {
-                      record(withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }));
-                      record(withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }));
-                      if (exercise.hint) record(withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint }));
-                    }}
-                  />
-                )}
-              </>
-            )}
+              )}
+              {neat.stage === "reading" && <p role="status" className="academy-muted">{tr("小章鱼在看你的手写…")}</p>}
+              {neat.stage === "confirming" && (
+                <NeatFormulaPanel latex={neat.latex} confidence={neat.confidence} onUse={(latex) => void confirmNeat(latex)} onCancel={() => { endNeat(); boardRef.current?.setPen("off"); }} />
+              )}
+              {card?.kind === "your_turn" && (
+                <YourTurnPanel
+                  variables={recordingVariables(recording)}
+                  valueOf={(alias) => boardRef.current?.variableValue(alias)}
+                  onSave={(exercise) => {
+                    record(withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }));
+                    record(withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }));
+                    if (exercise.hint) record(withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint }));
+                  }}
+                />
+              )}
+              <button type="button" className="teach-secondary teach-panel-end" disabled={transcribing} onClick={cancel}>{tr("放弃这次")}</button>
+            </>
+          )}
 
-            {card && kept && !isRecording && card.kind === "teach" && (
-              <OctoQuestionPanel
-                key={`${card.key}-${card.octo?.question ?? ""}`}
-                card={card}
-                pending={octo.pending.has(card.key)}
-                failed={octo.failed.has(card.key)}
-                onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
-              />
-            )}
-            {card && kept && !isRecording && (
+          {card && !isRecording && !kept && (
+            <>
+              <p className="teach-panel-text">{card.kind === "your_turn"
+                ? tr("先摆出答案，再设置看的人要完成的练习。")
+                : tr("像给朋友讲一样讲出来。把步骤写下来，讲到哪里就指到哪里。")}</p>
+              <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("录第 {{v0}} 张", { v0: cardIndex + 1 })}</button>
+              <p className="academy-muted">{tr("录的时候你写的、放的、指的，都会和你的声音一起播放。每张卡片都可以重录。")}</p>
+              {notice && <p role="status" className="teach-notice">{notice}</p>}
+            </>
+          )}
+
+          {card && !isRecording && kept && cardCheck?.status === "fix" && (
+            <>
+              <div className="teach-fix" role="status">
+                <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
+                {cardCheck.findings.map((finding) => <p key={finding.source}>{finding.message}</p>)}
+              </div>
+              <div>
+                <div className="teach-group-label">{tr("你上次说的话")}</div>
+                <p className="teach-panel-text">{kept.text || tr("（没有字幕）")}</p>
+              </div>
+              <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
+              <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
+              <button type="button" className="teach-link-button" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+            </>
+          )}
+
+          {card && !isRecording && kept && cardCheck?.status !== "fix" && (
+            <>
+              {card.kind === "teach" && (
+                <OctoQuestionPanel
+                  key={`${card.key}-${card.octo?.question ?? ""}`}
+                  card={card}
+                  pending={octo.pending.has(card.key)}
+                  failed={octo.failed.has(card.key)}
+                  onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
+                />
+              )}
               <TranscriptEditor
                 key={`${card.key}-${kept.take}`}
                 text={kept.text ?? ""}
                 onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))}
               />
-            )}
-            {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
-            {!isRecording && compiled.lesson && recordingComplete(recording) && (
-              <ReadabilityPanel compiled={compiled.lesson} cards={recording.cards} resolveAsset={resolveAsset} onOpenCard={setSelected} />
-            )}
-            {!isRecording && compiled.lesson && recordingComplete(recording) && (
-              <ReviewPanel
-                cards={recording.cards}
-                review={recording.review}
-                pending={review.pending}
-                failed={review.failed}
-                stale={Boolean(recording.review) && recording.cards.some((candidate) => (keptTake(candidate)?.startedAt ?? "") > recording.review!.at)}
-                onReview={() => void runReview()}
-                onOpenCard={setSelected}
-              />
-            )}
-            {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
-          </aside>
-        </div>
+              {notice && <p role="status" className="teach-notice">{notice}</p>}
+              <div className="teach-panel-end teach-panel-actions">
+                {nextCard ? (
+                  <button type="button" className="teach-primary" onClick={() => setSelected(nextCard.key)}>{tr("下一张：第 {{v0}} 张 →", { v0: cardIndex + 2 })}</button>
+                ) : (
+                  <button type="button" className="teach-primary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>{tr("检查我的课")}</button>
+                )}
+                <div className="teach-panel-row">
+                  <button type="button" className="teach-secondary" onClick={() => start()}>{tr("重录我的话")}</button>
+                  <button type="button" className="teach-secondary" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+                </div>
+              </div>
+            </>
+          )}
+          {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
+          {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
+        </aside>
       </div>
+
+      {checkRun && (
+        <CheckDialog
+          run={checkRun}
+          checks={checks}
+          {...(recording.review?.overall && lessonReady(checks, recording) ? { overall: recording.review.overall } : {})}
+          onFix={(key) => { setCheckRun(null); setSelected(key); }}
+          onAgain={() => void runCheck()}
+          onClose={() => setCheckRun(null)}
+        />
+      )}
     </main>
   );
+}
+
+/** m:ss for a take's length. */
+function clockText(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 function TranscriptEditor({ text, onSave }: { text: string; onSave: (text: string) => void }) {
@@ -572,165 +681,6 @@ function TranscriptEditor({ text, onSave }: { text: string; onSave: (text: strin
         <textarea className="teach-input" value={value} onChange={(event) => setValue(event.target.value)} />
       </label>
       <button type="submit" disabled={!value.trim() || value === text}>{tr("保存字幕")}</button>
-    </form>
-  );
-}
-
-function InsertPanel({
-  form, recording, grids, onInsert, onPoint, onLine,
-}: {
-  form: Exclude<InsertForm, null>;
-  recording: LearnerRecording;
-  grids: string[];
-  onInsert: (component: ComponentInsert) => void;
-  onPoint: (point: { node: string; point: string; x: number; y: number; label: string }) => void;
-  onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
-}) {
-  const [expression, setExpression] = useState("2*x");
-  const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
-  const [size, setSize] = useState({ x: "4", y: "3", z: "2" });
-  const [point, setPoint] = useState({ node: grids.at(-1) ?? "", x: "", y: "" });
-  const variables = recordingVariables(recording);
-  const [linked, setLinked] = useState("");
-  const axes = (): { x: [number, number]; y: [number, number] } | undefined => {
-    const [xMin, xMax, yMin, yMax] = [range.xMin, range.xMax, range.yMin, range.yMax].map(numberField);
-    if ([xMin, xMax, yMin, yMax].some((value) => value === undefined) || xMin! >= xMax! || yMin! >= yMax!) return undefined;
-    return { x: [xMin!, xMax!], y: [yMin!, yMax!] };
-  };
-  const rangeFields = (
-    <div className="teach-range" role="group" aria-label={tr("坐标范围")}>
-      {(["xMin", "xMax", "yMin", "yMax"] as const).map((field) => (
-        <label key={field}>{{ xMin: tr("x 从"), xMax: tr("x 到"), yMin: tr("y 从"), yMax: tr("y 到") }[field]}
-          <input className="teach-input" inputMode="decimal" value={range[field]} onChange={(event) => setRange({ ...range, [field]: event.target.value })} />
-        </label>
-      ))}
-    </div>
-  );
-
-  if (form === "graph") {
-    const ready = axes();
-    return (
-      <form className="teach-step" onSubmit={(event) => {
-        event.preventDefault();
-        if (ready && expression.trim()) onInsert({ panel: "graph", alias: nextComponentAlias(recording, "graph"), expression: expression.trim(), ...ready, ...(linked ? { linkedVariable: linked } : {}) });
-      }}>
-        <label className="teach-label">{tr("函数 y =")}<input className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)} /></label>
-        {rangeFields}
-        {variables.length > 0 && (
-          <label className="teach-label">{tr("和单位圆的角度联动")}
-            <select className="teach-input" value={linked} onChange={(event) => setLinked(event.target.value)}>
-              <option value="">{tr("不联动")}</option>
-              {variables.map((variable) => <option key={variable} value={variable}>{variable}</option>)}
-            </select>
-          </label>
-        )}
-        <button type="submit" disabled={!ready || !expression.trim()}>{tr("放到白板上")}</button>
-      </form>
-    );
-  }
-  if (form === "coordinate_grid") {
-    const ready = axes();
-    return (
-      <form className="teach-step" onSubmit={(event) => { event.preventDefault(); if (ready) onInsert({ panel: "coordinate_grid", alias: nextComponentAlias(recording, "grid"), ...ready }); }}>
-        {rangeFields}
-        <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
-      </form>
-    );
-  }
-  if (form === "unit_circle") {
-    return (
-      <form className="teach-step" onSubmit={(event) => { event.preventDefault(); onInsert({ panel: "unit_circle", alias: nextComponentAlias(recording, "unit-circle"), variable: nextVariable(recording) }); }}>
-        <p className="academy-muted">{tr("单位圆带一个角度滑杆，拖动圆上的点也能改角度。")}</p>
-        <button type="submit">{tr("放到白板上")}</button>
-      </form>
-    );
-  }
-  if (form === "solid_3d") {
-    const values = [size.x, size.y, size.z].map(numberField);
-    const ready = values.every((value) => value !== undefined && value > 0);
-    return (
-      <form className="teach-step" onSubmit={(event) => {
-        event.preventDefault();
-        if (ready) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, "box"), shape: "box", size: { x: values[0]!, y: values[1]!, z: values[2]! } });
-      }}>
-        <div className="teach-range" role="group" aria-label={tr("长方体尺寸")}>
-          {(["x", "y", "z"] as const).map((axis) => (
-            <label key={axis}>{{ x: tr("长"), y: tr("宽"), z: tr("高") }[axis]}
-              <input className="teach-input" inputMode="decimal" value={size[axis]} onChange={(event) => setSize({ ...size, [axis]: event.target.value })} />
-            </label>
-          ))}
-        </div>
-        <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
-      </form>
-    );
-  }
-  if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
-  const [x, y] = [numberField(point.x), numberField(point.y)];
-  const label = point.node ? nextPointLabel(recording, point.node) : undefined;
-  const gridRange = gridRanges(recording).get(point.node);
-  const outside = gridRange && x !== undefined && y !== undefined
-    && (x < gridRange.x[0] || x > gridRange.x[1] || y < gridRange.y[0] || y > gridRange.y[1]);
-  return (
-    <form className="teach-step" onSubmit={(event) => {
-      event.preventDefault();
-      if (label && x !== undefined && y !== undefined && !outside) onPoint({ node: point.node, point: label.point, x, y, label: `${label.label} (${x}, ${y})` });
-    }}>
-      {grids.length > 1 && (
-        <label className="teach-label">{tr("放在哪个网格")}
-          <select className="teach-input" value={point.node} onChange={(event) => setPoint({ ...point, node: event.target.value })}>
-            {grids.map((grid) => <option key={grid} value={grid}>{grid}</option>)}
-          </select>
-        </label>
-      )}
-      <div className="teach-range" role="group" aria-label={tr("点的坐标")}>
-        <label>x<input className="teach-input" inputMode="decimal" value={point.x} onChange={(event) => setPoint({ ...point, x: event.target.value })} /></label>
-        <label>y<input className="teach-input" inputMode="decimal" value={point.y} onChange={(event) => setPoint({ ...point, y: event.target.value })} /></label>
-      </div>
-      {label && <p className="academy-muted">{tr("这个点叫 {{v0}}", { v0: label.label })}</p>}
-      {outside && gridRange && (
-        <p role="alert">{tr("这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。", { v0: gridRange.x[0], v1: gridRange.x[1], v2: gridRange.y[0], v3: gridRange.y[1] })}</p>
-      )}
-      <button type="submit" disabled={!label || x === undefined || y === undefined || outside}>{tr("放到白板上")}</button>
-    </form>
-  );
-}
-
-function LineForm({ recording, onLine }: {
-  recording: LearnerRecording;
-  onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
-}) {
-  const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 2);
-  const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
-  const points = gridPoints(recording).get(grid) ?? [];
-  const [first, setFirst] = useState(points[0]?.point ?? "");
-  const [second, setSecond] = useState(points[1]?.point ?? "");
-  const a = points.find((candidate) => candidate.point === first);
-  const b = points.find((candidate) => candidate.point === second);
-  const ready = Boolean(a && b && (a.x !== b.x || a.y !== b.y));
-  const choose = (value: string, set: (value: string) => void) => (
-    <select className="teach-input" value={value} onChange={(event) => set(event.target.value)}>
-      {points.map((candidate) => <option key={candidate.point} value={candidate.point}>{candidate.label}</option>)}
-    </select>
-  );
-  return (
-    <form className="teach-step" onSubmit={(event) => {
-      event.preventDefault();
-      if (ready) onLine({ node: grid, from: first, to: second, alias: nextComponentAlias(recording, "line") });
-    }}>
-      {all.length > 1 && (
-        <label className="teach-label">{tr("用哪个网格的点")}
-          <select className="teach-input" value={grid} onChange={(event) => setGrid(event.target.value)}>
-            {all.map(([alias]) => <option key={alias} value={alias}>{alias}</option>)}
-          </select>
-        </label>
-      )}
-      <div className="teach-range" role="group" aria-label={tr("直线经过的两点")}>
-        {choose(first, setFirst)}
-        {choose(second, setSecond)}
-      </div>
-      {ready && <p className="academy-muted">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
-      {a && b && !ready && <p role="alert">{tr("请选两个不同的点。")}</p>}
-      <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
     </form>
   );
 }

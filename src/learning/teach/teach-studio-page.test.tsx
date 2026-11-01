@@ -1,5 +1,5 @@
 import { setLocale } from "@/i18n";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
@@ -91,6 +91,8 @@ vi.mock("./teach-assist", () => ({
   inkToMath: vi.fn(async () => assist.neat),
   reviewLesson: vi.fn(async () => assist.review),
 }));
+const screenCheck = vi.hoisted(() => ({ results: [] as unknown[] }));
+vi.mock("./readability-check", () => ({ checkReadability: vi.fn(async () => screenCheck.results) }));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
@@ -114,6 +116,7 @@ beforeEach(() => {
   board.selected = null;
   board.cut = null;
   board.pointers = [];
+  screenCheck.results = [];
   board.strokes = [];
   voice.pending = null;
   assist.question = "Why did you pick that point?";
@@ -141,12 +144,12 @@ function renderStudio(id = "rec-1") {
 
 it("records a card: a grid, a point, a pointer tap, then the learner's captions", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   time = 1_400;
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   time = 3_100;
-  fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+  addKind("Place a point");
   fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: "1" } });
   fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "2" } });
   expect(screen.getByText("This point is called A")).toBeTruthy();
@@ -157,8 +160,8 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   board.onTarget!({ node: "grid-1", part: "point-a" });
   expect(board.pointers.at(-1)).toEqual({ node: "grid-1", part: "point-a" });
   time = 9_000;
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
 
   const [draft] = loadRecordingDrafts(localStorage, "learner-1");
   const take = keptTake(draft!.cards[0]!)!;
@@ -174,7 +177,7 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
 
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   expect((screen.getByRole("button", { name: /Rise over run/ }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
   expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes).toEqual([]);
@@ -183,7 +186,7 @@ it("keeps other cards locked while one records, and discarding a take leaves no 
 
 it("only offers pointing while recording", () => {
   renderStudio();
-  expect(screen.queryByRole("button", { name: /Laser pointer/ })).toBeNull();
+  expect((screen.getByRole("button", { name: /Laser pointer/ }) as HTMLButtonElement).disabled).toBe(true);
   expect(board.onTarget).toBeUndefined();
 });
 
@@ -194,10 +197,10 @@ it("says so when the draft does not exist", () => {
 
 it("refuses a point outside the grid and says where the grid ends", () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+  addKind("Place a point");
   fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: "4" } });
   fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "8" } });
   expect(screen.getByRole("alert").textContent).toBe("This point is outside the grid: x goes from -5 to 5, y from -5 to 5.");
@@ -206,7 +209,7 @@ it("refuses a point outside the grid and says where the grid ends", () => {
 
 it("freezes the take's handwriting onto the card, as an annotation when written on a component", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   expect(board.inkDocuments).toEqual(["rec-1:card-1:take-1"]);
   fireEvent.click(screen.getByRole("button", { name: /Pen/ }));
   expect(board.pen.at(-1)).toBe("draw");
@@ -214,7 +217,7 @@ it("freezes the take's handwriting onto the card, as an annotation when written 
   expect(board.pen.at(-1)).toBe("erase");
   board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0L9 9\"/></svg>", width: 40, height: 30, annotates: { node: "grid-1", x: 0.3, y: 0.5, width: 0.1, height: 0.1 } };
   time = 4_000;
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
   const [ink] = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink!;
   expect(ink!.snapshotId).toBe("ink-snap:rec-1-card-1-t1@v1");
@@ -226,8 +229,8 @@ it("freezes the take's handwriting onto the card, as an annotation when written 
 
 it("turns what the learner says into the card's captions, timed from the take start", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   voice.transcripts = ["Here is a grid.", "Point A is at one two."];
   expect(screen.getByText("Start talking. Your words will show up here.")).toBeTruthy();
@@ -239,8 +242,8 @@ it("turns what the learner says into the card's captions, timed from the take st
   time = 7_000; voice.onUtterance!(new Blob(["b"]));
   expect(await screen.findByText("Here is a grid. Point A is at one two.")).toBeTruthy();
   time = 8_000;
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
   const take = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
   expect(take.text).toBe("Here is a grid. Point A is at one two.");
   expect(take.speechSpanMs).toEqual([600, 6_000]);
@@ -250,29 +253,29 @@ it("turns what the learner says into the card's captions, timed from the take st
 it("asks the learner to type the words when recognition is not connected", async () => {
   voice.available = false;
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   // Said before the learner starts talking, not only after the take.
   expect(await screen.findByText(/Speech recognition isn't connected, so your words won't turn into captions/)).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   voice.onSpeechStart!(); voice.onUtterance!(new Blob(["a"]));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   expect(await screen.findByText("Speech recognition isn't connected yet. Please type what you said on this card below.")).toBeTruthy();
 });
 
 it("says when nothing was heard during a take", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   await act(async () => undefined);
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   expect(await screen.findByText("I didn't hear you this time. Check that your microphone is on, or type what you said below.")).toBeTruthy();
 });
 
 it("shows the microphone level and whether words are heard and being turned into text", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   expect(screen.getByText("Turning on the microphone…")).toBeTruthy();
   expect(await screen.findByText("Listening. Start talking.")).toBeTruthy();
   act(() => voice.onAudioFrame!(new Float32Array(512).fill(0.05)));
@@ -291,7 +294,7 @@ it("shows the microphone level and whether words are heard and being turned into
 
 it("points at one stroke of the learner's writing, live and in the lesson", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
   time = 2_000;
   act(() => board.onStroke!({ x: 140, y: 80, width: 20, height: 40 }));
@@ -301,7 +304,7 @@ it("points at one stroke of the learner's writing, live and in the lesson", asyn
   board.strokes = [{ x: 150, y: 100 }];
   board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", x: 100, y: 60, width: 100, height: 80 } as typeof board.frozen;
   time = 5_000;
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
   const ink = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink![0]!;
   expect(ink.selections).toEqual(["sel-card-1-t1-m1"]);
@@ -313,16 +316,16 @@ it("points at one stroke of the learner's writing, live and in the lesson", asyn
 it("tells the learner when the microphone cannot be used", async () => {
   voice.listening = false;
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   expect(await screen.findByText("The microphone isn't available. You can still record, then type what you said below.")).toBeTruthy();
 });
 
 it("records a drag of the unit circle and a turn of the box, at the nearest named view", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Unit circle");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Box" }));
+  addKind("Box");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   expect(board.onVariableGesture).toBeTypeOf("function");
   time = 4_000;
@@ -338,11 +341,17 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   expect(take.events.map((event) => [event.type, event.t])).toEqual([["component.insert", 0], ["component.insert", 0], ["variable.drag", 1_000], ["view.rotate", 4_000]]);
 });
 
+/** Opens Add on the dock and picks what to put on the board. */
+function addKind(kind: string) {
+  fireEvent.click(screen.getByRole("button", { name: "Add" }));
+  fireEvent.click(screen.getByRole("button", { name: kind }));
+}
+
 function placeGridWithPoints(points: Array<[string, string]>) {
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   for (const [x, y] of points) {
-    fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+    addKind("Place a point");
     fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: x } });
     fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: y } });
     fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
@@ -351,9 +360,9 @@ function placeGridWithPoints(points: Array<[string, string]>) {
 
 it("draws the line through two placed points on their grid, and points an arrow at it", () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   placeGridWithPoints([["1", "2"], ["2", "4"]]);
-  fireEvent.click(screen.getByRole("button", { name: "Line through two points" }));
+  addKind("Line through two points");
   expect(screen.getByText("Draws y = 2x on the grid")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Draw it on the grid" }));
   fireEvent.click(screen.getByRole("button", { name: /Arrow/ }));
@@ -372,11 +381,11 @@ it("draws the line through two placed points on their grid, and points an arrow 
 
 it("lists each grid point once while a card with points is re-recorded", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   placeGridWithPoints([["1", "2"], ["2", "4"]]);
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Line through two points" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
+  addKind("Line through two points");
   expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["A (1, 2)", "B (2, 4)", "A (1, 2)", "B (2, 4)"]);
   fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
   expect(screen.getByText("This point is called C")).toBeTruthy();
@@ -391,13 +400,13 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
   );
   saveRecordingDraft(localStorage, "learner-1", recording);
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Unit circle");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
-  fireEvent.click(screen.getByRole("button", { name: /2\. Your turn/ }));
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: /2 · Your turn/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   board.values.theta = 3 * Math.PI / 2;
   fireEvent.click(screen.getByRole("button", { name: "This is the answer" }));
   expect(screen.getByText("Viewers need to make it equal -1")).toBeTruthy();
@@ -412,8 +421,8 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
 
 it("records a back-and-forth drag as moves in order", () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Unit circle");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   time = 6_000;
   act(() => {
@@ -427,10 +436,10 @@ it("records a back-and-forth drag as moves in order", () => {
 
 it("Octo asks about a card once it is recorded, and the learner's answer stays on the card", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   expect(await screen.findByText("Why did you pick that point?")).toBeTruthy();
   expect(assist.octoCalls).toEqual(["card-1"]);
   fireEvent.change(screen.getByRole("textbox", { name: "Your answer (only you can see it)" }), { target: { value: "It is easy to count." } });
@@ -443,20 +452,20 @@ it("Octo asks about a card once it is recorded, and the learner's answer stays o
 it("keeps recording when Octo cannot ask", async () => {
   assist.question = new Error("model unavailable");
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   expect(await screen.findByText("Octo couldn't think of a question this time. You can go on to the next card.")).toBeTruthy();
 });
 
 it("makes circled handwriting neat, and the formula takes its place on the board right away", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   board.inkCount = 3;
-  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  fireEvent.click(screen.getByRole("button", { name: "Neat" }));
   expect(board.pen.at(-1)).toBe("select");
   const circled = screen.getByRole("button", { name: "Make the circled writing neat" }) as HTMLButtonElement;
   expect(circled.disabled).toBe(true);
@@ -472,19 +481,19 @@ it("makes circled handwriting neat, and the formula takes its place on the board
   // Still recording, the formula is already on the board in the writing's place.
   await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write" && action.kind === "math"))
     .toMatchObject({ content: { fragments: [{ latex: "\\dfrac{8-2}{4-1}=2" }] }, place: { relation: "replaces", anchor: "ink-card-1" }, source: { selection: "sel-card-1-t1-n1", confirmed_by: "learner" } }));
-  expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /^Stop/ })).toBeTruthy();
   expect(board.compiled!.resourceContext.ink_snapshots?.[0]?.snapshot_id).toBe("ink-snap:rec-1-card-1-t1-n1@v1");
 
   board.frozen = null;
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
   const card = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!;
   expect(card.ink![0]).toMatchObject({ selections: ["sel-card-1-t1-n1"], annotates: { node: "grid-1" }, neat: { selection: "sel-card-1-t1-n1", latex: "\\dfrac{8-2}{4-1}=2" } });
   expect(keptTake(card)!.ink).toBeUndefined();
 
   // Re-recording the card keeps the neat formula in the writing's place.
-  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!.take).toBe(2));
   await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.map((action) => [action.do, (action as { as?: string }).as]))
     .toEqual(expect.arrayContaining([["write", "ink-card-1"], ["write", "formula-1"]])));
@@ -492,53 +501,92 @@ it("makes circled handwriting neat, and the formula takes its place on the board
 
 it("re-recording keeps the card's board, and starting over clears it", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
   expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.some((action) => action.do === "write" && action.kind === "geometry")).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
   fireEvent.click(screen.getByRole("button", { name: "Start this card over" }));
   expect(board.compiled).toBeNull();
   expect(screen.queryByRole("alert")).toBeNull();
-  expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /^Stop/ })).toBeTruthy();
 });
 
 it("can make all of a card's writing neat in one go", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   board.inkCount = 1;
-  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  fireEvent.click(screen.getByRole("button", { name: "Neat" }));
   fireEvent.click(screen.getByRole("button", { name: "Make all my writing neat" }));
   expect(await screen.findByRole("textbox", { name: "Formula (you can edit it)" })).toBeTruthy();
 });
 
 it("asks for writing first when there is no handwriting to tidy", async () => {
   renderStudio();
-  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Neat" }));
   expect(await screen.findByText("Write something first, then ask Octo to tidy it.")).toBeTruthy();
 });
 
-it("Octo reviews the whole lesson card by card and points to the card to fix", async () => {
+it("Check my lesson runs the screen check and Octo's review as one, and opens the card to fix", async () => {
   assist.review = { cards: [
     { key: "card-1", status: "good", kind: "none", message: "Clear points." },
     { key: "card-2", status: "check", kind: "slip", message: "You said one half; the board shows 2." },
   ], overall: "Fix how you read card 2." };
+  screenCheck.results = [{ card: "card-1", board: "chromebook", problems: ["small_text"] }];
   renderStudio();
   for (const name of [/Pick two points/, /Rise over run/]) {
     fireEvent.click(screen.getByRole("button", { name }));
-    fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-    fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+    addKind("Coordinate grid");
     fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
-    await screen.findByRole("button", { name: "Re-record this card" });
+    fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+    await screen.findByRole("button", { name: "Re-record my words" });
   }
-  fireEvent.click(screen.getByRole("button", { name: "Ask Octo" }));
-  expect(await screen.findByText("You said one half; the board shows 2.")).toBeTruthy();
-  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.review?.overall).toBe("Fix how you read card 2.");
-  const fixButtons = screen.getAllByRole("button", { name: "Fix this card" });
-  fireEvent.click(fixButtons.at(-1)!);
+  fireEvent.click(screen.getAllByRole("button", { name: "Check my lesson" })[0]!);
+  const dialog = await screen.findByRole("dialog", { name: "Check my lesson" });
+  expect(await within(dialog).findByText("You said one half; the board shows 2.")).toBeTruthy();
+  expect(within(dialog).getByText("On a small laptop: the text is too small to read.")).toBeTruthy();
+  expect(within(dialog).getByText("Nearly there! Fix 2 card(s) and your lesson is ready to watch.")).toBeTruthy();
+  const saved = loadRecordingDrafts(localStorage, "learner-1")[0]!.review!;
+  expect(saved.overall).toBe("Fix how you read card 2.");
+  expect(saved.screen).toEqual(screenCheck.results);
+  // The cards that need a fix are marked in the card strip too.
+  expect(screen.getByRole("button", { name: /Rise over run/ }).getAttribute("data-state")).toBe("fix");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Fix card 2" }));
+  expect(screen.queryByRole("dialog", { name: "Check my lesson" })).toBeNull();
   expect(screen.getByRole("button", { name: /Rise over run/ }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByText("To fix on this card")).toBeTruthy();
+  expect(screen.getByText("You said one half; the board shows 2.")).toBeTruthy();
+  // Re-recording the card clears its findings until the next check.
+  time = 99_000;
+  fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
+  time = 104_000;
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await screen.findByRole("button", { name: "Re-record my words" });
+  expect(screen.queryByText("To fix on this card")).toBeNull();
+  expect(screen.getByRole("button", { name: /Rise over run/ }).getAttribute("data-state")).toBe("recorded");
+});
+
+it("puts a new graph next to a card of the current row, picked in the list or tapped on the board", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /Next: card 2/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Graph");
+  const choices = within(screen.getByRole("group", { name: "Put it next to…" }));
+  expect((choices.getByRole("radio", { name: "On a new row below" }) as HTMLInputElement).checked).toBe(true);
+  expect(choices.getByRole("radio", { name: /Grid/ })).toBeTruthy();
+  // Tapping the grid on the board picks it too.
+  act(() => board.onTarget!({ node: "grid-1" }));
+  expect((choices.getByRole("radio", { name: /Grid/ }) as HTMLInputElement).checked).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[1]!.takes.at(-1)!;
+  expect(take.events.at(-1)).toMatchObject({ type: "component.insert", panel: "graph", nextTo: "grid-1" });
+  expect(board.compiled!.lesson.steps[0]!.beats[1]!.actions[0]).toMatchObject({ place: { relation: "right_of", anchor: "grid-1" }, role: "supporting_visual" });
 });

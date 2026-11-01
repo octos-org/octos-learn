@@ -3,7 +3,7 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import { useMemo, useState } from "react";
 
-import type { RecordingCard, RecordingReview } from "./recording";
+import type { RecordingCard } from "./recording";
 
 /** Octo's question after a card, with a private place for the learner's answer. */
 export function OctoQuestionPanel({ card, pending, failed, onAnswer }: {
@@ -58,39 +58,3 @@ export function NeatFormulaPanel({ latex, confidence, onUse, onCancel }: {
 }
 
 /** Octo's card-by-card review of the recorded lesson. */
-export function ReviewPanel({ cards, review, pending, failed, stale, onReview, onOpenCard }: {
-  cards: RecordingCard[];
-  review: RecordingReview | undefined;
-  pending: boolean;
-  failed: boolean;
-  stale: boolean;
-  onReview: () => void;
-  onOpenCard: (key: string) => void;
-}) {
-  const title = (key: string) => cards.find((card) => card.key === key)?.title ?? key;
-  return (
-    <section className="teach-step teach-review" aria-labelledby="teach-review-title">
-      <h2 id="teach-review-title">{tr("请小章鱼看一遍")}</h2>
-      <p className="academy-muted">{tr("小章鱼会一张一张看，告诉你哪里讲得好、哪里可以再改改。")}</p>
-      <button type="button" disabled={pending} onClick={onReview}>
-        {pending ? tr("小章鱼在看…") : review ? tr("再请小章鱼看一遍") : tr("请小章鱼看看")}
-      </button>
-      {failed && <p role="alert">{tr("小章鱼这次没看完，请再试一次。")}</p>}
-      {review && stale && <p className="academy-muted">{tr("课改过了，可以再请小章鱼看一遍。")}</p>}
-      {review && (
-        <>
-          <p>{review.overall}</p>
-          <ul className="teach-readability-list">
-            {review.cards.map((card) => (
-              <li key={card.key} className={card.status === "check" ? "teach-review-check" : "teach-review-good"}>
-                <strong>{title(card.key)}</strong>
-                <span>{card.message}</span>
-                {card.status === "check" && <button type="button" className="teach-secondary" onClick={() => onOpenCard(card.key)}>{tr("去改这张卡片")}</button>}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </section>
-  );
-}

@@ -122,10 +122,13 @@ export interface RecordingCard {
 }
 
 /** The review of the recorded lesson, kept with the draft for the learner. */
+/** The last "Check my lesson": Octo's review and, card by card, what the screen check found. */
 export interface RecordingReview {
   at: string;
   cards: Array<{ key: string; status: "good" | "check"; kind: "none" | "slip" | "misconception" | "unclear"; message: string }>;
   overall: string;
+  /** Cards not readable at their end on a checked screen; absent in drafts checked before the screen check joined. */
+  screen?: Array<{ card: string; board: "chromebook" | "large"; problems: Array<"small_text" | "small_diagram" | "out_of_view" | "overflow" | "missing_ink" | "no_focus"> }>;
 }
 
 export interface LearnerRecording {

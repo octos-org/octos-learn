@@ -65,6 +65,13 @@ function canonicalTarget(id: string): CanonicalTarget {
   return fragment < 0 ? { node_id: id } : { node_id: id.slice(0, fragment), fragment_id: id };
 }
 
+/** The board IDs a recorded card ends on, as its final focus names them. */
+function cardEndTargets(compiled: CompiledLesson, key: string): string[] {
+  const beat = compiled.lesson.steps[0]?.beats.find((candidate) => candidate.key === key);
+  const focus = [...(beat?.actions ?? [])].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
+  return (focus?.targets ?? []).map((target) => boardIdOf({ node: target.split("#")[0]! }));
+}
+
 function sameTarget(a: BoardTarget, b: BoardTarget): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -136,7 +143,11 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   /** While set, the learner can drag variables and turn 3D scenes; each finished gesture is reported. */
   onVariableGesture?: (gesture: VariableGesture) => void;
   onSceneGesture?: (gesture: SceneGesture) => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture }, ref) {
+  /** Room at the bottom of the board covered by the host's tools; the camera keeps cards above it. */
+  bottomInset?: number;
+  /** A recorded card to frame, as it ends; without one the board frames the latest card. */
+  focusCard?: string;
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -167,6 +178,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     const setLocale = () => (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     setLocale();
     const unsubscribeLocale = subscribeLocale(setLocale);
+    mounted.view.setViewportInsets({ top: 0, right: 0, bottom: bottomInset, left: 0 });
     mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     mountedRef.current = mounted;
@@ -240,7 +252,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       mounted.destroy();
       mountedRef.current = null;
     };
-  }, [resolveAsset]);
+  }, [resolveAsset, bottomInset]);
 
   useImperativeHandle(ref, () => ({
     async startInk(documentId) {
@@ -363,11 +375,12 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       .map((node) => [node.id, node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, node.content.camera) : node.content.camera])));
     mounted.view.render(state);
     sliderRef.current?.render(state);
-    if (state.focus.length) mounted.view.focusTargets(state.focus);
+    const framed = focusCard ? cardEndTargets(compiled, focusCard) : state.focus;
+    if (framed.length) mounted.view.focusTargets(framed);
     // A redraw hides the pointer; the learner's tap still shows until it fades.
     if (pointerRef.current?.canonical) mounted.view.showPointer(pointerRef.current.canonical);
     else if (pointerRef.current?.at) mounted.view.showPointerAt(pointerRef.current.at);
-  }, [compiled]);
+  }, [compiled, focusCard]);
 
   return (
     <div className="teach-board-frame">
