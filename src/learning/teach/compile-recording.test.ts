@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents, validateAuthoringLesson } from "octos-lesson-language";
+import { HeadlessLessonPlayer } from "octos-lesson-language/player";
+import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
 import { compileRecording, CompileError } from "./compile-recording";
 import { appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
@@ -60,6 +62,28 @@ describe("compileRecording", () => {
     expect(state.nodes["l:node:ink-card-3"]!.hidden).toBe(true);
     expect(state.nodes["l:node:neat-fraction"]!.source).toEqual({ selection: "sel-card3-all", confirmed_by: "learner" });
     expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "annotates" });
+  });
+
+  it("plays handwriting drawn on a graph and then made neat, with the formula over the handwriting", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "The line" }]);
+    recording = record(recording, "card-1", "The slope is 2.", [
+      { t: 0, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 6], y: [-1, 9] },
+      { t: 8_000, type: "make_neat.confirmed", selection: "sel-card1-all", latex: "m=2", alias: "neat", replacesInk: true },
+    ], { ink: [{ snapshotId: "ink-snap:card1@v4", sha256: SHA, selections: ["sel-card1-all"], annotates: { node: "grid", x: 0.1, y: 0.7, width: 0.3, height: 0.2 } }] });
+    const { lesson, resourceContext, state } = check(recording);
+    expect(state.nodes["l:node:ink-card-1"]!.hidden).toBe(true);
+    const host = document.createElement("div");
+    document.body.append(host);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40"><path d="M0 40 L16 0"/></svg>';
+    const mounted = mountInfiniteBoard(host, () => ({ src: "", svg, intrinsic_width: 120, intrinsic_height: 40, regions: { "sel-card1-all": { x: 0, y: 0, width: 1, height: 1 } } }));
+    try {
+      const player = new HeadlessLessonPlayer(normalizeAuthoringLesson(lesson, { lessonId: "l", boardId: "b", baseRevision: 0, resourceContext }));
+      for (let frame = player.advance(); frame; frame = player.advance()) mounted.view.render(frame.projection.board, frame.operation);
+      expect(host.querySelector('[data-id="l:node:neat"]')?.classList.contains("annotation")).toBe(true);
+    } finally {
+      mounted.destroy();
+      host.remove();
+    }
   });
 
   it("puts each action in the speech phase it happened in", () => {
