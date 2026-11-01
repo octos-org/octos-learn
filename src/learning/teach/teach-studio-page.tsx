@@ -22,7 +22,7 @@ import {
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
+import { gridRanges, learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { TeachBoard } from "./teach-board";
 import "./teach.css";
 
@@ -305,10 +305,13 @@ function InsertPanel({
   }
   const [x, y] = [numberField(point.x), numberField(point.y)];
   const label = point.node ? nextPointLabel(recording, point.node) : undefined;
+  const gridRange = gridRanges(recording).get(point.node);
+  const outside = gridRange && x !== undefined && y !== undefined
+    && (x < gridRange.x[0] || x > gridRange.x[1] || y < gridRange.y[0] || y > gridRange.y[1]);
   return (
     <form className="teach-step" onSubmit={(event) => {
       event.preventDefault();
-      if (label && x !== undefined && y !== undefined) onPoint({ node: point.node, point: label.point, x, y, label: `${label.label} (${x}, ${y})` });
+      if (label && x !== undefined && y !== undefined && !outside) onPoint({ node: point.node, point: label.point, x, y, label: `${label.label} (${x}, ${y})` });
     }}>
       {grids.length > 1 && (
         <label className="teach-label">{tr("放在哪个网格")}
@@ -322,7 +325,10 @@ function InsertPanel({
         <label>y<input className="teach-input" inputMode="decimal" value={point.y} onChange={(event) => setPoint({ ...point, y: event.target.value })} /></label>
       </div>
       {label && <p className="academy-muted">{tr("这个点叫 {{v0}}", { v0: label.label })}</p>}
-      <button type="submit" disabled={!label || x === undefined || y === undefined}>{tr("放到白板上")}</button>
+      {outside && gridRange && (
+        <p role="alert">{tr("这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。", { v0: gridRange.x[0], v1: gridRange.x[1], v2: gridRange.y[0], v3: gridRange.y[1] })}</p>
+      )}
+      <button type="submit" disabled={!label || x === undefined || y === undefined || outside}>{tr("放到白板上")}</button>
     </form>
   );
 }

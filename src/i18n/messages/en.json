@@ -2324,5 +2324,6 @@
   "高": "Height",
   "放在哪个网格": "Which grid",
   "点的坐标": "Point coordinates",
-  "这个点叫 {{v0}}": "This point is called {{v0}}"
+  "这个点叫 {{v0}}": "This point is called {{v0}}",
+  "这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。": "This point is outside the grid: x goes from {{v0}} to {{v1}}, y from {{v2}} to {{v3}}."
 }

@@ -125,9 +125,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   };
   const owner = (reference: string) => reference.split("#")[0]!;
 
-  const insert = (component: ComponentInsert): Action => {
+  const insert = (component: ComponentInsert, cardTitle: string): Action => {
     const alias = requireAlias(component.alias, "Component");
-    const title = component.title ? { title: component.title } : {};
+    // A component the learner did not name carries the card's title.
+    const title = { title: component.title?.trim() || cardTitle };
     if (component.panel === "graph") {
       const content: Record<string, unknown> = {
         ...title,
@@ -161,7 +162,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       return {
         do: "write", as: alias, kind: "geometry", role: "diagram", place: placeNext(),
         content: {
-          title: component.title ?? "Unit circle",
+          ...title,
           axes: { x: { min: -1.25, max: 1.25, label: "x" }, y: { min: -1.25, max: 1.25, label: "y" }, equal_scale: true },
           points: [
             { as: "origin", x: 0, y: 0, label: "O" },
@@ -245,7 +246,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const when = phaseOf(take, event.t);
       switch (event.type) {
         case "component.insert": {
-          const action = insert(event);
+          const action = insert(event, card.title);
           actions.push({ ...action, when } as Action);
           if (event.panel === "coordinate_grid") createdGrids.push({ alias: event.alias, index: actions.length - 1 });
           lastNode = event.alias;

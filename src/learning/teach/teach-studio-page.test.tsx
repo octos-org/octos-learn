@@ -96,3 +96,15 @@ it("says so when the draft does not exist", () => {
   renderStudio("missing");
   expect(screen.getByRole("alert").textContent).toBe("This lesson draft can't be found.");
 });
+
+it("refuses a point outside the grid and says where the grid ends", () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+  fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: "4" } });
+  fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "8" } });
+  expect(screen.getByRole("alert").textContent).toBe("This point is outside the grid: x goes from -5 to 5, y from -5 to 5.");
+  expect((screen.getByRole("button", { name: "Put on the board" }) as HTMLButtonElement).disabled).toBe(true);
+});

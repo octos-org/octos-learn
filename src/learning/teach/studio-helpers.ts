@@ -67,3 +67,17 @@ export function learnerAuthor(profileId: string): LessonAuthor {
   if (!reference) reference = "local";
   return { kind: "learner", learner_ref: `learner:${reference}`, presented_by: { avatar_ref: "avatar:octo", voice_ref: "voice:learner-default" } };
 }
+
+/** The axis ranges of every coordinate grid the learner has put on the board. */
+export function gridRanges(recording: LearnerRecording): Map<string, { x: [number, number]; y: [number, number] }> {
+  const ranges = new Map<string, { x: [number, number]; y: [number, number] }>();
+  for (const card of recording.cards) {
+    for (const take of card.takes) {
+      if (take.status === "superseded") continue;
+      for (const event of take.events as RecordingEvent[]) {
+        if (event.type === "component.insert" && event.panel === "coordinate_grid") ranges.set(event.alias, { x: event.x, y: event.y });
+      }
+    }
+  }
+  return ranges;
+}
