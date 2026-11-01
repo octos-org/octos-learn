@@ -1,7 +1,7 @@
 import { getLocale, subscribeLocale } from "@/i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { normalizeAuthoringLesson, reduceCanonicalEvents, type CanonicalEvent } from "octos-lesson-language";
-import { mountInfiniteBoard, type ImageAssetResolver, type MountedInfiniteBoard } from "octos-lesson-language/web-runtime";
+import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type CanonicalEvent, type SemanticBoardState } from "octos-lesson-language";
+import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type VariableControlsView } from "octos-lesson-language/web-runtime";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor, teachingReadingScale } from "../oll/board-chrome-insets";
@@ -76,6 +76,22 @@ function annotationFor(viewport: HTMLElement, ink: { x: number; y: number; width
   return undefined;
 }
 
+/** A finished drag of a lesson variable (unit circle point or slider). */
+export interface VariableGesture {
+  variable: string;
+  via: "slider" | "geometry_point";
+  from: number;
+  to: number;
+  durationMs: number;
+}
+
+/** A finished turn of a 3D scene by the learner. */
+export interface SceneGesture {
+  node: string;
+  yaw: number;
+  pitch: number;
+}
+
 type InkModule = typeof import("octos-lesson-language/ink-runtime");
 type InkRuntime = ReturnType<InkModule["mountInkRuntime"]>;
 
@@ -88,10 +104,23 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   resolveAsset: ImageAssetResolver;
   /** Called with what the learner tapped when a pointing tool is active. */
   onTarget?: (target: BoardTarget) => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget }, ref) {
+  /** While set, the learner can drag variables and turn 3D scenes; each finished gesture is reported. */
+  onVariableGesture?: (gesture: VariableGesture) => void;
+  onSceneGesture?: (gesture: SceneGesture) => void;
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onVariableGesture, onSceneGesture }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<VariableControlsView | null>(null);
+  // The compiled board, and what the learner's drags show on top of it until
+  // the recording catches up.
+  const boardStateRef = useRef<SemanticBoardState | null>(null);
+  const gestureRef = useRef<{ variable: string; from: number; startedAt: number } | null>(null);
+  const gesturesRef = useRef({ onVariableGesture, onSceneGesture });
+  useEffect(() => {
+    gesturesRef.current = { onVariableGesture, onSceneGesture };
+  }, [onVariableGesture, onSceneGesture]);
   const onTargetRef = useRef(onTarget);
   useEffect(() => {
     onTargetRef.current = onTarget;
@@ -114,6 +143,44 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (target) onTargetRef.current(target);
     };
     viewport.addEventListener("click", handleClick);
+
+    const showVariable = (alias: string, value: number) => {
+      const state = boardStateRef.current;
+      if (!state?.variables?.[alias]) return;
+      const next = setLessonVariable(state, alias, value);
+      boardStateRef.current = next;
+      mounted.view.render(next);
+      sliderRef.current?.render(next);
+    };
+    const variableInput = (alias: string, value: number, event: { phase: "start" | "update" | "commit"; control: string }) => {
+      if (!gesturesRef.current.onVariableGesture) return;
+      const current = boardStateRef.current?.variables?.[alias]?.value;
+      if (event.phase === "start" || !gestureRef.current) {
+        gestureRef.current = { variable: alias, from: current ?? value, startedAt: performance.now() };
+      }
+      showVariable(alias, value);
+      if (event.phase === "commit" && gestureRef.current) {
+        const { from, startedAt } = gestureRef.current;
+        gestureRef.current = null;
+        if (from !== value) {
+          gesturesRef.current.onVariableGesture?.({
+            variable: alias, via: event.control === "geometry_point" ? "geometry_point" : "slider",
+            from, to: value, durationMs: Math.round(performance.now() - startedAt),
+          });
+        }
+      }
+      return `studio-gesture-${alias}`;
+    };
+    mounted.view.setVariableInputHandler((alias, value, event) => variableInput(alias, value, event));
+    if (controlsRef.current) sliderRef.current = mountVariableControls(controlsRef.current, (alias, value, event) => variableInput(alias, value, event));
+    mounted.view.setScene3dInputHandler((nodeId, view, event) => {
+      if (!gesturesRef.current.onSceneGesture) return;
+      mounted.view.setScene3dViews({ [nodeId]: view });
+      const target = boardTargetFromId(nodeId);
+      if (event.phase === "commit" && target) gesturesRef.current.onSceneGesture({ node: target.node, yaw: view.yaw, pitch: view.pitch });
+      return `studio-scene-${nodeId}`;
+    });
+
     return () => {
       viewport.removeEventListener("click", handleClick);
       unsubscribeLocale();
@@ -185,9 +252,20 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       },
     });
     const state = reduceCanonicalEvents(events);
+    boardStateRef.current = state;
+    // A 3D scene shows its recorded view: the camera of its last view intent.
+    mounted.view.setScene3dViews(Object.fromEntries(Object.values(state.nodes)
+      .filter((node) => node.kind === "scene3d")
+      .map((node) => [node.id, node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, node.content.camera) : node.content.camera])));
     mounted.view.render(state);
+    sliderRef.current?.render(state);
     if (state.focus.length) mounted.view.focusTargets(state.focus);
   }, [compiled]);
 
-  return <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} />;
+  return (
+    <div className="teach-board-frame">
+      <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} data-interactive={onVariableGesture ? "true" : undefined} />
+      <div ref={controlsRef} className="teach-board-controls" />
+    </div>
+  );
 });

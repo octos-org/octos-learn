@@ -28,7 +28,7 @@ import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { gridRanges, learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { TakeSpeech } from "./take-speech";
-import { TeachBoard, type TeachBoardHandle } from "./teach-board";
+import { TeachBoard, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
 type Tool = "none" | "pen" | "laser" | "highlighter";
@@ -153,6 +153,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     update((current) => cancelTake(current, key, now()));
   };
 
+  // A drag happened over time; it is placed at its start, never before the take's last action.
+  const lastEventTime = () => recordingTake?.events.at(-1)?.t ?? 0;
+  const onVariableGesture = (gesture: VariableGesture) => {
+    record({ type: "variable.drag", ...gesture, t: Math.max(lastEventTime(), elapsed() - gesture.durationMs) });
+  };
+  const onSceneGesture = (gesture: SceneGesture) => {
+    record({ type: "view.rotate", ...gesture, t: Math.max(lastEventTime(), elapsed()) });
+  };
+
   const onTarget = (target: BoardTarget) => {
     if (tool === "laser") record(withTime({ type: "tool.laser" as const, target }));
     if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }));
@@ -194,7 +203,14 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         </ol>
 
         <div className="teach-studio-body">
-          <TeachBoard ref={boardRef} compiled={compiled.lesson} resolveAsset={resolveAsset} onTarget={isRecording && (tool === "laser" || tool === "highlighter") ? onTarget : undefined} />
+          <TeachBoard
+            ref={boardRef}
+            compiled={compiled.lesson}
+            resolveAsset={resolveAsset}
+            onTarget={isRecording && (tool === "laser" || tool === "highlighter") ? onTarget : undefined}
+            onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
+            onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
+          />
           <aside className="teach-controls" aria-label={tr("录课工具")}>
             {card && !isRecording && (
               <button type="button" className="teach-record" onClick={start}>{kept ? tr("重录这张卡片") : tr("开始录这张卡片")}</button>
@@ -216,6 +232,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 </div>
                 {(tool === "laser" || tool === "highlighter") && <p className="academy-muted">{tr("在白板上点一张卡片或它的一部分。")}</p>}
                 {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
+                {tool === "none" && <p className="academy-muted">{tr("拖动单位圆上的点或滑杆、转动长方体，都会录进这张卡片。")}</p>}
                 <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
                   {([["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box]] as const).map(([value, label, Icon]) => (
                     <button key={value} type="button" aria-pressed={form === value} onClick={() => setForm(form === value ? null : value)}><Icon size={16} aria-hidden="true" /> {label}</button>

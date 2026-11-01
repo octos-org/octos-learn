@@ -1,5 +1,5 @@
 import { setLocale } from "@/i18n";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
@@ -9,6 +9,8 @@ import type { BoardTarget } from "./recording";
 const board = vi.hoisted(() => ({
   compiled: null as CompiledLesson | null,
   onTarget: undefined as ((target: BoardTarget) => void) | undefined,
+  onVariableGesture: undefined as ((gesture: { variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }) => void) | undefined,
+  onSceneGesture: undefined as ((gesture: { node: string; yaw: number; pitch: number }) => void) | undefined,
   frozen: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
   pen: [] as boolean[],
   inkDocuments: [] as string[],
@@ -16,9 +18,11 @@ const board = vi.hoisted(() => ({
 vi.mock("./teach-board", async () => {
   const { forwardRef, useImperativeHandle } = await import("react");
   return {
-    TeachBoard: forwardRef((props: { compiled: CompiledLesson | null; onTarget?: (target: BoardTarget) => void }, ref) => {
+    TeachBoard: forwardRef((props: { compiled: CompiledLesson | null; onTarget?: (target: BoardTarget) => void; onVariableGesture?: typeof board.onVariableGesture; onSceneGesture?: typeof board.onSceneGesture }, ref) => {
       board.compiled = props.compiled;
       board.onTarget = props.onTarget;
+      board.onVariableGesture = props.onVariableGesture;
+      board.onSceneGesture = props.onSceneGesture;
       useImperativeHandle(ref, () => ({
         startInk: async (documentId: string) => { board.inkDocuments.push(documentId); },
         setPen: (on: boolean) => { board.pen.push(on); },
@@ -204,4 +208,25 @@ it("tells the learner when the microphone cannot be used", async () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
   expect(await screen.findByText("The microphone isn't available. You can still record, then type what you said below.")).toBeTruthy();
+});
+
+it("records a drag of the unit circle and a turn of the box, at the nearest named view", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Box" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  expect(board.onVariableGesture).toBeTypeOf("function");
+  time = 4_000;
+  act(() => board.onVariableGesture!({ variable: "theta", via: "geometry_point", from: 0, to: 1.2, durationMs: 2_000 }));
+  time = 5_000;
+  act(() => board.onSceneGesture!({ node: "box-1", yaw: 0.05, pitch: 1.45 }));
+  fireEvent.click(screen.getByRole("button", { name: /Pen/ }));
+  expect(board.onVariableGesture).toBeUndefined();
+  const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
+  expect(actions.find((action) => action.do === "animate")).toMatchObject({ variable: "theta", value: 1.2, duration_intent: "normal" });
+  expect(actions.find((action) => action.do === "view")).toMatchObject({ target: "box-1", preset: "top" });
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes[0]!;
+  expect(take.events.map((event) => [event.type, event.t])).toEqual([["component.insert", 0], ["component.insert", 0], ["variable.drag", 1_000], ["view.rotate", 4_000]]);
 });

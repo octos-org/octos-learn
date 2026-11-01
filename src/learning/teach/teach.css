@@ -40,3 +40,5 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
   .teach-board { height: 56vh; }
 }
 .teach-notice { margin: 0; padding: 10px 12px; border-radius: 12px; color: #6a4f12; background: #fbf1d6; font-size: 14px; }
+.teach-board-frame { display: grid; gap: 8px; }
+.teach-board-controls:empty, .teach-board-controls[hidden] { display: none; }
