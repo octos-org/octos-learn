@@ -345,8 +345,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
 
     if (card.kind === "your_turn") {
-      const check = take.events.find((event) => event.type === "your_turn.check_picked");
-      const demo = take.events.find((event) => event.type === "your_turn.demonstrated");
+      // The learner may set the exercise up more than once; the latest wins.
+      const check = [...take.events].reverse().find((event) => event.type === "your_turn.check_picked");
+      const demo = [...take.events].reverse().find((event) => event.type === "your_turn.demonstrated");
       if (check && demo && check.type === "your_turn.check_picked" && demo.type === "your_turn.demonstrated") {
         const hints = take.events.flatMap((event) => (event.type === "your_turn.hint_spoken" ? [event.text] : []));
         tasks.push({

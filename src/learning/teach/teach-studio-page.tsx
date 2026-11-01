@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { Box, Circle, Crosshair, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Square } from "lucide-react";
+import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Spline, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -25,14 +25,14 @@ import {
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { gridRanges, learnerAuthor, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
+import { gridPoints, gridRanges, learnerAuthor, lineThrough, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { TakeSpeech } from "./take-speech";
 import { TeachBoard, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
-type Tool = "none" | "pen" | "laser" | "highlighter";
-type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | null;
+type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
+type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | null;
 
 function numberField(value: string): number | undefined {
   const number = Number(value);
@@ -94,7 +94,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
 
   const chooseTool = (next: Tool) => {
     setTool(next);
-    boardRef.current?.setPen(next === "pen");
+    setArrowFrom(null);
+    boardRef.current?.setPen(next === "pen" ? "draw" : next === "eraser" ? "erase" : "off");
   };
   const start = () => {
     if (!recording || !card) return;
@@ -162,9 +163,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     record({ type: "view.rotate", ...gesture, t: Math.max(lastEventTime(), elapsed()) });
   };
 
+  const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
   const onTarget = (target: BoardTarget) => {
     if (tool === "laser") record(withTime({ type: "tool.laser" as const, target }));
     if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }));
+    if (tool === "arrow") {
+      if (!arrowFrom) { setArrowFrom(target); return; }
+      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }));
+      setArrowFrom(null);
+    }
   };
 
   useEffect(() => {
@@ -207,7 +214,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             ref={boardRef}
             compiled={compiled.lesson}
             resolveAsset={resolveAsset}
-            onTarget={isRecording && (tool === "laser" || tool === "highlighter") ? onTarget : undefined}
+            onTarget={isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow") ? onTarget : undefined}
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
           />
@@ -226,11 +233,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             {isRecording && (
               <>
                 <div className="teach-toolbar" role="group" aria-label={tr("书写和指点")}>
-                  {([["none", tr("移动白板"), MousePointer2], ["pen", tr("笔"), PenLine], ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter]] as const).map(([value, label, Icon]) => (
+                  {([["none", tr("移动白板"), MousePointer2], ["pen", tr("笔"), PenLine], ["eraser", tr("橡皮"), Eraser], ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight]] as const).map(([value, label, Icon]) => (
                     <button key={value} type="button" aria-pressed={tool === value} onClick={() => chooseTool(value)}><Icon size={16} aria-hidden="true" /> {label}</button>
                   ))}
                 </div>
                 {(tool === "laser" || tool === "highlighter") && <p className="academy-muted">{tr("在白板上点一张卡片或它的一部分。")}</p>}
+                {tool === "arrow" && <p className="academy-muted">{arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。")}</p>}
                 {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
                 {tool === "none" && <p className="academy-muted">{tr("拖动单位圆上的点或滑杆、转动长方体，都会录进这张卡片。")}</p>}
                 <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
@@ -240,6 +248,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   {grids.length > 0 && (
                     <button type="button" aria-pressed={form === "point"} onClick={() => setForm(form === "point" ? null : "point")}><Square size={16} aria-hidden="true" /> {tr("放一个点")}</button>
                   )}
+                  {[...gridPoints(recording).values()].some((points) => points.length >= 2) && (
+                    <button type="button" aria-pressed={form === "line"} onClick={() => setForm(form === "line" ? null : "line")}><Spline size={16} aria-hidden="true" /> {tr("过两点画直线")}</button>
+                  )}
                 </div>
                 {form && (
                   <InsertPanel
@@ -248,6 +259,18 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                     grids={grids}
                     onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); setForm(null); }}
                     onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); setForm(null); }}
+                    onLine={(line) => { record(withTime({ type: "graph_it.confirmed" as const, ...line })); setForm(null); }}
+                  />
+                )}
+                {card?.kind === "your_turn" && (
+                  <YourTurnPanel
+                    variables={recordingVariables(recording)}
+                    valueOf={(alias) => boardRef.current?.variableValue(alias)}
+                    onSave={(exercise) => {
+                      record(withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }));
+                      record(withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }));
+                      if (exercise.hint) record(withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint }));
+                    }}
                   />
                 )}
               </>
@@ -283,13 +306,14 @@ function TranscriptEditor({ text, onSave }: { text: string; onSave: (text: strin
 }
 
 function InsertPanel({
-  form, recording, grids, onInsert, onPoint,
+  form, recording, grids, onInsert, onPoint, onLine,
 }: {
   form: Exclude<InsertForm, null>;
   recording: LearnerRecording;
   grids: string[];
   onInsert: (component: ComponentInsert) => void;
   onPoint: (point: { node: string; point: string; x: number; y: number; label: string }) => void;
+  onLine: (line: { points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }) => void;
 }) {
   const [expression, setExpression] = useState("2*x");
   const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
@@ -369,6 +393,7 @@ function InsertPanel({
       </form>
     );
   }
+  if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
   const [x, y] = [numberField(point.x), numberField(point.y)];
   const label = point.node ? nextPointLabel(recording, point.node) : undefined;
   const gridRange = gridRanges(recording).get(point.node);
@@ -395,6 +420,105 @@ function InsertPanel({
         <p role="alert">{tr("这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。", { v0: gridRange.x[0], v1: gridRange.x[1], v2: gridRange.y[0], v3: gridRange.y[1] })}</p>
       )}
       <button type="submit" disabled={!label || x === undefined || y === undefined || outside}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+function LineForm({ recording, onLine }: {
+  recording: LearnerRecording;
+  onLine: (line: { points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }) => void;
+}) {
+  const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 2);
+  const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
+  const points = gridPoints(recording).get(grid) ?? [];
+  const [first, setFirst] = useState(points[0]?.point ?? "");
+  const [second, setSecond] = useState(points[1]?.point ?? "");
+  const a = points.find((candidate) => candidate.point === first);
+  const b = points.find((candidate) => candidate.point === second);
+  const expression = a && b && a !== b ? lineThrough(a, b) : undefined;
+  const range = gridRanges(recording).get(grid);
+  const choose = (value: string, set: (value: string) => void) => (
+    <select className="teach-input" value={value} onChange={(event) => set(event.target.value)}>
+      {points.map((candidate) => <option key={candidate.point} value={candidate.point}>{candidate.label}</option>)}
+    </select>
+  );
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (expression && range) onLine({ points: [`${grid}#${first}`, `${grid}#${second}`], expression, alias: nextComponentAlias(recording, "line"), x: range.x, y: range.y });
+    }}>
+      {all.length > 1 && (
+        <label className="teach-label">{tr("用哪个网格的点")}
+          <select className="teach-input" value={grid} onChange={(event) => setGrid(event.target.value)}>
+            {all.map(([alias]) => <option key={alias} value={alias}>{alias}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="teach-range" role="group" aria-label={tr("直线经过的两点")}>
+        {choose(first, setFirst)}
+        {choose(second, setSecond)}
+      </div>
+      {expression && <p className="academy-muted">y = {expression.replaceAll("*", "·")}</p>}
+      {a && b && a.x === b.x && <p role="alert">{tr("这两个点上下对齐，画出的是竖直线，不是函数图。")}</p>}
+      <button type="submit" disabled={!expression}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+const READOUTS = (variable: string) => [
+  { expression: variable, label: variable },
+  { expression: `sin(${variable})`, label: `sin ${variable}` },
+  { expression: `cos(${variable})`, label: `cos ${variable}` },
+];
+
+function evaluateReadout(expression: string, value: number): number {
+  if (expression.startsWith("sin(")) return Math.sin(value);
+  if (expression.startsWith("cos(")) return Math.cos(value);
+  return value;
+}
+
+/**
+ * Sets up a "Your turn" exercise from the learner's own demonstration: they
+ * put the answer on the board, then choose which reading is checked.
+ */
+function YourTurnPanel({ variables, valueOf, onSave }: {
+  variables: string[];
+  valueOf: (alias: string) => number | undefined;
+  onSave: (exercise: { variable: string; value: number; expression: string; target: number; tolerance: number; hint: string }) => void;
+}) {
+  const [variable, setVariable] = useState(variables[0] ?? "");
+  const [demonstrated, setDemonstrated] = useState<number>();
+  const [expression, setExpression] = useState(variable ? `sin(${variable})` : "");
+  const [hint, setHint] = useState("");
+  const [saved, setSaved] = useState(false);
+  if (!variables.length) return <p className="academy-muted">{tr("“轮到你了”需要一个可以拖动的组件，比如单位圆。先在前面的卡片里放一个。")}</p>;
+  const target = demonstrated === undefined ? undefined : Math.round(evaluateReadout(expression, demonstrated) * 100) / 100;
+  return (
+    <form className="teach-step" aria-label={tr("设置“轮到你了”练习")} onSubmit={(event) => {
+      event.preventDefault();
+      if (demonstrated === undefined || target === undefined) return;
+      onSave({ variable, value: demonstrated, expression, target, tolerance: expression === variable ? 0.05 : 0.01, hint: hint.trim() });
+      setSaved(true);
+    }}>
+      <p className="academy-muted">{tr("先在白板上把答案摆出来，再点“就是这个答案”。")}</p>
+      {variables.length > 1 && (
+        <select className="teach-input" value={variable} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
+          {variables.map((alias) => <option key={alias} value={alias}>{alias}</option>)}
+        </select>
+      )}
+      <button type="button" className="teach-secondary" onClick={() => setDemonstrated(valueOf(variable))}>{tr("就是这个答案")}</button>
+      {demonstrated !== undefined && (
+        <>
+          <label className="teach-label">{tr("检查哪个读数")}
+            <select className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)}>
+              {READOUTS(variable).map((readout) => <option key={readout.expression} value={readout.expression}>{readout.label}</option>)}
+            </select>
+          </label>
+          <p className="academy-muted">{tr("观看的人要让它等于 {{v0}}", { v0: target })}</p>
+          <label className="teach-label">{tr("给一个提示（可以不写）")}<input className="teach-input" value={hint} onChange={(event) => setHint(event.target.value)} /></label>
+          <button type="submit">{saved ? tr("已保存，可以再改") : tr("保存这道练习")}</button>
+        </>
+      )}
     </form>
   );
 }

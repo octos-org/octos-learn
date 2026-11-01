@@ -35,11 +35,14 @@ export interface FrozenInk {
 export interface TeachBoardHandle {
   /** Starts a fresh ink document for one take; the ink runtime loads on demand. */
   startInk(documentId: string): Promise<void>;
-  setPen(on: boolean): void;
+  /** Writing tool for the take's ink: draw, erase, or off (the board moves and responds). */
+  setPen(mode: "draw" | "erase" | "off"): void;
   /** Freezes the take's strokes and removes the live ink; null when nothing was drawn. */
   freezeInk(): Promise<FrozenInk | null>;
   /** Removes the live ink without keeping it. */
   discardInk(): Promise<void>;
+  /** The value a lesson variable shows on the board now. */
+  variableValue(alias: string): number | undefined;
 }
 
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
@@ -205,8 +208,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       ink.setMode("navigate");
       inkRef.current = ink;
     },
-    setPen(on) {
-      inkRef.current?.setMode(on ? "draw" : "navigate");
+    setPen(mode) {
+      inkRef.current?.setMode(mode === "off" ? "navigate" : mode);
     },
     async freezeInk() {
       const ink = inkRef.current;
@@ -228,6 +231,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const ink = inkRef.current;
       inkRef.current = null;
       await ink?.destroy();
+    },
+    variableValue(alias) {
+      return boardStateRef.current?.variables?.[alias]?.value;
     },
   }), []);
 

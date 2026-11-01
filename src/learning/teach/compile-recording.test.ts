@@ -145,3 +145,14 @@ describe("compileRecording", () => {
     expect(() => compileRecording(bad, { author, language: "en-US" })).toThrow(CompileError);
   });
 });
+
+describe("studio helpers", () => {
+  it("writes the line through two points as y = m·x + b", async () => {
+    const { lineThrough } = await import("./studio-helpers");
+    expect(lineThrough({ x: 1, y: 2 }, { x: 4, y: 8 })).toBe("2*x");
+    expect(lineThrough({ x: 0, y: 3 }, { x: 2, y: 2 })).toBe("-0.5*x+3");
+    expect(lineThrough({ x: 1, y: 1 }, { x: 3, y: -3 })).toBe("-2*x+3");
+    expect(lineThrough({ x: 0, y: 4 }, { x: 5, y: 4 })).toBe("4");
+    expect(lineThrough({ x: 2, y: 0 }, { x: 2, y: 5 })).toBeUndefined();
+  });
+});

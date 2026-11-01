@@ -12,7 +12,8 @@ const board = vi.hoisted(() => ({
   onVariableGesture: undefined as ((gesture: { variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }) => void) | undefined,
   onSceneGesture: undefined as ((gesture: { node: string; yaw: number; pitch: number }) => void) | undefined,
   frozen: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
-  pen: [] as boolean[],
+  pen: [] as string[],
+  values: {} as Record<string, number>,
   inkDocuments: [] as string[],
 }));
 vi.mock("./teach-board", async () => {
@@ -25,9 +26,10 @@ vi.mock("./teach-board", async () => {
       board.onSceneGesture = props.onSceneGesture;
       useImperativeHandle(ref, () => ({
         startInk: async (documentId: string) => { board.inkDocuments.push(documentId); },
-        setPen: (on: boolean) => { board.pen.push(on); },
+        setPen: (mode: string) => { board.pen.push(mode); },
         freezeInk: async () => board.frozen,
         discardInk: async () => undefined,
+        variableValue: (alias: string) => board.values[alias],
       }));
       return <div data-testid="teach-board" />;
     }),
@@ -70,6 +72,7 @@ beforeEach(() => {
   board.onTarget = undefined;
   board.frozen = null;
   board.pen = [];
+  board.values = {};
   board.inkDocuments = [];
   voice.listening = true;
   voice.available = true;
@@ -160,7 +163,9 @@ it("freezes the take's handwriting onto the card, as an annotation when written 
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
   expect(board.inkDocuments).toEqual(["rec-1:card-1:take-1"]);
   fireEvent.click(screen.getByRole("button", { name: /Pen/ }));
-  expect(board.pen.at(-1)).toBe(true);
+  expect(board.pen.at(-1)).toBe("draw");
+  fireEvent.click(screen.getByRole("button", { name: /Eraser/ }));
+  expect(board.pen.at(-1)).toBe("erase");
   board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0L9 9\"/></svg>", width: 40, height: 30, annotates: { node: "grid-1", x: 0.3, y: 0.5, width: 0.1, height: 0.1 } };
   time = 4_000;
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
@@ -170,7 +175,7 @@ it("freezes the take's handwriting onto the card, as an annotation when written 
   expect(ink!.sha256).toMatch(/^[0-9a-f]{64}$/);
   expect(ink!.annotates).toEqual({ node: "grid-1", x: 0.3, y: 0.5, width: 0.1, height: 0.1 });
   expect(JSON.parse(localStorage.getItem("octos-learn:learner-ink:v1:learner-1")!)["ink-snap:rec-1-card-1-t1@v1"].width).toBe(40);
-  expect(board.pen.at(-1)).toBe(false);
+  expect(board.pen.at(-1)).toBe("off");
 });
 
 it("turns what the learner says into the card's captions, timed from the take start", async () => {
@@ -229,4 +234,60 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   expect(actions.find((action) => action.do === "view")).toMatchObject({ target: "box-1", preset: "top" });
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes[0]!;
   expect(take.events.map((event) => [event.type, event.t])).toEqual([["component.insert", 0], ["component.insert", 0], ["variable.drag", 1_000], ["view.rotate", 4_000]]);
+});
+
+function placeGridWithPoints(points: Array<[string, string]>) {
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  for (const [x, y] of points) {
+    fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
+    fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: x } });
+    fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: y } });
+    fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  }
+}
+
+it("draws the line through two placed points and points an arrow at it", () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  placeGridWithPoints([["1", "2"], ["2", "4"]]);
+  fireEvent.click(screen.getByRole("button", { name: "Line through two points" }));
+  expect(screen.getByText("y = 2·x")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: /Arrow/ }));
+  expect(screen.getByText("Tap where the arrow starts.")).toBeTruthy();
+  act(() => board.onTarget!({ node: "grid-1", part: "point-a" }));
+  expect(screen.getByText("Now tap where the arrow points.")).toBeTruthy();
+  act(() => board.onTarget!({ node: "line-1", part: "line" }));
+  const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
+  expect(actions.find((action) => action.do === "write" && action.as === "line-1")).toMatchObject({ kind: "plot", content: { curves: [{ expression: "2*x" }] } });
+  expect(actions.find((action) => action.do === "connect")).toMatchObject({ from: "grid-1#point-a", to: "line-1#line" });
+});
+
+it("sets up a Your turn exercise from the learner's demonstration", async () => {
+  localStorage.clear();
+  const recording = planCards(
+    createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Sine", type: "math_off_map" }, goals: ["Sine is height"] }),
+    "2026-10-31T12:00:00.000Z",
+    [{ title: "The circle" }, { title: "Your turn", kind: "your_turn" }],
+  );
+  saveRecordingDraft(localStorage, "learner-1", recording);
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Unit circle" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: /2\. Your turn/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  board.values.theta = 3 * Math.PI / 2;
+  fireEvent.click(screen.getByRole("button", { name: "This is the answer" }));
+  expect(screen.getByText("Viewers need to make it equal -1")).toBeTruthy();
+  fireEvent.change(screen.getByRole("textbox", { name: "Give a hint (optional)" }), { target: { value: "Where is the point lowest?" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save this exercise" }));
+  expect(board.compiled!.lesson.lesson.tasks?.[0]).toMatchObject({
+    completion: { kind: "expression_target", expression: "sin(theta)", value: -1, tolerance: 0.01 },
+    allowed_operations: [{ kind: "variable_change", variable: "theta", controls: ["slider", "geometry_point"] }],
+    hints: ["Where is the point lowest?"],
+  });
 });

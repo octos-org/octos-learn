@@ -81,3 +81,40 @@ export function gridRanges(recording: LearnerRecording): Map<string, { x: [numbe
   }
   return ranges;
 }
+
+export interface GridPoint {
+  point: string;
+  label: string;
+  x: number;
+  y: number;
+}
+
+/** The points placed on each coordinate grid, in the order they were placed. */
+export function gridPoints(recording: LearnerRecording): Map<string, GridPoint[]> {
+  const points = new Map<string, GridPoint[]>();
+  for (const card of recording.cards) {
+    for (const take of card.takes) {
+      if (take.status === "superseded") continue;
+      for (const event of take.events as RecordingEvent[]) {
+        if (event.type !== "point_tool.place" && event.type !== "make_point.confirmed") continue;
+        points.set(event.node, [...(points.get(event.node) ?? []), { point: event.point, label: event.label, x: event.x, y: event.y }]);
+      }
+    }
+  }
+  return points;
+}
+
+function plain(value: number): string {
+  return String(Math.round(value * 10_000) / 10_000);
+}
+
+/** y = m·x + b through two points, or undefined for a vertical line (not a function). */
+export function lineThrough(a: { x: number; y: number }, b: { x: number; y: number }): string | undefined {
+  if (a.x === b.x) return undefined;
+  const slope = (b.y - a.y) / (b.x - a.x);
+  const intercept = a.y - slope * a.x;
+  const term = slope === 0 ? "" : `${plain(slope)}*x`;
+  if (!term) return plain(intercept);
+  if (Math.abs(intercept) < 1e-12) return term;
+  return `${term}${intercept < 0 ? "-" : "+"}${plain(Math.abs(intercept))}`;
+}
