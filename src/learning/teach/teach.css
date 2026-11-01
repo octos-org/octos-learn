@@ -135,3 +135,11 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
   .teach-dock { flex-wrap: wrap; justify-content: center; width: calc(100% - 32px); box-sizing: border-box; }
   .teach-add { left: 16px; right: 16px; width: auto; }
 }
+
+/* Watch my lesson */
+.teach-studio a.teach-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; color: #f6dfa0; background: #1b2457; font-size: 15px; font-weight: 500; text-decoration: none; }
+.teach-check-foot { gap: 10px; justify-content: space-between; }
+.teach-watch-stage { position: relative; flex: 1; min-height: 0; margin-top: 12px; overflow: hidden; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fbf9f3; }
+.teach-watch-bar { display: flex; align-items: center; gap: 12px; padding: 12px 0 0; }
+.teach-watch-caption { flex: 1; min-height: 48px; margin: 0; padding: 10px 16px; border-radius: 14px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 18px; line-height: 1.4; }
+.teach-watch-caption:empty { background: transparent; }

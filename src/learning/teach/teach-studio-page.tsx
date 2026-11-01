@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Plus, Sparkles } from "lucide-react";
+import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
@@ -444,6 +444,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     .flatMap((event) => (event.type === "component.insert" && event.panel === "coordinate_grid" ? [event.alias] : [])));
   const checks = cardChecks(recording, compiled.lesson, recording.review);
   const checkOf = (key: string) => checks.find((check) => check.key === key);
+  const ready = lessonReady(checks, recording);
   const cardCheck = card ? checkOf(card.key) : undefined;
   const pointing = isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow");
   const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
@@ -475,9 +476,16 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         {isRecording ? (
           <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>
         ) : (
-          <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
-            <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
-          </button>
+          <>
+            <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
+              <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
+            </button>
+            {ready ? (
+              <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
+            ) : (
+              <button type="button" className="teach-primary" disabled title={tr("检查通过后就能看你的课了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
+            )}
+          </>
         )}
       </header>
 
@@ -656,7 +664,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         <CheckDialog
           run={checkRun}
           checks={checks}
-          {...(recording.review?.overall && lessonReady(checks, recording) ? { overall: recording.review.overall } : {})}
+          {...(recording.review?.overall && ready ? { overall: recording.review.overall } : {})}
+          {...(ready ? { watchHref: `/teach/${recording.id}/watch` } : {})}
           onFix={(key) => { setCheckRun(null); setSelected(key); }}
           onAgain={() => void runCheck()}
           onClose={() => setCheckRun(null)}

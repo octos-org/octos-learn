@@ -31,6 +31,7 @@ import {
   mountInfiniteBoard,
   studentInputMethod,
   type BoardTargetCandidate,
+  type ImageAssetResolver,
   type MountedInfiniteBoard,
   type StudentInputMethod,
   type RegionLayoutConstraint,
@@ -675,6 +676,7 @@ function geometryTaskSnapDistance(
 
 export function LearningWhiteboard({
   runtime,
+  resolveAsset,
   portableCourseRegion,
   inkSessionId,
   inkMergeSourceSessionId,
@@ -703,6 +705,8 @@ export function LearningWhiteboard({
   taskReactions = NEUTRAL_REACTIONS,
 }: {
   runtime?: OllLessonRuntimeController | null;
+  /** Images the lesson refers to by asset ID, such as a learner's frozen handwriting. */
+  resolveAsset?: ImageAssetResolver;
   /** Fixed task lines of the teacher who gave this lesson. */
   taskReactions?: TeacherReactions;
   portableCourseRegion?: {
@@ -786,6 +790,9 @@ export function LearningWhiteboard({
 }) {
   useLocale();
   const viewportRef = useRef<HTMLDivElement>(null);
+  // The board is mounted once; it asks for assets through this ref.
+  const resolveAssetRef = useRef(resolveAsset);
+  useEffect(() => { resolveAssetRef.current = resolveAsset; }, [resolveAsset]);
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const questionsRef = useRef(questions);
   questionsRef.current = questions;
@@ -2383,7 +2390,7 @@ export function LearningWhiteboard({
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    const mounted = mountInfiniteBoard(viewport);
+    const mounted = mountInfiniteBoard(viewport, (id) => resolveAssetRef.current?.(id));
     (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
     // Automatic framing must not reduce teaching cards to an unreadable

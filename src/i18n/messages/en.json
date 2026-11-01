@@ -2463,5 +2463,18 @@
   "（没有字幕）": "(no captions)",
   "重录我的话": "Re-record my words",
   "白板上的东西会留着，只重新录你说的话和指的地方。": "Your board stays as it is. Only your words and pointing are recorded again.",
-  "下一张：第 {{v0}} 张 →": "Next: card {{v0}} →"
+  "下一张：第 {{v0}} 张 →": "Next: card {{v0}} →",
+  "← 回去改课": "← Back to editing",
+  "播放我的课": "Play",
+  "暂停播放": "Pause",
+  "再看一遍": "Watch again",
+  "从头开始": "Start from the beginning",
+  "关掉声音": "Turn sound off",
+  "打开声音": "Turn sound on",
+  "看完了！": "The end!",
+  "你的课": "Your lesson",
+  "这节课还有卡片没录好，录完就能看了。": "Some cards aren't recorded yet. Record them and you can watch your lesson.",
+  "还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。": "Speech isn't connected yet, so your lesson plays with captions only. Connect it in Settings → API Keys.",
+  "看我的课": "Watch my lesson",
+  "检查通过后就能看你的课了": "You can watch your lesson once the check finds nothing to fix"
 }
