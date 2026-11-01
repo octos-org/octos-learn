@@ -28,29 +28,32 @@ export interface NodeTarget {
 
 export type BoardTarget = InkTarget | NodeTarget;
 
-export type ComponentPanel =
-  | "graph"
-  | "coordinate_grid"
-  | "unit_circle"
-  | "number_line"
-  | "shape"
-  | "solid_3d"
-  | "surface_3d"
-  | "table";
+/** Components the insert panel offers, with the settings the learner chose. */
+export type ComponentInsert =
+  | { panel: "graph"; alias: string; expression: string; x: [number, number]; y: [number, number]; title?: string;
+      /** Shows the point (v, f(v)) for a lesson variable v, so the graph follows a slider or dragged point. */
+      linkedVariable?: string }
+  | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
+  | { panel: "unit_circle"; alias: string; variable: string; title?: string }
+  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string };
+
+export type ComponentPanel = ComponentInsert["panel"];
 
 /** One board action of a take, `t` milliseconds after the take started. */
 export type RecordingEvent =
-  | { t: number; type: "ink.stroke"; componentIds: string[] }
   | { t: number; type: "tool.laser" | "tool.highlighter"; target: BoardTarget }
-  | { t: number; type: "tool.arrow"; from: string; to: string; label?: string }
-  | { t: number; type: "component.insert"; panel: ComponentPanel; alias: string; settings: Record<string, unknown> }
+  | { t: number; type: "tool.arrow"; from: BoardTarget; to: BoardTarget; label?: string }
+  | ({ t: number; type: "component.insert" } & ComponentInsert)
   | { t: number; type: "point_tool.place"; node: string; point: string; x: number; y: number; label: string }
   | { t: number; type: "variable.drag"; variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }
   | { t: number; type: "view.rotate"; node: string; yaw: number; pitch: number }
-  | { t: number; type: "make_neat.confirmed"; selection: string; latex: string; alias: string }
-  | { t: number; type: "graph_it.confirmed"; from: string[]; expression: string; alias: string }
+  | { t: number; type: "make_neat.confirmed"; selection: string; latex: string; alias: string; replacesInk: boolean }
+  | { t: number; type: "graph_it.confirmed"; points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }
   | { t: number; type: "make_point.confirmed"; selection: string; node: string; point: string; x: number; y: number; label: string }
-  | { t: number; type: "ink.hide"; node: string };
+  | { t: number; type: "ink.hide"; node: string }
+  | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
+  | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
+  | { t: number; type: "your_turn.hint_spoken"; text: string };
 
 export type TakeStatus = "recording" | "kept" | "superseded";
 
@@ -68,11 +71,16 @@ export interface Take {
   events: RecordingEvent[];
 }
 
-/** The learner's ink of a card, frozen when the card stops. It belongs to the card, not a take. */
+/**
+ * A piece of the learner's ink on a card, frozen when the card stops. Ink
+ * belongs to the card, not a take. Ink drawn on a component annotates it at a
+ * position on that component (fractions of its card).
+ */
 export interface CardInk {
   snapshotId: string;
   sha256: string;
   selections: string[];
+  annotates?: { node: string; x: number; y: number; width: number; height: number };
 }
 
 export interface RecordingCard {
@@ -80,7 +88,7 @@ export interface RecordingCard {
   title: string;
   kind: "teach" | "your_turn";
   takes: Take[];
-  ink?: CardInk;
+  ink?: CardInk[];
 }
 
 export interface LearnerRecording {
@@ -196,7 +204,7 @@ export function finishTake(
   recording: LearnerRecording,
   key: string,
   now: string,
-  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk },
+  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk[] },
 ): LearnerRecording {
   const card = findCard(recording, key);
   const take = currentTake(card);

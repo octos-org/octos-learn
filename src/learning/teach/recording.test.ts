@@ -46,7 +46,7 @@ describe("learner recording", () => {
 
   it("records a take with timed events and keeps it", () => {
     let recording = startTake(slopeLesson(), "card-1", now);
-    recording = appendEvent(recording, "card-1", { t: 900, type: "ink.stroke", componentIds: ["c1"] }, now);
+    recording = appendEvent(recording, "card-1", { t: 900, type: "tool.highlighter", target: { inkSelection: "sel-gentle" } }, now);
     recording = appendEvent(recording, "card-1", { t: 7300, type: "tool.laser", target: { inkSelection: "sel-steep" } }, now);
     recording = finishTake(recording, "card-1", now, { durationMs: 9400, asrText: "A steep ramp has a big soap.", speechSpanMs: [600, 8700] });
     const take = keptTake(recording.cards[0]!);
@@ -56,9 +56,10 @@ describe("learner recording", () => {
 
   it("rejects events out of time order or outside a take", () => {
     const recording = startTake(slopeLesson(), "card-1", now);
-    const later = appendEvent(recording, "card-1", { t: 500, type: "ink.stroke", componentIds: ["c1"] }, now);
-    expect(() => appendEvent(later, "card-1", { t: 100, type: "ink.stroke", componentIds: ["c2"] }, now)).toThrow(RecordingError);
-    expect(() => appendEvent(slopeLesson(), "card-2", { t: 0, type: "ink.stroke", componentIds: [] }, now)).toThrow(RecordingError);
+    const laser = (t: number) => ({ t, type: "tool.laser" as const, target: { node: "grid" } });
+    const later = appendEvent(recording, "card-1", laser(500), now);
+    expect(() => appendEvent(later, "card-1", laser(100), now)).toThrow(RecordingError);
+    expect(() => appendEvent(slopeLesson(), "card-2", laser(0), now)).toThrow(RecordingError);
   });
 
   it("allows only one card to record at a time", () => {
@@ -67,7 +68,7 @@ describe("learner recording", () => {
   });
 
   it("re-recording a card supersedes its speech but keeps its ink", () => {
-    const ink = { snapshotId: "ink-snap:card3@v4", sha256: "abc", selections: ["sel-rise", "sel-run"] };
+    const ink = [{ snapshotId: "ink-snap:card3@v4", sha256: "abc", selections: ["sel-rise", "sel-run"] }];
     let recording = startTake(slopeLesson(), "card-3", now);
     recording = finishTake(recording, "card-3", now, { durationMs: 8000, asrText: "Rise over run is 3 over 6.", ink });
     recording = startTake(recording, "card-3", now);
