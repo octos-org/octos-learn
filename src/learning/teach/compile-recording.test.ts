@@ -93,6 +93,7 @@ describe("compileRecording", () => {
       { t: 4_000, type: "component.insert", panel: "graph", alias: "sine-plot", expression: "sin(x)", x: [0, 6.3], y: [-1.2, 1.2], linkedVariable: "theta" },
     ]);
     recording = record(recording, "card-3", "Drag the point so sine equals negative 1.", [
+      { t: 1_000, type: "variable.drag", variable: "theta", via: "geometry_point", from: Math.PI / 2, to: 4.7124, durationMs: 1_500 },
       { t: 3_000, type: "your_turn.demonstrated", variable: "theta", value: 4.7124 },
       { t: 3_600, type: "your_turn.check_picked", expression: "sin(theta)", value: -1, tolerance: 0.01 },
       { t: 4_800, type: "your_turn.hint_spoken", text: "Where is the point lowest?" },
@@ -101,6 +102,7 @@ describe("compileRecording", () => {
     expect(lesson.lesson.variables?.map((variable) => variable.as)).toEqual(["theta"]);
     const animations = lesson.steps[0]!.beats[1]!.actions.filter((action) => action.do === "animate") as Array<{ value: number; duration_intent: string }>;
     expect(animations.map((action) => [action.value, action.duration_intent])).toEqual([[1.2, "normal"], [0.6, "brief"], [Math.PI / 2, "normal"]]);
+    expect(lesson.steps[0]!.beats[2]!.actions.some((action) => action.do === "animate")).toBe(false);
     expect(lesson.lesson.tasks?.[0]).toMatchObject({
       prompt: "Drag the point so sine equals negative 1.",
       allowed_operations: [{ kind: "variable_change", variable: "theta", controls: ["slider", "geometry_point"] }],
@@ -154,5 +156,23 @@ describe("studio helpers", () => {
     expect(lineThrough({ x: 1, y: 1 }, { x: 3, y: -3 })).toBe("-2*x+3");
     expect(lineThrough({ x: 0, y: 4 }, { x: 5, y: 4 })).toBe("4");
     expect(lineThrough({ x: 2, y: 0 }, { x: 2, y: 5 })).toBeUndefined();
+  });
+});
+
+describe("Your turn demonstrations", () => {
+  it("show on the board while the card records, and never in the finished lesson", () => {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: ["Sine"] }),
+      now,
+      [{ title: "Circle" }, { title: "Your turn", kind: "your_turn" }],
+    );
+    recording = record(recording, "card-1", "A circle.", [{ t: 0, type: "component.insert", panel: "unit_circle", alias: "unit-circle", variable: "theta" }]);
+    recording = appendEvent(startTake(recording, "card-2", now), "card-2",
+      { t: 500, type: "variable.drag", variable: "theta", via: "geometry_point", from: 0, to: 4.7124, durationMs: 1_000 }, now);
+    const live = compileRecording(recording, { author, language: "en-US", includeTakeInProgress: true });
+    expect(live.lesson.steps[0]!.beats[1]!.actions.some((action) => action.do === "animate")).toBe(true);
+    const finished = finishTake(recording, "card-2", now, { durationMs: 2_000, asrText: "Your turn." });
+    const lesson = compileRecording(finished, { author, language: "en-US" }).lesson;
+    expect(lesson.steps[0]!.beats[1]!.actions.some((action) => action.do === "animate")).toBe(false);
   });
 });

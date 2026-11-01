@@ -243,6 +243,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     });
 
     for (const event of take.events as RecordingEvent[]) {
+      // On a Your turn card, dragging and turning only demonstrate the answer;
+      // played back they would give it away. While the card is still being
+      // recorded the board keeps showing the demonstration.
+      if (card.kind === "your_turn" && take.status !== "recording" && (event.type === "variable.drag" || event.type === "view.rotate")) continue;
       const when = phaseOf(take, event.t);
       switch (event.type) {
         case "component.insert": {
