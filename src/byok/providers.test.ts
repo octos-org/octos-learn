@@ -23,6 +23,13 @@ describe("BYOK provider transports", () => {
     api.request.mockResolvedValueOnce({ status: 200, body: "{}", code: "20000003" });
     expect((await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config())).status).toBe("no_speech");
   });
+  it("pins English recognition for English speech and leaves other languages to Volcano's default", async () => {
+    api.request.mockResolvedValue({ status: 200, body: '{"result":{"text":"Point A."}}', code: "20000000" });
+    await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config(), { language: "en-US" });
+    expect(JSON.parse((api.request.mock.calls[0] as [string, RequestInit])[1].body as string).payload.audio.language).toBe("en-US");
+    await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config(), { language: "zh-CN" });
+    expect(JSON.parse((api.request.mock.calls[1] as [string, RequestInit])[1].body as string).payload.audio).not.toHaveProperty("language");
+  });
   it("relays optional browser Jev using the caller's key", async () => {
     api.request.mockResolvedValue({ status: 200, body: '{"answers":{}}', code: null });
     expect((await directJson("admission", config("typesafe"), { state: "数学" })).body).toContain("answers");

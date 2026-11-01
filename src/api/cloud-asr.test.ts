@@ -20,5 +20,7 @@ describe("ASR boundary", () => {
     const wav = new Blob(["wav"]), signal = new AbortController().signal;
     expect(await transcribeCloudSpeech(wav, signal)).toEqual({ status: "speech", transcript: "数学" });
     expect(direct).toHaveBeenCalledWith(wav, signal);
+    await transcribeCloudSpeech(wav, signal, { language: "en-US" });
+    expect(direct).toHaveBeenLastCalledWith(wav, signal, undefined, { language: "en-US" });
   });
 });
