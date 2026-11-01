@@ -17,6 +17,7 @@ import {
   currentTake,
   finishTake,
   keptTake,
+  recordingComplete,
   startTake,
   type BoardTarget,
   type CardInk,
@@ -27,6 +28,7 @@ import {
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { gridPoints, gridRanges, learnerAuthor, lineThrough, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
+import { ReadabilityPanel } from "./readability-panel";
 import { TakeSpeech } from "./take-speech";
 import { TeachBoard, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
@@ -284,6 +286,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               />
             )}
             {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
+            {!isRecording && compiled.lesson && recordingComplete(recording) && (
+              <ReadabilityPanel compiled={compiled.lesson} cards={recording.cards} resolveAsset={resolveAsset} onOpenCard={setSelected} />
+            )}
             {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
           </aside>
         </div>

@@ -1,28 +1,15 @@
 import { getLocale, subscribeLocale } from "@/i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type CanonicalEvent, type SemanticBoardState } from "octos-lesson-language";
+import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type SemanticBoardState } from "octos-lesson-language";
 import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type VariableControlsView } from "octos-lesson-language/web-runtime";
 import "octos-lesson-language/web-runtime/styles.css";
 
-import { teachingCameraCeiling, teachingCameraFloor, teachingReadingScale } from "../oll/board-chrome-insets";
+import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
 import type { CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
+import { teachingRegionLayout } from "./teaching-board-setup";
 
-
-function nodeSections(events: CanonicalEvent[]): Record<string, string> {
-  const sections: Record<string, string> = {};
-  for (const event of events) {
-    for (const beat of event.step?.beats ?? []) {
-      for (const actions of Object.values(beat.stage ?? {})) {
-        for (const action of actions as Array<{ node?: { id?: string } }>) {
-          if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = event.step!.id;
-        }
-      }
-    }
-  }
-  return sections;
-}
 
 /** Ink frozen when a take stops: its SVG and where on the board it was drawn. */
 export interface FrozenInk {
@@ -251,12 +238,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       baseRevision: 0,
       resourceContext: compiled.resourceContext,
     });
-    mounted.view.setRegionLayouts({
-      __legacy__: {
-        x: 20, y: 20, flow: "teaching", nodeSections: nodeSections(events),
-        composition: { width: viewport.clientWidth, height: viewport.clientHeight, mode: "progressive", readingScale: teachingReadingScale() },
-      },
-    });
+    mounted.view.setRegionLayouts(teachingRegionLayout(events, viewport.clientWidth, viewport.clientHeight));
     const state = reduceCanonicalEvents(events);
     boardStateRef.current = state;
     // A 3D scene shows its recorded view: the camera of its last view intent.
