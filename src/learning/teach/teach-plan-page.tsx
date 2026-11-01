@@ -2,7 +2,7 @@ import { tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
 
@@ -10,8 +10,8 @@ import { AcademyHeader } from "../academy/academy-header";
 import { openHistoryApi } from "../history/history-api";
 import { TOPIC_NAME_CATALOGS, topicNameLabels } from "../map/taxonomy-labels";
 import { defaultCardTitles } from "./card-templates";
-import { createRecording, planCards, type LearnerRecording } from "./recording";
-import { saveRecordingDraft } from "./recording-store";
+import { createRecording, keptTake, planCards, type LearnerRecording } from "./recording";
+import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { searchStarTopics, topicFromChoice, type TopicChoice } from "./topic-choice";
 import "./teach.css";
 
@@ -41,6 +41,9 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
   const [cards, setCards] = useState<PlannedCard[]>(() => defaultCardTitles().map((title) => ({ title, kind: "teach" })));
   const [saveFailed, setSaveFailed] = useState(false);
   const [planned, setPlanned] = useState<LearnerRecording>();
+  // Lessons this learner has started on this device, newest first.
+  const [drafts] = useState(() => loadRecordingDrafts(localStorage, getSelectedProfileId() ?? "local")
+    .filter((draft) => draft.cards.length).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
 
   useEffect(() => {
     const token = getToken();
@@ -97,6 +100,21 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
         <AcademyHeader />
         <h1 className="academy-title">{tr("我来讲一课")}</h1>
 
+        {step === "topic" && drafts.length > 0 && (
+          <section className="teach-step" aria-labelledby="teach-drafts-title">
+            <h2 id="teach-drafts-title">{tr("接着讲你的课")}</h2>
+            <ul className="teach-drafts">
+              {drafts.map((draft) => (
+                <li key={draft.id}>
+                  <Link to={`/teach/${draft.id}`}>
+                    <span>{draft.topic.text}</span>
+                    <span className="teach-chip">{tr("录好 {{v0}}/{{v1}} 张", { v0: draft.cards.filter((card) => keptTake(card)).length, v1: draft.cards.length })}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {step === "topic" && (
           <section className="teach-step" aria-labelledby="teach-topic-title">
             <h2 id="teach-topic-title">{tr("你想讲什么？")}</h2>
