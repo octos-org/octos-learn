@@ -3,14 +3,16 @@ import { useLocale } from "@/i18n/use-locale";
 import { ArrowUpRight, Box, Circle, Crosshair, Eraser, Grid3x3, Highlighter, LineChart, MousePointer2, PenLine, Sparkles, Spline, Square } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { normalizeAuthoringLesson } from "octos-lesson-language";
 
 import { getSelectedProfileId } from "@/api/client";
 import { fetchCloudAsrStatus, transcribeCloudSpeech } from "@/api/cloud-asr";
 import { useVoiceCapture } from "@/home/voice/use-voice-capture";
 
 import { AcademyHeader } from "../academy/academy-header";
-import { compileRecording, type CompiledLesson } from "./compile-recording";
+import { compileRecording, EmptyLessonError, type CompiledLesson } from "./compile-recording";
 import {
+  addTakeInk,
   appendEvent,
   cancelTake,
   correctTranscript,
@@ -34,16 +36,19 @@ import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } f
 import { NeatFormulaPanel, OctoQuestionPanel, ReviewPanel } from "./assist-panels";
 import { ReadabilityPanel } from "./readability-panel";
 import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
-import { TakeSpeech } from "./take-speech";
-import { TeachBoard, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
+import { TakeSpeech, type Transcribe } from "./take-speech";
+import { STUDIO_LESSON_ID } from "./studio-board-ids";
+import { TeachBoard, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
 type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
 
-/** The selection naming all of one take's ink, which "Make it neat" replaces. */
-function neatSelectionId(cardKey: string, take: number): string {
-  return `sel-${cardKey}-t${take}-all`;
-}
+/** "Make it neat": the learner circles writing, Octo reads it, the learner confirms it. */
+type NeatStage =
+  | { stage: "idle" }
+  | { stage: "selecting"; selected: number }
+  | { stage: "reading" }
+  | { stage: "confirming"; latex: string; confidence: "high" | "medium" | "low" };
 
 function without(set: Set<string>, value: string): Set<string> {
   const next = new Set(set);
@@ -73,9 +78,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const capture = useVoiceCapture();
   const speechRef = useRef<TakeSpeech | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+  const [liveText, setLiveText] = useState("");
+  const listening = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [octo, setOcto] = useState<{ pending: Set<string>; failed: Set<string> }>({ pending: new Set(), failed: new Set() });
-  const [neat, setNeat] = useState<{ pending: boolean; result?: { latex: string; confidence: "high" | "medium" | "low" } }>({ pending: false });
+  const [neat, setNeat] = useState<NeatStage>({ stage: "idle" });
+  const stopSelecting = useRef<(() => void) | null>(null);
   const [review, setReviewState] = useState<{ pending: boolean; failed: boolean; compiledAt?: string }>({ pending: false, failed: false });
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
   const resolveAsset = useCallback((id: string) => inkSnapshotResolver(snapshots.current)(id), []);
@@ -100,8 +108,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const compiled = useMemo<{ lesson: CompiledLesson | null; error?: string }>(() => {
     if (!recording) return { lesson: null };
     try {
-      return { lesson: compileRecording(recording, { author: learnerAuthor(profileId), language: getLocale(), includeTakeInProgress: true }) };
+      const lesson = compileRecording(recording, { author: learnerAuthor(profileId), language: getLocale(), includeTakeInProgress: true });
+      // Checked the way the board will load it, so a problem is shown instead of breaking the page.
+      normalizeAuthoringLesson(lesson.lesson, { lessonId: STUDIO_LESSON_ID, boardId: "studio-board", baseRevision: 0, resourceContext: lesson.resourceContext });
+      return { lesson };
     } catch (error) {
+      if (error instanceof EmptyLessonError) return { lesson: null };
       return { lesson: null, error: (error as Error).message };
     }
   }, [recording, profileId]);
@@ -114,21 +126,34 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const withTime = <T extends object>(event: T) => ({ t: elapsed(), ...event }) as T & { t: number };
 
   const chooseTool = (next: Tool) => {
+    endNeat();
     setTool(next);
     setArrowFrom(null);
+    boardRef.current?.showPointer(null);
     boardRef.current?.setPen(next === "pen" ? "draw" : next === "eraser" ? "erase" : "off");
   };
-  const start = () => {
+  const start = (fresh = false) => {
     if (!recording || !card) return;
     takeStartedAt.current = clock();
     const key = card.key;
     setNotice(null);
-    update((current) => startTake(current, key, now()));
+    update((current) => startTake(current, key, now(), { fresh }));
     void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
-    const speech = new TakeSpeech(elapsed);
+    // Each sentence is transcribed as soon as the learner finishes it.
+    const recognition = fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
+    const transcribe: Transcribe = async (wav, signal) => {
+      if (!(await recognition)) throw new Error("Speech recognition is not connected");
+      return transcribeCloudSpeech(wav, signal);
+    };
+    setLiveText("");
+    const speech = new TakeSpeech(elapsed, transcribe, (text) => { if (speechRef.current === speech) setLiveText(text); });
     speechRef.current = speech;
-    void capture.start((wav) => speech.utterance(wav), { onSpeechStart: () => speech.speechStarted() }).then((listening) => {
-      if (!listening && speechRef.current === speech) setNotice(tr("麦克风不能用。可以照常录，录完在下面输入你说的话。"));
+    listening.current = false;
+    void capture.start((wav) => speech.utterance(wav), { onSpeechStart: () => speech.speechStarted() }).then(async (started) => {
+      if (speechRef.current !== speech) return;
+      listening.current = started;
+      if (!started) setNotice(tr("麦克风不能用。可以照常录，录完在下面输入你说的话。"));
+      else if (!(await recognition) && speechRef.current === speech) setNotice(tr("还没有连接语音识别，说的话不会自动变成字幕。可以在设置的 API Keys 里连接，或者录完在下面输入。"));
     });
   };
   const stop = async () => {
@@ -144,31 +169,30 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     await capture.stop();
     let spoken: Awaited<ReturnType<TakeSpeech["finish"]>> = { text: "", failed: 0 };
     if (speech) {
-      const available = await fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
-      spoken = await speech.finish(available ? transcribeCloudSpeech : null, new AbortController().signal);
-      if (!available && spoken.failed) setNotice(tr("还没有连接语音识别。请在下面输入你在这张卡片说的话。"));
+      spoken = await speech.finish();
+      const connected = await fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
+      if (spoken.failed && !connected) setNotice(tr("还没有连接语音识别。请在下面输入你在这张卡片说的话。"));
       else if (spoken.failed) setNotice(tr("有 {{v0}} 段话没听清。请在下面补上。", { v0: spoken.failed }));
+      else if (!spoken.speechSpanMs && listening.current) setNotice(tr("这次没有听到你说话。看看麦克风有没有打开，或者在下面输入你说的话。"));
     }
+    setLiveText("");
     const frozen = await boardRef.current?.freezeInk();
-    let ink: CardInk[] = [];
-    if (frozen) {
-      const snapshotId = `ink-snap:${recording.id}-${key}-t${recordingTake.take}@v1`;
-      const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height };
-      snapshots.current = { ...snapshots.current, [snapshotId]: stored };
-      if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
-      // "Make it neat" referred to all of this take's ink.
-      const neatSelection = neatSelectionId(key, recordingTake.take);
-      const madeNeat = (latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.events ?? [])
-        .some((event) => event.type === "make_neat.confirmed" && event.selection === neatSelection);
-      ink = [{ snapshotId, sha256: await inkChecksum(frozen.svg), selections: madeNeat ? [neatSelection] : [], ...(frozen.annotates ? { annotates: frozen.annotates } : {}) }];
-    }
+    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [])] : [];
     // The learner corrects what recognition heard, or types it, below.
     update((current) => finishTake(current, key, now(), {
       durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], ink,
     }));
     setTranscribing(false);
-    setNeat({ pending: false });
     if (card.kind === "teach") void askOctoAbout(key);
+  };
+
+  /** Stores frozen ink on this device and describes it for the card. */
+  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number): Promise<CardInk> => {
+    const snapshotId = `ink-snap:${recording!.id}-${key}-t${take}${part ? `-n${part}` : ""}@v1`;
+    const stored = { svg: frozen.svg, width: frozen.width, height: frozen.height };
+    snapshots.current = { ...snapshots.current, [snapshotId]: stored };
+    if (!saveInkSnapshot(localStorage, profileId, snapshotId, stored)) setSaveFailed(true);
+    return { snapshotId, sha256: await inkChecksum(frozen.svg), selections, ...(frozen.annotates ? { annotates: frozen.annotates } : {}) };
   };
 
   // Octo, as a curious student, asks about the card just recorded. It never blocks recording.
@@ -192,35 +216,61 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     }
   };
 
-  const makeNeat = async () => {
-    if (!recording) return;
-    setNeat({ pending: true });
+  // Make it neat: circle the writing, Octo reads it, the learner confirms,
+  // and the neat math takes the writing's place on the board right away.
+  const endNeat = () => {
+    stopSelecting.current?.();
+    stopSelecting.current = null;
+    setNeat({ stage: "idle" });
+  };
+  const startNeat = () => {
+    const board = boardRef.current;
+    if (!board?.inkCount()) {
+      setNotice(tr("先写一点，再请小章鱼整理。"));
+      return;
+    }
+    setNotice(null);
+    setTool("none");
+    setArrowFrom(null);
+    stopSelecting.current?.();
+    stopSelecting.current = board.selectInk((selected) => setNeat((state) => (state.stage === "selecting" ? { stage: "selecting", selected } : state)));
+    setNeat((state) => (state.stage === "selecting" ? state : { stage: "selecting", selected: 0 }));
+  };
+  const readNeat = async (all: boolean) => {
+    const board = boardRef.current;
+    if (!recording || !board) return;
+    if (all) board.selectAllInk();
+    setNeat({ stage: "reading" });
     try {
-      const ink = await boardRef.current?.peekInk();
-      if (!ink) {
-        setNotice(tr("先写一点，再请小章鱼整理。"));
-        setNeat({ pending: false });
-        return;
-      }
+      const ink = await board.selectedInk();
+      if (!ink) { setNeat({ stage: "selecting", selected: 0 }); return; }
       const result = await inkToMath(recording, ink, getLocale());
       if (!result.readable) {
         setNotice(tr("小章鱼没看清这段手写。可以写清楚一点再试。"));
-        setNeat({ pending: false });
+        setNeat({ stage: "selecting", selected: 1 });
         return;
       }
-      setNeat({ pending: false, result: { latex: result.latex, confidence: result.confidence } });
+      setNeat({ stage: "confirming", latex: result.latex, confidence: result.confidence });
     } catch {
       setNotice(tr("这次没能整理，请再试一次。"));
-      setNeat({ pending: false });
+      setNeat({ stage: "selecting", selected: 1 });
     }
   };
-  const useNeat = (latex: string) => {
-    if (!card || !recordingTake) return;
-    record(withTime({
-      type: "make_neat.confirmed" as const, selection: neatSelectionId(card.key, recordingTake.take), latex,
-      alias: nextComponentAlias(latest.current ?? recording!, "formula"), replacesInk: true,
-    }));
-    setNeat({ pending: false });
+  const confirmNeat = async (latex: string) => {
+    const board = boardRef.current;
+    if (!card || !recordingTake || !board) return;
+    const key = card.key;
+    const take = recordingTake.take;
+    const frozen = await board.cutSelectedInk();
+    endNeat();
+    board.setPen("off");
+    if (!frozen) return;
+    const part = (latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.ink?.length ?? 0) + 1;
+    const selection = `sel-${key}-t${take}-n${part}`;
+    const alias = nextComponentAlias(latest.current ?? recording!, "formula");
+    const ink = await keepInk(key, take, frozen, [selection], part);
+    update((current) => addTakeInk(current, key, { ...ink, neat: { selection, latex, alias } }, now()));
+    record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }));
   };
 
   const runReview = async () => {
@@ -240,7 +290,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     takeStartedAt.current = null;
     const key = card.key;
     chooseTool("none");
+    speechRef.current?.cancel();
     speechRef.current = null;
+    setLiveText("");
+    endNeat();
     void capture.stop();
     void boardRef.current?.discardInk();
     update((current) => cancelTake(current, key, now()));
@@ -261,12 +314,20 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
   const onTarget = (target: BoardTarget) => {
-    if (tool === "laser") record(withTime({ type: "tool.laser" as const, target }));
+    if (tool === "laser") {
+      record(withTime({ type: "tool.laser" as const, target }));
+      boardRef.current?.showPointer(target);
+    }
     if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }));
     if (tool === "arrow") {
-      if (!arrowFrom) { setArrowFrom(target); return; }
+      if (!arrowFrom) {
+        setArrowFrom(target);
+        boardRef.current?.showPointer(target, { hold: true });
+        return;
+      }
       record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }));
       setArrowFrom(null);
+      boardRef.current?.showPointer(null);
     }
   };
 
@@ -316,7 +377,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           />
           <aside className="teach-controls" aria-label={tr("录课工具")}>
             {card && !isRecording && (
-              <button type="button" className="teach-record" onClick={start}>{kept ? tr("重录这张卡片") : tr("开始录这张卡片")}</button>
+              <button type="button" className="teach-record" onClick={() => start()}>{kept ? tr("重录这张卡片") : tr("开始录这张卡片")}</button>
+            )}
+            {card && kept && !isRecording && (
+              <>
+                <p className="academy-muted">{tr("重录时白板上的内容会留着，你重新说、重新指就好。")}</p>
+                <button type="button" className="teach-secondary" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+              </>
             )}
             {isRecording && (
               <div className="teach-actions">
@@ -325,6 +392,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               </div>
             )}
             {notice && <p role="status" className="teach-notice">{notice}</p>}
+            {isRecording && (
+              <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
+                <h2 className="teach-label">{tr("你正在说的话")}</h2>
+                <p aria-live="polite">{liveText || <span className="academy-muted">{tr("开始说吧，你说的话会出现在这里。")}</span>}</p>
+              </section>
+            )}
 
             {isRecording && (
               <>
@@ -337,12 +410,23 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 {tool === "arrow" && <p className="academy-muted">{arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。")}</p>}
                 {tool === "pen" && <p className="academy-muted">{tr("直接在白板上写。写在图上的会贴在那张图上。")}</p>}
                 {tool === "none" && <p className="academy-muted">{tr("拖动单位圆上的点或滑杆、转动长方体，都会录进这张卡片。")}</p>}
-                {!neat.result && (
-                  <button type="button" className="teach-secondary" disabled={neat.pending} onClick={() => void makeNeat()}>
-                    <Sparkles size={16} aria-hidden="true" /> {neat.pending ? tr("小章鱼在看你的手写…") : tr("整理一下")}
+                {neat.stage === "idle" && (
+                  <button type="button" className="teach-secondary" onClick={startNeat}>
+                    <Sparkles size={16} aria-hidden="true" /> {tr("整理一下")}
                   </button>
                 )}
-                {neat.result && <NeatFormulaPanel latex={neat.result.latex} confidence={neat.result.confidence} onUse={useNeat} onCancel={() => setNeat({ pending: false })} />}
+                {neat.stage === "selecting" && (
+                  <div className="teach-step" role="group" aria-label={tr("选要整理的手写")}>
+                    <p className="academy-muted">{tr("在白板上画一个圈，圈住要整理的手写。")}</p>
+                    <button type="button" disabled={!neat.selected} onClick={() => void readNeat(false)}>{tr("整理圈住的手写")}</button>
+                    <button type="button" className="teach-secondary" onClick={() => void readNeat(true)}>{tr("整理这张卡片上所有手写")}</button>
+                    <button type="button" className="teach-secondary" onClick={() => { endNeat(); boardRef.current?.setPen("off"); }}>{tr("取消")}</button>
+                  </div>
+                )}
+                {neat.stage === "reading" && <p role="status" className="academy-muted">{tr("小章鱼在看你的手写…")}</p>}
+                {neat.stage === "confirming" && (
+                  <NeatFormulaPanel latex={neat.latex} confidence={neat.confidence} onUse={(latex) => void confirmNeat(latex)} onCancel={() => { endNeat(); boardRef.current?.setPen("off"); }} />
+                )}
                 <div className="teach-toolbar" role="group" aria-label={tr("放入组件")}>
                   {([["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box]] as const).map(([value, label, Icon]) => (
                     <button key={value} type="button" aria-pressed={form === value} onClick={() => setForm(form === value ? null : value)}><Icon size={16} aria-hidden="true" /> {label}</button>

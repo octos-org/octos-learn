@@ -32,6 +32,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
 .teach-toolbar button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1px solid rgba(40, 65, 67, 0.18); border-radius: 999px; color: #3d5a63; background: #fffef9; font: inherit; font-size: 14px; cursor: pointer; }
 .teach-toolbar button[aria-pressed="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-controls > button.teach-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid rgba(40, 65, 67, 0.22); border-radius: 999px; color: #3d5a63; background: #fffef9; font: inherit; font-size: 15px; cursor: pointer; }
 .teach-controls .teach-actions button.teach-secondary { min-height: 44px; padding: 0 16px; border: 1px solid rgba(40, 65, 67, 0.22); border-radius: 999px; color: #3d5a63; background: #fffef9; font: inherit; cursor: pointer; }
 .teach-range { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
 .teach-range label, .teach-label { display: grid; gap: 4px; color: #3d5a63; font-size: 13px; }
@@ -47,5 +48,8 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-readability-list ul { margin: 0; padding-left: 18px; color: #6a4f12; font-size: 14px; }
 .teach-octo p { margin: 0; }
 .teach-octo { padding: 12px; border-radius: 14px; background: #eef3fb; }
+.teach-live-captions { display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: #fffef9; border: 1px solid rgba(26, 35, 80, .12); }
+.teach-live-captions h2 { margin: 0; }
+.teach-live-captions p { margin: 0; min-height: 3em; max-height: 9em; overflow-y: auto; font-size: 16px; line-height: 1.5; }
 .teach-neat-preview { overflow-x: auto; padding: 8px 12px; border-radius: 12px; background: #fffef9; }
 .teach-review-good { background: #e8f3ef !important; }

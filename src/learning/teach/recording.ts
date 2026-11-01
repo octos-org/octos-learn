@@ -69,6 +69,10 @@ export interface Take {
   /** Start and end of speech inside the take, for action phases. */
   speechSpanMs?: [number, number];
   events: RecordingEvent[];
+  /** Ink frozen during the take, such as handwriting made neat; it joins the card's ink when the take is kept. */
+  ink?: CardInk[];
+  /** The learner started the card over: the card's earlier board and ink are replaced when this take is kept. */
+  fresh?: boolean;
 }
 
 /**
@@ -81,6 +85,8 @@ export interface CardInk {
   sha256: string;
   selections: string[];
   annotates?: { node: string; x: number; y: number; width: number; height: number };
+  /** The neat math the learner confirmed for this ink, shown in its place. */
+  neat?: { selection: string; latex: string; alias: string };
 }
 
 /** Octo's question after a card, and the learner's answer; private, never part of the lesson. */
@@ -191,14 +197,26 @@ export function keptTake(card: RecordingCard): Take | undefined {
   return [...card.takes].reverse().find((take) => take.status === "kept");
 }
 
-/** Starts a take. Re-recording a card replaces its speech and pointing, never its ink. */
-export function startTake(recording: LearnerRecording, key: string, now: string): LearnerRecording {
+/** What a card's board is built from, as opposed to the learner's words and pointing. */
+const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "ink.hide",
+  "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
+]);
+
+/**
+ * Starts a take. Re-recording a card replaces what the learner says and how
+ * they point and drag; the board they built (components, points, lines, the
+ * exercise, ink and neat math) stays, already shown when the take begins.
+ * Starting the card over (`fresh`) begins from an empty card instead.
+ */
+export function startTake(recording: LearnerRecording, key: string, now: string, options: { fresh?: boolean } = {}): LearnerRecording {
   const card = findCard(recording, key);
   if (currentTake(card)) throw new RecordingError(`Card ${key} is already recording`);
   if (recording.cards.some((other) => currentTake(other))) {
     throw new RecordingError("Another card is recording");
   }
-  const take: Take = { take: card.takes.length + 1, status: "recording", startedAt: now, events: [] };
+  const board = options.fresh ? [] : (keptTake(card)?.events ?? []).filter((event) => BOARD_CONTENT.has(event.type)).map((event) => ({ ...event, t: 0 }));
+  const take: Take = { take: card.takes.length + 1, status: "recording", startedAt: now, events: board, ...(options.fresh ? { fresh: true } : {}) };
   return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, takes: [...existing.takes, take] })));
 }
 
@@ -214,6 +232,16 @@ export function appendEvent(recording: LearnerRecording, key: string, event: Rec
   })));
 }
 
+/** Adds ink frozen during the take, for example handwriting the learner just made neat. */
+export function addTakeInk(recording: LearnerRecording, key: string, ink: CardInk, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, ink: [...(take.ink ?? []), ink] } : candidate)),
+  })));
+}
+
 /** Ends the take, keeps it, and marks the card's earlier kept take as superseded. */
 export function finishTake(
   recording: LearnerRecording,
@@ -225,14 +253,17 @@ export function finishTake(
   const take = currentTake(card);
   if (!take) throw new RecordingError(`Card ${key} is not recording`);
   if (!(result.durationMs > 0)) throw new RecordingError("A take must have a duration");
+  // Ink belongs to the card: a re-take adds its new strokes to what is already there.
+  const ink = [...(take.ink ?? []), ...(result.ink ?? [])];
+  const kept: Take = { ...take };
+  delete kept.ink;
   return touch(recording, now, replaceCard(recording, key, (existing) => ({
     ...existing,
-    // Ink belongs to the card: a re-take adds its new strokes to what is already there.
-    ...(result.ink?.length ? { ink: [...(existing.ink ?? []), ...result.ink] } : {}),
+    ...(take.fresh ? { ink } : ink.length ? { ink: [...(existing.ink ?? []), ...ink] } : {}),
     takes: existing.takes.map((candidate): Take => {
       if (candidate === take) {
         return {
-          ...take,
+          ...kept,
           status: "kept",
           durationMs: result.durationMs,
           asrText: result.asrText,

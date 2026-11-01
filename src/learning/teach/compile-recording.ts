@@ -27,6 +27,14 @@ export class CompileError extends Error {
   }
 }
 
+/** Nothing is on the board yet: no card has been recorded, or the one being recorded is still empty. */
+export class EmptyLessonError extends CompileError {
+  constructor() {
+    super("No card has been recorded yet");
+    this.name = "EmptyLessonError";
+  }
+}
+
 export interface CompileOptions {
   author: LessonAuthor;
   language: string;
@@ -94,6 +102,16 @@ function boxFaces(size: { x: number; y: number; z: number }) {
     face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, 0], [-hx, hy, 0], [-hx, hy, z], [-hx, -hy, z]]),
     face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, 0], [hx, hy, 0], [hx, hy, z], [hx, -hy, z]]),
   ];
+}
+
+/** Neat math the learner confirmed for a piece of their ink, in its place or below it. */
+function neatWrite(alias: string, latex: string, ink: string, selection: string, replacesInk: boolean): Action {
+  return {
+    do: "write", as: alias, kind: "math", role: "derivation",
+    content: { fragments: [{ as: "formula", latex }] },
+    place: replacesInk ? { relation: "replaces", anchor: ink } : { relation: "below", anchor: ink },
+    source: { selection, confirmed_by: "learner" },
+  } as Action;
 }
 
 /** Compiles one recording; the lesson still has to pass OLL validation. */
@@ -217,8 +235,16 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     const annotations: Action[] = [];
     let focus: string[] = [];
 
-    // Ink is the card's own; it is written first and replays while the learner speaks.
-    (card.ink ?? []).forEach((ink: CardInk, index) => {
+    // Neat math confirmed in an earlier take stays in its ink's place; one
+    // confirmed in this take appears when the learner confirmed it.
+    const confirmedNow = new Set(take.events.flatMap((event) => (event.type === "make_neat.confirmed" ? [event.selection] : [])));
+    const keptNeat: Array<{ ink: string; neat: NonNullable<CardInk["neat"]> }> = [];
+
+    // Ink is the card's own (plus what this take froze so far); it is written
+    // first and replays while the learner speaks.
+    const cardInk = take.status !== "recording" ? card.ink ?? []
+      : [...(take.fresh ? [] : card.ink ?? []), ...(take.ink ?? [])];
+    cardInk.forEach((ink: CardInk, index) => {
       const alias = inkAlias(card, index);
       const selections = ink.selections.map((id, position) => {
         const fragment = selectionAlias(id, position);
@@ -227,6 +253,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         return { as: fragment, selection_id: id };
       });
       snapshots.push({ snapshot_id: ink.snapshotId, sha256: ink.sha256, selection_ids: [...ink.selections] });
+      if (ink.neat && !confirmedNow.has(ink.neat.selection)) keptNeat.push({ ink: alias, neat: ink.neat });
       const content: Record<string, unknown> = {
         snapshot_id: ink.snapshotId, sha256: ink.sha256, replay: "stroke_order",
         alt: `Handwriting: ${card.title}`,
@@ -293,17 +320,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           break;
         case "make_neat.confirmed": {
           const ink = inkOfSelection.get(event.selection);
-          // The take's own ink is frozen when it stops; until then its neat
-          // version waits instead of failing the live board.
-          if (!ink && take.status === "recording") break;
           if (!ink) throw new CompileError(`Selection '${event.selection}' is not part of this lesson's ink`);
           const alias = requireAlias(event.alias, "Formula");
-          actions.push({
-            do: "write", as: alias, kind: "math", role: "derivation", when,
-            content: { fragments: [{ as: "formula", latex: event.latex }] },
-            place: event.replacesInk ? { relation: "replaces", anchor: ink } : { relation: "below", anchor: ink },
-            source: { selection: event.selection, confirmed_by: "learner" },
-          } as Action);
+          actions.push({ ...neatWrite(alias, event.latex, ink, event.selection, event.replacesInk), when } as Action);
           if (event.replacesInk) hidden.add(ink);
           lastNode = alias;
           focus = [alias];
@@ -351,6 +370,16 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       actions.splice(created + 1, 0, created < 0 ? annotation : { ...annotation, when: actions[created]!.when } as Action);
     }
 
+    // Neat math kept from an earlier take replaces its ink as soon as the ink is written.
+    for (const { ink, neat } of keptNeat) {
+      const written = actions.findIndex((action) => action.do === "write" && action.as === ink);
+      const alias = requireAlias(neat.alias, "Formula");
+      actions.splice(written + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true), ...(actions[written]?.when ? { when: actions[written]!.when } : {}) } as Action);
+      hidden.add(ink);
+      if (lastNode === ink) lastNode = alias;
+      focus = focus.map((id) => (id === ink ? alias : id));
+    }
+
     if (card.kind === "your_turn") {
       // The learner may set the exercise up more than once; the latest wins.
       const check = [...take.events].reverse().find((event) => event.type === "your_turn.check_picked");
@@ -374,10 +403,12 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       actions.push({ do: "focus", targets: focus, intent: "learner_card_end", when: "after_speech" } as Action);
       lastFocus = focus;
     }
+    // A card being recorded may have nothing on the board yet; a kept one must.
+    if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);
     steps[0]!.beats.push({ key: card.key, ...(take.text?.trim() ? { say: take.text.trim() } : {}), actions: actions as AuthoringAction[] });
   }
-  if (!steps[0]!.beats.length) throw new CompileError("No card has been recorded yet");
+  if (!steps[0]!.beats.length) throw new EmptyLessonError();
 
   const lesson: AuthoringLesson = {
     dsl: "octos.lesson",

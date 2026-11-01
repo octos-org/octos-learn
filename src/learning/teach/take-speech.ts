@@ -1,6 +1,7 @@
-// What a learner says during one take: each utterance with its timing, turned
-// into text when the take stops. Audio is only held until it is transcribed;
-// nothing but the text and timing is kept.
+// What a learner says during one take: each utterance with its timing,
+// transcribed as soon as it ends so the words appear while the learner is
+// still recording. Audio is only held until it is transcribed; nothing but the
+// text and timing is kept.
 
 export type Transcribe = (wav: Blob, signal: AbortSignal) => Promise<{ status: "speech" | "no_speech"; transcript: string }>;
 
@@ -15,7 +16,9 @@ export interface TakeSpeechResult {
 interface Utterance {
   start: number;
   end: number;
-  wav: Blob;
+  /** The words, "" for no speech, null when transcription failed; undefined while pending. */
+  text?: string | null;
+  done: Promise<void>;
 }
 
 /** Joins utterances with a space unless the text is written without spaces (Chinese, Japanese). */
@@ -30,11 +33,17 @@ function join(parts: string[]): string {
 export class TakeSpeech {
   private utterances: Utterance[] = [];
   private speechStartedAt: number | null = null;
+  private readonly controller = new AbortController();
 
   private readonly elapsed: () => number;
+  private readonly transcribe: Transcribe | null;
+  private readonly onText?: (text: string) => void;
 
-  constructor(elapsed: () => number) {
+  /** Without a transcriber the timing is still kept, so the learner can type the words. */
+  constructor(elapsed: () => number, transcribe: Transcribe | null, onText?: (text: string) => void) {
     this.elapsed = elapsed;
+    this.transcribe = transcribe;
+    this.onText = onText;
   }
 
   /** Voice activity began; the utterance that follows starts here. */
@@ -44,28 +53,40 @@ export class TakeSpeech {
 
   utterance(wav: Blob): void {
     const end = this.elapsed();
-    this.utterances.push({ start: this.speechStartedAt ?? end, end, wav });
+    const utterance: Utterance = { start: this.speechStartedAt ?? end, end, done: Promise.resolve() };
     this.speechStartedAt = null;
+    this.utterances.push(utterance);
+    const transcribe = this.transcribe;
+    if (!transcribe) {
+      utterance.text = null;
+      return;
+    }
+    utterance.done = transcribe(wav, this.controller.signal)
+      .then((result) => (result.status === "speech" ? result.transcript.trim() : ""), () => null)
+      .then((text) => {
+        utterance.text = text;
+        if (!this.controller.signal.aborted) this.onText?.(this.text());
+      });
   }
 
-  /** Transcribes every utterance in order; failures are counted, never fatal. */
-  async finish(transcribe: Transcribe | null, signal: AbortSignal): Promise<TakeSpeechResult> {
-    const utterances = this.utterances;
-    this.utterances = [];
-    if (!utterances.length) return { text: "", failed: 0 };
-    const span: [number, number] = [utterances[0]!.start, utterances.at(-1)!.end];
-    if (!transcribe) return { text: "", speechSpanMs: span, failed: utterances.length };
-    const parts: string[] = [];
-    let failed = 0;
-    for (const utterance of utterances) {
-      if (signal.aborted) break;
-      try {
-        const result = await transcribe(utterance.wav, signal);
-        if (result.status === "speech" && result.transcript.trim()) parts.push(result.transcript.trim());
-      } catch {
-        failed += 1;
-      }
-    }
-    return { text: join(parts), speechSpanMs: span, failed };
+  /** The words heard so far, in the order they were said. */
+  text(): string {
+    return join(this.utterances.flatMap((utterance) => (utterance.text ? [utterance.text] : [])));
+  }
+
+  /** Waits for every utterance; failures are counted, never fatal. */
+  async finish(): Promise<TakeSpeechResult> {
+    await Promise.all(this.utterances.map((utterance) => utterance.done));
+    if (!this.utterances.length) return { text: "", failed: 0 };
+    return {
+      text: this.text(),
+      speechSpanMs: [this.utterances[0]!.start, this.utterances.at(-1)!.end],
+      failed: this.utterances.filter((utterance) => utterance.text === null).length,
+    };
+  }
+
+  /** The take was discarded: stop transcribing and report nothing more. */
+  cancel(): void {
+    this.controller.abort();
   }
 }

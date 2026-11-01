@@ -4,6 +4,7 @@ import {
   cancelTake,
   correctTranscript,
   createRecording,
+  currentTake,
   finishTake,
   keptTake,
   planCards,
@@ -77,6 +78,30 @@ describe("learner recording", () => {
     expect(card.takes.map((take) => take.status)).toEqual(["superseded", "kept"]);
     expect(keptTake(card)?.text).toBe("So the slope is 6 over 3, which is 2.");
     expect(card.ink).toEqual(ink);
+  });
+
+  it("re-recording keeps the board the learner built and replaces words and pointing", () => {
+    let recording = startTake(slopeLesson(), "card-2", now);
+    recording = appendEvent(recording, "card-2", { t: 400, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now);
+    recording = appendEvent(recording, "card-2", { t: 2_100, type: "point_tool.place", node: "grid-1", point: "point-a", x: 1, y: 2, label: "A (1, 2)" }, now);
+    recording = appendEvent(recording, "card-2", { t: 3_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
+    recording = finishTake(recording, "card-2", now, { durationMs: 5_000, asrText: "Point A." });
+    recording = startTake(recording, "card-2", now);
+    expect(currentTake(recording.cards[1]!)!.events.map((event) => [event.t, event.type])).toEqual([[0, "component.insert"], [0, "point_tool.place"]]);
+    recording = appendEvent(recording, "card-2", { t: 1_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
+  });
+
+  it("starting a card over begins empty and replaces its ink only once the new take is kept", () => {
+    const ink = [{ snapshotId: "ink-snap:card3@v4", sha256: "abc", selections: [] }];
+    let recording = startTake(slopeLesson(), "card-3", now);
+    recording = appendEvent(recording, "card-3", { t: 400, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now);
+    recording = finishTake(recording, "card-3", now, { durationMs: 8000, asrText: "First.", ink });
+    recording = cancelTake(startTake(recording, "card-3", now, { fresh: true }), "card-3", now);
+    expect(recording.cards[2]!.ink).toEqual(ink);
+    recording = startTake(recording, "card-3", now, { fresh: true });
+    expect(currentTake(recording.cards[2]!)!.events).toEqual([]);
+    recording = finishTake(recording, "card-3", now, { durationMs: 3000, asrText: "Again." });
+    expect(recording.cards[2]!.ink).toEqual([]);
   });
 
   it("lets the learner correct the transcript of the kept take", () => {

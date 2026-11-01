@@ -14,7 +14,11 @@ const board = vi.hoisted(() => ({
   frozen: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
   pen: [] as string[],
   values: {} as Record<string, number>,
-  peek: null as null | { svg: string; width: number; height: number },
+  inkCount: 0,
+  onSelect: undefined as ((selected: number) => void) | undefined,
+  selected: null as null | { svg: string; width: number; height: number },
+  cut: null as null | { svg: string; width: number; height: number; annotates?: { node: string; x: number; y: number; width: number; height: number } },
+  pointers: [] as Array<BoardTarget | null>,
   inkDocuments: [] as string[],
 }));
 vi.mock("./teach-board", async () => {
@@ -31,7 +35,12 @@ vi.mock("./teach-board", async () => {
         freezeInk: async () => board.frozen,
         discardInk: async () => undefined,
         variableValue: (alias: string) => board.values[alias],
-        peekInk: async () => board.peek,
+        inkCount: () => board.inkCount,
+        selectInk: (onChange: (selected: number) => void) => { board.pen.push("select"); board.onSelect = onChange; return () => { board.onSelect = undefined; }; },
+        selectAllInk: () => { board.selected ??= { svg: "<svg/>", width: 80, height: 40 }; },
+        selectedInk: async () => board.selected,
+        cutSelectedInk: async () => board.cut,
+        showPointer: (target: BoardTarget | null) => { board.pointers.push(target); },
       }));
       return <div data-testid="teach-board" />;
     }),
@@ -90,7 +99,11 @@ beforeEach(() => {
   board.frozen = null;
   board.pen = [];
   board.values = {};
-  board.peek = null;
+  board.inkCount = 0;
+  board.onSelect = undefined;
+  board.selected = null;
+  board.cut = null;
+  board.pointers = [];
   assist.question = "Why did you pick that point?";
   assist.octoCalls = [];
   board.inkDocuments = [];
@@ -130,6 +143,7 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
   expect(board.onTarget).toBeTypeOf("function");
   board.onTarget!({ node: "grid-1", part: "point-a" });
+  expect(board.pointers.at(-1)).toEqual({ node: "grid-1", part: "point-a" });
   time = 9_000;
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
@@ -203,11 +217,15 @@ it("turns what the learner says into the card's captions, timed from the take st
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
   fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  voice.transcripts = ["Here is a grid.", "Point A is at one two."];
+  expect(screen.getByText("Start talking. Your words will show up here.")).toBeTruthy();
   time = 1_600; voice.onSpeechStart!();
   time = 4_000; voice.onUtterance!(new Blob(["a"]));
+  // The words show while the learner is still recording.
+  expect(await screen.findByText("Here is a grid.")).toBeTruthy();
   time = 4_500; voice.onSpeechStart!();
   time = 7_000; voice.onUtterance!(new Blob(["b"]));
-  voice.transcripts = ["Here is a grid.", "Point A is at one two."];
+  expect(await screen.findByText("Here is a grid. Point A is at one two.")).toBeTruthy();
   time = 8_000;
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Re-record this card" })).toBeTruthy());
@@ -221,11 +239,23 @@ it("asks the learner to type the words when recognition is not connected", async
   voice.available = false;
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  // Said before the learner starts talking, not only after the take.
+  expect(await screen.findByText(/Speech recognition isn't connected, so your words won't turn into captions/)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   voice.onSpeechStart!(); voice.onUtterance!(new Blob(["a"]));
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
   expect(await screen.findByText("Speech recognition isn't connected yet. Please type what you said on this card below.")).toBeTruthy();
+});
+
+it("says when nothing was heard during a take", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  await act(async () => undefined);
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  expect(await screen.findByText("I didn't hear you this time. Check that your microphone is on, or type what you said below.")).toBeTruthy();
 });
 
 it("tells the learner when the microphone cannot be used", async () => {
@@ -352,21 +382,68 @@ it("keeps recording when Octo cannot ask", async () => {
   expect(await screen.findByText("Octo couldn't think of a question this time. You can go on to the next card.")).toBeTruthy();
 });
 
-it("makes handwriting neat: the confirmed formula replaces the take's ink when it stops", async () => {
+it("makes circled handwriting neat, and the formula takes its place on the board right away", async () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
-  board.peek = { svg: "<svg/>", width: 50, height: 30 };
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  board.inkCount = 3;
   fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  expect(board.pen.at(-1)).toBe("select");
+  const circled = screen.getByRole("button", { name: "Make the circled writing neat" }) as HTMLButtonElement;
+  expect(circled.disabled).toBe(true);
+  board.selected = { svg: "<svg/>", width: 50, height: 30 };
+  act(() => board.onSelect!(2));
+  expect(circled.disabled).toBe(false);
+  fireEvent.click(circled);
   const formula = await screen.findByRole("textbox", { name: "Formula (you can edit it)" });
   fireEvent.change(formula, { target: { value: "\\dfrac{8-2}{4-1}=2" } });
+  board.cut = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", width: 50, height: 30, annotates: { node: "grid-1", x: 0.1, y: 0.7, width: 0.3, height: 0.2 } };
+  time = 3_000;
   fireEvent.click(screen.getByRole("button", { name: "Use this" }));
-  board.frozen = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", width: 50, height: 30 };
+  // Still recording, the formula is already on the board in the writing's place.
+  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write" && action.kind === "math"))
+    .toMatchObject({ content: { fragments: [{ latex: "\\dfrac{8-2}{4-1}=2" }] }, place: { relation: "replaces", anchor: "ink-card-1" }, source: { selection: "sel-card-1-t1-n1", confirmed_by: "learner" } }));
+  expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+  expect(board.compiled!.resourceContext.ink_snapshots?.[0]?.snapshot_id).toBe("ink-snap:rec-1-card-1-t1-n1@v1");
+
+  board.frozen = null;
   fireEvent.click(screen.getByRole("button", { name: "Stop" }));
   await waitFor(() => expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink).toHaveLength(1));
   const card = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!;
-  expect(card.ink![0]!.selections).toEqual(["sel-card-1-t1-all"]);
-  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write" && action.kind === "math"))
-    .toMatchObject({ content: { fragments: [{ latex: "\\dfrac{8-2}{4-1}=2" }] }, place: { relation: "replaces", anchor: "ink-card-1" }, source: { selection: "sel-card-1-t1-all", confirmed_by: "learner" } }));
+  expect(card.ink![0]).toMatchObject({ selections: ["sel-card-1-t1-n1"], annotates: { node: "grid-1" }, neat: { selection: "sel-card-1-t1-n1", latex: "\\dfrac{8-2}{4-1}=2" } });
+  expect(keptTake(card)!.ink).toBeUndefined();
+
+  // Re-recording the card keeps the neat formula in the writing's place.
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!.take).toBe(2));
+  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.map((action) => [action.do, (action as { as?: string }).as]))
+    .toEqual(expect.arrayContaining([["write", "ink-card-1"], ["write", "formula-1"]])));
+});
+
+it("re-recording keeps the card's board, and starting over clears it", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  fireEvent.click(screen.getByRole("button", { name: "Coordinate grid" }));
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record this card" }));
+  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.some((action) => action.do === "write" && action.kind === "geometry")).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start this card over" }));
+  expect(board.compiled).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+});
+
+it("can make all of a card's writing neat in one go", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Record this card" }));
+  board.inkCount = 1;
+  fireEvent.click(screen.getByRole("button", { name: "Make it neat" }));
+  fireEvent.click(screen.getByRole("button", { name: "Make all my writing neat" }));
+  expect(await screen.findByRole("textbox", { name: "Formula (you can edit it)" })).toBeTruthy();
 });
 
 it("asks for writing first when there is no handwriting to tidy", async () => {

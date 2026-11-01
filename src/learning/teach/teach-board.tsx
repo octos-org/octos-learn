@@ -1,13 +1,13 @@
 import { getLocale, subscribeLocale } from "@/i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type SemanticBoardState } from "octos-lesson-language";
+import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type CanonicalTarget, type SemanticBoardState } from "octos-lesson-language";
 import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type VariableControlsView } from "octos-lesson-language/web-runtime";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
 import type { CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
-import { boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
+import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
 import { segmentDrag, unwrapAngle, type DragSample } from "./studio-helpers";
 import { teachingRegionLayout } from "./teaching-board-setup";
 
@@ -31,11 +31,33 @@ export interface TeachBoardHandle {
   discardInk(): Promise<void>;
   /** The value a lesson variable shows on the board now. */
   variableValue(alias: string): number | undefined;
-  /** The take's handwriting so far, without freezing it; null when nothing is drawn. */
-  peekInk(): Promise<{ svg: string; width: number; height: number } | null>;
+  /** How many strokes the take has drawn so far. */
+  inkCount(): number;
+  /** The learner circles strokes with a lasso; `onChange` hears how many are selected. Returns a stop function. */
+  selectInk(onChange: (selected: number) => void): () => void;
+  /** Selects every stroke of the take. */
+  selectAllInk(): void;
+  /** The selected strokes as an image, without changing them; null when nothing is selected. */
+  selectedInk(): Promise<{ svg: string; width: number; height: number } | null>;
+  /** Freezes the selected strokes on their own and removes them from the live ink; null when nothing is selected. */
+  cutSelectedInk(): Promise<FrozenInk | null>;
+  /** Shows the pointer on what the learner tapped, briefly, or until replaced when `hold` is set; null hides it. */
+  showPointer(target: BoardTarget | null, options?: { hold?: boolean }): void;
 }
 
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
+/** How long the pointer stays where the learner tapped with the laser. */
+const POINTER_MS = 1_600;
+
+/** A board element ID as an OLL target: a card, or a part of one. */
+function canonicalTarget(id: string): CanonicalTarget {
+  const fragment = id.indexOf(":fragment:");
+  return fragment < 0 ? { node_id: id } : { node_id: id.slice(0, fragment), fragment_id: id };
+}
+
+function sameTarget(a: BoardTarget, b: BoardTarget): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
 /**
@@ -116,6 +138,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   useEffect(() => {
     gesturesRef.current = { onVariableGesture, onSceneGesture };
   }, [onVariableGesture, onSceneGesture]);
+  // The last tap, as the board names it, so the pointer lands on exactly what was tapped.
+  const tappedRef = useRef<{ target: BoardTarget; canonical: CanonicalTarget } | null>(null);
+  const pointerRef = useRef<{ canonical: CanonicalTarget; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const onTargetRef = useRef(onTarget);
   useEffect(() => {
     onTargetRef.current = onTarget;
@@ -135,7 +160,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (!onTargetRef.current) return;
       const element = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
       const target = boardTargetFromId(element?.dataset.id);
-      if (target) onTargetRef.current(target);
+      if (!target || !element?.dataset.id) return;
+      tappedRef.current = { target, canonical: canonicalTarget(element.dataset.id) };
+      onTargetRef.current(target);
     };
     viewport.addEventListener("click", handleClick);
 
@@ -182,6 +209,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     });
 
     return () => {
+      clearTimeout(pointerRef.current?.timer);
+      pointerRef.current = null;
       viewport.removeEventListener("click", handleClick);
       unsubscribeLocale();
       void inkRef.current?.destroy();
@@ -232,15 +261,52 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     variableValue(alias) {
       return boardStateRef.current?.variables?.[alias]?.value;
     },
-    async peekInk() {
+    inkCount() {
+      return inkRef.current?.state.component_count ?? 0;
+    },
+    selectInk(onChange) {
       const ink = inkRef.current;
-      if (!ink || !ink.state.component_count) return null;
-      const mode = ink.state.mode;
-      ink.selectAll();
+      if (!ink) return () => undefined;
+      ink.setSelectionMode("lasso");
+      ink.setMode("select");
+      onChange(ink.state.selected_count);
+      return ink.subscribe((state) => onChange(state.selected_count));
+    },
+    selectAllInk() {
+      inkRef.current?.selectAll();
+    },
+    async selectedInk() {
+      const ink = inkRef.current;
+      if (!ink || !ink.state.selected_count) return null;
       const snapshot = await ink.captureSelectionSnapshot();
-      ink.clearSelection();
-      ink.setMode(mode === "select" ? "navigate" : mode);
       return { svg: snapshot.svg, width: Math.max(1, snapshot.bounds.width), height: Math.max(1, snapshot.bounds.height) };
+    },
+    async cutSelectedInk() {
+      const ink = inkRef.current;
+      const mounted = mountedRef.current;
+      if (!ink || !mounted || !ink.state.selected_count) return null;
+      const snapshot = await ink.captureSelectionSnapshot();
+      const { bounds } = snapshot;
+      const annotates = annotationFor(mounted.elements.viewport, bounds);
+      await ink.deleteSelection();
+      return { svg: snapshot.svg, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+    },
+    showPointer(target, options) {
+      const view = mountedRef.current?.view;
+      clearTimeout(pointerRef.current?.timer);
+      pointerRef.current = null;
+      if (!view) return;
+      if (!target) { view.showPointer(undefined); return; }
+      const tapped = tappedRef.current;
+      const canonical = tapped && sameTarget(tapped.target, target) ? tapped.canonical
+        : "node" in target ? canonicalTarget(boardIdOf(target)) : undefined;
+      if (!canonical) { view.showPointer(undefined); return; }
+      const timer = options?.hold ? undefined : setTimeout(() => {
+        pointerRef.current = null;
+        mountedRef.current?.view.showPointer(undefined);
+      }, POINTER_MS);
+      pointerRef.current = { canonical, timer };
+      view.showPointer(canonical);
     },
   }), []);
 
@@ -268,6 +334,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     mounted.view.render(state);
     sliderRef.current?.render(state);
     if (state.focus.length) mounted.view.focusTargets(state.focus);
+    // A redraw hides the pointer; the learner's tap still shows until it fades.
+    if (pointerRef.current) mounted.view.showPointer(pointerRef.current.canonical);
   }, [compiled]);
 
   return (

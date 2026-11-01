@@ -10,3 +10,8 @@ export function boardTargetFromId(id: string | undefined): NodeTarget | undefine
   const [node, part] = id.slice(NODE_PREFIX.length).split(":fragment:");
   return node ? { node, ...(part ? { part } : {}) } : undefined;
 }
+
+/** The board element ID of a card (and part), the inverse of boardTargetFromId. */
+export function boardIdOf(target: NodeTarget): string {
+  return `${NODE_PREFIX}${target.node}${target.part ? `:fragment:${target.part}` : ""}`;
+}
