@@ -62,6 +62,8 @@
 | 2026-10-31 | M0 测试基础修复 | 完成，待合并：OLL [#26](https://github.com/alan0x/octos-lesson-language/pull/26)、应用 [#113](https://github.com/octos-org/octos-learn/pull/113) |
 | 2026-10-31 | M1 OLL 合同扩展 | 完成，待合并：OLL [#27](https://github.com/alan0x/octos-lesson-language/pull/27)（叠在 #26 上），执行版本 0.6.0 |
 | 2026-10-31 | M2 录课工作室 | 完成，待合并：应用 [#114](https://github.com/octos-org/octos-learn/pull/114)（叠在 #113 上，固定 OLL #27）。另含 M3 的录制编译器 |
+| 2026-10-31 | M3 编译与可读性检查 | 完成，待合并：应用 [#114](https://github.com/octos-org/octos-learn/pull/114)。提交前在 1366×768 与 1920×1080 两种画板上逐卡检查 |
+| 2026-11-01 | M4 AI 助手 | 完成，待合并：learning-coach [#37](https://github.com/alan0x/learning-coach/pull/37)（0.23.0：Octo 提问、手写转公式、课程点评）、应用 [#114](https://github.com/octos-org/octos-learn/pull/114)。真实模型端到端验证通过；真实运行发现并修复了 OLL 中"整理手写"替换画在卡片上的墨迹时排版崩溃（#27）。测试共用约 13 次模型生成（授权上限 50） |
 
 M0 实际范围比计划大。原以为是一个回退，复核发现所有正向样例都在失败，原因多在检查本身（字体时序、过时的卡片宽度门槛、不随缩放的字号指标、Harness 与产品排版不一致），另有一个真实的产品问题：小屏幕上多卡片同框时镜头缩得过小。用户决定：课程进行中必须可读、结束全览不要求；检查 1366 × 768 与 1920 × 1080；正文屏幕字号门槛 12.5 px；在 M0 修复。修复后五个正向样例两种尺寸全部通过，9 门已发布课程在真实应用中课程进行中正文均 ≥ 12.5 px（一处已记录的例外）。详见 OLL `docs/PLAYBACK-GATE-REVIEW-2026-10-31.md` 与应用 `docs/course-runtime-quality/readable-camera-2026-10-31/REPORT.md`。
 
@@ -229,4 +231,4 @@ M2 与 M1 可并行；M4 的追问与检查可在 M2 后半段并行开发。
 | P3 | 优先支持的设备 | Chromebook 触屏 + 桌面浏览器先行，Android TV 保持现有支持 |
 | P4 | 法律顾问 | M7 开始前需要确定 |
 | P5 | 开始顺序 | 先做 M0，然后 M1 与 M2 并行 |
-| P6 | en-US 语音供应商 | 现有 BYOK 首期语音只接火山新版 API；美国用户的英文 ASR（儿童语音）与 TTS 音色需要选型，M2/M5 开始前确定 |
+| P6 | en-US 语音供应商 | 现有 BYOK 首期语音只接火山新版 API；美国用户的英文 ASR（儿童语音）与 TTS 音色需要选型，M2/M5 开始前确定。**2026-11-01 决定**：开发期继续使用火山引擎，用户自带 API Key；供应商之后再选 |
