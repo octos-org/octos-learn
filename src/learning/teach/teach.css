@@ -153,3 +153,4 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-presenter-button { padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
 .teach-avatar { display: block; border-radius: 50%; object-fit: cover; background: #eef1f6; }
 .teach-avatar-placeholder { display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 20px; font-weight: 700; }
+.teach-tag[data-source="privacy"] { color: #6b2160; background: #f6e3f1; }

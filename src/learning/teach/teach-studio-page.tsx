@@ -353,6 +353,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!screen && !reviewed) return;
     update((latestRecording) => setReview(latestRecording, {
       at, cards: reviewed?.cards ?? [], overall: reviewed?.overall ?? "", ...(screen ? { screen } : {}),
+      ...(reviewed?.personal_details ? { personal: reviewed.personal_details.map((detail) => ({ card: detail.key, quote: detail.quote, kind: detail.kind })) } : {}),
     }, now()));
   };
   const cancel = () => {
@@ -613,12 +614,14 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <>
               <div className="teach-fix" role="status">
                 <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
-                {cardCheck.findings.map((finding) => <p key={finding.source}>{finding.message}</p>)}
+                {cardCheck.findings.map((finding, index) => <p key={`${finding.source}-${index}`}>{finding.message}</p>)}
               </div>
-              <div>
-                <div className="teach-group-label">{tr("你上次说的话")}</div>
-                <p className="teach-panel-text">{kept.text || tr("（没有字幕）")}</p>
-              </div>
+              <TranscriptEditor
+                key={`${card.key}-${kept.take}`}
+                text={kept.text ?? ""}
+                label={tr("你的话（课会用这些话来讲，可以直接改）")}
+                onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))}
+              />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
               <button type="button" className="teach-link-button" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
@@ -681,12 +684,12 @@ function clockText(ms: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-function TranscriptEditor({ text, onSave }: { text: string; onSave: (text: string) => void }) {
+function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {
   const [value, setValue] = useState(text);
   return (
     <form className="teach-step" onSubmit={(event) => { event.preventDefault(); if (value.trim()) onSave(value); }}>
       <label className="teach-label">
-        {tr("你在这张卡片说的话")}
+        {label ?? tr("你在这张卡片说的话")}
         <textarea className="teach-input" value={value} onChange={(event) => setValue(event.target.value)} />
       </label>
       <button type="submit" disabled={!value.trim() || value === text}>{tr("保存字幕")}</button>

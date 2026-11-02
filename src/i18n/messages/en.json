@@ -2498,5 +2498,16 @@
   "声音": "Voice",
   "你的语音服务还没有可以选的声音，课会用设置里保存的声音。": "Your speech service has no voices to choose from yet, so your lesson uses the voice saved in Settings.",
   "好了": "Done",
-  "换一个形象或声音": "Change the avatar or voice"
+  "换一个形象或声音": "Change the avatar or voice",
+  "隐私": "Privacy",
+  "一个名字": "a name",
+  "一所学校": "a school",
+  "你住的地方": "where you live",
+  "一个真实的地方": "a real place",
+  "你的年龄或年级": "your age or grade",
+  "你的生日": "your birthday",
+  "联系方式": "contact details",
+  "你的个人信息": "something personal about you",
+  "你说了“{{v0}}”，这是{{v1}}。分享前把它从你的话里删掉。": "You said \"{{v0}}\" — that's {{v1}}. Take it out of your words before you share your lesson.",
+  "你的话（课会用这些话来讲，可以直接改）": "Your words (your lesson is narrated from these, so you can change them here)"
 }

@@ -127,6 +127,8 @@ export interface RecordingReview {
   at: string;
   cards: Array<{ key: string; status: "good" | "check"; kind: "none" | "slip" | "misconception" | "unclear"; message: string }>;
   overall: string;
+  /** Personal details Octo found in what the learner said, by card, as the learner's own words. */
+  personal?: Array<{ card: string; quote: string; kind: string }>;
   /** Cards not readable at their end on a checked screen; absent in drafts checked before the screen check joined. */
   screen?: Array<{ card: string; board: "chromebook" | "large"; problems: Array<"small_text" | "small_diagram" | "out_of_view" | "overflow" | "missing_ink" | "no_focus"> }>;
 }
