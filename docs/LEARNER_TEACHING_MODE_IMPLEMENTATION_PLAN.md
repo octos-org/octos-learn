@@ -1,5 +1,7 @@
 # 学生当老师模式：实施计划
 
+> 当前进展、PR 合并顺序、本地运行与剩余工作见 [交接文档](LEARNER_TEACHING_MODE_HANDOFF.md)。
+
 日期：2026-10-31。状态：计划草案，待用户确认。产品方案见[学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)；OLL 样例与发现见 `octos-lesson-language/docs/LEARNER-TAUGHT-V1-FINDINGS.md`（分支 `claude/learner-taught-samples`）。
 
 ## 1. 最终目标
