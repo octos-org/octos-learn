@@ -23,6 +23,9 @@ import { TeachPlanPage } from "./learning/teach/teach-plan-page";
 import { TeachStudioPage } from "./learning/teach/teach-studio-page";
 import { TeachWatchPage } from "./learning/teach/teach-watch-page";
 import { AwardHost } from "./learning/academy/award-host";
+import { lazy, Suspense } from "react";
+
+const AvatarLabPage = lazy(() => import("./learning/avatar/avatar-lab-page"));
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -80,6 +83,7 @@ export function AppRoutes() {
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/records" element={<RecordsPage />} />
         <Route path="/teach" element={<TeachPlanPage />} />
+        <Route path="/teach/avatar-lab" element={<Suspense fallback={null}><AvatarLabPage /></Suspense>} />
         <Route path="/teach/:id" element={<TeachStudioPage />} />
         <Route path="/teach/:id/watch" element={<TeachWatchPage />} />
         <Route path="/report" element={<Navigate to="/records?tab=week" replace />} />
