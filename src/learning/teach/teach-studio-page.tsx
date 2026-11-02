@@ -125,7 +125,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const compiled = useMemo<{ lesson: CompiledLesson | null; error?: string }>(() => {
     if (!recording) return { lesson: null };
     try {
-      const lesson = compileRecording(recording, { author: learnerAuthor(profileId), language: getLocale(), includeTakeInProgress: true });
+      const lesson = compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true });
       // Loaded the way the board loads it, so a problem is shown instead of breaking the page.
       reduceCanonicalEvents(normalizeAuthoringLesson(lesson.lesson, { lessonId: STUDIO_LESSON_ID, boardId: "studio-board", baseRevision: 0, resourceContext: lesson.resourceContext }));
       return { lesson };
@@ -272,7 +272,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
   const compileQuietly = (current: LearnerRecording) => {
     try {
-      return compileRecording(current, { author: learnerAuthor(profileId), language: getLocale() });
+      return compileRecording(current, { author: learnerAuthor(profileId, current.presenter), language: getLocale() });
     } catch {
       return null;
     }

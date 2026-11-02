@@ -143,3 +143,13 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-watch-bar { display: flex; align-items: center; gap: 12px; padding: 12px 0 0; }
 .teach-watch-caption { flex: 1; min-height: 48px; margin: 0; padding: 10px 16px; border-radius: 14px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 18px; line-height: 1.4; }
 .teach-watch-caption:empty { background: transparent; }
+.teach-presenter { display: grid; gap: 14px; margin-top: 12px; padding: 16px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fffef9; }
+.teach-presenter fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.teach-presenter-avatars { display: flex; flex-wrap: wrap; gap: 10px; }
+.teach-presenter-avatars button { display: grid; justify-items: center; gap: 4px; min-width: 84px; padding: 8px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 14px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 13px; cursor: pointer; }
+.teach-presenter-avatars button[aria-pressed="true"] { border: 2px solid #1b2457; }
+.teach-presenter-voices { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.teach-presenter > .teach-primary { justify-self: start; }
+.teach-presenter-button { padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.teach-avatar { display: block; border-radius: 50%; object-fit: cover; background: #eef1f6; }
+.teach-avatar-placeholder { display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 20px; font-weight: 700; }

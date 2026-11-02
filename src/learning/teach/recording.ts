@@ -140,6 +140,13 @@ export interface LearnerRecording {
   goals: string[];
   cards: RecordingCard[];
   review?: RecordingReview;
+  /** Who presents the lesson: catalog IDs of the avatar and voice the learner chose. */
+  presenter?: Presenter;
+}
+
+export interface Presenter {
+  avatar?: string;
+  voice?: string;
 }
 
 export class RecordingError extends Error {
@@ -350,6 +357,11 @@ export function answerOcto(recording: LearnerRecording, key: string, answer: str
   const card = findCard(recording, key);
   if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
   return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+/** The learner chooses who presents the lesson. */
+export function setPresenter(recording: LearnerRecording, presenter: Presenter, now: string): LearnerRecording {
+  return { ...recording, updatedAt: now, presenter: { ...recording.presenter, ...presenter } };
 }
 
 export function setReview(recording: LearnerRecording, review: RecordingReview, now: string): LearnerRecording {
