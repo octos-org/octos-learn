@@ -64,15 +64,31 @@ export function nextVariable(recording: LearnerRecording): string {
 }
 
 /**
+ * The learner's opaque reference: random, made once per profile on this
+ * device, so a shared lesson never carries the profile's name.
+ */
+export function learnerReference(profileId: string, storage: Storage | null = typeof localStorage === "undefined" ? null : localStorage): string {
+  const key = `octos-learn:learner-ref:v1:${profileId}`;
+  try {
+    const existing = storage?.getItem(key);
+    if (existing && /^[a-f0-9]{32}$/.test(existing)) return existing;
+    const made = crypto.randomUUID().replaceAll("-", "");
+    storage?.setItem(key, made);
+    return made;
+  } catch {
+    // Without storage the reference is still opaque, just not stable across visits.
+    return crypto.randomUUID().replaceAll("-", "");
+  }
+}
+
+/**
  * The lesson's author: the learner by an opaque reference only, presented by
  * the avatar and voice they chose from the app's catalogs (Octo and the
  * account's voice until they choose).
  */
 export function learnerAuthor(profileId: string, presenter: Presenter = {}): LessonAuthor {
-  let reference = profileId.replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 64).replace(/^-+|-+$/g, "");
-  if (!reference) reference = "local";
   return {
-    kind: "learner", learner_ref: `learner:${reference}`,
+    kind: "learner", learner_ref: `learner:${learnerReference(profileId)}`,
     presented_by: { avatar_ref: `avatar:${presenter.avatar ?? DEFAULT_AVATAR}`, voice_ref: presenter.voice ? `voice:${presenter.voice}` : "voice:learner-default" },
   };
 }
