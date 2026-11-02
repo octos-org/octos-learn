@@ -5,7 +5,7 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson } from "octos-lesson-language";
 
@@ -29,7 +29,10 @@ import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
 import { nodeSections } from "./teaching-board-setup";
+import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import "./teach.css";
+
+const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
 
 /** A short, stable fingerprint of the lesson, so a changed lesson starts again from the top. */
 function fingerprint(text: string): string {
@@ -52,8 +55,11 @@ export function TeachWatchPage() {
   const makeWork = useRef<AbortController | null>(null);
   const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
   const [makeFailed, setMakeFailed] = useState<string | null>(null);
+  const [showAvatar, setShowAvatar] = useState(() => recording?.presenter?.mouthMotion === "basic");
+  const [mediaClock, setMediaClock] = useState<{ beatId: string; clock: AudioPlaybackClock; packageHash: string } | null>(null);
   const choosePresenter = (presenter: Presenter) => {
     if (!recording) return;
+    if (presenter.mouthMotion !== undefined) setShowAvatar(presenter.mouthMotion === "basic");
     makeWork.current?.abort(); makeWork.current = null; setMaking(null); setMakeFailed(null);
     const next = setPresenter(recording, presenter, new Date().toISOString());
     saveRecordingDraft(localStorage, profileId, next);
@@ -123,6 +129,9 @@ export function TeachWatchPage() {
     return () => { active = false; };
   }, [recording, lesson, lessonPrint]);
   const packaged = pack.status === "ready" ? pack.loaded : undefined;
+  const onMediaClock = useCallback((beatId: string, clock: AudioPlaybackClock | null) => {
+    setMediaClock((previous) => clock ? { beatId, clock, packageHash: packaged?.manifest.contentSha256 ?? "" } : previous?.beatId === beatId ? null : previous);
+  }, [packaged]);
   const checks = recording && lesson ? cardChecks(recording, lesson.compiled, recording.review) : [];
   const checked = Boolean(recording && lessonReady(checks, recording));
   const privateTitles = recording ? [recording.topic.text, ...recording.goals, ...recording.cards.map((card) => card.title)].flatMap((text) => findPersonalDetails(text)) : [];
@@ -175,6 +184,10 @@ export function TeachWatchPage() {
   const onComplete = useCallback((beatId: string) => runtimeRef.current?.completeNarration(beatId), []);
   const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
   const speaking = Boolean(runtime?.playing && runtime.activeSpeech.trim());
+  const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
+  const mouthTrack = useMemo(() => packaged && narrationBeatId
+    ? packaged.mouthTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
+  const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length);
   const narration = useOllNarrationTts({
     language: lesson?.language,
     enabled: narrated,
@@ -189,6 +202,7 @@ export function TeachWatchPage() {
     onPlaybackStart: onStart,
     onPlaybackComplete: onComplete,
     onPlaybackEnd: onEnd,
+    ...(hasMouthTracks ? { onMediaClock } : {}),
   });
 
   if (!recording) {
@@ -242,15 +256,21 @@ export function TeachWatchPage() {
               <button type="button" className="teach-primary" onClick={() => setChoosing(false)}>{tr("好了")}</button>
             </section>
           )}
-          <section className="teach-watch-stage" aria-label={tr("你的课")}>
-            <LearningWhiteboard runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
-          </section>
+          <div className="teach-watch-layout">
+            <section className="teach-watch-stage" aria-label={tr("你的课")}>
+              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
+            </section>
+            {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
+              track={mouthTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
+              playing={speaking && narrated} preparing={narration.preparing}
+            /></Suspense>}
+          </div>
           <div className="teach-watch-bar">
             <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
               <AvatarPicture avatar={avatar} size={44} />
             </button>
             <button type="button" className="teach-primary" disabled={!runtime || audio === "checking"}
-              onClick={() => (runtime?.completed ? runtime.restart() : runtime?.playing ? runtime.pause() : runtime?.play())}>
+              onClick={() => { if (narrated) unlockAudio(); if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play(); }}>
               {runtime?.playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               {runtime?.completed ? tr("再看一遍") : runtime?.playing ? tr("暂停播放") : tr("播放我的课")}
             </button>
@@ -265,6 +285,7 @@ export function TeachWatchPage() {
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
           <section className="teach-package" aria-label={tr("分享前的准备")}>
+            {hasMouthTracks && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
             <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
             {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
             {pack.status === "ready" ? (

@@ -1,0 +1,8 @@
+.teach-watch-avatar { display: flex; flex-direction: column; flex: 0 0 230px; min-width: 0; align-self: stretch; padding: 12px; border: 1px solid rgba(40,65,67,.14); border-radius: 18px; background: #fffef9; }
+.teach-watch-avatar-stage { position: relative; flex: 1; min-height: 230px; border-radius: 12px; overflow: hidden; background: #e9eff2; }
+.teach-watch-avatar-stage .avatar-lab-render { position: absolute; inset: 0; }
+.teach-watch-avatar-stage canvas { display: block; }
+.teach-watch-avatar-stage > span { position: absolute; left: 8px; top: 8px; padding: 4px 8px; border-radius: 20px; background: #eee4ca; color: #605230; font-size: 11px; }
+.teach-watch-avatar p { margin: 10px 0 6px; color: #314d63; font-size: 13px; line-height: 1.5; }
+.teach-watch-avatar small { color: #617384; font-size: 11px; line-height: 1.5; }
+@media(max-width:800px) { .teach-watch-avatar { flex-basis: auto; } .teach-watch-avatar-stage { min-height: 210px; } }

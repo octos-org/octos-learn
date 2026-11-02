@@ -140,9 +140,16 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-studio a.teach-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; color: #f6dfa0; background: #1b2457; font-size: 15px; font-weight: 500; text-decoration: none; }
 .teach-check-foot { gap: 10px; justify-content: space-between; }
 .teach-watch-stage { position: relative; flex: 1; min-height: 0; margin-top: 12px; overflow: hidden; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fbf9f3; }
+.teach-watch-layout { display: flex; flex: 1; min-height: 300px; gap: 12px; margin-top: 12px; }
+.teach-watch-layout > .teach-watch-stage { min-width: 0; margin-top: 0; }
+@media(max-width:800px) { .teach-watch-layout { flex-direction: column; flex: auto; } .teach-watch-layout > .teach-watch-stage { min-height: 360px; } }
 .teach-watch-bar { display: flex; align-items: center; gap: 12px; padding: 12px 0 0; }
 .teach-watch-caption { flex: 1; min-height: 48px; margin: 0; padding: 10px 16px; border-radius: 14px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 18px; line-height: 1.4; }
 .teach-watch-caption:empty { background: transparent; }
+.teach-package-import { margin-top: 12px; padding: 12px 16px; border: 1px solid rgba(40,65,67,.14); border-radius: 14px; background: #fffef9; }
+.teach-package-import label { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.teach-package-import p { margin: 8px 0 0; color: #617384; font-size: 13px; line-height: 1.5; }
+.teach-package-viewer > .teach-watch-caption { flex: 0 0 auto; min-height: 25px; margin-top: 10px; }
 .teach-presenter { display: grid; gap: 14px; margin-top: 12px; padding: 16px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fffef9; }
 .teach-presenter fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
 .teach-presenter-avatars { display: flex; flex-wrap: wrap; gap: 10px; }

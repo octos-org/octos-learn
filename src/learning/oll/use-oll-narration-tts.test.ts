@@ -231,6 +231,30 @@ describe("useOllNarrationTts", () => {
     expect(nativePlay).not.toHaveBeenCalled();
   });
 
+  it("publishes a packaged clip clock, clears it on pause, and ignores late clock publication", async () => {
+    const clock = { read: () => ({ positionMs: 500, durationMs: 4000 }) };
+    let publish: ((value: typeof clock) => void) | undefined;
+    mocks.playAudioBlob.mockImplementation(async (_audio: Blob, _ended: () => void, _signal: AbortSignal, observer?: typeof publish) => {
+      publish = observer; observer?.(clock); return true;
+    });
+    const onMediaClock = vi.fn(), resolveAudio = () => new Blob(["verified"]);
+    const { rerender } = renderHook(({ playing }) => useOllNarrationTts({ enabled: true, playing, text: "Packaged.", narrationId: "clock-beat", resolveAudio, onMediaClock }), { initialProps: { playing: true } });
+    await waitFor(() => expect(onMediaClock).toHaveBeenCalledWith("clock-beat", clock));
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+    rerender({ playing: false });
+    expect(onMediaClock).toHaveBeenLastCalledWith("clock-beat", null);
+    const count = onMediaClock.mock.calls.length;
+    act(() => publish?.(clock)); expect(onMediaClock).toHaveBeenCalledTimes(count);
+  });
+
+  it("does not call paid speech when a strict offline package resolver refuses missing narration", async () => {
+    const onPlaybackComplete = vi.fn();
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "Missing clip.", narrationId: "strict-offline",
+      resolveAudio: async () => { throw new Error("Missing verified packaged narration"); }, onPlaybackComplete }));
+    await waitFor(() => expect(onPlaybackComplete).toHaveBeenCalledWith("strict-offline"));
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled(); expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+  });
+
   it("routes packaged narration through Android MediaPlayer when available", async () => {
     let requestId = "";
     const playAudio = vi.fn((id: string) => {
