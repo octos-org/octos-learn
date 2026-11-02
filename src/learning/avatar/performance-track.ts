@@ -62,8 +62,10 @@ export function sampleAvatarTrack(track: AvatarTrack, timeMs: number): FaceFrame
   const weight = Math.min(1, (timeMs - before.timeMs) / (after.timeMs - before.timeMs));
   const channels = Object.fromEntries(FACE_CHANNELS.flatMap((key) => before.channels[key] === undefined && after.channels[key] === undefined ? []
     : [[key, (before.channels[key] ?? 0) * (1 - weight) + (after.channels[key] ?? 0) * weight]]));
-  return normalizeFaceFrame({ timeMs, source: before.source, tracked: before.tracked, channels,
-    rotation: before.rotation.map((v, i) => v * (1 - weight) + after.rotation[i]! * weight) });
+  // The track stores displayed motion, including the smooth decay while lost.
+  // Normalizing as untracked here would zero every interpolated lost frame.
+  return { ...normalizeFaceFrame({ timeMs, source: before.source, tracked: true, channels,
+    rotation: before.rotation.map((v, i) => v * (1 - weight) + after.rotation[i]! * weight) }), tracked: before.tracked };
 }
 
 export function percentile(values: number[], fraction: number): number {

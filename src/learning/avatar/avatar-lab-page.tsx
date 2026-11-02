@@ -7,6 +7,8 @@ import { getSelectedProfileId } from "@/api/client";
 import { AcademyHeader } from "../academy/academy-header";
 import { TeachBoard, type TeachBoardHandle } from "../teach/teach-board";
 import { AvatarStage, type AvatarRenderMetrics } from "./avatar-stage";
+import { AvatarClipLibrary } from "./avatar-clip-library";
+import { EXPRESSION_SAMPLES, expressionSample } from "./expression-samples";
 import { FaceCapture, selfTestFaceModel, type CaptureError, type CaptureState } from "./face-capture";
 import { demoFaceFrame, FaceSmoother, neutralFrame, type FaceFrame } from "./face-frame";
 import { MAX_TRACK_MS, parseAvatarTrack, percentile, PerformanceRecorder, sampleAvatarTrack, type AvatarTrack } from "./performance-track";
@@ -36,6 +38,7 @@ export default function AvatarLabPage() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [inkReady, setInkReady] = useState(false);
   const [modelCheck, setModelCheck] = useState<"idle" | "running" | "passed">("idle");
+  const profileId = getSelectedProfileId() ?? "local";
   const modelCheckAbort = useRef<AbortController | null>(null);
   const video = useRef<HTMLVideoElement>(null);
   const capture = useRef<FaceCapture | null>(null);
@@ -45,6 +48,7 @@ export default function AvatarLabPage() {
   const recorder = useRef(new PerformanceRecorder());
   const controls = useRef({ mode, track, replayPlaying, replayTime });
   const playback = useRef({ anchor: 0, offset: 0 });
+  const sourceRevision = useRef(0);
   const [inkId] = useState(() => `avatar-lab-${getSelectedProfileId() ?? "local"}`);
   const captureSamples = useRef<{ processing: number[]; pipeline: number[]; lastReport: number }>({ processing: [], pipeline: [], lastReport: 0 });
 
@@ -74,14 +78,16 @@ export default function AvatarLabPage() {
       },
     });
     capture.current = owner;
+    const invalidateImport = () => { sourceRevision.current++; };
     const stopForVisibility = () => {
       if (document.hidden) {
+        invalidateImport();
         owner.stop(); modelCheckAbort.current?.abort(); setModelCheck("idle");
         setMode("idle"); setReplayPlaying(false); finishRecording();
       }
     };
     document.addEventListener("visibilitychange", stopForVisibility);
-    return () => { owner.stop(); capture.current = null; modelCheckAbort.current?.abort(); document.removeEventListener("visibilitychange", stopForVisibility); };
+    return () => { invalidateImport(); owner.stop(); capture.current = null; modelCheckAbort.current?.abort(); document.removeEventListener("visibilitychange", stopForVisibility); };
   }, [finishRecording]);
 
   const getFrame = useCallback((now: number) => {
@@ -111,6 +117,7 @@ export default function AvatarLabPage() {
   }, [replayPlaying, track]);
 
   const stop = () => {
+    sourceRevision.current++;
     modelCheckAbort.current?.abort(); modelCheckAbort.current = null; setModelCheck("idle");
     capture.current?.stop(); finishRecording(); setReplayPlaying(false); setMode("idle");
     inputFrame.current = neutralFrame(); smoother.current.reset();
@@ -123,6 +130,7 @@ export default function AvatarLabPage() {
     void capture.current?.start();
   };
   const replay = () => {
+    sourceRevision.current++;
     capture.current?.stop(); finishRecording(); smoother.current.reset();
     const offset = replayTime >= (track?.durationMs ?? 0) ? 0 : replayTime;
     playback.current = { anchor: performance.now(), offset };
@@ -131,6 +139,10 @@ export default function AvatarLabPage() {
   const pauseReplay = () => {
     setReplayTime(Math.min(track?.durationMs ?? 0, playback.current.offset + performance.now() - playback.current.anchor));
     setReplayPlaying(false);
+  };
+  const openTrack = (value: AvatarTrack, play = false) => {
+    stop(); setTrack(value); setReplayTime(0); setMode("replay"); setError(null);
+    playback.current = { anchor: performance.now(), offset: 0 }; setReplayPlaying(play);
   };
   const download = (value: unknown, filename: string) => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: "application/json" }));
@@ -180,19 +192,26 @@ export default function AvatarLabPage() {
         <section className="avatar-lab-track" aria-label={tr("表情片段")}>
           <div className="avatar-lab-actions">
             <button type="button" className="teach-secondary" disabled={!canRecord} onClick={() => {
-              if (recording) finishRecording(); else { recorder.current.begin(performance.now()); setRecording(true); }
+              if (recording) finishRecording(); else { sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
             }}>{recording ? tr("结束表情片段") : tr("录一段表情")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => replayPlaying ? pauseReplay() : replay()}>{replayPlaying ? <Pause size={17} /> : <Play size={17} />}{replayPlaying ? tr("暂停片段") : tr("回放片段")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => track && download(track, "avatar-performance.json")}><Download size={17} />{tr("导出表情片段")}</button>
             <label className="avatar-lab-import">{tr("导入表情片段")}<input type="file" accept=".json,application/json" onChange={(event) => {
               const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
               if (file.size > 5_000_000) { setError("track"); return; }
-              void file.text().then((text) => { const imported = parseAvatarTrack(JSON.parse(text)); stop(); setTrack(imported); setReplayTime(0); setMode("replay"); setError(null); }).catch(() => setError("track"));
+              const revision = ++sourceRevision.current;
+              void file.text().then((text) => { if (revision === sourceRevision.current) { const imported = parseAvatarTrack(JSON.parse(text)); openTrack(imported); } }).catch(() => { if (revision === sourceRevision.current) setError("track"); });
             }} /></label>
           </div>
-          {track && <label className="avatar-lab-scrub">{tr("片段进度")} <span>{(replayTime / 1000).toFixed(1)} / {(track.durationMs / 1000).toFixed(1)} s</span><input type="range" aria-label={tr("片段进度")} min="0" max={Math.max(1, track.durationMs)} step="10" value={replayTime} disabled={recording} onChange={(event) => { capture.current?.stop(); setReplayPlaying(false); setMode("replay"); setReplayTime(Number(event.target.value)); }} /></label>}
+          {track && <label className="avatar-lab-scrub">{tr("片段进度")} <span>{(replayTime / 1000).toFixed(1)} / {(track.durationMs / 1000).toFixed(1)} s</span><input type="range" aria-label={tr("片段进度")} min="0" max={Math.max(1, track.durationMs)} step="10" value={replayTime} disabled={recording} onChange={(event) => { sourceRevision.current++; capture.current?.stop(); setReplayPlaying(false); setMode("replay"); setReplayTime(Number(event.target.value)); }} /></label>}
           <p>{tr("片段只保存角色动作参数，不包含照片或声音；导出后可在另一台支持的设备上回放。")}</p>
         </section>
+        <section className="avatar-lab-samples" aria-label={tr("无需摄像头的表情排练")}>
+          <h2>{tr("无需摄像头的表情排练")}</h2>
+          <p>{tr("这些是预设的合成动作，每段 4 秒，可回放、定位或保存。用于检查角色动作，不代表真人捕捉效果。")}</p>
+          <div className="avatar-lab-actions">{EXPRESSION_SAMPLES.map((sample) => <button key={sample.id} type="button" className="teach-secondary" disabled={recording} onClick={() => openTrack(expressionSample(sample.id), true)}>{sample.name()}</button>)}</div>
+        </section>
+        <AvatarClipLibrary key={profileId} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
         <section className="avatar-lab-metrics" aria-label={tr("性能观察")}>
           <dl><div><dt>{tr("实际显示帧率")}</dt><dd>{metrics && mode !== "idle" ? metrics.fps.toFixed(0) : "—"} {tr("FPS")}</dd></div><div><dt>{tr("识别耗时 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.processing.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("取帧到结果 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.pipeline.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("绘制提交耗时 p95")}</dt><dd>{metrics && mode !== "idle" ? metrics.submissionP95Ms.toFixed(1) : "—"} ms</dd></div></dl>
           <p>{tr("取帧到结果不包含摄像头传感延迟，绘制提交耗时不等于 GPU 总耗时；这些数字不能当作完整动作响应延迟。")}</p>

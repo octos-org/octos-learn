@@ -40,5 +40,17 @@
 .avatar-lab-whiteboard .teach-board-frame { display: block; }
 .avatar-lab-whiteboard .teach-board { position: relative; min-height: 330px; height: 330px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 12px; background: #fbf9f3; }
 .avatar-lab-error { padding: 14px; color: #8e371e; background: #fbe4da; border-radius: 12px; }
+.avatar-lab-library, .avatar-lab-samples { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-library h2, .avatar-lab-samples h2 { margin: 0; font-size: 18px; }
+.avatar-lab-library p, .avatar-lab-samples p { color: #617384; font-size: 13px; line-height: 1.65; }
+.avatar-lab-library label { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; }
+.avatar-lab-library input { width: min(220px, 100%); min-width: 0; padding: 10px; border: 1px solid #c9d2da; border-radius: 9px; background: #fff; color: #24394b; }
+.avatar-lab-library-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.avatar-lab-library-tabs button[aria-pressed="true"] { background: #e8edf5; border-color: #273e75; }
+.avatar-lab-library ul { list-style: none; margin: 16px 0 0; padding: 0; }
+.avatar-lab-library li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 0; border-top: 1px solid #e2e5e7; }
+.avatar-lab-library li > div:first-child { display: grid; gap: 5px; min-width: 0; }
+.avatar-lab-library li strong { overflow-wrap: anywhere; }
+.avatar-lab-library li span { color: #617384; font-size: 12px; }
 @media(max-width:800px) { .avatar-lab-grid { grid-template-columns: 1fr; } .avatar-lab-stage { min-height: 400px; } .avatar-lab-controls .avatar-lab-actions { flex-direction: row; } .avatar-lab-metrics dl { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width:440px) { .avatar-lab-heading h1 { font-size: 25px; } .avatar-lab-heading { align-items: flex-start; } .avatar-lab-board-heading { flex-direction: column; align-items: flex-start; } .avatar-lab-recording { top: 48px; left: 16px; right: auto; } .avatar-lab-controls, .avatar-lab-track, .avatar-lab-metrics, .avatar-lab-whiteboard { padding: 16px; } .avatar-lab-stage { min-height: 340px; } }

@@ -79,6 +79,14 @@ describe("bounded portable performance tracks", () => {
     expect(sampleAvatarTrack(track, 100).channels.jawOpen).toBe(.25);
     expect(sampleAvatarTrack(track, 100).tracked).toBe(false);
   });
+  it("interpolates displayed decay between lost frames without snapping to zero", () => {
+    const track = parseAvatarTrack({ schema: "octos.avatar-performance.v1", durationMs: 100,
+      frames: [{ ...frame(0, .6), tracked: false }, { ...frame(100, .2), tracked: false }] });
+    const middle = sampleAvatarTrack(track, 50);
+    expect(middle.tracked).toBe(false);
+    expect(middle.channels.jawOpen).toBeCloseTo(.4);
+    expect(middle.rotation[1]).toBeCloseTo(.3);
+  });
   it("reports a tail percentile rather than an average", () => {
     expect(percentile([...Array(18).fill(1), 40, 60], .95)).toBe(40);
     expect(percentile([], .95)).toBe(0);
