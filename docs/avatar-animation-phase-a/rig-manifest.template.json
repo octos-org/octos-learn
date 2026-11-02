@@ -1,0 +1,381 @@
+{
+  "schema": "octos.avatar-rig.v1",
+  "id": "star-fox",
+  "version": "0.1.0",
+  "modelSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "headRotation": {
+    "node": "Fox_Head",
+    "signs": [
+      -1,
+      -1,
+      -1
+    ]
+  },
+  "channels": {
+    "browDownLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "browDownLeft",
+        "gain": 1
+      }
+    ],
+    "browDownRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "browDownRight",
+        "gain": 1
+      }
+    ],
+    "browInnerUp": [
+      {
+        "node": "Fox_Face",
+        "morph": "browInnerUp",
+        "gain": 1
+      }
+    ],
+    "browOuterUpLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "browOuterUpLeft",
+        "gain": 1
+      }
+    ],
+    "browOuterUpRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "browOuterUpRight",
+        "gain": 1
+      }
+    ],
+    "cheekPuff": [
+      {
+        "node": "Fox_Face",
+        "morph": "cheekPuff",
+        "gain": 1
+      }
+    ],
+    "cheekSquintLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "cheekSquintLeft",
+        "gain": 1
+      }
+    ],
+    "cheekSquintRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "cheekSquintRight",
+        "gain": 1
+      }
+    ],
+    "eyeBlinkLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeBlinkLeft",
+        "gain": 1
+      }
+    ],
+    "eyeBlinkRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeBlinkRight",
+        "gain": 1
+      }
+    ],
+    "eyeLookDownLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookDownLeft",
+        "gain": 1
+      }
+    ],
+    "eyeLookDownRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookDownRight",
+        "gain": 1
+      }
+    ],
+    "eyeLookInLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookInLeft",
+        "gain": 1
+      }
+    ],
+    "eyeLookInRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookInRight",
+        "gain": 1
+      }
+    ],
+    "eyeLookOutLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookOutLeft",
+        "gain": 1
+      }
+    ],
+    "eyeLookOutRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookOutRight",
+        "gain": 1
+      }
+    ],
+    "eyeLookUpLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookUpLeft",
+        "gain": 1
+      }
+    ],
+    "eyeLookUpRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeLookUpRight",
+        "gain": 1
+      }
+    ],
+    "eyeSquintLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeSquintLeft",
+        "gain": 1
+      }
+    ],
+    "eyeSquintRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeSquintRight",
+        "gain": 1
+      }
+    ],
+    "eyeWideLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeWideLeft",
+        "gain": 1
+      }
+    ],
+    "eyeWideRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "eyeWideRight",
+        "gain": 1
+      }
+    ],
+    "jawForward": [
+      {
+        "node": "Fox_Face",
+        "morph": "jawForward",
+        "gain": 1
+      }
+    ],
+    "jawLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "jawLeft",
+        "gain": 1
+      }
+    ],
+    "jawOpen": [
+      {
+        "node": "Fox_Face",
+        "morph": "jawOpen",
+        "gain": 1
+      }
+    ],
+    "jawRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "jawRight",
+        "gain": 1
+      }
+    ],
+    "mouthClose": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthClose",
+        "gain": 1
+      }
+    ],
+    "mouthDimpleLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthDimpleLeft",
+        "gain": 1
+      }
+    ],
+    "mouthDimpleRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthDimpleRight",
+        "gain": 1
+      }
+    ],
+    "mouthFrownLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthFrownLeft",
+        "gain": 1
+      }
+    ],
+    "mouthFrownRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthFrownRight",
+        "gain": 1
+      }
+    ],
+    "mouthFunnel": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthFunnel",
+        "gain": 1
+      }
+    ],
+    "mouthLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthLeft",
+        "gain": 1
+      }
+    ],
+    "mouthLowerDownLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthLowerDownLeft",
+        "gain": 1
+      }
+    ],
+    "mouthLowerDownRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthLowerDownRight",
+        "gain": 1
+      }
+    ],
+    "mouthPressLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthPressLeft",
+        "gain": 1
+      }
+    ],
+    "mouthPressRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthPressRight",
+        "gain": 1
+      }
+    ],
+    "mouthPucker": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthPucker",
+        "gain": 1
+      }
+    ],
+    "mouthRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthRight",
+        "gain": 1
+      }
+    ],
+    "mouthRollLower": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthRollLower",
+        "gain": 1
+      }
+    ],
+    "mouthRollUpper": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthRollUpper",
+        "gain": 1
+      }
+    ],
+    "mouthShrugLower": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthShrugLower",
+        "gain": 1
+      }
+    ],
+    "mouthShrugUpper": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthShrugUpper",
+        "gain": 1
+      }
+    ],
+    "mouthSmileLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthSmileLeft",
+        "gain": 1
+      }
+    ],
+    "mouthSmileRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthSmileRight",
+        "gain": 1
+      }
+    ],
+    "mouthStretchLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthStretchLeft",
+        "gain": 1
+      }
+    ],
+    "mouthStretchRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthStretchRight",
+        "gain": 1
+      }
+    ],
+    "mouthUpperUpLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthUpperUpLeft",
+        "gain": 1
+      }
+    ],
+    "mouthUpperUpRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "mouthUpperUpRight",
+        "gain": 1
+      }
+    ],
+    "noseSneerLeft": [
+      {
+        "node": "Fox_Face",
+        "morph": "noseSneerLeft",
+        "gain": 1
+      }
+    ],
+    "noseSneerRight": [
+      {
+        "node": "Fox_Face",
+        "morph": "noseSneerRight",
+        "gain": 1
+      }
+    ],
+    "tongueOut": [
+      {
+        "node": "Fox_Face",
+        "morph": "tongueOut",
+        "gain": 1
+      }
+    ]
+  },
+  "unsupportedChannels": []
+}
