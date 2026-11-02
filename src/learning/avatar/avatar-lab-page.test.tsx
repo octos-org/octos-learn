@@ -7,6 +7,7 @@ const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbac
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
 vi.mock("./avatar-stage", () => ({ AvatarStage: () => <div /> }));
+vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
     callbacks: CaptureCallbacks;

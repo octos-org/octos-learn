@@ -91,7 +91,8 @@ export function AvatarStage({ frame, fpsLimit, active, onMetrics, onError }: {
   const wake = useRef<(() => void) | null>(null);
   useEffect(() => {
     callbacks.current = { frame, onMetrics, onError, fpsLimit, active };
-    if (active) wake.current?.();
+    // A paused audio/track seek still needs a fresh frame, then returns to idle.
+    wake.current?.();
   }, [frame, fpsLimit, onMetrics, onError, active]);
   useEffect(() => {
     const element = host.current;

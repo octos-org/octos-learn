@@ -8,6 +8,7 @@ import { AcademyHeader } from "../academy/academy-header";
 import { TeachBoard, type TeachBoardHandle } from "../teach/teach-board";
 import { AvatarStage, type AvatarRenderMetrics } from "./avatar-stage";
 import { AvatarClipLibrary } from "./avatar-clip-library";
+import { AvatarAudioPreview } from "./avatar-audio-preview";
 import { EXPRESSION_SAMPLES, expressionSample } from "./expression-samples";
 import { FaceCapture, selfTestFaceModel, type CaptureError, type CaptureState } from "./face-capture";
 import { demoFaceFrame, FaceSmoother, neutralFrame, type FaceFrame } from "./face-frame";
@@ -212,6 +213,7 @@ export default function AvatarLabPage() {
           <div className="avatar-lab-actions">{EXPRESSION_SAMPLES.map((sample) => <button key={sample.id} type="button" className="teach-secondary" disabled={recording} onClick={() => openTrack(expressionSample(sample.id), true)}>{sample.name()}</button>)}</div>
         </section>
         <AvatarClipLibrary key={profileId} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
+        <AvatarAudioPreview />
         <section className="avatar-lab-metrics" aria-label={tr("性能观察")}>
           <dl><div><dt>{tr("实际显示帧率")}</dt><dd>{metrics && mode !== "idle" ? metrics.fps.toFixed(0) : "—"} {tr("FPS")}</dd></div><div><dt>{tr("识别耗时 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.processing.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("取帧到结果 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.pipeline.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("绘制提交耗时 p95")}</dt><dd>{metrics && mode !== "idle" ? metrics.submissionP95Ms.toFixed(1) : "—"} ms</dd></div></dl>
           <p>{tr("取帧到结果不包含摄像头传感延迟，绘制提交耗时不等于 GPU 总耗时；这些数字不能当作完整动作响应延迟。")}</p>
