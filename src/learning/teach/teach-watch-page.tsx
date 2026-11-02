@@ -4,7 +4,7 @@
 
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson } from "octos-lesson-language";
@@ -18,6 +18,11 @@ import { LearningWhiteboard } from "../oll/oll-lesson-runtime";
 import { useOllLessonRuntime, type OllLessonTopicDefinition } from "../oll/use-oll-lesson-runtime";
 import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { compileRecording } from "./compile-recording";
+import { LEARNER_PACKAGE_EXTENSION, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
+import { readStoredLearnerPackage, writeStoredLearnerPackage, type StoredLearnerPackage } from "./learner-package-store";
+import { cardChecks, lessonReady } from "./lesson-check";
+import { makeLearnerPackage } from "./make-learner-package";
+import { findPersonalDetails } from "./privacy";
 import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
 import { recordingComplete, setPresenter, type Presenter } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
@@ -34,6 +39,10 @@ function fingerprint(text: string): string {
 }
 
 type Audio = "checking" | "on" | "unavailable";
+
+type PackState =
+  | { status: "loading" | "none" | "outdated" }
+  | { status: "ready"; stored: StoredLearnerPackage; loaded: LoadedLearnerPackage };
 
 export function TeachWatchPage() {
   useLocale();
@@ -64,7 +73,7 @@ export function TeachWatchPage() {
         id: "learner-lesson", title: recording.topic.text, language: compiled.lesson.lesson.language,
         stepIds, nodeIds: Object.keys(sections), nodeSections: sections,
       }];
-      return { source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
+      return { compiled, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
     } catch {
       return null;
     }
@@ -93,10 +102,60 @@ export function TeachWatchPage() {
   }, [wantedVoice, resource]);
   const avatar = presenterAvatar(recording?.presenter?.avatar);
 
+  // The lesson's package, made on this device: once it matches the lesson,
+  // the lesson plays from it with no speech service and no model.
+  const lessonPrint = fingerprint(lesson?.source ?? "");
+  const [pack, setPack] = useState<PackState>({ status: "loading" });
+  useEffect(() => {
+    if (!recording || !lesson) return;
+    let active = true;
+    void readStoredLearnerPackage(recording.id).then(async (stored) => {
+      if (!stored) return { status: "none" } as PackState;
+      if (stored.lessonFingerprint !== lessonPrint) return { status: "outdated" } as PackState;
+      return { status: "ready", stored, loaded: await readLearnerPackage(stored.archive) } as PackState;
+    }).catch(() => ({ status: "none" }) as PackState).then((state) => { if (active) setPack(state); });
+    return () => { active = false; };
+  }, [recording, lesson, lessonPrint]);
+  const packaged = pack.status === "ready" ? pack.loaded : undefined;
+  const checks = recording && lesson ? cardChecks(recording, lesson.compiled, recording.review) : [];
+  const checked = Boolean(recording && lessonReady(checks, recording));
+  const privateTitles = recording ? [recording.topic.text, ...recording.goals, ...recording.cards.map((card) => card.title)].flatMap((text) => findPersonalDetails(text)) : [];
+  const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
+  const [makeFailed, setMakeFailed] = useState<string | null>(null);
+  const makePackage = async () => {
+    if (!recording || !lesson) return;
+    setMakeFailed(null);
+    setMaking({ done: 0, total: 0 });
+    try {
+      const { archive, manifest } = await makeLearnerPackage({
+        lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
+        voices, signal: new AbortController().signal, onProgress: (done, total) => setMaking({ done, total }),
+      });
+      const stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
+      await writeStoredLearnerPackage(stored);
+      setPack({ status: "ready", stored, loaded: await readLearnerPackage(stored.archive) });
+    } catch (error) {
+      setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
+    } finally {
+      setMaking(null);
+    }
+  };
+  const download = () => {
+    if (pack.status !== "ready" || !recording) return;
+    const url = URL.createObjectURL(new Blob([pack.stored.archive], { type: "application/zip" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `lesson-${recording.id}${LEARNER_PACKAGE_EXTENSION}`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  };
+  const resolvePackagedAudio = useCallback((beatId: string, text: string) => packaged?.narration(beatId, text) ?? null, [packaged]);
+  const narrated = (Boolean(packaged) || audio === "on") && sound;
+
   const runtime = useOllLessonRuntime({
-    source: lesson && audio !== "checking" ? lesson.source : null,
-    storageKey: `octos-learn:teach-watch:${recording?.id ?? "none"}:${fingerprint(lesson?.source ?? "")}`,
-    narrationTiming: audio === "on" && sound ? "external" : "estimated",
+    source: lesson && audio !== "checking" && pack.status !== "loading" ? packaged?.source ?? lesson.source : null,
+    storageKey: `octos-learn:teach-watch:${recording?.id ?? "none"}:${lessonPrint}`,
+    narrationTiming: narrated ? "external" : "estimated",
     topics: lesson?.topics,
   });
   const runtimeRef = useRef(runtime);
@@ -107,7 +166,7 @@ export function TeachWatchPage() {
   const speaking = Boolean(runtime?.playing && runtime.activeSpeech.trim());
   const narration = useOllNarrationTts({
     language: lesson?.language,
-    enabled: audio === "on" && sound,
+    enabled: narrated,
     playing: speaking,
     text: runtime?.activeSpeech ?? "",
     narrationId: runtime?.currentBeatId,
@@ -115,6 +174,7 @@ export function TeachWatchPage() {
     upcomingNarrationId: runtime?.nextNarration?.beatId,
     prefetchEnabled: true,
     voices,
+    ...(packaged ? { resolveAudio: resolvePackagedAudio } : {}),
     onPlaybackStart: onStart,
     onPlaybackComplete: onComplete,
     onPlaybackEnd: onEnd,
@@ -171,7 +231,7 @@ export function TeachWatchPage() {
             </section>
           )}
           <section className="teach-watch-stage" aria-label={tr("你的课")}>
-            <LearningWhiteboard runtime={runtime} resolveAsset={resolveAsset} />
+            <LearningWhiteboard runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
           </section>
           <div className="teach-watch-bar">
             <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
@@ -192,7 +252,27 @@ export function TeachWatchPage() {
             )}
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
-          {audio === "unavailable" && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
+          <section className="teach-package" aria-label={tr("分享前的准备")}>
+            {pack.status === "ready" ? (
+              <>
+                <p role="status">{tr("这节课已经准备好分享了：声音已经做好，不联网也能播放。")}</p>
+                <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>
+              </>
+            ) : making ? (
+              <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在准备…")}</p>
+            ) : (
+              <>
+                <p className="academy-muted">{pack.status === "outdated" ? tr("课改过了，要重新准备一次。") : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能准备分享。")
+                  : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
+                    : audio !== "on" ? tr("准备分享需要连接语音合成。") : tr("会用你选的声音把每张卡片讲一遍并保存，以后不联网也能播放。")}</p>
+                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || audio !== "on"} onClick={() => void makePackage()}>
+                  <PackageCheck size={16} aria-hidden="true" />{tr("准备分享")}
+                </button>
+              </>
+            )}
+            {makeFailed && <p role="alert">{makeFailed}</p>}
+          </section>
+          {audio === "unavailable" && !packaged && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
           {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}
         </>
       )}

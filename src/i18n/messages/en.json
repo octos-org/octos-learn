@@ -2509,5 +2509,17 @@
   "联系方式": "contact details",
   "你的个人信息": "something personal about you",
   "你说了“{{v0}}”，这是{{v1}}。分享前把它从你的话里删掉。": "You said \"{{v0}}\" — that's {{v1}}. Take it out of your words before you share your lesson.",
-  "你的话（课会用这些话来讲，可以直接改）": "Your words (your lesson is narrated from these, so you can change them here)"
+  "你的话（课会用这些话来讲，可以直接改）": "Your words (your lesson is narrated from these, so you can change them here)",
+  "这次没能做好，请再试一次。": "That didn't work this time. Please try again.",
+  "分享前的准备": "Getting ready to share",
+  "这节课已经准备好分享了：声音已经做好，不联网也能播放。": "Your lesson is ready to share: its voice is made, and it plays without the internet.",
+  "下载课程包": "Download the lesson package",
+  "正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…": "Making the voice for card {{v0}} of {{v1}}…",
+  "正在准备…": "Getting ready…",
+  "课改过了，要重新准备一次。": "Your lesson changed, so get it ready again.",
+  "先在编辑页“检查我的课”，没有要改的地方后就能准备分享。": "First use Check my lesson in the editor. Once there's nothing to fix, you can get it ready to share.",
+  "题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。": "Your topic or a card title has something personal in it (\"{{v0}}\"). Go back and change it first.",
+  "准备分享需要连接语音合成。": "Getting ready to share needs speech to be connected.",
+  "会用你选的声音把每张卡片讲一遍并保存，以后不联网也能播放。": "Your chosen voice reads each card once and it's saved, so your lesson plays without the internet.",
+  "准备分享": "Get ready to share"
 }
