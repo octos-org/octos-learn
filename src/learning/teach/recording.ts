@@ -149,6 +149,8 @@ export interface LearnerRecording {
 export interface Presenter {
   avatar?: string;
   voice?: string;
+  /** Opt-in basic final-audio mouth motion; no camera performance or model is published. */
+  mouthMotion?: "off" | "basic";
 }
 
 export class RecordingError extends Error {

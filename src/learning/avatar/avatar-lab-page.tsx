@@ -212,8 +212,8 @@ export default function AvatarLabPage() {
           <p>{tr("这些是预设的合成动作，每段 4 秒，可回放、定位或保存。用于检查角色动作，不代表真人捕捉效果。")}</p>
           <div className="avatar-lab-actions">{EXPRESSION_SAMPLES.map((sample) => <button key={sample.id} type="button" className="teach-secondary" disabled={recording} onClick={() => openTrack(expressionSample(sample.id), true)}>{sample.name()}</button>)}</div>
         </section>
-        <AvatarClipLibrary key={profileId} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
-        <AvatarAudioPreview />
+        <AvatarClipLibrary key={`library:${profileId}`} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
+        <AvatarAudioPreview key={`audio:${profileId}`} />
         <section className="avatar-lab-metrics" aria-label={tr("性能观察")}>
           <dl><div><dt>{tr("实际显示帧率")}</dt><dd>{metrics && mode !== "idle" ? metrics.fps.toFixed(0) : "—"} {tr("FPS")}</dd></div><div><dt>{tr("识别耗时 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.processing.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("取帧到结果 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.pipeline.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("绘制提交耗时 p95")}</dt><dd>{metrics && mode !== "idle" ? metrics.submissionP95Ms.toFixed(1) : "—"} ms</dd></div></dl>
           <p>{tr("取帧到结果不包含摄像头传感延迟，绘制提交耗时不等于 GPU 总耗时；这些数字不能当作完整动作响应延迟。")}</p>

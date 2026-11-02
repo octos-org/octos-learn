@@ -2632,5 +2632,16 @@
   "嘴型文件必须匹配当前音频。换配音后需要重新生成；这版尚未自动提取音素，也未接入课程发布。": "The mouth track must match this audio. Generate a new track after changing the narration. Automatic phoneme extraction and lesson publishing are not connected yet.",
   "音频未能读取，请使用浏览器支持的短音频重试。": "The audio could not be read. Try a short audio file supported by this browser.",
   "嘴型文件与当前音频不匹配，请使用同一段配音生成的文件。": "This mouth track does not match the current audio. Use a track generated for this exact narration.",
-  "嘴型文件无效，请检查格式、时长和动作范围。": "The mouth track is invalid. Check its format, duration and motion values."
+  "嘴型文件无效，请检查格式、时长和动作范围。": "The mouth track is invalid. Check its format, duration and motion values.",
+  "第 {{v0}} 张卡片 · {{v1}}": "Card {{v0}} · {{v1}}",
+  "导入带嘴型的课程包": "Import a lesson package with mouth motion",
+  "课包卡片": "Package card",
+  "嘴型文件必须匹配当前音频。换配音后需要重新生成；课程包试听会使用包内已验证的配音与嘴型。精细发音嘴型仍需后续完善。": "Mouth tracks must match the audio. Regenerate them after changing narration. Package previews use the verified audio and mouth motion inside the package. Detailed phoneme animation is still in development.",
+  "课程包未能读取，可能已损坏或需要更新应用。": "The lesson package could not be read. It may be damaged or require a newer app.",
+  "这个课程包没有嘴型轨。请在准备分享时勾选“保存基础嘴型”，重新下载后导入。": "This lesson package has no mouth track. Select “Save basic mouth motion” when preparing to share, then download and import it again.",
+  "保存基础嘴型（预览）": "Save basic mouth motion (preview)",
+  "会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。": "Save simple mouth motion with the narration, up to 60 seconds per card. Download the package to preview each card in the avatar lab. Detailed phoneme animation is still in development.",
+  "第 {{v0}} 张卡片未能准备嘴型，请确认配音不超过 60 秒，或先取消保存基础嘴型后重试。": "Mouth motion could not be prepared for card {{v0}}. Check that its narration is no longer than 60 seconds, or turn off basic mouth motion and try again.",
+  "使用设置中的声音": "Use the voice from settings",
+  "之前选择的声音在当前语音服务中不可用。请重新选择声音，或明确选择“使用设置中的声音”。": "The previously selected voice is unavailable with your current speech service. Choose another voice, or explicitly select “Use the voice from settings”."
 }

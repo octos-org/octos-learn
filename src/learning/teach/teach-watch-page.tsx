@@ -49,8 +49,12 @@ export function TeachWatchPage() {
   const { id } = useParams();
   const profileId = getSelectedProfileId() ?? "local";
   const [recording, setRecording] = useState(() => loadRecordingDrafts(localStorage, profileId).find((draft) => draft.id === id));
+  const makeWork = useRef<AbortController | null>(null);
+  const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
+  const [makeFailed, setMakeFailed] = useState<string | null>(null);
   const choosePresenter = (presenter: Presenter) => {
     if (!recording) return;
+    makeWork.current?.abort(); makeWork.current = null; setMaking(null); setMakeFailed(null);
     const next = setPresenter(recording, presenter, new Date().toISOString());
     saveRecordingDraft(localStorage, profileId, next);
     setRecording(next);
@@ -92,19 +96,21 @@ export function TeachWatchPage() {
     });
     return () => { active = false; };
   }, []);
-  // The chosen voice speaks when the account's speech resource offers it; otherwise the account's own voice does.
+  // A chosen voice must still be offered; using the account voice is an explicit choice.
   const voiceChoices = presenterVoices(resource);
   const chosenVoice = voiceChoices.find((voice) => voice.id === recording?.presenter?.voice);
   const wantedVoice = recording?.presenter?.voice;
+  const voiceAvailable = !wantedVoice || Boolean(chosenVoice);
   const voices = useMemo<LessonVoices | null>(() => {
     const offered = presenterVoices(resource).some((voice) => voice.id === wantedVoice);
     return offered && resource && wantedVoice ? { [resource.trim()]: { id: wantedVoice } } : null;
   }, [wantedVoice, resource]);
   const avatar = presenterAvatar(recording?.presenter?.avatar);
+  const includeLipSync = recording?.presenter?.mouthMotion === "basic";
 
   // The lesson's package, made on this device: once it matches the lesson,
   // the lesson plays from it with no speech service and no model.
-  const lessonPrint = fingerprint(lesson?.source ?? "");
+  const lessonPrint = fingerprint((lesson?.source ?? "") + (includeLipSync ? "\u0000avatar-mouth-v1" : ""));
   const [pack, setPack] = useState<PackState>({ status: "loading" });
   useEffect(() => {
     if (!recording || !lesson) return;
@@ -120,24 +126,29 @@ export function TeachWatchPage() {
   const checks = recording && lesson ? cardChecks(recording, lesson.compiled, recording.review) : [];
   const checked = Boolean(recording && lessonReady(checks, recording));
   const privateTitles = recording ? [recording.topic.text, ...recording.goals, ...recording.cards.map((card) => card.title)].flatMap((text) => findPersonalDetails(text)) : [];
-  const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
-  const [makeFailed, setMakeFailed] = useState<string | null>(null);
+  useEffect(() => {
+    const cancel = () => { makeWork.current?.abort(); makeWork.current = null; };
+    return cancel;
+  }, [id, profileId]);
   const makePackage = async () => {
-    if (!recording || !lesson) return;
+    if (!recording || !lesson || !voiceAvailable) return;
     setMakeFailed(null);
     setMaking({ done: 0, total: 0 });
+    makeWork.current?.abort(); const controller = new AbortController(); makeWork.current = controller;
     try {
       const { archive, manifest } = await makeLearnerPackage({
         lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
-        voices, signal: new AbortController().signal, onProgress: (done, total) => setMaking({ done, total }),
+        voices, includeLipSync, signal: controller.signal, onProgress: (done, total) => { if (makeWork.current === controller) setMaking({ done, total }); },
       });
+      if (controller.signal.aborted || makeWork.current !== controller) return;
       const stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
       await writeStoredLearnerPackage(stored);
-      setPack({ status: "ready", stored, loaded: await readLearnerPackage(stored.archive) });
+      const loaded = await readLearnerPackage(stored.archive);
+      if (!controller.signal.aborted && makeWork.current === controller) setPack({ status: "ready", stored, loaded });
     } catch (error) {
-      setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
+      if (!controller.signal.aborted && makeWork.current === controller) setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
     } finally {
-      setMaking(null);
+      if (makeWork.current === controller) { makeWork.current = null; setMaking(null); }
     }
   };
   const download = () => {
@@ -150,7 +161,7 @@ export function TeachWatchPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
   const resolvePackagedAudio = useCallback((beatId: string, text: string) => packaged?.narration(beatId, text) ?? null, [packaged]);
-  const narrated = (Boolean(packaged) || audio === "on") && sound;
+  const narrated = (Boolean(packaged) || (audio === "on" && voiceAvailable)) && sound;
 
   const runtime = useOllLessonRuntime({
     source: lesson && audio !== "checking" && pack.status !== "loading" ? packaged?.source ?? lesson.source : null,
@@ -214,6 +225,7 @@ export function TeachWatchPage() {
               </fieldset>
               <fieldset>
                 <legend className="teach-group-label">{tr("声音")}</legend>
+                <button type="button" className="teach-secondary" aria-pressed={!wantedVoice} onClick={() => choosePresenter({ voice: "" })}>{tr("使用设置中的声音")}</button>
                 {voiceChoices.length ? (
                   <div className="teach-presenter-voices">
                     {voiceChoices.map((voice) => (
@@ -253,6 +265,8 @@ export function TeachWatchPage() {
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
           <section className="teach-package" aria-label={tr("分享前的准备")}>
+            <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
+            {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
             {pack.status === "ready" ? (
               <>
                 <p role="status">{tr("这节课已经准备好分享了：声音已经做好，不联网也能播放。")}</p>
@@ -265,7 +279,7 @@ export function TeachWatchPage() {
                 <p className="academy-muted">{pack.status === "outdated" ? tr("课改过了，要重新准备一次。") : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能准备分享。")
                   : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
                     : audio !== "on" ? tr("准备分享需要连接语音合成。") : tr("会用你选的声音把每张卡片讲一遍并保存，以后不联网也能播放。")}</p>
-                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || audio !== "on"} onClick={() => void makePackage()}>
+                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || audio !== "on" || !voiceAvailable} onClick={() => void makePackage()}>
                   <PackageCheck size={16} aria-hidden="true" />{tr("准备分享")}
                 </button>
               </>
@@ -273,6 +287,7 @@ export function TeachWatchPage() {
             {makeFailed && <p role="alert">{makeFailed}</p>}
           </section>
           {audio === "unavailable" && !packaged && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
+          {!packaged && audio !== "checking" && !voiceAvailable && <p role="status" className="teach-notice">{tr("之前选择的声音在当前语音服务中不可用。请重新选择声音，或明确选择“使用设置中的声音”。")}</p>}
           {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}
         </>
       )}

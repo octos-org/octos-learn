@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import { AvatarStage } from "./avatar-stage";
-import { calibrationWav, lipSyncFrame, parseLipSyncTrack, type LipSyncTrack } from "./lip-sync";
+import { audioDigest, calibrationWav, lipSyncFrame, parseLipSyncTrack, type LipSyncTrack } from "./lip-sync";
 import { preparePreviewAudio } from "./prepare-preview-audio";
+import type { LoadedLearnerPackage } from "../teach/learner-package";
 
 const ignoreMetrics = () => undefined;
+const blobBytes = (blob: Blob): Promise<ArrayBuffer> => typeof blob.arrayBuffer === "function" ? blob.arrayBuffer() : new Promise((resolve, reject) => {
+  const reader = new FileReader(); reader.onload = () => resolve(reader.result as ArrayBuffer); reader.onerror = () => reject(reader.error); reader.readAsArrayBuffer(blob);
+});
 
 export function AvatarAudioPreview() {
   const audio = useRef<HTMLAudioElement>(null);
@@ -16,8 +20,11 @@ export function AvatarAudioPreview() {
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<"audio" | "timing" | "mismatch" | "graphics" | null>(null);
+  const [failure, setFailure] = useState<"audio" | "timing" | "mismatch" | "graphics" | "package" | "no_mouth" | null>(null);
   const [rate, setRate] = useState("1");
+  const [lessonPack, setLessonPack] = useState<LoadedLearnerPackage | null>(null);
+  const [cards, setCards] = useState<Array<{ beatId: string; text: string }>>([]);
+  const [selectedCard, setSelectedCard] = useState("");
   const onGraphicsError = useCallback(() => setFailure("graphics"), []);
   const frame = useCallback(() => lipSyncFrame(track, (audio.current?.currentTime ?? position / 1000) * 1000, Boolean(track)), [track, position]);
 
@@ -34,7 +41,7 @@ export function AvatarAudioPreview() {
     };
   }, []);
 
-  const load = async (input: () => Promise<ArrayBuffer>, label: string, mediaType: string) => {
+  const load = async (input: () => Promise<ArrayBuffer>, label: string, mediaType: string, preparedTrack?: LipSyncTrack) => {
     const current = ++revision.current;
     work.current?.abort(); const controller = new AbortController(); work.current = controller;
     audio.current?.pause(); audio.current?.removeAttribute("src"); audio.current?.load();
@@ -43,7 +50,9 @@ export function AvatarAudioPreview() {
     try {
       const bytes = await input();
       if (current !== revision.current || controller.signal.aborted) return;
-      const prepared = await preparePreviewAudio(bytes, controller.signal);
+      const prepared = preparedTrack
+        ? parseLipSyncTrack(preparedTrack, { audioSha256: await audioDigest(bytes), durationMs: preparedTrack.durationMs })
+        : await preparePreviewAudio(bytes, controller.signal);
       if (current !== revision.current || controller.signal.aborted || !audio.current) return;
       sourceUrl.current = URL.createObjectURL(new Blob([bytes], { type: mediaType || "application/octet-stream" }));
       audio.current.src = sourceUrl.current; audio.current.playbackRate = Number(rate); audio.current.volume = .65;
@@ -56,6 +65,17 @@ export function AvatarAudioPreview() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(track)], { type: "application/json" }));
     const link = document.createElement("a"); link.href = url; link.download = "avatar-lip-sync.json"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const openCard = (pack: LoadedLearnerPackage, card: { beatId: string; text: string }, index: number) => {
+    const prepared = pack.mouthTrack(card.beatId, card.text);
+    if (!prepared) { setFailure("no_mouth"); return; }
+    setSelectedCard(card.beatId);
+    const type = pack.manifest.files.find((file) => file.path === pack.manifest.narration.find((clip) => clip.beatId === card.beatId)?.file)?.mediaType ?? "audio/mpeg";
+    void load(async () => {
+      const blob = await pack.narration(card.beatId, card.text);
+      if (!blob) throw new Error("missing_packaged_audio");
+      return blobBytes(blob);
+    }, tr("第 {{v0}} 张卡片 · {{v1}}", { v0: index + 1, v1: pack.manifest.title }), type, prepared);
   };
   return <section className="avatar-lab-audio" aria-label={tr("配音与嘴型排练")}>
     <h2>{tr("配音与嘴型排练")}</h2>
@@ -71,9 +91,28 @@ export function AvatarAudioPreview() {
           <label className="avatar-lab-import">{tr("导入配音音频")}<input type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg" onChange={(event) => {
             const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
             if (file.size > 10_000_000) { setFailure("audio"); return; }
-            void load(() => file.arrayBuffer(), file.name, file.type);
+            void load(() => blobBytes(file), file.name, file.type);
+          }} /></label>
+          <label className="avatar-lab-import">{tr("导入带嘴型的课程包")}<input type="file" accept=".olesson,application/zip" onChange={(event) => {
+            const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
+            if (file.size > 100_000_000) { setFailure("package"); return; }
+            const current = ++revision.current;
+            work.current?.abort(); audio.current?.pause(); setPlaying(false); setBusy(true); setFailure(null); setLessonPack(null); setCards([]); setSelectedCard("");
+            void blobBytes(file).then(async (bytes) => {
+              const { readLearnerPackage, lessonNarration } = await import("../teach/learner-package");
+              const pack = await readLearnerPackage(bytes);
+              if (current !== revision.current) return;
+              const lines = lessonNarration(pack.events);
+              if (!lines.length || !pack.mouthTrack(lines[0]!.beatId, lines[0]!.text)) { setFailure("no_mouth"); return; }
+              setLessonPack(pack); setCards(lines); openCard(pack, lines[0]!, 0);
+            }).catch(() => { if (current === revision.current) setFailure("package"); })
+              .finally(() => { if (current === revision.current) setBusy(false); });
           }} /></label>
         </div>
+        {lessonPack && <label className="avatar-lab-select">{tr("课包卡片")}<select aria-label={tr("课包卡片")} value={selectedCard} onChange={(event) => {
+          const index = cards.findIndex((card) => card.beatId === event.target.value);
+          if (index >= 0) openCard(lessonPack, cards[index]!, index);
+        }}>{cards.map((card, index) => <option key={card.beatId} value={card.beatId}>{tr("第 {{v0}} 张卡片", { v0: index + 1 })}</option>)}</select></label>}
         <p>{tr("音频限 60 秒、10 MB、单声道或双声道。校准音是四段轻声提示音，用于验证同步，不代表语音或嘴型质量。")}</p>
         {busy && <p role="status">{tr("正在本机分析配音…")}</p>}
         {track && <><strong>{name}</strong><p role="status">{track.method === "envelope-v1" ? tr("基础开合：根据音量变化生成，尚不能区分发音嘴型。") : tr("已载入外部发音嘴型轨，准确度仍需单独验收。")}</p></>}
@@ -97,8 +136,8 @@ export function AvatarAudioPreview() {
             }).catch((error: unknown) => { if (current === revision.current) setFailure(error instanceof Error && error.message === "lip_audio_mismatch" ? "mismatch" : "timing"); });
           }} /></label>
         </div>
-        <p>{tr("嘴型文件必须匹配当前音频。换配音后需要重新生成；这版尚未自动提取音素，也未接入课程发布。")}</p>
-        {failure && <p role="alert" className="avatar-lab-error">{failure === "audio" ? tr("音频未能读取，请使用浏览器支持的短音频重试。") : failure === "mismatch" ? tr("嘴型文件与当前音频不匹配，请使用同一段配音生成的文件。") : failure === "timing" ? tr("嘴型文件无效，请检查格式、时长和动作范围。") : tr("这台设备暂时无法显示三维头像，请换用支持 WebGL 2 的浏览器。")}</p>}
+        <p>{tr("嘴型文件必须匹配当前音频。换配音后需要重新生成；课程包试听会使用包内已验证的配音与嘴型。精细发音嘴型仍需后续完善。")}</p>
+        {failure && <p role="alert" className="avatar-lab-error">{failure === "audio" ? tr("音频未能读取，请使用浏览器支持的短音频重试。") : failure === "mismatch" ? tr("嘴型文件与当前音频不匹配，请使用同一段配音生成的文件。") : failure === "timing" ? tr("嘴型文件无效，请检查格式、时长和动作范围。") : failure === "package" ? tr("课程包未能读取，可能已损坏或需要更新应用。") : failure === "no_mouth" ? tr("这个课程包没有嘴型轨。请在准备分享时勾选“保存基础嘴型”，重新下载后导入。") : tr("这台设备暂时无法显示三维头像，请换用支持 WebGL 2 的浏览器。")}</p>}
       </div>
     </div>
   </section>;

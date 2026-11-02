@@ -3,7 +3,8 @@ import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-la
 import { describe, expect, it } from "vitest";
 
 import { compileRecording } from "./compile-recording";
-import { buildLearnerPackage, lessonNarration, readLearnerPackage, LearnerPackageError, type NarrationClip } from "./learner-package";
+import { buildLearnerPackage, lessonNarration, readLearnerPackage, LearnerPackageError, sha256, LEARNER_PACKAGE_SCHEMA, LEARNER_MOUTH_PACKAGE_SCHEMA, type NarrationClip, type LearnerPackageManifest } from "./learner-package";
+import { LIP_SYNC_SCHEMA } from "../avatar/lip-sync";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake } from "./recording";
 import { learnerAuthor, learnerReference } from "./studio-helpers";
 
@@ -51,6 +52,8 @@ describe("learner lesson package", () => {
     expect(manifest.author).toMatchObject({ avatar_ref: "avatar:avatar-3", voice_ref: "voice:zh_male_linjiananhai_uranus_bigtts" });
     expect(manifest.author.learner_ref).toMatch(/^learner:[a-f0-9]{32}$/);
     const loaded = await readLearnerPackage(archive);
+    expect(manifest.schema).toBe(LEARNER_PACKAGE_SCHEMA);
+    expect(loaded.mouthTrack(narration[0]!.beatId, narration[0]!.text)).toBeNull();
     expect(reduceCanonicalEvents(loaded.events)).toEqual(reduceCanonicalEvents(events));
     expect(loaded.resolveAsset("ink-snap:rec-1-card-2-t1-n1@v1")?.svg).toBe(SVG);
     const [first] = lessonNarration(events);
@@ -60,6 +63,80 @@ describe("learner lesson package", () => {
     expect(await loaded.narration(first!.beatId, "Something else.")).toBeNull();
     // The same content makes the same archive.
     expect((await buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration })).archive).toEqual(archive);
+  });
+
+  async function withMouth() {
+    const input = await lessonEvents();
+    for (const clip of input.narration) clip.lipSync = { schema: LIP_SYNC_SCHEMA, audioSha256: await sha256(clip.audio), method: "envelope-v1", durationMs: clip.durationMs,
+      keys: [{ timeMs: 0, channels: {} }, { timeMs: 1000, channels: { jawOpen: .7 } }, { timeMs: clip.durationMs, channels: {} }] };
+    return { lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, ...input };
+  }
+
+  it("round-trips versioned final-audio mouth tracks and retains v1 compatibility", async () => {
+    const input = await withMouth();
+    const { archive, manifest } = await buildLearnerPackage(input);
+    expect(manifest.schema).toBe(LEARNER_MOUTH_PACKAGE_SCHEMA);
+    expect(manifest.requiredCapabilities).toEqual(["avatar-lip-sync-v1"]);
+    const loaded = await readLearnerPackage(archive), first = input.narration[0]!;
+    expect(loaded.mouthTrack(first.beatId, first.text)).toEqual(first.lipSync);
+    expect(loaded.mouthTrack(first.beatId, "Changed words")).toBeNull();
+    const copy = loaded.mouthTrack(first.beatId, first.text)!; copy.keys[1]!.channels.jawOpen = 0;
+    expect(loaded.mouthTrack(first.beatId, first.text)!.keys[1]!.channels.jawOpen).toBe(.7);
+    expect((await buildLearnerPackage(input)).archive).toEqual(archive);
+  });
+
+  it("refuses stale, missing or duplicated tracks while building", async () => {
+    const input = await withMouth();
+    input.narration[0]!.lipSync!.audioSha256 = "f".repeat(64);
+    await expect(buildLearnerPackage(input)).rejects.toThrow("lip_audio_mismatch");
+    const missing = await withMouth(); delete missing.narration[1]!.lipSync;
+    await expect(buildLearnerPackage(missing)).rejects.toThrow("mouth track");
+    const duplicate = await withMouth(); duplicate.narration.push(duplicate.narration[0]!);
+    await expect(buildLearnerPackage(duplicate)).rejects.toThrow("Duplicate narration clips");
+  });
+
+  // Rebuild integrity hashes as a file editor could. Semantic binding must
+  // still reject a mismatched audio/text/track pair after those hashes agree.
+  async function editedPackage(edit: (files: Record<string, Uint8Array>, manifest: LearnerPackageManifest) => void) {
+    const { archive } = await buildLearnerPackage(await withMouth());
+    const files = unzipSync(archive), manifest = JSON.parse(new TextDecoder().decode(files["manifest.json"]!)) as LearnerPackageManifest;
+    edit(files, manifest);
+    for (const entry of manifest.files) { entry.sha256 = await sha256(files[entry.path]!); entry.bytes = files[entry.path]!.byteLength; }
+    manifest.contentSha256 = await sha256([...manifest.files].sort((a, b) => a.path.localeCompare(b.path)).map((file) => `${file.path}\u0000${file.sha256}\u0000${file.bytes}`).join("\n"));
+    files["manifest.json"] = new TextEncoder().encode(JSON.stringify(manifest));
+    return zipSync(files);
+  }
+
+  it("rejects a changed audio pair even when its file hashes were updated", async () => {
+    const archive = await editedPackage((files) => { files["narration/1.mp3"] = new Uint8Array([1, 2, 3]); });
+    await expect(readLearnerPackage(archive)).rejects.toThrow("mouth track does not match its narration");
+  });
+
+  it("rejects a changed lesson transcript or illegal motion even with updated hashes", async () => {
+    const changed = await editedPackage((files, manifest) => {
+      files[manifest.lesson] = new TextEncoder().encode(new TextDecoder().decode(files[manifest.lesson]!).replace("Here is a grid.", "Here are changed words."));
+    });
+    await expect(readLearnerPackage(changed)).rejects.toThrow("narration does not match its lesson");
+    const illegal = await editedPackage((files) => {
+      const track = JSON.parse(new TextDecoder().decode(files["mouth/1.json"]!)); track.keys[1].channels.eyeBlinkLeft = 1;
+      files["mouth/1.json"] = new TextEncoder().encode(JSON.stringify(track));
+    });
+    await expect(readLearnerPackage(illegal)).rejects.toThrow("invalid mouth track");
+  });
+
+  it("rejects schema downgrades, unknown required capabilities and ambiguous file references", async () => {
+    for (const edit of [
+      (_files: Record<string, Uint8Array>, manifest: LearnerPackageManifest) => { manifest.schema = LEARNER_PACKAGE_SCHEMA; },
+      (_files: Record<string, Uint8Array>, manifest: LearnerPackageManifest) => { manifest.requiredCapabilities = ["future-rig"] as unknown as ["avatar-lip-sync-v1"]; },
+      (_files: Record<string, Uint8Array>, manifest: LearnerPackageManifest) => { manifest.narration[1]!.file = manifest.narration[0]!.file; },
+    ]) await expect(readLearnerPackage(await editedPackage(edit))).rejects.toThrow("Invalid lesson package manifest");
+  });
+
+  it("preserves the actual audio media type in the archive and offline reader", async () => {
+    const input = await withMouth(); input.narration[0]!.mediaType = "audio/wav";
+    const loaded = await readLearnerPackage((await buildLearnerPackage(input)).archive);
+    expect(loaded.manifest.narration[0]!.file).toBe("narration/1.wav");
+    expect((await loaded.narration(input.narration[0]!.beatId, input.narration[0]!.text))?.type).toBe("audio/wav");
   });
 
   it("carries no real name, and no audio but the made narration", async () => {

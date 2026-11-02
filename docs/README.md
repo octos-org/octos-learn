@@ -63,7 +63,7 @@
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。
 - [正式星狐模型交付规范](LEARNER_AVATAR_MODEL_SPEC.md)：可交给建模/绑定制作人员的通道、资产、自动检查和组合表情验收要求。
-- [配音与嘴型排练](LEARNER_AVATAR_AUDIO_SYNC.md)：本机音频预览、媒体时钟、音频绑定的嘴型格式，以及高质量发音与课程集成待办。
+- [配音与嘴型排练](LEARNER_AVATAR_AUDIO_SYNC.md)：本机音频预览、可选 v2 嘴型课包、逐卡试听，以及高质量发音与完整课程动画待办。
 
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
