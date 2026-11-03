@@ -1,10 +1,10 @@
 # 学生当老师模式：交接与当前进展
 
-> 截至 2026-11-01。给接手的会话或 agent：读完本文即可继续工作。方案见 [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)，里程碑与验收见 [实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)（第 3 节进度表逐条记录了每次完成的内容）。
+> 截至 2026-11-02。给接手的会话或 agent：读完本文即可继续工作。方案见 [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)，里程碑与验收见 [实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)（第 3 节进度表逐条记录了每次完成的内容）。
 
 ## 1. 一句话现状
 
-M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验证，代码全部推送、PR 全部打开，**都还没有合并**。孩子现在可以：选主题和卡片 → 逐张录课（语音实时字幕、手写、整理成公式、插入网格/函数图/单位圆/长方体、点和过两点直线、激光笔/荧光笔/箭头、“放在旁边…”、“轮到你了”练习）→ “检查我的课”（屏幕可读性 + 小章鱼点评 + 隐私）→ 改卡片 → 选形象和声音 → “看我的课” → “准备分享”生成课程包 → 断网播放。下一步是产品方做一轮端到端实测，然后 M6。
+M0–M6 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验证，代码全部推送、PR 全部打开，**都还没有合并**。第一阶段（只有自己能看到）的功能已经齐了。孩子现在可以：选主题和卡片 → 逐张录课（语音实时字幕、手写、整理成公式、插入网格/函数图/单位圆/长方体、点和过两点直线、激光笔/荧光笔/箭头、“放在旁边…”、“轮到你了”练习）→ “检查我的课”（屏幕可读性 + 小章鱼点评 + 隐私）→ 改卡片 → 选形象和声音 → “看我的课” → **“保存到我的课”**（生成课程包并存到账号）→ 在“我的课”里播放（只用课程包，不需要 Key、断网也能放）→ 星图上出现“讲过”外环，获得“小讲台”成就。草稿会同步到账号。下一步是产品方做一轮端到端实测（M5 和 M6 一起测），然后合并；第二阶段 M7 开工前需要法律顾问（P4）。
 
 ## 2. 仓库、分支、PR 与合并顺序
 
@@ -17,6 +17,7 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 | 3 | octos-learn | [#113](https://github.com/octos-org/octos-learn/pull/113) | `claude/readable-camera-floor` → main | M0：桌面镜头最小缩放、等待卡片渲染再取景 |
 | 4 | octos-learn | [#114](https://github.com/octos-org/octos-learn/pull/114) | `claude/learner-studio` → main（含 #113） | M2–M4 + 两轮实测修复 + 录课页重设计。头：`030878dc` |
 | 5 | octos-learn | [#115](https://github.com/octos-org/octos-learn/pull/115) | `claude/learner-m5` → `claude/learner-studio` | M5：看我的课、形象与声音、隐私、课程包；`scripts/teach-e2e/` 实测脚本。头：`e4e26442` |
+| 5a | octos-learn | [#117](https://github.com/octos-org/octos-learn/pull/117) | `claude/learner-m6` → `claude/learner-m5` | M6：`services/learner-lessons`、我的课、播放页、保存到我的课、草稿同步、星图“讲过”外环、“小讲台”成就。头：`70f6616a` |
 | 6 | learning-coach | [#37](https://github.com/alan0x/learning-coach/pull/37) | `claude/learner-teaching-actions` → main | 0.23.0：小章鱼提问、手写转公式、课程点评 |
 | 7 | learning-coach | [#38](https://github.com/alan0x/learning-coach/pull/38) | `claude/learner-privacy-review` → #37 | 0.24.0：点评返回个人信息 `personal_details` |
 
@@ -33,7 +34,7 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 | 2026-10-31 | 录课时孩子可以擦除、隐藏、替换自己的笔迹（OLL 决策 0005–0008 已接受）；AI 不能改孩子的笔迹 |
 | 2026-10-31 | 可读性：讲课过程中每张卡片结束时屏幕字号 ≥ 12.5 px，检查 1366×768 和 1920×1080 两种画板；课末总览不检查 |
 | 2026-10-31 | 语音识别继续用火山引擎，用户自带 Key；美国英语（儿童语音）供应商以后再选（实施计划 P6） |
-| 2026-10-31 | 批准 M4 最多 50 次真实模型测试调用；**截至本文已用 37 次** |
+| 2026-10-31 | 批准 M4 最多 50 次真实模型测试调用；**截至本文已用 43 次**（M6 实测用了 6 次） |
 | 2026-11-01 | 重录一张卡片：保留白板内容，只重录说的话和指点；另有“这张卡片从头来” |
 | 2026-11-01 | 不做自由拖动排版，改为插入时“放在旁边…”；“检查这节课”和“请小章鱼看一遍”合并为“检查我的课” |
 | 2026-11-01 | 录课页重设计稿已批准：https://claude.ai/artifact/FPVojc7DYWPFX3n6qXkzt3 （六个画面） |
@@ -63,6 +64,22 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 | `teach-watch-page.tsx` | `/teach/:id/watch` 看我的课；选形象和声音；准备分享；从课程包播放 |
 | `learner-package.ts` / `make-learner-package.ts` / `learner-package-store.ts` | 课程包格式（`.olesson`）、生成（预生成旁白）、本机存储 |
 | `ink-snapshot-store.ts` | 冻结笔迹快照与选区 |
+| `learner-lessons-api.ts` | “我的课”服务的客户端：列表、草稿、保存课程包、下载、导出、删除 |
+| `draft-sync.ts` | 本机草稿与账号草稿同步（各记上次一致的版本号；两边都改时新的胜出；账号上删了本机跟着删） |
+| `teach-lessons-page.tsx` | `/teach/lessons` 我的课：已保存的课和草稿，播放、接着改、导出、下载课程包、删除 |
+| `teach-lesson-player-page.tsx` | `/teach/lessons/:id/play` 播放已保存的课：只用课程包，暂停可操作组件，课后“轮到你了”练习 |
+
+服务端（`services/`）：
+
+| 文件 | 职责 |
+|---|---|
+| `learner-lessons/store.mjs` | 课程存储与状态机（`TRANSITIONS`：保存/批准/发布/撤回，带操作日志）；草稿版本号；删除；导出；把保存的课记到学习记录（`reconcileHistory`） |
+| `learner-lessons/package-check.mjs`、`zip.mjs` | 服务端校验课程包：严格的 zip 读取、清单、每个文件的 SHA-256、内容哈希、只允许课程/笔迹/旁白三类文件 |
+| `learner-lessons/server.mjs` | `/api/learn/lessons` 接口；身份每次向 Octos 确认 |
+| `product-server.mjs` | 学习记录和我的课共用同一个学习记录库 |
+| `learning-history/event-contract.mjs` | 新事件 `lesson_taught`（只能由我的课服务写入，`/events` 拒收） |
+| `learning-history/map-progress.mjs` | 星图返回 `taught` |
+| `learning-history/achievement-catalog.mjs`、`achievements.mjs` | “小讲台”分类 6 个成就 |
 
 其他相关：`src/api/cloud-asr.ts`（加载用户服务后再判断识别是否可用；英语固定 `en-US`）、`src/byok/providers.ts`、`src/home/voice/use-voice-capture.ts`（`stop({ submitSpeech: true })` 保留按停止时还在说的话）、`src/learning/oll/oll-lesson-runtime.tsx`（`LearningWhiteboard` 新增 `resolveAsset`）。
 
@@ -90,7 +107,10 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 | `neat-before-speech.cjs` | 先整理后说话再停止（曾导致崩溃）、激光点笔画、麦克风状态、继续草稿 |
 | `watch.cjs` | 录两张卡片后“看我的课”，逐张旁白和字幕 |
 | `privacy.cjs` | 小章鱼找出规则抓不到的名字；改话后清除 |
-| `package-offline.cjs` | 检查 → 准备分享 → 下载 → **断网播放零请求** |
+| `package-offline.cjs` | 检查 → 保存到我的课 → 下载 → **断网播放零请求** |
+| `my-lessons.cjs` | M6：保存到我的课 → 颁奖 → 我的课 → 播放页（**播放时零请求、零技能调用**）→ 星图“讲过” → 成就 → 删除后课、学习记录和成就都撤掉 |
+
+脚本默认 `http://127.0.0.1:5217`，可用 `TEACH_E2E_BASE` 指定。M6 实测时开发服务器用了临时学习记录库（`OCTOS_LEARN_HISTORY_DB=<临时目录>/history.sqlite`，我的课的库放在同一目录），以免写入本机真实学习记录。
 
 ## 6. 已知问题与限制
 
@@ -98,7 +118,10 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 - **形象美术未到位**：六个形象位置显示占位图（Octo 和“形象 2–6”），等产品方提供图片和名字。
 - **手写里的个人信息不检查**：隐私检查只看说的话和标题；孩子手写的名字不会被发现。
 - **录课页里不能改卡片标题和主题**：标题里有个人信息时，“准备分享”会拦住，但需要回到规划才能改（规划页目前不能改已有草稿的标题）。
-- **未做**：数轴、图形、表格组件；从笔迹“变成一个点”；“播放这张卡片”；修改画面里给要改的白板内容描边（小章鱼点评不指出具体内容）；草稿只存本机（M6 才有服务端）。
+- **未做**：数轴、图形、表格组件；从笔迹“变成一个点”；“播放这张卡片”；修改画面里给要改的白板内容描边（小章鱼点评不指出具体内容）。
+- **星图主题搜索**：英文星图目录里没有叫 “slope” 的知识点（最接近的是 “Linear Function Graphs”），孩子输入 slope 时没有星图建议，只能当自由主题讲。
+- **观看者的播放记录**：播放页不写学习记录（第一阶段只有自己看）。
+- **删除后的笔迹快照**：删除一节课不会清理本机共用的笔迹快照存储。
 - **未实测**：重设计后的录课页还没有产品方实测；中文界面近期未完整走一遍；Android/APK 未测；“轮到你了”练习在“看我的课”里的课后练习未专门验证。
 - OLL 的 `scripts/check-ai-ink-browser.mjs` 里“手势选区可直接拖动”一步用系统 Chrome 时本来就失败（与本工作无关，改动前后一致）。
 - 火山识别偶尔在句间不加空格（“2and”），孩子可在字幕里改。
@@ -110,11 +133,7 @@ M0–M5 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 2. 审查并按顺序合并 7 个 PR；合并 OLL #27 后更新应用里的 OLL 固定提交；正式环境安装 learning-coach 0.24.0。
 3. 形象美术（产品方）；美国英语语音供应商选型（P6），之后更新声音目录和识别。
 
-**M6 我的课程、播放与奖励（第一阶段收尾）**
-- `services/learner-lessons`：课程包存储、状态机（草稿 → 已提交 → 已批准 → 已发布 → 已撤回）、删除与导出；草稿同步到服务端（目前只在本机）。
-- “我的课程”页；观看页（OLL Runtime + 儿童形象 + 预生成音频，暂停后可操作组件，课后练习）——M5 的“看我的课”和课程包是基础。
-- learning-history：“讲过”事件、星图“讲过”外环、成就（第一次讲课等，录制和检查结束后才颁发，不打断讲课）。
-- 第一阶段验收：在目标设备上完成 Jordan 与 Riley 两堂课的全流程；Playwright 端到端测试覆盖（可在 `scripts/teach-e2e/` 基础上做成正式测试）。
+**M6 已完成（2026-11-02，PR #117）**。剩下的第一阶段验收：在目标设备（触屏 Chromebook / iPad）上完成 Jordan 与 Riley 两堂课的全流程；把 `scripts/teach-e2e/` 做成正式的 Playwright 测试；虚拟形象动画（另一位 agent 在做）接到播放页。
 
 **M7 账号、同意与班级/家庭分享（第二阶段）**：年龄段与 COPPA 家长同意、家长账号、老师与班级、分享范围（私有/家庭/班级）、批准队列、只有预设反应、FERPA；开工前需要法律顾问（P4）。
 
