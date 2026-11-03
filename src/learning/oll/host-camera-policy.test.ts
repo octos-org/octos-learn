@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compositionTargetsRendered,
   planHostTeachingFocus,
   type HostTeachingFocusInput,
 } from "./host-camera-policy";
@@ -84,5 +85,18 @@ describe("host teaching camera policy", () => {
       attentionTargets: ["chosen-outline-target"],
       attentionChanged: true,
     })).toEqual({ source: "attention", targets: ["chosen-outline-target"] });
+  });
+});
+
+describe("compositionTargetsRendered", () => {
+  it("is false while a Beat's targets have not been created yet", () => {
+    expect(compositionTargetsRendered({ nodes: {}, groups: {}, connections: {} }, ["first-card"])).toBe(false);
+    expect(compositionTargetsRendered(undefined, ["first-card"])).toBe(false);
+  });
+
+  it("is true once any target exists as a node, group or connection", () => {
+    expect(compositionTargetsRendered({ nodes: { "first-card": {} } }, ["first-card", "later-card"])).toBe(true);
+    expect(compositionTargetsRendered({ groups: { pair: {} } }, ["pair"])).toBe(true);
+    expect(compositionTargetsRendered({ connections: { link: {} } }, ["link"])).toBe(true);
   });
 });
