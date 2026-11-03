@@ -1,0 +1,22 @@
+{
+  "id": "star-fox-illustrated",
+  "version": "0.1.0",
+  "baseSize": [
+    1199,
+    1312
+  ],
+  "audioDurationMs": 13485.895691609978,
+  "files": {
+    "base.png": {
+      "bytes": 1449509,
+      "sha256": "6582baf6af3395b589dc275b6d15e947f8ab506543fcfdd68d2b86d9c17bcc64"
+    },
+    "demo-lesson.wav": {
+      "bytes": 598824,
+      "sha256": "1b315807a237f5996cbed26ff375f1f8c2aadaa38b2dca4ed7848f3f8fc787e9"
+    }
+  },
+  "art": "Built-in image_gen base with no eyes, eyebrows or mouth; independently drawn animated Canvas features.",
+  "audio": "Local system Tingting Chinese sample, original script; no human recording, voice clone or paid service.",
+  "status": "Visual sample. Not a production character or browser/device acceptance."
+}
