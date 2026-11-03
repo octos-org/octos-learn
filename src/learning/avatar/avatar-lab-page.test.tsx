@@ -14,7 +14,7 @@ vi.mock("./face-capture", () => ({
   FaceCapture: class {
     callbacks: CaptureCallbacks;
     constructor(_video: HTMLVideoElement, callbacks: CaptureCallbacks) { this.callbacks = callbacks; captureMock.callbacks = callbacks; }
-    start() { captureMock.starts(); return Promise.resolve(); }
+    start(options: unknown) { captureMock.starts(options); return Promise.resolve(); }
     stop() { captureMock.stops(); this.callbacks.onState("idle"); }
   },
   selfTestFaceModel: vi.fn(async () => 1),
@@ -28,7 +28,7 @@ const open = () => render(<MemoryRouter><AvatarLabPage /></MemoryRouter>);
 it("does not open the camera on entry or when checking the local model", async () => {
   open();
   expect(captureMock.starts).not.toHaveBeenCalled();
-  expect((screen.getByRole("button", { name: "录一段表情" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "录一段动作" }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "自检表情模型" }));
   await screen.findByText("表情模型自检通过，未使用摄像头。");
   expect(captureMock.starts).not.toHaveBeenCalled();
@@ -48,7 +48,7 @@ it("cannot record a pending permission request and releases capture when leaving
   const page = open();
   fireEvent.click(screen.getByRole("button", { name: "开启摄像头跟随" }));
   expect(captureMock.starts).toHaveBeenCalledOnce();
-  const record = () => screen.getByRole("button", { name: "录一段表情" }) as HTMLButtonElement;
+  const record = () => screen.getByRole("button", { name: "录一段动作" }) as HTMLButtonElement;
   expect(record().disabled).toBe(true);
   act(() => captureMock.callbacks!.onState("loading"));
   expect(record().disabled).toBe(true);
@@ -79,10 +79,10 @@ it("routes captured expressions into the 2D stage and records them for replay", 
   expect(stageMock.active).toBe(true);
   expect(stageMock.frame!(1000).source).toBe("mediapipe");
   expect(stageMock.frame!(1033).channels.jawOpen).toBeGreaterThan(.6);
-  fireEvent.click(screen.getByRole("button", { name: "录一段表情", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "录一段动作", exact: true }));
   stageMock.frame!(1066); stageMock.frame!(1100);
   vi.mocked(performance.now).mockReturnValue(1133);
-  fireEvent.click(screen.getByRole("button", { name: "结束表情片段", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "结束动作片段", exact: true }));
   fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
   expect(stageMock.frame!(1133).source).toBe("mediapipe");
   expect(stageMock.frame!(1133).channels.eyeBlinkLeft).toBeGreaterThan(.5);
@@ -101,4 +101,34 @@ it("manual sliders stop capture and deterministically redraw a paused synthetic 
   expect(frame.source).toBe("demo"); expect(frame.channels.jawOpen).toBe(.75); expect(frame.channels.eyeBlinkLeft).toBe(1); expect(frame.rotation[2]).toBe(.08);
   fireEvent.click(screen.getByRole("button", { name: "恢复自然表情" }));
   expect(stageMock.frame!(0).channels.jawOpen).toBe(0); expect(stageMock.frame!(0).rotation).toEqual([0, 0, 0]);
+});
+
+it("requests body following explicitly and lets the learner choose face only", () => {
+  open(); fireEvent.click(screen.getByRole("button", { name: "开启摄像头跟随" }));
+  expect(captureMock.starts).toHaveBeenLastCalledWith({ body: true });
+  act(() => captureMock.callbacks!.onBodyState!("failed"));
+  expect(screen.getByText("身体跟随未能启动，仍可使用面部跟随。")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "停止", exact: true }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "跟随上半身和双手" }));
+  fireEvent.click(screen.getByRole("button", { name: "开启摄像头跟随" }));
+  expect(captureMock.starts).toHaveBeenLastCalledWith({ body: false });
+});
+it("drives independent arms, wrist directions and gestures without a camera", () => {
+  open(); fireEvent.click(screen.getByRole("button", { name: "双手举起" }));
+  expect(stageMock.frame!(0).body!.left.lower).toBeGreaterThan(2); expect(stageMock.frame!(0).body!.right.lower).toBeLessThan(-2);
+  fireEvent.change(screen.getByRole("slider", { name: "左臂 前臂角度" }), { target: { value: "1.4" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "右臂 手势" }), { target: { value: "point" } });
+  expect(stageMock.frame!(0).body!.left.lower).toBe(1.4); expect(stageMock.frame!(0).body!.right.gesture).toBe("point"); expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "挥手演示" })); expect(stageMock.active).toBe(true);
+  expect(stageMock.frame!(100).body!.left.lower).not.toBe(stageMock.frame!(300).body!.left.lower);
+});
+it("records and replays synthetic body motion without dropping the hands", () => {
+  vi.spyOn(performance, "now").mockReturnValue(1000); open();
+  fireEvent.click(screen.getByRole("button", { name: "食指指向", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "录一段动作", exact: true }));
+  stageMock.frame!(1000); stageMock.frame!(1100);
+  vi.mocked(performance.now).mockReturnValue(1200);
+  fireEvent.click(screen.getByRole("button", { name: "结束动作片段", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
+  expect(stageMock.frame!(1200).body!.left.gesture).toBe("point"); expect(stageMock.frame!(1200).body!.left.upper).toBe(.9);
 });

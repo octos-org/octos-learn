@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import type { FaceFrame } from "./face-frame";
-import { createOriginalFoxPainter, ORIGINAL_FOX_ASSETS } from "./original-fox";
+import { createPuppetFoxPainter, PUPPET_FOX_ASSETS, type PuppetFoxImages } from "./puppet-fox";
 import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
@@ -19,8 +19,8 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     if (!ctx) { callbacks.current.onError?.(); return; }
     let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
     const samples: number[] = [];
-    const images = Object.entries(ORIGINAL_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
-    let loaded = 0, painter: ReturnType<typeof createOriginalFoxPainter> | null = null;
+    const images = Object.entries(PUPPET_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
+    let loaded = 0, painter: ReturnType<typeof createPuppetFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
     const render = (now: number) => {
@@ -48,7 +48,7 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
         if (disposed || failed || ++loaded !== images.length) return;
         clearTimeout(timeout);
         try {
-          painter = createOriginalFoxPainter(images[0]!.image, images[1]!.image, images[2]!.image, (width, height) => {
+          painter = createPuppetFoxPainter(Object.fromEntries(images.map(({ key, image }) => [key, image])) as PuppetFoxImages, (width, height) => {
             const buffer = element.ownerDocument.createElement("canvas"); buffer.width = width; buffer.height = height;
             const context = buffer.getContext("2d"); if (!context) throw new Error("canvas_unavailable");
             return { canvas: buffer, context };

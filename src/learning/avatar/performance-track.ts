@@ -1,9 +1,11 @@
 import { FACE_CHANNELS, normalizeFaceFrame, type FaceFrame, type FaceSource } from "./face-frame";
+import { mixBody, neutralBody, parseBodyPose } from "./body-frame";
 
 export const AVATAR_TRACK_SCHEMA = "octos.avatar-performance.v1";
+export const AVATAR_BODY_TRACK_SCHEMA = "octos.avatar-performance.v2";
 export const MAX_TRACK_MS = 60_000;
 export const MAX_TRACK_FRAMES = 3601;
-export interface AvatarTrack { schema: typeof AVATAR_TRACK_SCHEMA; durationMs: number; frames: FaceFrame[] }
+export interface AvatarTrack { schema: typeof AVATAR_TRACK_SCHEMA | typeof AVATAR_BODY_TRACK_SCHEMA; durationMs: number; frames: FaceFrame[] }
 
 /** Short, in-memory technical recordings; nothing is automatically persisted. */
 export class PerformanceRecorder {
@@ -23,14 +25,14 @@ export class PerformanceRecorder {
   finish(now: number): AvatarTrack {
     const durationMs = this.start === null ? 0 : Math.min(MAX_TRACK_MS, Math.max(0, now - this.start));
     this.start = null;
-    return { schema: AVATAR_TRACK_SCHEMA, durationMs, frames: structuredClone(this.frames) };
+    return { schema: this.frames.some((frame) => frame.body) ? AVATAR_BODY_TRACK_SCHEMA : AVATAR_TRACK_SCHEMA, durationMs, frames: structuredClone(this.frames) };
   }
 }
 
 export function parseAvatarTrack(raw: unknown): AvatarTrack {
   if (!raw || typeof raw !== "object") throw new Error("invalid_track");
   const value = raw as Record<string, unknown>;
-  if (value.schema !== AVATAR_TRACK_SCHEMA || typeof value.durationMs !== "number" || !Number.isFinite(value.durationMs)
+  if (![AVATAR_TRACK_SCHEMA, AVATAR_BODY_TRACK_SCHEMA].includes(value.schema as string) || typeof value.durationMs !== "number" || !Number.isFinite(value.durationMs)
     || value.durationMs < 0 || value.durationMs > MAX_TRACK_MS || !Array.isArray(value.frames) || !value.frames.length || value.frames.length > MAX_TRACK_FRAMES) throw new Error("invalid_track");
   let last = -1;
   const frames = value.frames.map((rawFrame) => {
@@ -46,10 +48,11 @@ export function parseAvatarTrack(raw: unknown): AvatarTrack {
     last = frame.timeMs;
     // A recorded lost-face frame may contain the already-smoothed return to
     // neutral. Keep those display values, while retaining the tracking flag.
+    if (frame.body !== undefined && value.schema !== AVATAR_BODY_TRACK_SCHEMA) throw new Error("body_requires_v2_track");
     return { ...normalizeFaceFrame({ timeMs: frame.timeMs, source: frame.source as FaceSource, tracked: true,
-      channels, rotation: frame.rotation }), tracked: frame.tracked };
+      channels, rotation: frame.rotation }), tracked: frame.tracked, ...(frame.body !== undefined ? { body: parseBodyPose(frame.body) } : {}) };
   });
-  return { schema: AVATAR_TRACK_SCHEMA, durationMs: value.durationMs, frames };
+  return { schema: value.schema as AvatarTrack["schema"], durationMs: value.durationMs, frames };
 }
 
 /** Random access makes pause/seek deterministic; no accumulated timer drift. */
@@ -65,7 +68,8 @@ export function sampleAvatarTrack(track: AvatarTrack, timeMs: number): FaceFrame
   // The track stores displayed motion, including the smooth decay while lost.
   // Normalizing as untracked here would zero every interpolated lost frame.
   return { ...normalizeFaceFrame({ timeMs, source: before.source, tracked: true, channels,
-    rotation: before.rotation.map((v, i) => v * (1 - weight) + after.rotation[i]! * weight) }), tracked: before.tracked };
+    rotation: before.rotation.map((v, i) => v * (1 - weight) + after.rotation[i]! * weight) }), tracked: before.tracked,
+    ...(before.body || after.body ? { body: mixBody(before.body ?? neutralBody(), after.body ?? neutralBody(), weight) } : {}) };
 }
 
 export function percentile(values: number[], fraction: number): number {

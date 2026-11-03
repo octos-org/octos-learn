@@ -19,7 +19,7 @@ function setup() {
   vi.stubGlobal("Worker", FakeWorker);
   vi.stubGlobal("createImageBitmap", vi.fn(async () => bitmap));
   const video = { play: vi.fn(async () => undefined), srcObject: null, currentTime: 1, readyState: 2 } as unknown as HTMLVideoElement;
-  const callbacks = { onState: vi.fn(), onError: vi.fn(), onFrame: vi.fn() };
+  const callbacks = { onState: vi.fn(), onError: vi.fn(), onFrame: vi.fn(), onBodyState: vi.fn() };
   return { owner: new FaceCapture(video, callbacks), track, stream, getUserMedia, video, callbacks, bitmap };
 }
 beforeEach(() => { vi.useFakeTimers(); workers.length = 0; });
@@ -66,4 +66,13 @@ it("releases the camera when the model fails to initialize", async () => {
 it("times out failed model loading and releases its camera", async () => {
   const s = setup(); await s.owner.start(); await vi.advanceTimersByTimeAsync(45001);
   expect(s.track.stop).toHaveBeenCalledOnce(); expect(s.callbacks.onError).toHaveBeenCalledWith("model_failed");
+});
+
+it("opts into local body capture and reports its fallback without stopping the camera", async () => {
+  const s = setup(); await s.owner.start({ body: true });
+  const worker = workers[0]!;
+  expect(worker.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "init", body: true }));
+  worker.send({ type: "body_state", state: "failed" });
+  expect(s.callbacks.onBodyState).toHaveBeenCalledWith("failed"); expect(s.callbacks.onError).not.toHaveBeenCalled(); expect(s.track.stop).not.toHaveBeenCalled();
+  s.owner.stop(); expect(s.callbacks.onBodyState).toHaveBeenLastCalledWith("off");
 });

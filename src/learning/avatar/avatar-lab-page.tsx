@@ -14,6 +14,8 @@ import { EXPRESSION_SAMPLES, expressionSample } from "./expression-samples";
 import { FaceCapture, selfTestFaceModel, type CaptureError, type CaptureState } from "./face-capture";
 import { demoFaceFrame, FaceSmoother, neutralFrame, type FaceFrame } from "./face-frame";
 import { AVATAR_TRACK_SCHEMA, MAX_TRACK_MS, parseAvatarTrack, percentile, PerformanceRecorder, sampleAvatarTrack, type AvatarTrack } from "./performance-track";
+import { neutralBody, type BodyPose, type HandGesture } from "./body-frame";
+import { bodyPreset } from "./puppet-fox";
 import "../teach/teach.css";
 import "./avatar-lab.css";
 
@@ -29,8 +31,12 @@ const errorMessage = (code: CaptureError) => ({
 
 export default function AvatarLabPage() {
   useLocale();
-  const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay" | "manual">("idle");
+  const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay" | "manual" | "body-demo">("idle");
   const [manual, setManual] = useState(INITIAL_MANUAL);
+  const [manualBody, setManualBody] = useState<BodyPose>(neutralBody);
+  const [bodyCapture, setBodyCapture] = useState(true);
+  const [bodyState, setBodyState] = useState<"off" | "loading" | "ready" | "failed">("off");
+  const [bodyPresence, setBodyPresence] = useState({ left: false, right: false });
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
   const [metrics, setMetrics] = useState<AvatarRenderMetrics | null>(null);
@@ -67,6 +73,7 @@ export default function AvatarLabPage() {
     if (!video.current) return;
     const owner = new FaceCapture(video.current, {
       onState: setCaptureState,
+      onBodyState: setBodyState,
       onError: (code) => { setError(code); setMode("idle"); finishRecording(); },
       onFrame: (frame, processingMs, pipelineMs) => {
         inputFrame.current = frame;
@@ -75,6 +82,7 @@ export default function AvatarLabPage() {
         if (sample.processing.length > 600) { sample.processing.shift(); sample.pipeline.shift(); }
         if (performance.now() - sample.lastReport > 500) {
           sample.lastReport = performance.now();
+          setBodyPresence({ left: frame.body?.left.tracked ?? false, right: frame.body?.right.tracked ?? false });
           setCaptureMetrics({ processing: percentile(sample.processing, .95), pipeline: percentile(sample.pipeline, .95), samples: sample.processing.length });
         }
       },
@@ -93,8 +101,13 @@ export default function AvatarLabPage() {
   }, [finishRecording]);
 
   const getFrame = useCallback((now: number) => {
-    if (mode === "manual") return { timeMs: now, source: "demo", tracked: true, rotation: [manual.pitch, manual.yaw, manual.tilt],
-      channels: { jawOpen: manual.mouth, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile, eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, browInnerUp: manual.brows } } satisfies FaceFrame;
+    if (mode === "manual" || mode === "body-demo") {
+      const frame: FaceFrame = { timeMs: now, source: "demo", tracked: true, rotation: [manual.pitch, manual.yaw, manual.tilt],
+        channels: { jawOpen: manual.mouth, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile, eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, browInnerUp: manual.brows },
+        body: mode === "body-demo" ? bodyPreset("wave", now - playback.current.anchor) : manualBody };
+      if (recorder.current.recording && !recorder.current.append(frame, now)) finishRecording();
+      return frame;
+    }
     const state = { mode, track, replayPlaying, replayTime };
     let frame: FaceFrame;
     if (state.mode === "replay" && state.track) {
@@ -109,7 +122,7 @@ export default function AvatarLabPage() {
     const displayed = smoother.current.update(frame, now);
     if (recorder.current.recording && !recorder.current.append(displayed, now)) finishRecording();
     return displayed;
-  }, [finishRecording, mode, track, replayPlaying, replayTime, manual]);
+  }, [finishRecording, mode, track, replayPlaying, replayTime, manual, manualBody]);
 
   useEffect(() => {
     if (!replayPlaying || !track) return;
@@ -124,14 +137,14 @@ export default function AvatarLabPage() {
     sourceRevision.current++;
     modelCheckAbort.current?.abort(); modelCheckAbort.current = null; setModelCheck("idle");
     capture.current?.stop(); finishRecording(); setReplayPlaying(false); setMode("idle");
-    inputFrame.current = neutralFrame(); smoother.current.reset();
+    inputFrame.current = neutralFrame(); smoother.current.reset(); setBodyPresence({ left: false, right: false });
   }, [finishRecording]);
   const demo = () => { stop(); setError(null); setMode("demo"); };
   const startCamera = () => {
     stop(); setError(null); setMode("camera");
     captureSamples.current = { processing: [], pipeline: [], lastReport: 0 };
     setCaptureMetrics({ processing: 0, pipeline: 0, samples: 0 });
-    void capture.current?.start();
+    void capture.current?.start({ body: bodyCapture });
   };
   const replay = () => {
     sourceRevision.current++;
@@ -153,10 +166,10 @@ export default function AvatarLabPage() {
     const link = document.createElement("a"); link.href = url; link.download = filename; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const status = mode === "manual" ? tr("正在手动调整，未使用摄像头") : mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放表情片段") : mode !== "camera" ? tr("准备好了")
+  const status = (mode === "manual" || mode === "body-demo") ? tr("正在手动调整，未使用摄像头") : mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放动作片段") : mode !== "camera" ? tr("准备好了")
     : captureState === "starting" ? tr("正在连接摄像头…") : captureState === "loading" ? tr("正在本机加载表情模型…")
       : captureState === "tracking" ? tr("正在跟随你的表情") : tr("请面对摄像头，让整张脸进入画面");
-  const canRecord = mode === "demo" || (mode === "camera" && (captureState === "tracking" || captureState === "lost"));
+  const canRecord = mode === "manual" || mode === "body-demo" || mode === "demo" || (mode === "camera" && (captureState === "tracking" || captureState === "lost"));
   const hasCaptureMetrics = mode === "camera" && captureMetrics.samples > 0;
 
   return (
@@ -164,7 +177,7 @@ export default function AvatarLabPage() {
       <div className="course-launcher-inner">
         <AcademyHeader />
         <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维星狐互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
-        <p className="avatar-lab-intro">{tr("直接使用原始星狐插画。打开摄像头，让原画跟随你眨眼、开口和小幅点头；也可以拖动滑杆检查。静止时保留原图。")}</p>
+        <p className="avatar-lab-intro">{tr("保留星狐原画的细腻画风，重新制作正面自然姿态。头部、躯干和双臂独立活动，可跟随表情、抬手、挥手和指向。")}</p>
         <div className="avatar-lab-pose" aria-label={tr("星狐定格检查")}>
           <span>{tr("定格检查")}</span>
           {[
@@ -180,11 +193,16 @@ export default function AvatarLabPage() {
             openTrack({ schema: AVATAR_TRACK_SCHEMA, durationMs: 1000, frames: [frame, { ...frame, timeMs: 1000 }] });
           }}>{pose.label}</button>)}
         </div>
+        <div className="avatar-lab-pose" aria-label={tr("手臂与手势排练")}>{([
+          ["rest", tr("双臂自然放下")], ["left", tr("抬起左手")], ["right", tr("抬起右手")], ["both", tr("双手举起")], ["point", tr("食指指向")], ["wave", tr("挥手演示")],
+        ] as const).map(([id, label]) => <button key={id} type="button" onClick={() => {
+          stop(); setManualBody(bodyPreset(id)); playback.current.anchor = performance.now(); setMode(id === "wave" ? "body-demo" : "manual");
+        }}>{label}</button>)}</div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <IllustratedAvatarStage className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <IllustratedAvatarStage className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || mode === "body-demo" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
             <span className="avatar-lab-stage-label">{tr("二维星狐 · 互动小样")}</span>
-            {recording && <span className="avatar-lab-recording">{tr("正在录表情片段（最长 60 秒）")}</span>}
+            {recording && <span className="avatar-lab-recording">{tr("正在录动作片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
           <section className="avatar-lab-controls" aria-label={tr("头像控制")}>
@@ -200,14 +218,35 @@ export default function AvatarLabPage() {
               }}>{modelCheck === "running" ? tr("正在自检表情模型…") : tr("自检表情模型")}</button>
             </div>
             {modelCheck === "passed" && <p role="status">{tr("表情模型自检通过，未使用摄像头。")}</p>}
+            <label className="avatar-lab-body-toggle"><input type="checkbox" checked={bodyCapture} disabled={mode === "camera"} onChange={(event) => setBodyCapture(event.target.checked)} />{tr("跟随上半身和双手")}</label>
+            {bodyCapture && <p>{tr("请让肩膀、手肘和双手进入画面。看不到的手臂会缓慢放下。")}</p>}
+            {mode === "camera" && bodyCapture && <p role="status">{bodyState === "loading" ? tr("正在本机加载身体和手部模型…") : bodyState === "failed" ? tr("身体跟随未能启动，仍可使用面部跟随。") : bodyState === "ready" ? (bodyPresence.left && bodyPresence.right ? tr("双臂已进入跟随") : bodyPresence.left || bodyPresence.right ? tr("一侧手臂已进入跟随，请让另一侧进入画面") : tr("等待肩膀、手肘和双手进入画面")) : tr("身体跟随待启动")}</p>}
             <p>{tr("只在这台设备上识别，摄像头画面不会上传。此处不采集声音。")}</p>
             <video className="avatar-lab-camera" ref={video} muted playsInline aria-label={tr("本机摄像头预览")} hidden={mode !== "camera"} />
             <label className="avatar-lab-select">{tr("显示速度")}<select value={fpsLimit} onChange={(event) => setFpsLimit(event.target.value === "30" ? 30 : 60)}><option value="60">{tr("流畅（目标 60 帧）")}</option><option value="30">{tr("节能（目标 30 帧）")}</option></select></label>
             <Link className="teach-secondary" to="/teach/avatar-2d/example">{tr("观看讲课配音示例")}</Link>
           </section>
         </div>
+        <section className="avatar-lab-manual" aria-label={tr("手臂与手势排练")}>
+          <div className="avatar-lab-manual-heading"><div><h2>{tr("手臂与手势排练")}</h2><p>{tr("先用预设或滑杆检查动作，无需开启摄像头。手势支持张掌、握拳和食指指向。")}</p></div></div>
+          <div className="avatar-lab-sliders">{(["left", "right"] as const).map((side) => <div className="avatar-lab-arm" key={side}>
+            <h3>{side === "left" ? tr("左臂（画面左侧）") : tr("右臂（画面右侧）")}</h3>
+            {([
+              ["upper", tr("肩部角度")], ["lower", tr("前臂角度")], ["wrist", tr("手腕方向")],
+            ] as const).map(([key, label]) => <label key={key}><span>{label}<output>{Math.round(manualBody[side][key] * 180 / Math.PI)}°</output></span>
+              <input aria-label={`${side === "left" ? tr("左臂") : tr("右臂")} ${label}`} type="range" min={-Math.PI} max={Math.PI} step="0.01" value={manualBody[side][key]} onChange={(event) => {
+                stop(); const value = Number(event.target.value); setManualBody((body) => ({ ...body, tracked: true, [side]: { ...body[side], tracked: true, [key]: value } })); setMode("manual");
+              }} /></label>)}
+            <label><span>{tr("手势")}</span><select aria-label={`${side === "left" ? tr("左臂") : tr("右臂")} ${tr("手势")}`} value={manualBody[side].gesture} onChange={(event) => {
+              stop(); const gesture = event.target.value as HandGesture; setManualBody((body) => ({ ...body, tracked: true, [side]: { ...body[side], tracked: true, gesture } })); setMode("manual");
+            }}><option value="relaxed">{tr("自然")}</option><option value="open">{tr("张掌")}</option><option value="point">{tr("食指指向")}</option><option value="fist">{tr("握拳")}</option></select></label>
+          </div>)}</div>
+          <label className="avatar-lab-lean">{tr("身体倾斜")}<input type="range" aria-label={tr("身体倾斜")} min="-0.35" max="0.35" step="0.01" value={manualBody.lean} onChange={(event) => {
+            stop(); const lean = Number(event.target.value); setManualBody((body) => ({ ...body, tracked: true, lean })); setMode("manual");
+          }} /></label>
+        </section>
         <section className="avatar-lab-manual" aria-label={tr("手动调整表情")}>
-          <div className="avatar-lab-manual-heading"><div><h2>{tr("拖动滑杆，马上看效果")}</h2><p>{tr("无需摄像头。手动调整会停止当前跟随或回放；这些参数只用于预览。")}</p></div>
+          <div className="avatar-lab-manual-heading"><div><h2>{tr("拖动滑杆，马上看效果")}</h2><p>{tr("无需摄像头。手动调整会停止当前跟随或回放，也可以录制动作片段。")}</p></div>
             <button type="button" className="teach-secondary" onClick={() => { stop(); setManual(INITIAL_MANUAL); setMode("manual"); }}>{tr("恢复自然表情")}</button></div>
           <div className="avatar-lab-sliders">{([
             { key: "mouth", label: tr("嘴巴开合"), min: 0, max: 1 }, { key: "smile", label: tr("微笑程度"), min: 0, max: 1 },
@@ -220,15 +259,15 @@ export default function AvatarLabPage() {
             }} /></label>)}</div>
         </section>
         {error && <p className="avatar-lab-error" role="alert">{error === "graphics" ? tr("二维角色未能载入，请刷新重试。")
-          : error === "track" ? tr("这个表情文件无法读取，请使用有效的头像片段。") : error === "ink" ? tr("白板未能开启，请刷新后重试。") : errorMessage(error)}</p>}
-        <section className="avatar-lab-track" aria-label={tr("表情片段")}>
+          : error === "track" ? tr("这个动作文件无法读取，请使用有效的头像片段。") : error === "ink" ? tr("白板未能开启，请刷新后重试。") : errorMessage(error)}</p>}
+        <section className="avatar-lab-track" aria-label={tr("动作片段")}>
           <div className="avatar-lab-actions">
             <button type="button" className="teach-secondary" disabled={!canRecord} onClick={() => {
               if (recording) finishRecording(); else { sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
-            }}>{recording ? tr("结束表情片段") : tr("录一段表情")}</button>
+            }}>{recording ? tr("结束动作片段") : tr("录一段动作")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => replayPlaying ? pauseReplay() : replay()}>{replayPlaying ? <Pause size={17} /> : <Play size={17} />}{replayPlaying ? tr("暂停片段") : tr("回放片段")}</button>
-            <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => track && download(track, "avatar-performance.json")}><Download size={17} />{tr("导出表情片段")}</button>
-            <label className="avatar-lab-import">{tr("导入表情片段")}<input type="file" accept=".json,application/json" onChange={(event) => {
+            <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => track && download(track, "avatar-performance.json")}><Download size={17} />{tr("导出动作片段")}</button>
+            <label className="avatar-lab-import">{tr("导入动作片段")}<input type="file" accept=".json,application/json" onChange={(event) => {
               const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
               if (file.size > 5_000_000) { setError("track"); return; }
               const revision = ++sourceRevision.current;

@@ -6,6 +6,7 @@ export interface CaptureCallbacks {
   onState(state: CaptureState): void;
   onError(error: CaptureError): void;
   onFrame(frame: FaceFrame, processingMs: number, pipelineMs: number): void;
+  onBodyState?(state: "off" | "loading" | "ready" | "failed"): void;
 }
 
 function assetRoot(): string {
@@ -61,7 +62,7 @@ export class FaceCapture {
   private callbacks: CaptureCallbacks;
   constructor(video: HTMLVideoElement, callbacks: CaptureCallbacks) { this.video = video; this.callbacks = callbacks; }
 
-  async start(): Promise<void> {
+  async start(options: { body?: boolean } = {}): Promise<void> {
     this.stop();
     const generation = this.generation;
     if (!navigator.mediaDevices?.getUserMedia) { this.callbacks.onError("camera_unavailable"); return; }
@@ -88,6 +89,8 @@ export class FaceCapture {
         if (event.data.type === "ready") {
           if (this.initializationTimer) clearTimeout(this.initializationTimer);
           this.initializationTimer = null; this.ready = true; this.schedule(generation);
+        } else if (event.data.type === "body_state") {
+          this.callbacks.onBodyState?.(event.data.state);
         } else if (event.data.type === "frame") {
           this.busy = false;
           this.callbacks.onState(event.data.frame.tracked ? "tracking" : "lost");
@@ -95,7 +98,7 @@ export class FaceCapture {
         } else this.fail("model_failed");
       };
       worker.onerror = () => { if (generation === this.generation) this.fail("model_failed"); };
-      worker.postMessage({ type: "init", assetRoot: assetRoot() });
+      worker.postMessage({ type: "init", assetRoot: assetRoot(), ...(options.body ? { body: true } : {}) });
       this.initializationTimer = setTimeout(() => { if (generation === this.generation) this.fail("model_failed"); }, 45_000);
     } catch (error) {
       if (generation !== this.generation) return;
@@ -130,5 +133,6 @@ export class FaceCapture {
     this.video.srcObject = null;
     this.ready = this.busy = false; this.lastVideoTime = -1;
     this.callbacks.onState("idle");
+    this.callbacks.onBodyState?.("off");
   }
 }

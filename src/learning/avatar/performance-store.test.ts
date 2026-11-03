@@ -1,8 +1,10 @@
 import { IDBFactory } from "fake-indexeddb";
 import { describe, expect, it } from "vitest";
 import { listAvatarClips, readAvatarClip, renameAvatarClip, saveAvatarClip, trashAvatarClip } from "./performance-store";
+import { neutralFrame } from "./face-frame";
+import { bodyPreset } from "./puppet-fox";
 import { expressionSample, EXPRESSION_SAMPLES } from "./expression-samples";
-import { parseAvatarTrack, sampleAvatarTrack } from "./performance-track";
+import { AVATAR_BODY_TRACK_SCHEMA, parseAvatarTrack, sampleAvatarTrack } from "./performance-track";
 
 describe("on-device expression library", () => {
   it("isolates profiles, including IDs that collide and profile IDs containing punctuation", async () => {
@@ -78,4 +80,17 @@ describe("synthetic expression rehearsals", () => {
     expect(sampleAvatarTrack(loss, 3000).tracked).toBe(true);
     expect(sampleAvatarTrack(loss, 3000).channels.jawOpen).toBeGreaterThan(.6);
   });
+});
+
+it("preserves v2 body and hand parameters when saving and reopening a profile clip", async () => {
+  const factory = new IDBFactory();
+  const track = { schema: AVATAR_BODY_TRACK_SCHEMA, durationMs: 1000, frames: [
+    { ...neutralFrame(), body: bodyPreset("point") }, { ...neutralFrame(1000), body: bodyPreset("both") },
+  ] };
+  await saveAvatarClip("learner", { id: "body", name: "Point and raise", track }, factory);
+  const saved = await readAvatarClip("learner", "body", factory);
+  expect(saved.schema).toBe(AVATAR_BODY_TRACK_SCHEMA);
+  expect(saved.frames[0]!.body!.left.gesture).toBe("point");
+  expect(saved.frames[1]!.body!.right.lower).toBe(-2.55);
+  expect((await listAvatarClips("learner", factory))[0]!.frameCount).toBe(2);
 });

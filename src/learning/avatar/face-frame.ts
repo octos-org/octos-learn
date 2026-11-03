@@ -1,3 +1,4 @@
+import { BodySmoother, type BodyPose } from "./body-frame";
 /** Device-independent expression data. No images, identity mesh or microphone data. */
 export const FACE_CHANNELS = [
   "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
@@ -21,6 +22,7 @@ export interface FaceFrame {
   channels: Partial<Record<FaceChannel, number>>;
   /** Radians, unmirrored subject coordinates: pitch, yaw, roll. */
   rotation: [number, number, number];
+  body?: BodyPose;
 }
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -59,11 +61,12 @@ export function mediaPipeFrame(timeMs: number, categories: Array<{ categoryName:
 
 /** Mouth reacts quickly; brows/head settle more gently. No synthetic emotion inference. */
 export class FaceSmoother {
+  private body = new BodySmoother();
   private frame = neutralFrame();
   private lastTime: number | undefined;
   private neutral: FaceFrame | undefined;
   calibrate(frame: FaceFrame): void { if (frame.tracked) this.neutral = structuredClone(frame); }
-  reset(): void { this.frame = neutralFrame(); this.lastTime = undefined; this.neutral = undefined; }
+  reset(): void { this.frame = neutralFrame(); this.lastTime = undefined; this.neutral = undefined; this.body.reset(); }
   update(input: FaceFrame, now: number): FaceFrame {
     const delta = this.lastTime === undefined ? 100 : bounded(now - this.lastTime, 0, 100);
     this.lastTime = now;
@@ -81,7 +84,8 @@ export class FaceSmoother {
       const target = input.tracked ? bounded(value - (this.neutral?.rotation[i] ?? 0), -1, 1) : 0;
       return this.frame.rotation[i]! + (1 - Math.exp(-delta / (input.tracked ? 65 : 180))) * (target - this.frame.rotation[i]!);
     }) as FaceFrame["rotation"];
-    this.frame = { ...input, channels, rotation };
+    const body = this.body.update(input.body, now);
+    this.frame = { ...input, channels, rotation, ...(body ? { body } : {}) };
     return this.frame;
   }
 }

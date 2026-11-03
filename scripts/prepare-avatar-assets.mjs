@@ -15,6 +15,13 @@ const packageFile = fileURLToPath(import.meta.resolve("@mediapipe/tasks-vision")
 const wasm = path.join(path.dirname(packageFile), "wasm");
 await mkdir(path.join(out, "wasm"), { recursive: true });
 await copyFile(model, path.join(out, "face_landmarker.task"));
+const bodyManifest = JSON.parse(await readFile(path.join(root, "public/models/avatar-body/manifest.json"), "utf8"));
+for (const entry of bodyManifest.models) {
+  const file = path.join(root, "public/models/avatar-body", entry.file);
+  const bytes = await readFile(file);
+  if (createHash("sha256").update(bytes).digest("hex") !== entry.sha256) throw new Error(`Body model checksum does not match: ${entry.file}`);
+  await copyFile(file, path.join(out, entry.file));
+}
 for (const name of await readdir(wasm)) {
   if (/^vision_wasm.*\.(js|wasm)$/.test(name)) await copyFile(path.join(wasm, name), path.join(out, "wasm", name));
 }
