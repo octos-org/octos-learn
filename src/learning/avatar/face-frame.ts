@@ -59,7 +59,9 @@ export function mediaPipeFrame(timeMs: number, categories: Array<{ categoryName:
     channels: Object.fromEntries(categories.map((item) => [item.categoryName, item.score])), rotation: [pitch, yaw, roll] });
 }
 
-/** Mouth reacts quickly; brows/head settle more gently. No synthetic emotion inference. */
+/** Mouth and closing eyelids react quickly; reopening and head motion settle.
+ * Blink closure must survive a single 20 FPS capture sample. No event is invented.
+ */
 export class FaceSmoother {
   private body = new BodySmoother();
   private frame = neutralFrame();
@@ -76,7 +78,9 @@ export class FaceSmoother {
       const raw = faceChannel(input, key);
       const baseline = Math.min(.3, faceChannel(this.neutral ?? neutralFrame(), key));
       const target = input.tracked ? bounded((raw - baseline) / (1 - baseline)) : 0;
-      const tau = !input.tracked ? 180 : /^(mouth|jaw|tongue)/.test(key) ? 22 : 65;
+      const isBlink = key === "eyeBlinkLeft" || key === "eyeBlinkRight";
+      const tau = !input.tracked ? 180 : isBlink ? (target > faceChannel(this.frame,key) ? 12 : 50)
+        : /^(mouth|jaw|tongue)/.test(key) ? 22 : 65;
       const factor = 1 - Math.exp(-delta / tau);
       channels[key] = faceChannel(this.frame, key) + factor * (target - faceChannel(this.frame, key));
     }

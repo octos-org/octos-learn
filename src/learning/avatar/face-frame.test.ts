@@ -36,6 +36,22 @@ describe("normalized face data", () => {
     expect(smoother.update(frame(2, .2), 2).rotation[1]).toBe(0);
     smoother.reset(); expect(smoother.update(frame(3, .2), 3).channels.jawOpen).toBeGreaterThan(0);
   });
+  it("preserves a single-sample 20 FPS blink without slowing closure like head motion", () => {
+    const smoother=new FaceSmoother();
+    const input=(timeMs:number,blink:number)=>normalizeFaceFrame({timeMs,source:"mediapipe",tracked:true,channels:{eyeBlinkLeft:blink,eyeBlinkRight:0},rotation:[0,0,0]});
+    smoother.update(input(0,0),0);
+    const closed=smoother.update(input(50,.9),50);
+    expect(closed.channels.eyeBlinkLeft).toBeGreaterThan(.88);
+    expect(closed.channels.eyeBlinkRight).toBe(0);
+    const reopening=smoother.update(input(100,0),100);
+    expect(reopening.channels.eyeBlinkLeft).toBeGreaterThan(.2);
+    expect(reopening.channels.eyeBlinkLeft).toBeLessThan(.4);
+  });
+  it("decays a closed eyelid on actual tracking loss instead of holding a synthetic blink", () => {
+    const smoother=new FaceSmoother();smoother.update(normalizeFaceFrame({timeMs:0,source:"mediapipe",tracked:true,channels:{eyeBlinkLeft:1}}),0);
+    let display=neutralFrame();for(let time=50;time<=2000;time+=50)display=smoother.update(neutralFrame(time,"mediapipe"),time);
+    expect(display.channels.eyeBlinkLeft).toBeLessThan(.001);expect(display.tracked).toBe(false);
+  });
 });
 
 describe("bounded portable performance tracks", () => {

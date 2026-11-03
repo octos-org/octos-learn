@@ -68,6 +68,7 @@
 - [二维星狐可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)：插画与独立程序五官、动作/中文配音预览、实际动图导出，以及浏览器验收限制；录课入口已指向新小样。
 - [二维星狐完整互动](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准/录制/回放、连续滑杆与试听接入二维舞台；主入口已改为互动试验室，附聊天内直接拖动版本。
 - [原画风二维星狐互动版本](LEARNER_AVATAR_PAINTED_INTERACTIVE.md)：当前可测试整合版本；连续双眼、开合/圆唇/微笑、抬眉、有限头部变形接入原有控制和录制回放，附实际浏览器截图、动画、像素检查与未验证边界。
+- [真实模型输入验证与眨眼修正](LEARNER_AVATAR_REAL_INPUT_VALIDATION.md)：五段本地公开视频的 966 次实际模型推理、真实参数驱动动画、快速眨眼修复、失跟恢复与回放检查；明确原生 Python 与网页 Worker 的差别及浏览器工具阻塞。
 - [单张星狐 LivePortrait 实测](LEARNER_AVATAR_SINGLE_IMAGE_VALIDATION.md)：真实运行人像版/动物版与官方动作对照，附离线短片、逐帧报告和复现脚本；当前画面质量与本机速度未通过，不接入产品。
 - [同原画面部素材与绑定验证](LEARNER_AVATAR_FACE_RIG_VALIDATION.md)：保留原画细节的分层实测；已修正中性跳变并验证双眼独立控制，附真实浏览器截图、慢速动画、可操作页与摄像头验收边界。
 - [单图与直播式二维面部动画调研](LEARNER_AVATAR_SINGLE_IMAGE_RESEARCH.md)：最新范围收敛为面部，核查 VTube Studio/Live2D、单图生成式与自动分层绑定；说明真实可用性、许可和未实测边界。

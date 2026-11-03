@@ -8,6 +8,11 @@ export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasIma
 type Point = [number, number];
 const bounded = (v: number, min = 0, max = 1) => Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : 0;
 const smooth = (v: number) => { v = bounded(v); return v * v * (3 - 2 * v); };
+/** Retarget model coefficients to the painted lid travel, without inventing blinks.
+ * ARKit/manual/demo keep their direct [0,1] control; only MediaPipe needs gain.
+ */
+export const paintedBlinkAmount = (score: number, source: FaceFrame["source"]) => source === "mediapipe"
+  ? smooth((bounded(score) - .06) / .74) : bounded(score);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const mouthCurve: Point[] = [[220,280],[230,282],[240,286],[253,286],[266,283],[276,281],[286,284],[295,286],[305,281],[315,280]];
 function curve(points: Point[], x: number) {
@@ -143,7 +148,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
-      const left=Math.max(c('eyeBlinkLeft'),auto),right=Math.max(c('eyeBlinkRight'),auto),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
+      const left=Math.max(paintedBlinkAmount(c('eyeBlinkLeft'),frame.source),auto),right=Math.max(paintedBlinkAmount(c('eyeBlinkRight'),frame.source),auto),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
       const open=Math.max(c('jawOpen'),round*.85)*(1-c('mouthClose')),smile=(c('mouthSmileLeft')+c('mouthSmileRight'))/2;
       ctx.clearRect(0,0,512,512);ctx.drawImage(images.base,0,0,512,512);paintEyes(ctx,eyes,{left,right});paintMouth(open,round,smile);
       paintBrows([bounded(c('browInnerUp')+c('browOuterUpLeft')-c('browDownLeft'),-1,1),bounded(c('browInnerUp')+c('browOuterUpRight')-c('browDownRight'),-1,1)]);

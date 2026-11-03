@@ -1,0 +1,332 @@
+[
+  {
+    "video": "d0.mp4",
+    "sourceSha256": "63f6f9962e1fdf6e6722172e7a18155204858d5d5ce3b1e0646c150360c33bed",
+    "modelSha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "runtime": "mediapipe Python CPU 0.10.21",
+    "inputFps": 20,
+    "frames": 122,
+    "detectedVideoFrames": 62,
+    "videoFrameCount": 62,
+    "channels": {
+      "eyeBlinkLeft": {
+        "rawMax": 0.7473653554916382,
+        "displayMax": 0.7470485343170729,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.9853719735691173,
+        "paintedNearlyClosedFrames": 1
+      },
+      "eyeBlinkRight": {
+        "rawMax": 0.6825127601623535,
+        "displayMax": 0.6822168823562234,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.9320628162268539,
+        "paintedNearlyClosedFrames": 0
+      },
+      "jawOpen": {
+        "rawMax": 0.2471894770860672,
+        "displayMax": 0.24706266035615387,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0
+      },
+      "mouthPucker": {
+        "rawMax": 0.17664027214050293,
+        "displayMax": 0.17570262207643567,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0
+      }
+    },
+    "rotationRanges": [
+      {
+        "min": 0.056129814860742075,
+        "max": 0.10006852761243391
+      },
+      {
+        "min": -0.04482604071161527,
+        "max": -0.02513586594316645
+      },
+      {
+        "min": -0.030024351134789053,
+        "max": 0.0015123631776442256
+      }
+    ],
+    "blankFrames": 40,
+    "blankFalsePositiveFrames": 0,
+    "lossEndMaxAbsChannelOrRotation": 0.000008393942749044055,
+    "recoveryDetected": true,
+    "recoveryDelayMs": 0,
+    "lossDetectedAfterMs": 0,
+    "recordSerializeReplayHashMatches": true,
+    "processing": {
+      "averageMs": 3.6428135491803575,
+      "p95Ms": 5.534083000000578
+    },
+    "note": "Real model output from local public example video. Python CPU runtime is distinct from browser/WASM and is not user-camera/TV validation."
+  },
+  {
+    "video": "d10.mp4",
+    "sourceSha256": "ac7ee3c2419046f11dc230b6db33c2391a98334eba2b1d773e7eb9627992622f",
+    "modelSha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "runtime": "mediapipe Python CPU 0.10.21",
+    "inputFps": 20,
+    "frames": 220,
+    "detectedVideoFrames": 160,
+    "videoFrameCount": 160,
+    "channels": {
+      "eyeBlinkLeft": {
+        "rawMax": 0.8845680952072144,
+        "displayMax": 0.8719262775437305,
+        "rawHighFrames": 2,
+        "displayHighFrames": 3,
+        "paintedLidMax": 1,
+        "paintedNearlyClosedFrames": 3
+      },
+      "eyeBlinkRight": {
+        "rawMax": 0.769120454788208,
+        "displayMax": 0.7582447899236633,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.9908076412363779,
+        "paintedNearlyClosedFrames": 1
+      },
+      "jawOpen": {
+        "rawMax": 0.8732746243476868,
+        "displayMax": 0.8703014460015651,
+        "rawHighFrames": 3,
+        "displayHighFrames": 3
+      },
+      "mouthPucker": {
+        "rawMax": 0.9817299246788025,
+        "displayMax": 0.9789699712422529,
+        "rawHighFrames": 7,
+        "displayHighFrames": 8
+      }
+    },
+    "rotationRanges": [
+      {
+        "min": -0.1354129715990724,
+        "max": 0.09056399871325037
+      },
+      {
+        "min": -0.031231901656460455,
+        "max": 0.04914600140489371
+      },
+      {
+        "min": -0.04242346581576869,
+        "max": 0.03223257893960886
+      }
+    ],
+    "blankFrames": 40,
+    "blankFalsePositiveFrames": 0,
+    "lossEndMaxAbsChannelOrRotation": 0.000012992173277107056,
+    "recoveryDetected": true,
+    "recoveryDelayMs": 0,
+    "lossDetectedAfterMs": 0,
+    "recordSerializeReplayHashMatches": true,
+    "processing": {
+      "averageMs": 3.9256776500000097,
+      "p95Ms": 4.68283299999861
+    },
+    "note": "Real model output from local public example video. Python CPU runtime is distinct from browser/WASM and is not user-camera/TV validation."
+  },
+  {
+    "video": "d11.mp4",
+    "sourceSha256": "94b449a25686eddd42e244fb571c908a123aa0154776682601df1f3830f8f65c",
+    "modelSha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "runtime": "mediapipe Python CPU 0.10.21",
+    "inputFps": 20,
+    "frames": 220,
+    "detectedVideoFrames": 160,
+    "videoFrameCount": 160,
+    "channels": {
+      "eyeBlinkLeft": {
+        "rawMax": 0.7941912412643433,
+        "displayMax": 0.7901730590102483,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.9994756363974824,
+        "paintedNearlyClosedFrames": 1
+      },
+      "eyeBlinkRight": {
+        "rawMax": 0.5437952280044556,
+        "displayMax": 0.5413597347691956,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.7189133518925347,
+        "paintedNearlyClosedFrames": 0
+      },
+      "jawOpen": {
+        "rawMax": 0.596298098564148,
+        "displayMax": 0.5814272433870032,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0
+      },
+      "mouthPucker": {
+        "rawMax": 0.9984478950500488,
+        "displayMax": 0.9969184251766735,
+        "rawHighFrames": 82,
+        "displayHighFrames": 81
+      }
+    },
+    "rotationRanges": [
+      {
+        "min": -0.1518759677665983,
+        "max": 0.16505283700657125
+      },
+      {
+        "min": -0.10552387562775353,
+        "max": 0.18314200567855735
+      },
+      {
+        "min": -0.17965171090906154,
+        "max": 0.029996725308125225
+      }
+    ],
+    "blankFrames": 40,
+    "blankFalsePositiveFrames": 0,
+    "lossEndMaxAbsChannelOrRotation": 0.000014740066914321566,
+    "recoveryDetected": true,
+    "recoveryDelayMs": 0,
+    "lossDetectedAfterMs": 0,
+    "recordSerializeReplayHashMatches": true,
+    "processing": {
+      "averageMs": 3.989386395454574,
+      "p95Ms": 4.853833000000307
+    },
+    "note": "Real model output from local public example video. Python CPU runtime is distinct from browser/WASM and is not user-camera/TV validation."
+  },
+  {
+    "video": "d18.mp4",
+    "sourceSha256": "1dc94c1fec7ef7dc831c8a49f0e1788ae568812cb68e62f6875d9070f573d02a",
+    "modelSha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "runtime": "mediapipe Python CPU 0.10.21",
+    "inputFps": 20,
+    "frames": 204,
+    "detectedVideoFrames": 144,
+    "videoFrameCount": 144,
+    "channels": {
+      "eyeBlinkLeft": {
+        "rawMax": 0.5774178504943848,
+        "displayMax": 0.5763374893768898,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.781163204500122,
+        "paintedNearlyClosedFrames": 0
+      },
+      "eyeBlinkRight": {
+        "rawMax": 0.6529864072799683,
+        "displayMax": 0.6523492505797025,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.8964526806792252,
+        "paintedNearlyClosedFrames": 0
+      },
+      "jawOpen": {
+        "rawMax": 0.9310131669044495,
+        "displayMax": 0.9307752558380553,
+        "rawHighFrames": 17,
+        "displayHighFrames": 18
+      },
+      "mouthPucker": {
+        "rawMax": 0.9933781027793884,
+        "displayMax": 0.9933461263044302,
+        "rawHighFrames": 17,
+        "displayHighFrames": 17
+      }
+    },
+    "rotationRanges": [
+      {
+        "min": 0.02365609351795606,
+        "max": 0.11486170779412185
+      },
+      {
+        "min": 0.009115408114370147,
+        "max": 0.06368058266327285
+      },
+      {
+        "min": -0.06582671703705667,
+        "max": 0.028287581163024156
+      }
+    ],
+    "blankFrames": 40,
+    "blankFalsePositiveFrames": 0,
+    "lossEndMaxAbsChannelOrRotation": 0.000011499900142612557,
+    "recoveryDetected": true,
+    "recoveryDelayMs": 0,
+    "lossDetectedAfterMs": 0,
+    "recordSerializeReplayHashMatches": true,
+    "processing": {
+      "averageMs": 3.9157113431372044,
+      "p95Ms": 4.70958300000035
+    },
+    "note": "Real model output from local public example video. Python CPU runtime is distinct from browser/WASM and is not user-camera/TV validation."
+  },
+  {
+    "video": "d20.mp4",
+    "sourceSha256": "1e249873c21abf27b3c9f405a1b5283ef1b70e5eff21c1df44ca4b5b4d9b7309",
+    "modelSha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "runtime": "mediapipe Python CPU 0.10.21",
+    "inputFps": 20,
+    "frames": 200,
+    "detectedVideoFrames": 140,
+    "videoFrameCount": 140,
+    "channels": {
+      "eyeBlinkLeft": {
+        "rawMax": 0.4816969931125641,
+        "displayMax": 0.4813182724731236,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.603356486752348,
+        "paintedNearlyClosedFrames": 0
+      },
+      "eyeBlinkRight": {
+        "rawMax": 0.3979279100894928,
+        "displayMax": 0.3975571653201949,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0,
+        "paintedLidMax": 0.43440603270204425,
+        "paintedNearlyClosedFrames": 0
+      },
+      "jawOpen": {
+        "rawMax": 0.48668113350868225,
+        "displayMax": 0.47407364681640285,
+        "rawHighFrames": 0,
+        "displayHighFrames": 0
+      },
+      "mouthPucker": {
+        "rawMax": 0.983422577381134,
+        "displayMax": 0.981672086136345,
+        "rawHighFrames": 10,
+        "displayHighFrames": 9
+      }
+    },
+    "rotationRanges": [
+      {
+        "min": -0.010825124578450827,
+        "max": 0.10699672663569845
+      },
+      {
+        "min": -0.13740762428893008,
+        "max": -0.10434350807090681
+      },
+      {
+        "min": -0.11867892420466612,
+        "max": -0.058585455954730845
+      }
+    ],
+    "blankFrames": 40,
+    "blankFalsePositiveFrames": 0,
+    "lossEndMaxAbsChannelOrRotation": 0.000010388270487738367,
+    "recoveryDetected": true,
+    "recoveryDelayMs": 0,
+    "lossDetectedAfterMs": 0,
+    "recordSerializeReplayHashMatches": true,
+    "processing": {
+      "averageMs": 3.8638330950000377,
+      "p95Ms": 4.653249999998721
+    },
+    "note": "Real model output from local public example video. Python CPU runtime is distinct from browser/WASM and is not user-camera/TV validation."
+  }
+]
