@@ -18,4 +18,9 @@ blinkHtml=blinkHtml.replace("import {MATERIALS,drawFace} from './renderer.mjs';"
 blinkHtml=blinkHtml.replace("import {prepareBlinkStudy,drawBlinkStudy} from './blink-study.mjs';",`const {prepareBlinkStudy,drawBlinkStudy}=(()=>{${blinkRenderer}\nreturn {prepareBlinkStudy,drawBlinkStudy};})();`);
 blinkHtml=blinkHtml.replace("image.src='materials/'+key+'.png'",'image.src=embeddedImages[key]');
 fs.writeFileSync(`${root}/blink-preview.html`,blinkHtml);
-console.log('Exported self-contained preview.html + blink-preview.html; no network or camera access.');
+const eyeRenderer=fs.readFileSync(`${root}/eye-occlusion.mjs`,'utf8').replaceAll('export ','');
+let eyesHtml=fs.readFileSync(`${root}/eyes.html`,'utf8');
+eyesHtml=eyesHtml.replace("import {prepareEyeOcclusion,drawEyeOcclusion} from './eye-occlusion.mjs';",`const {prepareEyeOcclusion,drawEyeOcclusion}=(()=>{${eyeRenderer}\nreturn {prepareEyeOcclusion,drawEyeOcclusion};})();\nconst embeddedEyes=${JSON.stringify({source:data.source,face:data.face})};`);
+eyesHtml=eyesHtml.replace("image.src='materials/'+key+'.png'",'image.src=embeddedEyes[key]');
+fs.writeFileSync(`${root}/eyes-preview.html`,eyesHtml);
+console.log('Exported three self-contained manual previews. Eyes camera/model controls require the existing HTTPS dev app and stay disabled for file: opening.');
