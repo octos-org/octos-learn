@@ -1,27 +1,31 @@
 # 学生当老师模式：交接与当前进展
 
-> 截至 2026-11-02。给接手的会话或 agent：读完本文即可继续工作。方案见 [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)，里程碑与验收见 [实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)（第 3 节进度表逐条记录了每次完成的内容）。
+> 截至 2026-11-03。给接手的会话或 agent：读完本文即可继续工作。方案见 [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)，里程碑与验收见 [实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)（第 3 节进度表逐条记录了每次完成的内容）。
 
 ## 1. 一句话现状
 
-M0–M6 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验证，代码全部推送、PR 全部打开，**都还没有合并**。第一阶段（只有自己能看到）的功能已经齐了。孩子现在可以：选主题和卡片 → 逐张录课（语音实时字幕、手写、整理成公式、插入网格/函数图/单位圆/长方体、点和过两点直线、激光笔/荧光笔/箭头、“放在旁边…”、“轮到你了”练习）→ “检查我的课”（屏幕可读性 + 小章鱼点评 + 隐私）→ 改卡片 → 选形象和声音 → “看我的课” → **“保存到我的课”**（生成课程包并存到账号）→ 在“我的课”里播放（只用课程包，不需要 Key、断网也能放）→ 星图上出现“讲过”外环，获得“小讲台”成就。草稿会同步到账号。下一步是产品方做一轮端到端实测（M5 和 M6 一起测），然后合并；第二阶段 M7 开工前需要法律顾问（P4）。
+M0–M6 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验证，代码已全部合并到各仓库 main（2026-11-03，见第 2 节）。第一阶段（只有自己能看到）的功能已经齐了。孩子现在可以：选主题和卡片 → 逐张录课（语音实时字幕、手写、整理成公式、插入网格/函数图/单位圆/长方体、点和过两点直线、激光笔/荧光笔/箭头、“放在旁边…”、“轮到你了”练习）→ “检查我的课”（屏幕可读性 + 小章鱼点评 + 隐私）→ 改卡片 → 选形象和声音 → “看我的课” → **“保存到我的课”**（生成课程包并存到账号）→ 在“我的课”里播放（只用课程包，不需要 Key、断网也能放）→ 星图上出现“讲过”外环，获得“小讲台”成就。草稿会同步到账号。下一步：虚拟形象（另一位 agent 在做）接入后，产品方做一轮整体端到端实测；第二阶段 M7 开工前需要法律顾问（P4）。
 
-## 2. 仓库、分支、PR 与合并顺序
+## 2. 仓库、分支、PR 与合并状态
 
-所有 PR 都是叠加的，按下面顺序合并；合并 OLL #27 后要把应用里的 OLL 固定提交改为 #27 的合并提交（`package.json` 和 `learning-stack-bom.json` 两处）。
+**2026-11-03 全部合并。** OLL 合并后，应用里的 OLL 固定提交已改为 #27 的合并提交 `7f6dbd6`（`package.json`、`learning-stack-bom.json`、`pnpm-lock.yaml`；与原来的 `595254d` 内容完全相同，只多了两个合并提交）。
 
-| 顺序 | 仓库 | PR | 分支 → 目标 | 内容 |
-|---|---|---|---|---|
-| 1 | octos-lesson-language | [#26](https://github.com/alan0x/octos-lesson-language/pull/26) | `claude/playback-gate-fixes` → main | M0：播放检查门槛修正（屏幕字号、去掉卡宽门槛等） |
-| 2 | octos-lesson-language | [#27](https://github.com/alan0x/octos-lesson-language/pull/27) | `claude/learner-taught-contracts` → main（含 #26） | M1 与后续：`learner_taught`、笔迹、批注/替换/隐藏、视角意图；激光指向部件、`showPointer`/`showPointerAt`、`deleteSelection`/`strokeBoundsAt`、整理后的公式留在原处、辅助图可“放在旁边”、导出 `visibleBoard`。头：`595254d` |
-| 3 | octos-learn | [#113](https://github.com/octos-org/octos-learn/pull/113) | `claude/readable-camera-floor` → main | M0：桌面镜头最小缩放、等待卡片渲染再取景 |
-| 4 | octos-learn | [#114](https://github.com/octos-org/octos-learn/pull/114) | `claude/learner-studio` → main（含 #113） | M2–M4 + 两轮实测修复 + 录课页重设计。头：`030878dc` |
-| 5 | octos-learn | [#115](https://github.com/octos-org/octos-learn/pull/115) | `claude/learner-m5` → `claude/learner-studio` | M5：看我的课、形象与声音、隐私、课程包；`scripts/teach-e2e/` 实测脚本。头：`e4e26442` |
-| 5a | octos-learn | [#117](https://github.com/octos-org/octos-learn/pull/117) | `claude/learner-m6` → `claude/learner-m5` | M6：`services/learner-lessons`、我的课、播放页、保存到我的课、草稿同步、星图“讲过”外环、“小讲台”成就。头：`70f6616a` |
-| 6 | learning-coach | [#37](https://github.com/alan0x/learning-coach/pull/37) | `claude/learner-teaching-actions` → main | 0.23.0：小章鱼提问、手写转公式、课程点评 |
-| 7 | learning-coach | [#38](https://github.com/alan0x/learning-coach/pull/38) | `claude/learner-privacy-review` → #37 | 0.24.0：点评返回个人信息 `personal_details` |
+| 仓库 | PR | 内容 | 合并提交 |
+|---|---|---|---|
+| octos-lesson-language | [#26](https://github.com/alan0x/octos-lesson-language/pull/26) | M0：播放检查门槛修正 | 已合并 |
+| octos-lesson-language | [#27](https://github.com/alan0x/octos-lesson-language/pull/27) | M1 与后续：`learner_taught`、笔迹、批注/替换/隐藏、视角意图、激光指向、`visibleBoard` 等 | `7f6dbd6` |
+| learning-coach | [#37](https://github.com/alan0x/learning-coach/pull/37) | 0.23.0：小章鱼提问、手写转公式、课程点评 | 已合并 |
+| learning-coach | [#38](https://github.com/alan0x/learning-coach/pull/38) | 0.24.0：点评返回 `personal_details` | `be05941` |
+| octos-learn | [#113](https://github.com/octos-org/octos-learn/pull/113) | M0：桌面镜头最小缩放 | 已合并 |
+| octos-learn | [#114](https://github.com/octos-org/octos-learn/pull/114) | M2–M4、实测修复、录课页重设计；固定 OLL `7f6dbd6` | `96fa323` |
+| octos-learn | [#115](https://github.com/octos-org/octos-learn/pull/115) | M5：看我的课、形象与声音、隐私、课程包、`scripts/teach-e2e/` | `3bfd95c` |
+| octos-learn | [#117](https://github.com/octos-org/octos-learn/pull/117) | M6：`services/learner-lessons`、我的课、播放页、草稿同步、星图“讲过”、“小讲台”成就 | `b834b37` |
+| octos-learn | [#116](https://github.com/octos-org/octos-learn/pull/116) | 本文、计划与实施计划 | 本 PR |
 
-计划文档在 octos-learn 的 `claude/learner-teaching-mode` 分支（本文也在这里），尚未开 PR；可以在合并 #114/#115 时一起合入，或单独开一个文档 PR。
+**合并后还没做的（上线相关，需要产品方决定时机）**：
+- 正式环境安装 learning-coach 0.24.0，并重启 Octos。
+- 公网部署前端（`scripts/deploy-public-web.sh`）；服务器 nginx 按 `deploy/nginx/octos-learn.conf.example` 加上 `/api/learn/lessons`（请求体上限 33 MiB），重启产品服务。我的课的数据库默认在学习记录库同目录（`learner-lessons.sqlite`）。
+- 另一位 agent 的虚拟形象分支（`codex/avatar-capture-prototype`）是从合并前的 main 拉出的，合并回 main 时需要先同步最新 main。
 
 **本机已安装** learning-coach 0.24.0（`~/.octos/profiles/yy/data/skills/learning-coach`，旧版本备份在 `~/.octos/backups/learning-coach-before-*`）。
 
@@ -128,10 +132,11 @@ M0–M6 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 
 ## 7. 剩余工作
 
-**近期（合并前后）**
-1. 产品方端到端实测重设计后的录课页、看我的课、隐私和课程包；按实测结果修。
-2. 审查并按顺序合并 7 个 PR；合并 OLL #27 后更新应用里的 OLL 固定提交；正式环境安装 learning-coach 0.24.0。
-3. 形象美术（产品方）；美国英语语音供应商选型（P6），之后更新声音目录和识别。
+**近期**
+1. 虚拟形象（另一位 agent：2D 形象 + 摄像头跟随表情和头部动作）接入“看我的课”和播放页。
+2. 产品方整体端到端实测（录课页、看我的课、隐私、保存到我的课、我的课、播放页、星图、成就）；按实测结果修。
+3. 上线：正式环境安装 learning-coach 0.24.0、部署前端与产品服务、nginx 加 `/api/learn/lessons`（见第 2 节）。
+4. 美国英语语音供应商选型（P6），之后更新声音目录和识别。
 
 **M6 已完成（2026-11-02，PR #117）**。剩下的第一阶段验收：在目标设备（触屏 Chromebook / iPad）上完成 Jordan 与 Riley 两堂课的全流程；把 `scripts/teach-e2e/` 做成正式的 Playwright 测试；虚拟形象动画（另一位 agent 在做）接到播放页。
 
