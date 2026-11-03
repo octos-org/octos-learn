@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import type { FaceFrame } from "./face-frame";
-import { createPuppetFoxPainter, PUPPET_FOX_ASSETS, type PuppetFoxImages } from "./puppet-fox";
+import { createPaintedFoxPainter, PAINTED_FOX_ASSETS, type PaintedFoxImages } from "./painted-fox";
 import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
@@ -19,9 +19,9 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     if (!ctx) { callbacks.current.onError?.(); return; }
     let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
     const samples: number[] = [];
-    const images = Object.entries(PUPPET_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
-    let loaded = 0, painter: ReturnType<typeof createPuppetFoxPainter> | null = null;
-    const fail = () => { if (!disposed && !failed) { failed = true; setState("failed"); callbacks.current.onError?.(); } };
+    const images = Object.entries(PAINTED_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
+    let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
+    const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
     const render = (now: number) => {
       handle = 0; if (disposed || !ready || document.hidden) return;
@@ -32,7 +32,8 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
         const w = Math.max(1, element.clientWidth), h = Math.max(1, element.clientHeight), ratio = Math.min(devicePixelRatio || 1, 1.5);
         if (element.width !== Math.round(w * ratio) || element.height !== Math.round(h * ratio)) { element.width = Math.round(w * ratio); element.height = Math.round(h * ratio); }
         const input = callbacks.current.frame(now), start = performance.now();
-        painter!.draw(ctx, element.width, element.height, input, { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion });
+        try { painter!.draw(ctx, element.width, element.height, input, { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion }); }
+        catch { fail(); return; }
         samples.push(performance.now() - start); count++; last = now - ((now - last) % interval);
         if (now - lastReport >= 1000) {
           callbacks.current.onMetrics?.({ fps: count * 1000 / (now - lastReport), submissionP95Ms: percentile(samples, .95), renderer: "Canvas 2D" });
@@ -48,9 +49,9 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
         if (disposed || failed || ++loaded !== images.length) return;
         clearTimeout(timeout);
         try {
-          painter = createPuppetFoxPainter(Object.fromEntries(images.map(({ key, image }) => [key, image])) as PuppetFoxImages, (width, height) => {
+          painter = createPaintedFoxPainter(Object.fromEntries(images.map(({ key, image }) => [key, image])) as PaintedFoxImages, (width, height) => {
             const buffer = element.ownerDocument.createElement("canvas"); buffer.width = width; buffer.height = height;
-            const context = buffer.getContext("2d"); if (!context) throw new Error("canvas_unavailable");
+            const context = buffer.getContext("2d", { willReadFrequently: true }); if (!context) throw new Error("canvas_unavailable");
             return { canvas: buffer, context };
           });
           ready = true; setState("ready"); request();

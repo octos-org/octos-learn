@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-02",
+  "branch": "codex/avatar-capture-prototype",
+  "baseCommit": "a6ac3a30",
+  "unitTests": {
+    "files": 193,
+    "tests": 1662,
+    "result": "passed"
+  },
+  "typescript": "passed",
+  "changedModulesEslint": "passed with zero warnings",
+  "i18n": {
+    "uiFiles": 82,
+    "pairs": 2763,
+    "result": "passed"
+  },
+  "normalProductionBuild": "pnpm build:public passed after resource preparation; existing chunk/dynamic import/CSS warnings retained",
+  "browser": {
+    "url": "https://127.0.0.1:5173/teach/avatar-2d",
+    "observed": [
+      "Existing local passwordless login",
+      "New painted renderer loaded",
+      "Smile/open preset visible; actual screenshot saved",
+      "Continuous demo started",
+      "Synthetic demo recorded to automatic 60 second limit",
+      "Replay started, progress 0.2 / 60.0 s and Pause button visible"
+    ],
+    "desktopShortObservation": {
+      "displayFps": 30,
+      "drawingSubmissionP95Ms": 11.0,
+      "scope": "One desktop browser demo reading. No capture or TV benchmark."
+    },
+    "finalModelSelfTest": "Started but success not observed before connection timeout; preceding dual-eye page had passed the unchanged worker/model blank-frame check.",
+    "finalRepeat": "Local browser use disabled in Work settings on latest attempt; no settings changed",
+    "manualRecordingFix": "Covered by actual React regression; not re-clicked after browser control disabled",
+    "humanCameraOpened": false,
+    "microphoneOpened": false
+  },
+  "notVerified": [
+    "Real human tracking and subjective art approval",
+    "iPhone capture",
+    "Android touch display performance",
+    "Final browser repeat after manual-recording fix",
+    "Complete course/community recording workflow"
+  ]
+}

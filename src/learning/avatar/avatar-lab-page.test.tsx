@@ -103,32 +103,41 @@ it("manual sliders stop capture and deterministically redraw a paused synthetic 
   expect(stageMock.frame!(0).channels.jawOpen).toBe(0); expect(stageMock.frame!(0).rotation).toEqual([0, 0, 0]);
 });
 
-it("requests body following explicitly and lets the learner choose face only", () => {
-  open(); fireEvent.click(screen.getByRole("button", { name: "开启摄像头跟随" }));
-  expect(captureMock.starts).toHaveBeenLastCalledWith({ body: true });
-  act(() => captureMock.callbacks!.onBodyState!("failed"));
-  expect(screen.getByText("身体跟随未能启动，仍可使用面部跟随。")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "停止", exact: true }));
-  fireEvent.click(screen.getByRole("checkbox", { name: "跟随上半身和双手" }));
+it("keeps body capture disabled while arms are postponed", () => {
+  open();
+  expect(screen.queryByRole("checkbox", { name: "跟随上半身和双手" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "挥手演示" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "开启摄像头跟随" }));
-  expect(captureMock.starts).toHaveBeenLastCalledWith({ body: false });
+  expect(captureMock.starts).toHaveBeenLastCalledWith(undefined);
 });
-it("drives independent arms, wrist directions and gestures without a camera", () => {
-  open(); fireEvent.click(screen.getByRole("button", { name: "双手举起" }));
-  expect(stageMock.frame!(0).body!.left.lower).toBeGreaterThan(2); expect(stageMock.frame!(0).body!.right.lower).toBeLessThan(-2);
-  fireEvent.change(screen.getByRole("slider", { name: "左臂 前臂角度" }), { target: { value: "1.4" } });
-  fireEvent.change(screen.getByRole("combobox", { name: "右臂 手势" }), { target: { value: "point" } });
-  expect(stageMock.frame!(0).body!.left.lower).toBe(1.4); expect(stageMock.frame!(0).body!.right.gesture).toBe("point"); expect(captureMock.starts).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "挥手演示" })); expect(stageMock.active).toBe(true);
-  expect(stageMock.frame!(100).body!.left.lower).not.toBe(stageMock.frame!(300).body!.left.lower);
-});
-it("records and replays synthetic body motion without dropping the hands", () => {
+
+it("records and replays rounded lips with facial and head controls", () => {
   vi.spyOn(performance, "now").mockReturnValue(1000); open();
-  fireEvent.click(screen.getByRole("button", { name: "食指指向", exact: true }));
+  fireEvent.change(screen.getByRole("slider", { name: "圆唇程度" }), { target: { value: ".8" } });
+  fireEvent.change(screen.getByRole("slider", { name: "点头幅度" }), { target: { value: ".2" } });
   fireEvent.click(screen.getByRole("button", { name: "录一段动作", exact: true }));
   stageMock.frame!(1000); stageMock.frame!(1100);
   vi.mocked(performance.now).mockReturnValue(1200);
   fireEvent.click(screen.getByRole("button", { name: "结束动作片段", exact: true }));
   fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
-  expect(stageMock.frame!(1200).body!.left.gesture).toBe("point"); expect(stageMock.frame!(1200).body!.left.upper).toBe(.9);
+  expect(stageMock.frame!(1200).channels.mouthPucker).toBe(.8);
+  expect(stageMock.frame!(1200).rotation[0]).toBe(.2);
+  expect(captureMock.starts).not.toHaveBeenCalled();
+});
+
+it("keeps a manual recording running across slider changes and replays the changing values", () => {
+  vi.spyOn(performance,"now").mockReturnValue(1000);open();
+  fireEvent.click(screen.getByRole("button",{name:"恢复自然表情"}));
+  fireEvent.click(screen.getByRole("button",{name:"录一段动作",exact:true}));
+  stageMock.frame!(1000);
+  fireEvent.change(screen.getByRole("slider",{name:"嘴巴开合"}),{target:{value:".8"}});
+  expect(screen.getByRole("button",{name:"结束动作片段",exact:true})).toBeTruthy();
+  stageMock.frame!(1100);
+  fireEvent.change(screen.getByRole("slider",{name:"圆唇程度"}),{target:{value:".6"}});
+  stageMock.frame!(1200);vi.mocked(performance.now).mockReturnValue(1300);
+  fireEvent.click(screen.getByRole("button",{name:"结束动作片段",exact:true}));
+  fireEvent.click(screen.getByRole("button",{name:"回放片段",exact:true}));
+  expect(stageMock.frame!(1300).channels.jawOpen).toBe(0);
+  expect(stageMock.frame!(1400).channels.jawOpen).toBe(.8);
+  expect(stageMock.frame!(1500).channels.mouthPucker).toBe(.6);
 });

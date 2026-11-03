@@ -2758,5 +2758,8 @@
   "导出动作片段": "Export motion clip",
   "导入动作片段": "Import motion clip",
   "动作片段": "Motion clips",
-  "这个动作文件无法读取，请使用有效的头像片段。": "Could not read this motion file. Use a valid avatar clip."
+  "这个动作文件无法读取，请使用有效的头像片段。": "Could not read this motion file. Use a valid avatar clip.",
+  "同一幅星狐画稿，连续眨眼、开口、圆唇和轻微转头。摄像头、手动调节和动作回放使用同一套表情。手臂暂不启用。": "One painted Star Fox portrait with continuous blinking, mouth movement, rounded lips, and gentle head motion. Camera tracking, manual controls, and replay share the same expressions. Arms are not enabled yet.",
+  "圆唇程度": "Lip rounding",
+  "自然表情": "Neutral expression"
 }

@@ -2,12 +2,20 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
 import { neutralFrame } from "./face-frame";
+const painterMock = vi.hoisted(() => ({ fail: false }));
+
+// This suite covers image loading and render-loop ownership. Actual painted
+// pixels are verified by the native Canvas export/validation script.
+vi.mock("./painted-fox", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./painted-fox")>();
+  return { ...actual, createPaintedFoxPainter: () => ({ draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => { if (painterMock.fail) throw new Error("paint_failed"); ctx.clearRect(0, 0, w, h); } }) };
+});
 
 const images: Array<{ onload: (() => void) | null; onerror: (() => void) | null; src: string }> = [];
 let raf: Map<number, FrameRequestCallback>, serial: number;
 const clear = vi.fn();
 beforeEach(() => {
-  images.length = 0; serial = 0; raf = new Map(); clear.mockReset();
+  images.length = 0; serial = 0; raf = new Map(); clear.mockReset(); painterMock.fail = false;
   const noop = () => undefined;
   const ctx = new Proxy({ clearRect: clear, createLinearGradient: () => ({ addColorStop: noop }), createRadialGradient: () => ({ addColorStop: noop }) }, { get: (obj, key) => obj[key as keyof typeof obj] ?? noop, set: () => true });
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
@@ -22,7 +30,7 @@ const advance = (time: number) => { const items = [...raf.values()]; raf.clear()
 
 it("draws only after loading and releases pending frames when unmounted", () => {
   const page = render(<IllustratedAvatarStage frame={neutralFrame} active />);
-  expect(clear).not.toHaveBeenCalled(); expect(images).toHaveLength(9); expect(images[0]!.src).toContain("puppet-v0.1/head.png");
+  expect(clear).not.toHaveBeenCalled(); expect(images).toHaveLength(4); expect(images[0]!.src).toContain("painted-v0.1/source.png");
   act(() => images.forEach((image) => image.onload!())); advance(100); expect(clear).toHaveBeenCalled();
   page.unmount(); expect(raf.size).toBe(0); expect(images[0]!.onload).toBeNull();
 });
@@ -41,4 +49,11 @@ it("shows a load timeout and ignores a late image", () => {
   act(() => vi.advanceTimersByTime(15000)); expect(error).toHaveBeenCalledOnce();
   expect(screen.getByRole("status").textContent).toContain("未能载入");
   act(() => images.forEach((image) => image.onload!())); advance(100); expect(clear).not.toHaveBeenCalled();
+});
+
+it("reports a drawing failure once and stops scheduling instead of leaving a stale ready stage", () => {
+  const error=vi.fn();render(<IllustratedAvatarStage frame={neutralFrame} active onError={error} />);
+  act(()=>images.forEach(image=>image.onload!()));painterMock.fail=true;advance(100);
+  expect(error).toHaveBeenCalledOnce();expect(screen.getByRole("status").textContent).toContain("未能载入");expect(raf.size).toBe(0);
+  advance(200);expect(error).toHaveBeenCalledOnce();
 });
