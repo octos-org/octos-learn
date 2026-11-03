@@ -2,7 +2,8 @@
 // what to fix on each card and a way straight to that card.
 
 import { tr } from "@/i18n";
-import { Check, X } from "lucide-react";
+import { Check, Play, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useEffect, useRef } from "react";
 
 import type { CardCheck } from "./lesson-check";
@@ -25,10 +26,12 @@ function Progress({ state, running, done, failed }: { state: CheckPart; running:
 
 const KIND_TAG = { slip: () => tr("小章鱼 · 口误"), misconception: () => tr("小章鱼 · 概念"), unclear: () => tr("小章鱼 · 不够清楚") } as const;
 
-export function CheckDialog({ run, checks, overall, onFix, onAgain, onClose }: {
+export function CheckDialog({ run, checks, overall, watchHref, onFix, onAgain, onClose }: {
   run: CheckRun;
   checks: CardCheck[];
   overall?: string;
+  /** Where to watch the lesson, once nothing is left to fix. */
+  watchHref?: string;
   onFix: (key: string) => void;
   onAgain: () => void;
   onClose: () => void;
@@ -66,9 +69,9 @@ export function CheckDialog({ run, checks, overall, onFix, onAgain, onClose }: {
                 <strong>{index + 1} · {check.title}</strong>
                 {check.status === "good" && check.praise && <p>{check.praise}</p>}
                 {check.status === "redo" && <p>{tr("这张卡片检查后又重录了，再检查一遍就知道了。")}</p>}
-                {check.findings.map((finding) => (
-                  <p key={finding.source}>
-                    <span className="teach-tag" data-source={finding.source}>{finding.source === "screen" ? tr("屏幕检查") : finding.kind ? KIND_TAG[finding.kind]() : tr("小章鱼")}</span>
+                {check.findings.map((finding, findingIndex) => (
+                  <p key={`${finding.source}-${findingIndex}`}>
+                    <span className="teach-tag" data-source={finding.source}>{finding.source === "screen" ? tr("屏幕检查") : finding.source === "privacy" ? tr("隐私") : finding.kind ? KIND_TAG[finding.kind]() : tr("小章鱼")}</span>
                     {finding.message}
                   </p>
                 ))}
@@ -80,6 +83,7 @@ export function CheckDialog({ run, checks, overall, onFix, onAgain, onClose }: {
       )}
       <div className="teach-check-foot">
         <button type="button" className="teach-secondary" disabled={running} onClick={onAgain}>{tr("再检查一遍")}</button>
+        {watchHref && !running && <Link className="teach-primary" to={watchHref}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>}
       </div>
     </dialog>
   );

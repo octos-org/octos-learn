@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Plus, Sparkles } from "lucide-react";
+import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
@@ -125,7 +125,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const compiled = useMemo<{ lesson: CompiledLesson | null; error?: string }>(() => {
     if (!recording) return { lesson: null };
     try {
-      const lesson = compileRecording(recording, { author: learnerAuthor(profileId), language: getLocale(), includeTakeInProgress: true });
+      const lesson = compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true });
       // Loaded the way the board loads it, so a problem is shown instead of breaking the page.
       reduceCanonicalEvents(normalizeAuthoringLesson(lesson.lesson, { lessonId: STUDIO_LESSON_ID, boardId: "studio-board", baseRevision: 0, resourceContext: lesson.resourceContext }));
       return { lesson };
@@ -272,7 +272,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
   const compileQuietly = (current: LearnerRecording) => {
     try {
-      return compileRecording(current, { author: learnerAuthor(profileId), language: getLocale() });
+      return compileRecording(current, { author: learnerAuthor(profileId, current.presenter), language: getLocale() });
     } catch {
       return null;
     }
@@ -353,6 +353,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!screen && !reviewed) return;
     update((latestRecording) => setReview(latestRecording, {
       at, cards: reviewed?.cards ?? [], overall: reviewed?.overall ?? "", ...(screen ? { screen } : {}),
+      ...(reviewed?.personal_details ? { personal: reviewed.personal_details.map((detail) => ({ card: detail.key, quote: detail.quote, kind: detail.kind })) } : {}),
     }, now()));
   };
   const cancel = () => {
@@ -444,6 +445,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     .flatMap((event) => (event.type === "component.insert" && event.panel === "coordinate_grid" ? [event.alias] : [])));
   const checks = cardChecks(recording, compiled.lesson, recording.review);
   const checkOf = (key: string) => checks.find((check) => check.key === key);
+  const ready = lessonReady(checks, recording);
   const cardCheck = card ? checkOf(card.key) : undefined;
   const pointing = isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow");
   const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
@@ -475,9 +477,16 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         {isRecording ? (
           <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>
         ) : (
-          <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
-            <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
-          </button>
+          <>
+            <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
+              <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
+            </button>
+            {ready ? (
+              <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
+            ) : (
+              <button type="button" className="teach-primary" disabled title={tr("检查通过后就能看你的课了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
+            )}
+          </>
         )}
       </header>
 
@@ -605,12 +614,14 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <>
               <div className="teach-fix" role="status">
                 <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
-                {cardCheck.findings.map((finding) => <p key={finding.source}>{finding.message}</p>)}
+                {cardCheck.findings.map((finding, index) => <p key={`${finding.source}-${index}`}>{finding.message}</p>)}
               </div>
-              <div>
-                <div className="teach-group-label">{tr("你上次说的话")}</div>
-                <p className="teach-panel-text">{kept.text || tr("（没有字幕）")}</p>
-              </div>
+              <TranscriptEditor
+                key={`${card.key}-${kept.take}`}
+                text={kept.text ?? ""}
+                label={tr("你的话（课会用这些话来讲，可以直接改）")}
+                onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))}
+              />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
               <button type="button" className="teach-link-button" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
@@ -656,7 +667,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         <CheckDialog
           run={checkRun}
           checks={checks}
-          {...(recording.review?.overall && lessonReady(checks, recording) ? { overall: recording.review.overall } : {})}
+          {...(recording.review?.overall && ready ? { overall: recording.review.overall } : {})}
+          {...(ready ? { watchHref: `/teach/${recording.id}/watch` } : {})}
           onFix={(key) => { setCheckRun(null); setSelected(key); }}
           onAgain={() => void runCheck()}
           onClose={() => setCheckRun(null)}
@@ -672,12 +684,12 @@ function clockText(ms: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-function TranscriptEditor({ text, onSave }: { text: string; onSave: (text: string) => void }) {
+function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {
   const [value, setValue] = useState(text);
   return (
     <form className="teach-step" onSubmit={(event) => { event.preventDefault(); if (value.trim()) onSave(value); }}>
       <label className="teach-label">
-        {tr("你在这张卡片说的话")}
+        {label ?? tr("你在这张卡片说的话")}
         <textarea className="teach-input" value={value} onChange={(event) => setValue(event.target.value)} />
       </label>
       <button type="submit" disabled={!value.trim() || value === text}>{tr("保存字幕")}</button>

@@ -26,6 +26,8 @@ export interface CardReview {
 export interface LessonReview {
   cards: CardReview[];
   overall: string;
+  /** Personal details the learner said, as their own words on a card (skill 0.24.0 and later). */
+  personal_details?: Array<{ key: string; quote: string; kind: string }>;
 }
 
 export interface InkToMath {

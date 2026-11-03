@@ -127,6 +127,8 @@ export interface RecordingReview {
   at: string;
   cards: Array<{ key: string; status: "good" | "check"; kind: "none" | "slip" | "misconception" | "unclear"; message: string }>;
   overall: string;
+  /** Personal details Octo found in what the learner said, by card, as the learner's own words. */
+  personal?: Array<{ card: string; quote: string; kind: string }>;
   /** Cards not readable at their end on a checked screen; absent in drafts checked before the screen check joined. */
   screen?: Array<{ card: string; board: "chromebook" | "large"; problems: Array<"small_text" | "small_diagram" | "out_of_view" | "overflow" | "missing_ink" | "no_focus"> }>;
 }
@@ -140,6 +142,13 @@ export interface LearnerRecording {
   goals: string[];
   cards: RecordingCard[];
   review?: RecordingReview;
+  /** Who presents the lesson: catalog IDs of the avatar and voice the learner chose. */
+  presenter?: Presenter;
+}
+
+export interface Presenter {
+  avatar?: string;
+  voice?: string;
 }
 
 export class RecordingError extends Error {
@@ -350,6 +359,11 @@ export function answerOcto(recording: LearnerRecording, key: string, answer: str
   const card = findCard(recording, key);
   if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
   return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+/** The learner chooses who presents the lesson. */
+export function setPresenter(recording: LearnerRecording, presenter: Presenter, now: string): LearnerRecording {
+  return { ...recording, updatedAt: now, presenter: { ...recording.presenter, ...presenter } };
 }
 
 export function setReview(recording: LearnerRecording, review: RecordingReview, now: string): LearnerRecording {

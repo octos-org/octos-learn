@@ -7,10 +7,11 @@ import { tr } from "@/i18n";
 
 import type { CompiledLesson } from "./compile-recording";
 import type { CardReadability, ReadabilityProblem } from "./readability-check";
+import { findPersonalDetails } from "./privacy";
 import { keptTake, type LearnerRecording, type RecordingReview } from "./recording";
 
 export interface CheckFinding {
-  source: "octo" | "screen";
+  source: "octo" | "screen" | "privacy";
   /** Octo's kind of problem, shown as a short tag. */
   kind?: "slip" | "misconception" | "unclear";
   message: string;
@@ -51,6 +52,28 @@ function screenFinding(results: CardReadability[], arrow: boolean): CheckFinding
   return { source: "screen", message: tr("{{v0}}：{{v1}}。", { v0: where, v1: problems.map(PROBLEM_TEXT).join(tr("；")) }) };
 }
 
+const DETAIL_TEXT: Record<string, () => string> = {
+  name: () => tr("一个名字"), school: () => tr("一所学校"), address: () => tr("你住的地方"), home: () => tr("你住的地方"), place: () => tr("一个真实的地方"),
+  age: () => tr("你的年龄或年级"), birthday: () => tr("你的生日"), email: () => tr("联系方式"), phone: () => tr("联系方式"), link: () => tr("联系方式"),
+  contact: () => tr("联系方式"), other: () => tr("你的个人信息"),
+};
+
+/**
+ * Personal details in a card's words as they are now: the rules' findings and
+ * Octo's, while the quoted words are still there. Changing the words clears them.
+ */
+export function privacyFindings(text: string, octo: Array<{ quote: string; kind: string }> = []): CheckFinding[] {
+  const lower = text.toLowerCase();
+  const details = [...findPersonalDetails(text), ...octo.filter((detail) => lower.includes(detail.quote.toLowerCase()))];
+  const seen = new Set<string>();
+  return details.flatMap((detail) => {
+    const key = detail.quote.toLowerCase();
+    if ([...seen].some((quote) => quote.includes(key) || key.includes(quote))) return [];
+    seen.add(key);
+    return [{ source: "privacy" as const, message: tr("你说了“{{v0}}”，这是{{v1}}。分享前把它从你的话里删掉。", { v0: detail.quote, v1: (DETAIL_TEXT[detail.kind] ?? DETAIL_TEXT.other!)() }) }];
+  });
+}
+
 /** Each recorded card's findings from the last check. */
 export function cardChecks(recording: LearnerRecording, compiled: CompiledLesson | null, review: RecordingReview | undefined): CardCheck[] {
   if (!review) return [];
@@ -59,7 +82,7 @@ export function cardChecks(recording: LearnerRecording, compiled: CompiledLesson
     if (!take) return [];
     if (take.startedAt > review.at) return [{ key: card.key, title: card.title, status: "redo", findings: [] }];
     const octo = review.cards.find((entry) => entry.key === card.key);
-    const findings: CheckFinding[] = [];
+    const findings: CheckFinding[] = privacyFindings(take.text ?? "", (review.personal ?? []).filter((detail) => detail.card === card.key));
     if (octo?.status === "check") findings.push({ source: "octo", ...(octo.kind !== "none" ? { kind: octo.kind } : {}), message: octo.message });
     const screen = screenFinding((review.screen ?? []).filter((result) => result.card === card.key), drawsArrow(compiled, card.key));
     if (screen) findings.push(screen);
