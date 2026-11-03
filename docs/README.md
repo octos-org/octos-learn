@@ -65,6 +65,7 @@
 - [正式星狐模型交付规范](LEARNER_AVATAR_MODEL_SPEC.md)：可交给建模/绑定制作人员的通道、资产、自动检查和组合表情验收要求。
 - [星狐三维小样 v0.1](LEARNER_AVATAR_STAR_FOX_SAMPLE.md)：本项目直接制作的可编辑模型、21 通道表情、真实 GLB 加载、定格检查与实际质量边界。
 - [学生讲师二维方向](LEARNER_AVATAR_2D_DIRECTION.md)：用户否定三维小样后的新路线；二维绘本角色、图层嘴眼动画、教学表现与分阶段验收，尚未替换运行渲染器。
+- [二维星狐可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)：插画与独立程序五官、动作/中文配音预览、实际动图导出，以及浏览器验收限制；录课入口已指向新小样。
 - [正式星狐制作路线调研](LEARNER_AVATAR_PRODUCTION_RESEARCH.md)：人工制作、AI 辅助与现成资产比较；狐头小样、费用假设、分阶段验收和可直接使用的询价需求。
 - [配音与嘴型排练](LEARNER_AVATAR_AUDIO_SYNC.md)：本机音频预览、可选 v2 嘴型课包、完整白板同步播放器，以及高质量发音与正式角色待办。
 
