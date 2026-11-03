@@ -1,0 +1,127 @@
+{
+  "anchors": {
+    "face": {
+      "cx": 255.5,
+      "cy": 255.5,
+      "x0": 0,
+      "x1": 511,
+      "y0": 0,
+      "y1": 511
+    },
+    "eyeL": {
+      "x0": 133,
+      "x1": 240,
+      "y0": 170,
+      "y1": 254,
+      "icx": 186.05950361202005,
+      "icy": 211.50947958979802,
+      "closeY": 222.15585865095235
+    },
+    "eyeR": {
+      "x0": 288,
+      "x1": 383,
+      "y0": 173,
+      "y1": 253,
+      "icx": 334.88115879476436,
+      "icy": 212.37164475343164,
+      "closeY": 222.1690934555977
+    },
+    "mouth": {
+      "x0": 246,
+      "x1": 297,
+      "y0": 279,
+      "y1": 299,
+      "cx": 271.7256038548393,
+      "cy": 288.49339177723044
+    },
+    "neckPivot": {
+      "cx": 255.5,
+      "cy": 531
+    },
+    "neckTop": 511,
+    "neckBottom": 571,
+    "bodyPivot": {
+      "cx": 255.5,
+      "cy": 512
+    },
+    "faceScale": 1.5345345345345345,
+    "hairRootY": 60
+  },
+  "warnings": [],
+  "synth": {
+    "eye": false,
+    "mouth": false
+  },
+  "layers": [
+    {
+      "name": "face",
+      "side": null,
+      "fade": null,
+      "depth": 1,
+      "x": 0,
+      "y": 0,
+      "w": 512,
+      "h": 512
+    },
+    {
+      "name": "eyewhite_1_l",
+      "side": "L",
+      "fade": "eyeOpen",
+      "depth": 1.06,
+      "x": 131,
+      "y": 168,
+      "w": 112,
+      "h": 89
+    },
+    {
+      "name": "eyewhite_2_r",
+      "side": "R",
+      "fade": "eyeOpen",
+      "depth": 1.06,
+      "x": 286,
+      "y": 171,
+      "w": 100,
+      "h": 85
+    },
+    {
+      "name": "eye_close_1_l",
+      "side": "L",
+      "fade": "eyeClose",
+      "depth": 1.12,
+      "x": 133,
+      "y": 206,
+      "w": 98,
+      "h": 31
+    },
+    {
+      "name": "eye_close_2_r",
+      "side": "R",
+      "fade": "eyeClose",
+      "depth": 1.12,
+      "x": 296,
+      "y": 205,
+      "w": 90,
+      "h": 33
+    },
+    {
+      "name": "mouth_close",
+      "side": null,
+      "fade": "mouthClose",
+      "depth": 1.08,
+      "x": 214,
+      "y": 260,
+      "w": 114,
+      "h": 63
+    },
+    {
+      "name": "mouth_open",
+      "side": null,
+      "fade": "mouthOpen",
+      "depth": 1.08,
+      "x": 244,
+      "y": 277,
+      "w": 56,
+      "h": 25
+    }
+  ]
+}

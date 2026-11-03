@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星狐 · 面部素材验证</title>
+<style>
+body{margin:0;background:#f4f1ea;color:#243649;font:16px/1.6 system-ui,sans-serif}main{max-width:960px;margin:32px auto;padding:0 20px}h1{font-size:26px;margin-bottom:6px}p{margin:6px 0 20px}.stage{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}canvas,img{display:block;width:100%;border-radius:16px}figcaption{padding:8px 0}.controls{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0}label{display:grid;min-width:200px;flex:1}button{font:inherit;color:inherit;padding:8px 16px;border:1px solid #bec8cb;border-radius:24px;background:#fff;cursor:pointer}input{width:100%;accent-color:#956a2f}.note{font-size:14px;color:#52616e}#status{min-height:24px}@media(max-width:600px){.stage{gap:8px}main{margin:16px auto}h1{font-size:22px}}
+</style>
+<main><h1>星狐 · 面部素材验证</h1><p>检查同一幅画的闭眼、开口与过渡。手臂和转头尚未加入。</p>
+<div class="stage"><figure><img src="materials/source.png" alt="同一张星狐原画的正眼线裁剪"><figcaption>原画裁剪</figcaption></figure><figure><canvas id="face" width="512" height="512" aria-label="可调节表情的星狐样本"></canvas><figcaption>表情样本 · 保留原画细节</figcaption></figure></div>
+<p id="status" role="status">正在读取本地素材…</p>
+<div class="controls"><label>左侧眼睛闭合 <output id="left-value">0%</output><input id="left" aria-label="左侧眼睛闭合" type="range" min="0" max="1" step=".01" value="0"></label><label>右侧眼睛闭合 <output id="right-value">0%</output><input id="right" aria-label="右侧眼睛闭合" type="range" min="0" max="1" step=".01" value="0"></label><label>开口 <output id="mouth-value">0%</output><input id="mouth" aria-label="开口" type="range" min="0" max="1" step=".01" value="0"></label></div>
+<div class="controls"><button id="neutral" disabled>自然表情</button><button id="closed" disabled>双眼闭合</button><button id="speak" disabled>开口</button><button id="play" disabled aria-pressed="false">播放表情演示</button></div>
+<p class="note">这是面部素材验证页，还不是摄像头跟随成品。眼睛中间状态仍有压扁感；嘴型仅有一种开口形状。演示由固定参数驱动，没有采集摄像头或声音。</p>
+</main><script type="module">
+import {MATERIALS,drawFace} from './renderer.mjs';
+const canvas=document.querySelector('#face'),ctx=canvas.getContext('2d'),status=document.querySelector('#status'),keys=['left','right','mouth'];
+const controls=Object.fromEntries(keys.map(k=>[k,document.getElementById(k)]));let playing=false,raf=0,start=0,images;
+function draw(){const state=Object.fromEntries(keys.map(k=>[k,Number(controls[k].value)]));for(const k of keys)document.getElementById(k+'-value').value=Math.round(state[k]*100)+'%';drawFace(ctx,images,state);}
+function stop(){playing=false;cancelAnimationFrame(raf);document.querySelector('#play').textContent='播放表情演示';document.querySelector('#play').setAttribute('aria-pressed','false');}
+function pose(left,right,mouth){stop();for(const [i,k]of keys.entries())controls[k].value=[left,right,mouth][i];draw();}
+function tick(now){if(!playing)return;const t=((now-start)/1000)%5;const blink=Math.max(0,1-Math.abs(t-1)*5);controls.left.value=controls.right.value=blink;controls.mouth.value=t>2&&t<4?.8*Math.max(0,Math.sin((t-2)*9)):0;draw();raf=requestAnimationFrame(tick);}
+try{images=Object.fromEntries(await Promise.all(MATERIALS.map(async key=>{const image=new Image();image.src='materials/'+key+'.png';await image.decode();return[key,image];})));draw();for(const control of Object.values(controls))control.addEventListener('input',()=>{stop();draw();});document.querySelector('#neutral').onclick=()=>pose(0,0,0);document.querySelector('#closed').onclick=()=>pose(1,1,0);document.querySelector('#speak').onclick=()=>pose(0,0,1);document.querySelector('#play').onclick=()=>{if(playing){stop();return;}playing=true;start=performance.now();document.querySelector('#play').textContent='暂停演示';document.querySelector('#play').setAttribute('aria-pressed','true');raf=requestAnimationFrame(tick);};for(const b of document.querySelectorAll('button'))b.disabled=false;status.textContent='素材已就绪 · 手动调整或播放固定演示';}catch{status.textContent='素材读取失败，请从本机开发服务打开此页面。';}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});window.addEventListener('pagehide',stop);
+</script></html>

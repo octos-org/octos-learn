@@ -68,6 +68,7 @@
 - [二维星狐可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)：插画与独立程序五官、动作/中文配音预览、实际动图导出，以及浏览器验收限制；录课入口已指向新小样。
 - [二维星狐完整互动](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准/录制/回放、连续滑杆与试听接入二维舞台；主入口已改为互动试验室，附聊天内直接拖动版本。
 - [单张星狐 LivePortrait 实测](LEARNER_AVATAR_SINGLE_IMAGE_VALIDATION.md)：真实运行人像版/动物版与官方动作对照，附离线短片、逐帧报告和复现脚本；当前画面质量与本机速度未通过，不接入产品。
+- [同原画面部素材与绑定验证](LEARNER_AVATAR_FACE_RIG_VALIDATION.md)：实际检查 Anime2.5DRig 与七图层星狐 PSD，另附原画局部素材的六状态、固定参数动画和独立交互样本；端点改善，自然眨眼、连续嘴型与头部绑定仍未通过。
 - [单图与直播式二维面部动画调研](LEARNER_AVATAR_SINGLE_IMAGE_RESEARCH.md)：最新范围收敛为面部，核查 VTube Studio/Live2D、单图生成式与自动分层绑定；说明真实可用性、许可和未实测边界。
 - [正面二维角色与身体跟随](LEARNER_AVATAR_BODY_CAPTURE.md)：上一轮实现记录，用户已否定画面质量、手臂暂缓；保留原画细腻画风、重新制作头正的独立部件，加入双臂/手腕/三类手势捕捉与排练，身体动作录制回放，附验证与实际设备限制。
 - [原始插画表情驱动](LEARNER_AVATAR_ORIGINAL_ART.md)：历史阶段；按用户原图保留毛发、琥珀眼与服装细节；局部绘画素材与纹理形变驱动表情，自然状态实际像素与源图一致。
