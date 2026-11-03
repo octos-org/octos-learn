@@ -115,6 +115,9 @@ it("records and replays rounded lips with facial and head controls", () => {
   vi.spyOn(performance, "now").mockReturnValue(1000); open();
   fireEvent.change(screen.getByRole("slider", { name: "圆唇程度" }), { target: { value: ".8" } });
   fireEvent.change(screen.getByRole("slider", { name: "点头幅度" }), { target: { value: ".2" } });
+  fireEvent.change(screen.getByRole("slider", { name: "左右视线" }), { target: { value: "-.7" } });
+  fireEvent.change(screen.getByRole("slider", { name: "上下视线" }), { target: { value: ".4" } });
+  fireEvent.change(screen.getByRole("slider", { name: "眯眼程度" }), { target: { value: ".6" } });
   fireEvent.click(screen.getByRole("button", { name: "录一段动作", exact: true }));
   stageMock.frame!(1000); stageMock.frame!(1100);
   vi.mocked(performance.now).mockReturnValue(1200);
@@ -122,6 +125,10 @@ it("records and replays rounded lips with facial and head controls", () => {
   fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
   expect(stageMock.frame!(1200).channels.mouthPucker).toBe(.8);
   expect(stageMock.frame!(1200).rotation[0]).toBe(.2);
+  expect(stageMock.frame!(1200).channels.eyeLookOutLeft).toBe(.7);
+  expect(stageMock.frame!(1200).channels.eyeLookInRight).toBe(.7);
+  expect(stageMock.frame!(1200).channels.eyeLookDownLeft).toBe(.4);
+  expect(stageMock.frame!(1200).channels.eyeSquintRight).toBe(.6);
   expect(captureMock.starts).not.toHaveBeenCalled();
 });
 

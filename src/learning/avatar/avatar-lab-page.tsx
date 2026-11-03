@@ -18,7 +18,7 @@ import "../teach/teach.css";
 import "./avatar-lab.css";
 
 const noAssets = () => undefined;
-const INITIAL_MANUAL = { mouth: 0, round: 0, smile: 0, leftEye: 0, rightEye: 0, brows: 0, yaw: 0, pitch: 0, tilt: 0 };
+const INITIAL_MANUAL = { mouth: 0, round: 0, smile: 0, frown: 0, leftEye: 0, rightEye: 0, squint: 0, gazeX: 0, gazeY: 0, brows: 0, browDown: 0, yaw: 0, pitch: 0, tilt: 0 };
 const errorMessage = (code: CaptureError) => ({
   camera_unavailable: tr("没有找到可用摄像头，请检查连接。"),
   permission_denied: tr("摄像头权限未开启，你仍可播放演示。"),
@@ -95,7 +95,14 @@ export default function AvatarLabPage() {
   const getFrame = useCallback((now: number) => {
     if (mode === "manual") {
       const frame: FaceFrame = { timeMs: now, source: "demo", tracked: true, rotation: [manual.pitch, manual.yaw, manual.tilt],
-        channels: { jawOpen: manual.mouth, mouthPucker: manual.round, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile, eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, browInnerUp: manual.brows } };
+        channels: { jawOpen: manual.mouth, mouthPucker: manual.round, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile,
+          mouthFrownLeft: manual.frown, mouthFrownRight: manual.frown,
+          eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, eyeSquintLeft: manual.squint, eyeSquintRight: manual.squint,
+          eyeLookInLeft: Math.max(0,manual.gazeX), eyeLookOutRight: Math.max(0,manual.gazeX),
+          eyeLookOutLeft: Math.max(0,-manual.gazeX), eyeLookInRight: Math.max(0,-manual.gazeX),
+          eyeLookDownLeft: Math.max(0,manual.gazeY), eyeLookDownRight: Math.max(0,manual.gazeY),
+          eyeLookUpLeft: Math.max(0,-manual.gazeY), eyeLookUpRight: Math.max(0,-manual.gazeY),
+          browInnerUp: manual.brows, browDownLeft: manual.browDown, browDownRight: manual.browDown } };
       if (recorder.current.recording && !recorder.current.append(frame, now)) finishRecording();
       return frame;
     }
@@ -177,6 +184,12 @@ export default function AvatarLabPage() {
             { label: tr("闭唇"), channels: { jawOpen: .9, mouthClose: 1 }, rotation: [0, 0, 0] },
             { label: tr("圆唇"), channels: { mouthPucker: .9 }, rotation: [0, 0, 0] },
             { label: tr("微笑开口"), channels: { mouthSmileLeft: .8, mouthSmileRight: .8, jawOpen: .65 }, rotation: [0, 0, 0] },
+            { label: tr("看向左侧"), channels: { eyeLookOutLeft: .9, eyeLookInRight: .9 }, rotation: [0, 0, 0] },
+            { label: tr("看向右侧"), channels: { eyeLookInLeft: .9, eyeLookOutRight: .9 }, rotation: [0, 0, 0] },
+            { label: tr("眯眼微笑"), channels: { mouthSmileLeft: .8, mouthSmileRight: .8, cheekSquintLeft: .8, cheekSquintRight: .8 }, rotation: [0, 0, 0] },
+            { label: tr("皱眉"), channels: { browDownLeft: .9, browDownRight: .9, mouthFrownLeft: .7, mouthFrownRight: .7 }, rotation: [0, 0, 0] },
+            { label: tr("疑惑"), channels: { browOuterUpLeft: .9, browDownRight: .4, mouthFrownRight: .4 }, rotation: [0, 0, .04] },
+            { label: tr("担心"), channels: { browInnerUp: .9, mouthFrownLeft: .8, mouthFrownRight: .8 }, rotation: [0, 0, 0] },
             { label: tr("双眼闭合"), channels: { eyeBlinkLeft: 1, eyeBlinkRight: 1 }, rotation: [0, 0, 0] },
             { label: tr("轻轻偏头"), channels: { jawOpen: .65 }, rotation: [0, -.4, -.1] },
           ].map((pose) => <button key={pose.label} type="button" onClick={() => {
@@ -216,6 +229,9 @@ export default function AvatarLabPage() {
           <div className="avatar-lab-sliders">{([
             { key: "mouth", label: tr("嘴巴开合"), min: 0, max: 1 }, { key: "round", label: tr("圆唇程度"), min: 0, max: 1 }, { key: "smile", label: tr("微笑程度"), min: 0, max: 1 },
             { key: "leftEye", label: tr("左眼闭合"), min: 0, max: 1 }, { key: "rightEye", label: tr("右眼闭合"), min: 0, max: 1 },
+            { key: "gazeX", label: tr("左右视线"), min: -1, max: 1 }, { key: "gazeY", label: tr("上下视线"), min: -1, max: 1 },
+            { key: "squint", label: tr("眯眼程度"), min: 0, max: 1 }, { key: "frown", label: tr("嘴角下压"), min: 0, max: 1 },
+            { key: "browDown", label: tr("皱眉程度"), min: 0, max: 1 },
             { key: "brows", label: tr("抬眉程度"), min: 0, max: 1 }, { key: "yaw", label: tr("左右偏头"), min: -.6, max: .6 },
             { key: "pitch", label: tr("点头幅度"), min: -.35, max: .35 }, { key: "tilt", label: tr("歪头角度"), min: -.1, max: .1 },
           ] as const).map((item) => <label key={item.key} htmlFor={`avatar-manual-${item.key}`}><span>{item.label}<output>{manual[item.key].toFixed(2)}</output></span>

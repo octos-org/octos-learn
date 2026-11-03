@@ -1,0 +1,184 @@
+{
+  "kind": "real-local-frozen-graph-inference",
+  "date": "2026-11-03",
+  "model": {
+    "name": "iic/cv_unet_person-image-cartoon-3d_compound-models",
+    "file": "cartoon_h.pb",
+    "sha256": "bca966dded317de32b6870b758fd01c6ab8f6ab76a285149fbf450a71624fe80",
+    "input": "input_image:0",
+    "input_dtype": "float32",
+    "output": "output_image:0",
+    "output_dtype": "uint8",
+    "model_page": "https://modelscope.cn/models/iic/cv_unet_person-image-cartoon-3d_compound-models/summary"
+  },
+  "input": {
+    "source": "NASA public-domain Eileen Collins photograph from scikit-image v0.19.3",
+    "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.19.3/skimage/data/astronaut.png",
+    "license_reference": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+    "sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+    "head_crop": [
+      110,
+      10,
+      350,
+      250
+    ],
+    "alignment": "Fixed manual crop, not automatic face detection or the full upstream composite pipeline"
+  },
+  "runtime": {
+    "tensorflow": "2.16.2",
+    "numpy": "1.26.4",
+    "python": "3.9.6",
+    "machine": "arm64",
+    "device": "CPU",
+    "intra_op_threads": 6,
+    "inter_op_threads": 1
+  },
+  "results": [
+    {
+      "name": "head-288",
+      "size": [
+        288,
+        288
+      ],
+      "warmup_ms": 99.23012499999983,
+      "inference_ms": [
+        66.61183399999993,
+        65.41641700000001,
+        68.68929099999987,
+        73.69787499999991,
+        104.08395799999992,
+        63.65029100000008,
+        61.9902080000001,
+        61.46795799999971
+      ],
+      "median_ms": 66.01412549999998,
+      "mean_ms": 70.70097899999995,
+      "output_sha256": "f2c0b8faa1ea0a0aaa9af9c4ab1871adf625b9d02c832682dc3adb46dee2bcab",
+      "onnx": {
+        "inference_ms": [
+          71.22770799999944,
+          74.26308299999995,
+          71.06645899999987,
+          71.09695800000004,
+          71.77574999999959,
+          70.95612500000037,
+          73.13695800000008,
+          70.58129199999996
+        ],
+        "median_ms": 71.16233299999973,
+        "max_channel_difference_vs_tensorflow": 1,
+        "mean_channel_difference_vs_tensorflow": 2.4112654320987653e-05
+      }
+    },
+    {
+      "name": "head-512",
+      "size": [
+        512,
+        512
+      ],
+      "warmup_ms": 185.64058400000016,
+      "inference_ms": [
+        183.10350000000008,
+        180.89695900000004,
+        181.18816699999974,
+        182.2892089999999,
+        180.96533300000007,
+        181.9236660000003,
+        180.5595000000002,
+        188.7326250000001
+      ],
+      "median_ms": 181.55591650000002,
+      "mean_ms": 182.45736987500004,
+      "output_sha256": "45b98e8ebff770a34b0508ebddc243a140dc539d5b3fd3218b3d2dee49e5dd0f",
+      "onnx": {
+        "inference_ms": [
+          198.98929199999938,
+          193.09304100000003,
+          195.57499999999982,
+          197.62029200000075,
+          196.41954099999913,
+          198.68549999999985,
+          198.0499999999994,
+          196.21654199999838
+        ],
+        "median_ms": 197.01991649999994,
+        "max_channel_difference_vs_tensorflow": 1,
+        "mean_channel_difference_vs_tensorflow": 1.1444091796875e-05
+      }
+    },
+    {
+      "name": "full-512",
+      "size": [
+        512,
+        512
+      ],
+      "warmup_ms": 180.53870800000027,
+      "inference_ms": [
+        182.16995799999935,
+        186.05304200000018,
+        182.33545799999985,
+        183.69454100000038,
+        184.9102080000007,
+        183.40879199999983,
+        187.06154099999938,
+        181.8539589999997
+      ],
+      "median_ms": 183.55166650000012,
+      "mean_ms": 183.93593737499992,
+      "output_sha256": "1f486769a32fd242fd246bf597b9c2a1c6a1beb4a9924382e996607eb2dd5ad3",
+      "onnx": {
+        "inference_ms": [
+          198.38008400000007,
+          197.5002919999991,
+          194.48549999999898,
+          199.47645899999955,
+          201.44483400000013,
+          198.98925000000034,
+          192.07695799999948,
+          196.58824999999956
+        ],
+        "median_ms": 197.94018799999958,
+        "max_channel_difference_vs_tensorflow": 1,
+        "mean_channel_difference_vs_tensorflow": 1.52587890625e-05
+      }
+    }
+  ],
+  "onnx": {
+    "runtime": "1.19.2",
+    "providers": [
+      "CPUExecutionProvider"
+    ],
+    "sha256": "5d9eec30e48d5081574e5c0957180ed9370d01bf877016d19e2e831892c8ce73",
+    "bytes": 5887423,
+    "operators": [
+      "Add",
+      "Cast",
+      "Concat",
+      "Conv",
+      "Div",
+      "Expand",
+      "Gather",
+      "LeakyRelu",
+      "Max",
+      "Min",
+      "Mul",
+      "Reshape",
+      "Resize",
+      "Shape",
+      "Slice",
+      "Squeeze",
+      "Sub",
+      "Transpose",
+      "Unsqueeze"
+    ],
+    "web_runtime_tested": false
+  },
+  "camera_used": false,
+  "external_inference": false,
+  "limits": [
+    "Not the Snapchat model or a style-equivalence pass.",
+    "Single static adult fixture; no expression/temporal test.",
+    "Core graph timing excludes capture, face detection/alignment, background composition, encoding and display.",
+    "No browser/TV performance claim; no anonymity or final TTS claim."
+  ]
+}

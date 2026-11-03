@@ -1,0 +1,25 @@
+{
+  "model": "iic/cv_unet_person-image-cartoon-3d_compound-models",
+  "license": "Apache License 2.0 as stated in official model card",
+  "scope": "Only core inference graph and metadata downloaded; training weights/detector/background not included",
+  "files": [
+    {
+      "file": "cartoon_h.pb",
+      "bytes": 5894895,
+      "sha256": "bca966dded317de32b6870b758fd01c6ab8f6ab76a285149fbf450a71624fe80",
+      "url": "https://modelscope.cn/api/v1/models/iic/cv_unet_person-image-cartoon-3d_compound-models/repo?Revision=master&FilePath=cartoon_h.pb"
+    },
+    {
+      "file": "configuration.json",
+      "bytes": 498,
+      "sha256": "bc80195f77c37f89bdf595967f9a37ce9444b4b2fdbb2d97c358d8866fa3d70e",
+      "url": "https://modelscope.cn/api/v1/models/iic/cv_unet_person-image-cartoon-3d_compound-models/repo?Revision=master&FilePath=configuration.json"
+    },
+    {
+      "file": "README.md",
+      "bytes": 7256,
+      "sha256": "176fe4a5b39bcd4d9c3ab0e689c1834c1ebc8a4439f5a4501d776743307e9841",
+      "url": "https://modelscope.cn/api/v1/models/iic/cv_unet_person-image-cartoon-3d_compound-models/repo?Revision=master&FilePath=README.md"
+    }
+  ]
+}

@@ -3,7 +3,9 @@ import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes } from "./painted-eyes";
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
-export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png` } as const;
+export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
+/** The fitted face keeps its original coordinates inside the completed portrait. */
+export const PAINTED_FOX_VIEW = { size:704, x:96, y:192, frame:736 } as const;
 export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource>;
 type Point = [number, number];
 const bounded = (v: number, min = 0, max = 1) => Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : 0;
@@ -16,6 +18,23 @@ export const paintedBlinkAmount = (score: number, source: FaceFrame["source"]) =
 /** A detector coefficient is not a fraction of the character's mouth travel. */
 export const paintedJawAmount = (score: number, source: FaceFrame["source"]) =>
   bounded(score * (source === "mediapipe" ? 1.6 : 1));
+/** Gaze is in portrait/screen coordinates; positive X is right, positive Y down.
+ * Squint/cheek channels raise the lids without turning every smile into a blink.
+ */
+export function paintedEyeControls(frame: FaceFrame) {
+  const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
+  const gain=frame.source==='mediapipe'?1.5:1;
+  return {
+    left:paintedBlinkAmount(c('eyeBlinkLeft'),frame.source),
+    right:paintedBlinkAmount(c('eyeBlinkRight'),frame.source),
+    leftSquint:Math.max(c('eyeSquintLeft'),c('cheekSquintLeft')),
+    rightSquint:Math.max(c('eyeSquintRight'),c('cheekSquintRight')),
+    leftTension:bounded(c('browDownLeft')*(frame.source==='mediapipe'?1.6:1)),
+    rightTension:bounded(c('browDownRight')*(frame.source==='mediapipe'?1.6:1)),
+    leftGaze:[bounded(gain*(c('eyeLookInLeft')-c('eyeLookOutLeft')),-1,1),bounded(gain*(c('eyeLookDownLeft')-c('eyeLookUpLeft')),-1,1)]as const,
+    rightGaze:[bounded(gain*(c('eyeLookOutRight')-c('eyeLookInRight')),-1,1),bounded(gain*(c('eyeLookDownRight')-c('eyeLookUpRight')),-1,1)]as const,
+  };
+}
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 /** Rigid head, including hair/ears at the crop edges. Only the neck attaches.
  * Yaw/pitch give restrained head following, not a fabricated side view.
@@ -26,6 +45,19 @@ export function paintedHeadPoint([x,y]: Point, pitch:number, yaw:number, roll:nu
   const angle=bounded(roll,-.1,.1);
   return [x+((Math.cos(angle)-1)*dx-Math.sin(angle)*dy+bounded(yaw,-.45,.45)*18)*weight,
     y+(Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+bounded(pitch,-.35,.35)*14)*weight];
+}
+/** Small local bends above the ear roots and at the outer hair tips. Facial
+ * geometry stays rigid; this does not pin or stretch the portrait boundary.
+ * Pose-driven offsets are deterministic when recordings are replayed or sought.
+ */
+export function paintedMotionPoint([x,y]:Point,pitch:number,yaw:number,roll:number):Point {
+  const turn=bounded(yaw,-.45,.45)/.45,tilt=bounded(roll,-.1,.1)/.1;
+  const ear=smooth((70-y)/110)*smooth((Math.abs(x-256)-100)/65);
+  const rootX=x<256?96:420,dx=x-rootX,dy=y-35,angle=(turn*.024+tilt*.018)*ear;
+  const hair=smooth((Math.abs(x-256)-145)/80)*smooth((y+20)/90)*(1-smooth((y-275)/60));
+  const moved:Point=[x+(Math.cos(angle)-1)*dx-Math.sin(angle)*dy+hair*(turn*2.5+tilt*1.5),
+    y+Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+hair*tilt*1.2];
+  return paintedHeadPoint(moved,pitch,yaw,roll);
 }
 const mouthCurve: Point[] = [[224,272],[235,276],[247,277],[260,274],[272,277],[284,276],[296,272]];
 function curve(points: Point[], x: number) {
@@ -40,6 +72,19 @@ function sample(array: Float32Array, w: number, h: number, x: number, y: number,
   const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
   const nx=Math.min(ix+1,w-1),ny=Math.min(iy+1,h-1);
   return mix(mix(array[(iy*w+ix)*stride+ch],array[(iy*w+nx)*stride+ch],fx),mix(array[(ny*w+ix)*stride+ch],array[(ny*w+nx)*stride+ch],fx),fy);
+}
+/** Bicubic sampling preserves the small mouth texture's painted contours when
+ * enlarged. Interpolate premultiplied channels, then constrain the alpha below.
+ */
+function sampleOral(array:Float32Array,x:number,y:number,ch:number) {
+  if(x<1||x>510||y<1||y>510)return 0;
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+  const cubic=(a:number,b:number,c:number,d:number,t:number)=>b+.5*t*(c-a+t*(2*a-5*b+4*c-d+t*(3*(b-c)+d-a)));
+  const rows=[-1,0,1,2].map(dy=>{
+    const i=((iy+dy)*512+ix)*4+ch;
+    return cubic(array[i-4],array[i],array[i+4],array[i+8],fx);
+  });
+  return bounded(cubic(rows[0],rows[1],rows[2],rows[3],fy),0,ch===3?1:255);
 }
 
 /** One painted portrait with internal facial layers; no independent body pieces. */
@@ -83,14 +128,15 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     const [x,y,w,h] = rect, base = new Float32Array(w*h*3), residual = new Float32Array(w*h*4), output = ctx.createImageData(w,h);
     for(let xx=0;xx<w;xx++)for(let yy=0;yy<h;yy++) {
       const i=((y+yy)*512+x+xx)*4,k=yy*w+xx;
-      const matte=smooth((xx-3)/6)*smooth((w-3-xx)/6)*smooth((6-Math.abs(y+yy-curve(points as Point[],x+xx)))/3);
+      const matte=smooth((xx-3)/6)*smooth((w-3-xx)/6)*smooth((11-Math.abs(y+yy-curve(points as Point[],x+xx)))/2);
       residual[k*4+3]=matte;
       for(let c=0;c<3;c++){const d=source.data[i+c]-browClean.data[i+c];base[k*3+c]=source.data[i+c]-d*matte;residual[k*4+c]=d*matte;}
     }
     return { x,y,w,h,base,residual,output };
   });
-  function paintMouth(open: number, round: number, smile: number) {
-    if (open === 0 && round === 0 && smile === 0) return;
+  function paintMouth(open: number, round: number, leftSmile: number, rightSmile: number) {
+    if (open === 0 && round === 0 && leftSmile === 0 && rightSmile === 0) return;
+    const smile=(leftSmile+rightSmile)/2;
     const scaleX = (1 - .08 * open) * (1 - .45 * round) * (1 + .18 * smile);
     const center = 260;
     for (let x = 0; x < mw; x++) {
@@ -99,18 +145,19 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       // Author the visible travel independently of the small oral source crop.
       // Keep the upper lip near the muzzle; most opening travels downwards.
       const travel=48*bounded((bottom-top)/interiorHeight);
-      const lift = -smile * 3 * Math.min(1, ((sx - center) / 32) ** 2);
+      const corner=mix(leftSmile,rightSmile,bounded(.5+(sx-center)/64));
+      const lift = -corner * 6 * Math.min(1, ((sx - center) / 32) ** 2);
       const uy = cy-.18*travel*open+lift, ly = cy+.82*travel*open+lift;
       for (let y = 0; y < mh; y++) {
         const py = my + y, k = y * mw + x, syU = py - uy + cy - my, syL = py - ly + cy - my;
         const uw = sample(upper,mw,mh,sx-mx,syU,3), lw = sample(lower,mw,mh,sx-mx,syL,3), norm = Math.max(1, uw + lw);
         const oy = ly>uy ? top+(py-uy)/(ly-uy)*(bottom-top) : -100;
-        const alpha = sample(interior,512,512,ox,oy,3);
         const coverage = Math.min(1,open*travel);
         // Interior coverage tends to zero with opening area, rather than popping on.
         const inside = smooth((py-uy)/1.6)*smooth((ly-py)/1.6)*coverage;
+        const alpha=inside>0?sampleOral(interior,ox,oy,3):0;
         for (let c = 0; c < 3; c++) {
-          const skin = mouthBase[k*3+c], pigment = sample(interior,512,512,ox,oy,c);
+          const skin = mouthBase[k*3+c], pigment=inside>0?Math.min(255*alpha,sampleOral(interior,ox,oy,c)):0;
           mouthOutput.data[k*4+c] = Math.round(skin*(1-alpha*inside)+pigment*inside+(sample(upper,mw,mh,sx-mx,syU,c)+sample(lower,mw,mh,sx-mx,syL,c))/norm);
         }
         mouthOutput.data[k*4+3]=255;
@@ -118,43 +165,53 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     }
     ctx.putImageData(mouthOutput,mx,my);
   }
-  function paintBrows(lifts: number[]) {
+  function paintBrows(states: Array<{inner:number;outer:number;down:number}>) {
     brows.forEach((b,index)=>{
-      const lift=lifts[index]*5;if(lift===0)return;
+      const state=states[index];if(state.inner===0&&state.outer===0&&state.down===0)return;
+      const current=ctx.getImageData(b.x,b.y,b.w,b.h).data;
       for(let x=0;x<b.w;x++)for(let y=0;y<b.h;y++) {
+        const inner=bounded((index===0?x:b.w-1-x)/b.w);
+        const lift=state.inner*8*inner+state.outer*7*(1-inner)-state.down*(1+12*inner);
         const k=y*b.w+x;
-        for(let c=0;c<3;c++)b.output.data[k*4+c]=Math.round(b.base[k*3+c]+sample(b.residual,b.w,b.h,x,y+lift,c));
+        // The brow and upper-lid rectangles overlap. Apply only the brow delta,
+        // otherwise the old eye pixels silently overwrite the frowning eyelid.
+        const original=((b.y+y)*512+b.x+x)*4;
+        for(let c=0;c<3;c++)b.output.data[k*4+c]=Math.round(current[k*4+c]+b.base[k*3+c]-source.data[original+c]+sample(b.residual,b.w,b.h,x,y+lift,c));
         b.output.data[k*4+3]=255;
       }
       ctx.putImageData(b.output,b.x,b.y);
     });
   }
-  const cols=14,rows=14,vertices:Point[]=[],triangles:Array<[number,number,number]>=[];
-  for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push([x*512/cols,y*512/rows]);
+  const {size,x:padX,y:padY}=PAINTED_FOX_VIEW;
+  const portrait=surface(size,size),portraitCtx=portrait.context;
+  portraitCtx.drawImage(images.extended,0,0,size,size);
+  const portraitSource=portraitCtx.getImageData(0,0,size,size);
+  const cols=22,rows=22,vertices:Point[]=[],triangles:Array<[number,number,number]>=[];
+  for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push([x*size/cols,y*size/rows]);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+1,c=a+cols+1;triangles.push([a,b,c],[b,c+1,c]);}
-  const deformed=surface(512,512),headOutput=ctx.createImageData(512,512);
+  const deformed=surface(size,size),headOutput=ctx.createImageData(size,size);
   // A moving crop may uncover background at the top/sides. Clear it instead of
   // stretching the boundary vertices or retaining a second, stationary ear.
-  const headBackground=new Uint8ClampedArray(source.data);
+  const headBackground=new Uint8ClampedArray(portraitSource.data);
   const paper=source.data.slice((350*512+10)*4,(350*512+10)*4+4);
-  for(let i=0;i<340*512*4;i+=4)headBackground.set(paper,i);
+  for(let i=0;i<(340+padY)*size*4;i+=4)headBackground.set(paper,i);
   function deformHead(pitch:number,yaw:number,roll:number) {
-    const input=ctx.getImageData(0,0,512,512).data,out=headOutput.data;out.set(headBackground);
-    const points=vertices.map(p=>paintedHeadPoint(p,pitch,yaw,roll));
+    const input=portraitCtx.getImageData(0,0,size,size).data,out=headOutput.data;out.set(headBackground);
+    const points=vertices.map(([x,y])=>{const p=paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll);return[p[0]+padX,p[1]+padY]as Point;});
     for(const [ia,ib,ic]of triangles) {
       const a=vertices[ia],b=vertices[ib],c=vertices[ic],p=points[ia],q=points[ib],r=points[ic];
       if(a[0]===p[0]&&a[1]===p[1]&&b[0]===q[0]&&b[1]===q[1]&&c[0]===r[0]&&c[1]===r[1])continue;
       const det=(q[0]-p[0])*(r[1]-p[1])-(r[0]-p[0])*(q[1]-p[1]);
       if(det<=0)throw new Error('painted_head_fold');
-      const minX=Math.max(0,Math.floor(Math.min(p[0],q[0],r[0]))),maxX=Math.min(511,Math.ceil(Math.max(p[0],q[0],r[0])));
-      const minY=Math.max(0,Math.floor(Math.min(p[1],q[1],r[1]))),maxY=Math.min(511,Math.ceil(Math.max(p[1],q[1],r[1])));
+      const minX=Math.max(0,Math.floor(Math.min(p[0],q[0],r[0]))),maxX=Math.min(size-1,Math.ceil(Math.max(p[0],q[0],r[0])));
+      const minY=Math.max(0,Math.floor(Math.min(p[1],q[1],r[1]))),maxY=Math.min(size-1,Math.ceil(Math.max(p[1],q[1],r[1])));
       for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++) {
         const dx=x+.5-p[0],dy=y+.5-p[1];
         const wb=(dx*(r[1]-p[1])-dy*(r[0]-p[0]))/det,wc=((q[0]-p[0])*dy-(q[1]-p[1])*dx)/det;
         if(wb < -1e-7 || wc < -1e-7 || wb+wc > 1.0000001)continue;
-        const sx=bounded(a[0]+wb*(b[0]-a[0])+wc*(c[0]-a[0])-.5,0,511),sy=bounded(a[1]+wb*(b[1]-a[1])+wc*(c[1]-a[1])-.5,0,511);
-        const ix=Math.floor(sx),iy=Math.floor(sy),fx=sx-ix,fy=sy-iy,nx=Math.min(ix+1,511),ny=Math.min(iy+1,511),dest=(y*512+x)*4;
-        for(let ch=0;ch<4;ch++)out[dest+ch]=Math.round(mix(mix(input[(iy*512+ix)*4+ch],input[(iy*512+nx)*4+ch],fx),mix(input[(ny*512+ix)*4+ch],input[(ny*512+nx)*4+ch],fx),fy));
+        const sx=bounded(a[0]+wb*(b[0]-a[0])+wc*(c[0]-a[0])-.5,0,size-1),sy=bounded(a[1]+wb*(b[1]-a[1])+wc*(c[1]-a[1])-.5,0,size-1);
+        const ix=Math.floor(sx),iy=Math.floor(sy),fx=sx-ix,fy=sy-iy,nx=Math.min(ix+1,size-1),ny=Math.min(iy+1,size-1),dest=(y*size+x)*4;
+        for(let ch=0;ch<4;ch++)out[dest+ch]=Math.round(mix(mix(input[(iy*size+ix)*4+ch],input[(iy*size+nx)*4+ch],fx),mix(input[(ny*size+ix)*4+ch],input[(ny*size+nx)*4+ch],fx),fy));
       }
     }
     deformed.context.putImageData(headOutput,0,0);return deformed.canvas;
@@ -164,15 +221,22 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
-      const left=Math.max(paintedBlinkAmount(c('eyeBlinkLeft'),frame.source),auto),right=Math.max(paintedBlinkAmount(c('eyeBlinkRight'),frame.source),auto),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
-      const open=Math.max(paintedJawAmount(c('jawOpen'),frame.source),round*.85)*(1-c('mouthClose')),smile=(c('mouthSmileLeft')+c('mouthSmileRight'))/2;
-      ctx.clearRect(0,0,512,512);ctx.drawImage(images.base,0,0,512,512);paintEyes(ctx,eyes,{left,right});paintMouth(open,round,smile);
-      paintBrows([bounded(c('browInnerUp')+c('browOuterUpLeft')-c('browDownLeft'),-1,1),bounded(c('browInnerUp')+c('browOuterUpRight')-c('browDownRight'),-1,1)]);
+      const eyeState=paintedEyeControls(frame),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
+      const open=Math.max(paintedJawAmount(c('jawOpen'),frame.source),round*.85)*(1-c('mouthClose'));
+      ctx.clearRect(0,0,512,512);ctx.drawImage(images.base,0,0,512,512);
+      paintEyes(ctx,eyes,{...eyeState,left:Math.max(eyeState.left,auto),right:Math.max(eyeState.right,auto)});
+      paintMouth(open,round,c('mouthSmileLeft')-c('mouthFrownLeft'),c('mouthSmileRight')-c('mouthFrownRight'));
+      paintBrows([{inner:c('browInnerUp'),outer:c('browOuterUpLeft'),down:eyeState.leftTension},
+        {inner:c('browInnerUp'),outer:c('browOuterUpRight'),down:eyeState.rightTension}]);
+      portraitCtx.clearRect(0,0,size,size);portraitCtx.drawImage(images.extended,0,0,size,size);
+      // Only facial pixels change. The original fitted face is preserved exactly
+      // inside the outpainted portrait, so this patch has no visible boundary.
+      portraitCtx.drawImage(texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
       const pitch=bounded(frame.rotation[0],-.35,.35),yaw=bounded(-frame.rotation[1],-.45,.45),roll=bounded(-frame.rotation[2],-.10,.10);
-      target.clearRect(0,0,width,height);const scale=Math.min(width/536,height/536),ox=(width-512*scale)/2,oy=(height-512*scale)/2;
+      target.clearRect(0,0,width,height);const scale=Math.min(width/PAINTED_FOX_VIEW.frame,height/PAINTED_FOX_VIEW.frame),ox=(width-size*scale)/2,oy=(height-size*scale)/2;
       target.save();target.translate(ox,oy);target.scale(scale,scale);
-      if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,512,512);}
-      target.drawImage(pitch===0&&yaw===0&&roll===0?texture.canvas:deformHead(pitch,yaw,roll),0,0);
+      if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,size,size);}
+      target.drawImage(pitch===0&&yaw===0&&roll===0?portrait.canvas:deformHead(pitch,yaw,roll),0,0);
       target.restore();
     },
   };

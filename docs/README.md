@@ -60,6 +60,18 @@
 
 ## 专题计划
 
+- [星狐完整耳朵、随动与眉眼表情](LEARNER_AVATAR_EARS_EXPRESSIONS.md)：当前星狐工作入口；补绘完整耳朵、耳尖/发梢随动、皱眉覆盖修复与眉眼联动、口腔采样改善，附实际程序动画和像素验证。
+
+- [双线推进：星狐优化与神经卡通化实验](LEARNER_AVATAR_TWO_TRACK_PROGRESS.md)：最新工作入口。星狐新增视线、笑眼、眉毛/嘴角独立变化；DCT-Net 真实本地输出、ONNX 转换与 WASM 计算验证，附对照动画、数值检查和实际性能边界。
+
+- [Cartoon 3D Style 深入可行性](LEARNER_AVATAR_CARTOON_STYLE_FEASIBILITY.md)：用户已确认视觉目标；SDK 免费与内容授权分开核查，官方发布包 12 项静态接口检查、Face Generator 网页兼容性缺口、自托管模型元数据、匿名录制/最终配音/安卓落地顺序。尚未运行新模型。
+
+- [截图特效再研究：实时神经卡通化](LEARNER_AVATAR_NEURAL_CARTOON_RESEARCH.md)：用户否定现成角色后，按截图跨平台查找；记录 Google Lens 实际提交与结果读取限制、Snapchat 官方机器学习卡通化线索，以及自有画风、匿名与课程回放的限制。
+
+- [现成虚拟角色初筛](LEARNER_AVATAR_CHARACTER_SHORTLIST.md)：三组真实角色图、作者动作视频来源、成本与网页分发授权状态；尚未购买或接入，供先选外观。
+
+- [虚拟讲师路线重选：现成完整角色优先](LEARNER_AVATAR_DOUYIN_REASSESSMENT.md)：用户否定 DeepAR 外观与费用后，优先调研完整丰富表情 VRM + 开源渲染，专业 Live2D 备选；保留厂商调研和纯角色输出、最终配音回放、课程包及电视验证门槛。新候选尚未集成。
+
 - [二维星狐嘴型与头发/耳朵边缘修正](LEARNER_AVATAR_RESPONSE_FIX.md)：扩大相机张嘴响应与可见行程，撤销头部顶部/两侧的固定约束，附同输入前后对比与既有识别动作回放；保留源图裁切和缺失侧脸限制。
 
 - [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：头像分支已整合 M0–M6 main；当前正面 2D 画稿、完整代码/素材/验证地图、用户最新约束，以及 v2 课程包保存和正式播放接入的未完成事项。接手头像工作先读本文。
