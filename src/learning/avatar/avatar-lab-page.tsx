@@ -6,7 +6,8 @@ import { useLocale } from "@/i18n/use-locale";
 import { getSelectedProfileId } from "@/api/client";
 import { AcademyHeader } from "../academy/academy-header";
 import { TeachBoard, type TeachBoardHandle } from "../teach/teach-board";
-import { AvatarStage, type AvatarRenderMetrics } from "./avatar-stage";
+import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
+import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import { AvatarClipLibrary } from "./avatar-clip-library";
 import { AvatarAudioPreview } from "./avatar-audio-preview";
 import { EXPRESSION_SAMPLES, expressionSample } from "./expression-samples";
@@ -17,6 +18,7 @@ import "../teach/teach.css";
 import "./avatar-lab.css";
 
 const noAssets = () => undefined;
+const INITIAL_MANUAL = { mouth: 0, smile: 0, leftEye: 0, rightEye: 0, brows: 0, yaw: 0, pitch: 0, tilt: 0 };
 const errorMessage = (code: CaptureError) => ({
   camera_unavailable: tr("没有找到可用摄像头，请检查连接。"),
   permission_denied: tr("摄像头权限未开启，你仍可播放演示。"),
@@ -27,7 +29,8 @@ const errorMessage = (code: CaptureError) => ({
 
 export default function AvatarLabPage() {
   useLocale();
-  const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay">("idle");
+  const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay" | "manual">("idle");
+  const [manual, setManual] = useState(INITIAL_MANUAL);
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
   const [metrics, setMetrics] = useState<AvatarRenderMetrics | null>(null);
@@ -90,6 +93,8 @@ export default function AvatarLabPage() {
   }, [finishRecording]);
 
   const getFrame = useCallback((now: number) => {
+    if (mode === "manual") return { timeMs: now, source: "demo", tracked: true, rotation: [manual.pitch, manual.yaw, manual.tilt],
+      channels: { jawOpen: manual.mouth, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile, eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, browInnerUp: manual.brows } } satisfies FaceFrame;
     const state = { mode, track, replayPlaying, replayTime };
     let frame: FaceFrame;
     if (state.mode === "replay" && state.track) {
@@ -104,7 +109,7 @@ export default function AvatarLabPage() {
     const displayed = smoother.current.update(frame, now);
     if (recorder.current.recording && !recorder.current.append(displayed, now)) finishRecording();
     return displayed;
-  }, [finishRecording, mode, track, replayPlaying, replayTime]);
+  }, [finishRecording, mode, track, replayPlaying, replayTime, manual]);
 
   useEffect(() => {
     if (!replayPlaying || !track) return;
@@ -148,7 +153,7 @@ export default function AvatarLabPage() {
     const link = document.createElement("a"); link.href = url; link.download = filename; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const status = mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放表情片段") : mode !== "camera" ? tr("准备好了")
+  const status = mode === "manual" ? tr("正在手动调整，未使用摄像头") : mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放表情片段") : mode !== "camera" ? tr("准备好了")
     : captureState === "starting" ? tr("正在连接摄像头…") : captureState === "loading" ? tr("正在本机加载表情模型…")
       : captureState === "tracking" ? tr("正在跟随你的表情") : tr("请面对摄像头，让整张脸进入画面");
   const canRecord = mode === "demo" || (mode === "camera" && (captureState === "tracking" || captureState === "lost"));
@@ -158,8 +163,8 @@ export default function AvatarLabPage() {
     <main className="course-launcher academy-page teach-page avatar-lab">
       <div className="course-launcher-inner">
         <AcademyHeader />
-        <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("动态头像试验室")}</h1></div><span>{tr("技术预览")}</span></div>
-        <p className="avatar-lab-intro">{tr("这是第一版星狐三维小样。可以定格检查表情，也可以播放动作或配音；外形和组合表情仍在打磨。")}</p>
+        <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维星狐互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
+        <p className="avatar-lab-intro">{tr("打开摄像头，试试眨眼、张嘴、微笑和点头，让二维星狐跟随你。也可以不用摄像头，拖动下方滑杆或点击定格表情。")}</p>
         <div className="avatar-lab-pose" aria-label={tr("星狐定格检查")}>
           <span>{tr("定格检查")}</span>
           {[
@@ -169,7 +174,7 @@ export default function AvatarLabPage() {
             { label: tr("圆唇"), channels: { mouthPucker: .9 }, rotation: [0, 0, 0] },
             { label: tr("微笑开口"), channels: { mouthSmileLeft: .8, mouthSmileRight: .8, jawOpen: .65 }, rotation: [0, 0, 0] },
             { label: tr("双眼闭合"), channels: { eyeBlinkLeft: 1, eyeBlinkRight: 1 }, rotation: [0, 0, 0] },
-            { label: tr("侧面检查"), channels: { jawOpen: .65 }, rotation: [0, -.65, 0] },
+            { label: tr("轻轻偏头"), channels: { jawOpen: .65 }, rotation: [0, -.4, -.1] },
           ].map((pose) => <button key={pose.label} type="button" onClick={() => {
             const frame: FaceFrame = { timeMs: 0, source: "demo", tracked: true, channels: pose.channels, rotation: pose.rotation as FaceFrame["rotation"] };
             openTrack({ schema: AVATAR_TRACK_SCHEMA, durationMs: 1000, frames: [frame, { ...frame, timeMs: 1000 }] });
@@ -177,8 +182,8 @@ export default function AvatarLabPage() {
         </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <AvatarStage frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
-            <span className="avatar-lab-stage-label">{tr("星狐小样 · 第一版")}</span>
+            <IllustratedAvatarStage className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <span className="avatar-lab-stage-label">{tr("二维星狐 · 互动小样")}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录表情片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
@@ -198,10 +203,23 @@ export default function AvatarLabPage() {
             <p>{tr("只在这台设备上识别，摄像头画面不会上传。此处不采集声音。")}</p>
             <video className="avatar-lab-camera" ref={video} muted playsInline aria-label={tr("本机摄像头预览")} hidden={mode !== "camera"} />
             <label className="avatar-lab-select">{tr("显示速度")}<select value={fpsLimit} onChange={(event) => setFpsLimit(event.target.value === "30" ? 30 : 60)}><option value="60">{tr("流畅（目标 60 帧）")}</option><option value="30">{tr("节能（目标 30 帧）")}</option></select></label>
-            <div className="avatar-lab-concept"><img src={`${import.meta.env.BASE_URL}teach-avatars/star-fox/concept-idle.png`} alt={tr("已选定的星狐美术参考")} /><span>{tr("正式星狐模型的美术参考")}</span></div>
+            <Link className="teach-secondary" to="/teach/avatar-2d/example">{tr("观看讲课配音示例")}</Link>
           </section>
         </div>
-        {error && <p className="avatar-lab-error" role="alert">{error === "graphics" ? tr("这台设备暂时无法显示三维头像，请换用支持 WebGL 2 的浏览器。")
+        <section className="avatar-lab-manual" aria-label={tr("手动调整表情")}>
+          <div className="avatar-lab-manual-heading"><div><h2>{tr("拖动滑杆，马上看效果")}</h2><p>{tr("无需摄像头。手动调整会停止当前跟随或回放；这些参数只用于预览。")}</p></div>
+            <button type="button" className="teach-secondary" onClick={() => { stop(); setManual(INITIAL_MANUAL); setMode("manual"); }}>{tr("恢复自然表情")}</button></div>
+          <div className="avatar-lab-sliders">{([
+            { key: "mouth", label: tr("嘴巴开合"), min: 0, max: 1 }, { key: "smile", label: tr("微笑程度"), min: 0, max: 1 },
+            { key: "leftEye", label: tr("左眼闭合"), min: 0, max: 1 }, { key: "rightEye", label: tr("右眼闭合"), min: 0, max: 1 },
+            { key: "brows", label: tr("抬眉程度"), min: 0, max: 1 }, { key: "yaw", label: tr("左右偏头"), min: -.6, max: .6 },
+            { key: "pitch", label: tr("点头幅度"), min: -.35, max: .35 }, { key: "tilt", label: tr("歪头角度"), min: -.1, max: .1 },
+          ] as const).map((item) => <label key={item.key} htmlFor={`avatar-manual-${item.key}`}><span>{item.label}<output>{manual[item.key].toFixed(2)}</output></span>
+            <input id={`avatar-manual-${item.key}`} aria-label={item.label} type="range" min={item.min} max={item.max} step="0.01" value={manual[item.key]} onChange={(event) => {
+              stop(); setManual((previous) => ({ ...previous, [item.key]: Number(event.target.value) })); setMode("manual");
+            }} /></label>)}</div>
+        </section>
+        {error && <p className="avatar-lab-error" role="alert">{error === "graphics" ? tr("二维角色未能载入，请刷新重试。")
           : error === "track" ? tr("这个表情文件无法读取，请使用有效的头像片段。") : error === "ink" ? tr("白板未能开启，请刷新后重试。") : errorMessage(error)}</p>}
         <section className="avatar-lab-track" aria-label={tr("表情片段")}>
           <div className="avatar-lab-actions">

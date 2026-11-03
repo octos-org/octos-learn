@@ -13,7 +13,7 @@ import { lessonNarration } from "../teach/learner-package";
 
 const state = vi.hoisted(() => ({ frame: null as (() => FaceFrame) | null, signals: [] as AbortSignal[] }));
 const track = envelopeLipSync([new Float32Array(16000).fill(.2)], 16000, "a".repeat(64));
-vi.mock("./avatar-stage", () => ({ AvatarStage: ({ frame }: { frame: () => FaceFrame }) => { state.frame = frame; return <div />; } }));
+vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame }: { frame: () => FaceFrame }) => { state.frame = frame; return <div />; } }));
 vi.mock("./prepare-preview-audio", () => ({ preparePreviewAudio: vi.fn(async (_bytes: ArrayBuffer, signal: AbortSignal) => { state.signals.push(signal); return track; }) }));
 import { AvatarAudioPreview } from "./avatar-audio-preview";
 

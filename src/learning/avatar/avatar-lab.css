@@ -7,6 +7,17 @@
 .avatar-lab-intro { margin: 14px 0 22px; max-width: 760px; color: #53697c; line-height: 1.7; }
 .avatar-lab-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
 .avatar-lab-stage { position: relative; min-height: 440px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 22px; background: radial-gradient(ellipse at 50% 43%, #f9f6eb 0%, #e6edf2 80%); }
+.avatar-lab-stage > .avatar-lab-illustrated { position: absolute; inset: 0 0 45px; width: auto; height: auto; }
+.avatar-lab-manual { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-manual-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
+.avatar-lab-manual h2 { margin: 0; font-size: 18px; }
+.avatar-lab-manual p { color: #617384; font-size: 13px; line-height: 1.65; margin: 8px 0 0; }
+.avatar-lab-sliders { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px 24px; margin-top: 20px; }
+.avatar-lab-sliders label { display: grid; gap: 10px; min-width: 0; font-size: 13px; }
+.avatar-lab-sliders label > span { display: flex; justify-content: space-between; gap: 10px; }
+.avatar-lab-sliders output { color: #8b7c62; font-variant-numeric: tabular-nums; }
+.avatar-lab-sliders input { width: 100%; accent-color: #34496c; }
+@media(max-width:800px) { .avatar-lab-sliders { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 .avatar-lab-render { position: absolute; inset: 0 0 45px; }
 .avatar-lab-render canvas { display: block; }
 .avatar-lab-stage-label { position: absolute; top: 16px; left: 16px; }
@@ -63,6 +74,7 @@
 .avatar-audio-grid { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(0, 1.2fr); gap: 24px; margin-top: 18px; }
 .avatar-audio-stage { position: relative; min-height: 360px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 18px; background: #e9eff2; }
 .avatar-audio-stage .avatar-lab-render { inset: 0; }
+.avatar-audio-stage > .illustrated-avatar { position: absolute; inset: 0; width: auto; height: auto; }
 .avatar-audio-controls { min-width: 0; }
 .avatar-audio-controls audio { width: 100%; margin: 12px 0; }
 .avatar-audio-controls audio[hidden] { display: none; }

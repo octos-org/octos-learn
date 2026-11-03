@@ -2,20 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import type { FaceFrame } from "./face-frame";
 import { drawIllustratedFox, ILLUSTRATED_FOX_ASSET } from "./illustrated-fox";
+import { percentile } from "./performance-track";
+import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
 
-export function IllustratedAvatarStage({ frame, active, idleMotion = false, className = "", onError }: {
-  frame: (now: number) => FaceFrame; active: boolean; idleMotion?: boolean; className?: string; onError?: () => void;
+export function IllustratedAvatarStage({ frame, active, idleMotion = false, className = "", fpsLimit = 30, onMetrics, onError }: {
+  frame: (now: number) => FaceFrame; active: boolean; idleMotion?: boolean; className?: string; fpsLimit?: 30 | 60; onMetrics?: (metrics: AvatarRenderMetrics) => void; onError?: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null), wake = useRef<(() => void) | null>(null);
-  const callbacks = useRef({ frame, active, idleMotion, onError });
+  const callbacks = useRef({ frame, active, idleMotion, fpsLimit, onMetrics, onError });
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
-  useEffect(() => { callbacks.current = { frame, active, idleMotion, onError }; wake.current?.(); }, [frame, active, idleMotion, onError]);
+  useEffect(() => { callbacks.current = { frame, active, idleMotion, fpsLimit, onMetrics, onError }; wake.current?.(); }, [frame, active, idleMotion, fpsLimit, onMetrics, onError]);
   useEffect(() => {
     const element = canvas.current; if (!element) return;
     const ctx = element.getContext("2d");
     if (!ctx) { callbacks.current.onError?.(); return; }
-    let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0;
+    let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
+    const samples: number[] = [];
     const image = new Image();
     const fail = () => { if (!disposed && !failed) { failed = true; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
@@ -23,14 +26,21 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
       handle = 0; if (disposed || !ready || document.hidden) return;
       if (callbacks.current.active) idleAt = 0;
       else if (!idleAt) idleAt = now;
-      if (now - last >= 1000 / 30 || !callbacks.current.active) {
+      const interval = 1000 / callbacks.current.fpsLimit;
+      if (now - last >= interval || !callbacks.current.active) {
         const w = Math.max(1, element.clientWidth), h = Math.max(1, element.clientHeight), ratio = Math.min(devicePixelRatio || 1, 1.5);
         if (element.width !== Math.round(w * ratio) || element.height !== Math.round(h * ratio)) { element.width = Math.round(w * ratio); element.height = Math.round(h * ratio); }
-        drawIllustratedFox(ctx, image, element.width, element.height, callbacks.current.frame(now), { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion }); last = now;
+        const input = callbacks.current.frame(now), start = performance.now();
+        drawIllustratedFox(ctx, image, element.width, element.height, input, { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion });
+        samples.push(performance.now() - start); count++; last = now - ((now - last) % interval);
+        if (now - lastReport >= 1000) {
+          callbacks.current.onMetrics?.({ fps: count * 1000 / (now - lastReport), submissionP95Ms: percentile(samples, .95), renderer: "Canvas 2D" });
+          lastReport = now; count = 0; samples.length = 0;
+        }
       }
       if (callbacks.current.active || now - idleAt < 70) handle = requestAnimationFrame(render);
     };
-    const request = () => { if (!disposed && ready && !handle && !document.hidden) { idleAt = 0; handle = requestAnimationFrame(render); } };
+    const request = () => { if (!disposed && ready && !handle && !document.hidden) { idleAt = 0; lastReport = performance.now(); count = 0; samples.length = 0; handle = requestAnimationFrame(render); } };
     wake.current = request;
     image.onload = () => { clearTimeout(timeout); if (disposed || failed) return; ready = true; setState("ready"); request(); };
     image.onerror = () => { clearTimeout(timeout); fail(); };

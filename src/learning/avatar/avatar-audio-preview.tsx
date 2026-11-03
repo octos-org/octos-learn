@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
-import { AvatarStage } from "./avatar-stage";
+import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
 import { audioDigest, calibrationWav, lipSyncFrame, parseLipSyncTrack, type LipSyncTrack } from "./lip-sync";
 import { preparePreviewAudio } from "./prepare-preview-audio";
 import type { LoadedLearnerPackage } from "../teach/learner-package";
@@ -82,8 +82,8 @@ export function AvatarAudioPreview() {
     <p>{tr("导入一段已生成的配音，嘴型会跟随音频的实际进度。这里只在本机预览，不录音、不上传，也不会调用付费语音服务。")}</p>
     <div className="avatar-audio-grid">
       <div className="avatar-audio-stage">
-        <AvatarStage frame={frame} fpsLimit={30} active={playing} onMetrics={ignoreMetrics} onError={onGraphicsError} />
-        <span className="avatar-lab-stage-label">{tr("星狐小样 · 第一版")}</span>
+        <IllustratedAvatarStage frame={frame} fpsLimit={30} active={playing} onMetrics={ignoreMetrics} onError={onGraphicsError} />
+        <span className="avatar-lab-stage-label">{tr("二维星狐 · 互动小样")}</span>
       </div>
       <div className="avatar-audio-controls">
         <div className="avatar-lab-actions">

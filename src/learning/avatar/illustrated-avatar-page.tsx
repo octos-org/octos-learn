@@ -50,7 +50,7 @@ export default function IllustratedAvatarPage() {
     finally { if (controller.current === request) setBusy(false); }
   };
   return <main className="fox-preview-page">
-    <header><Link to="/teach">{tr("← 回到录课")}</Link><span>{tr("OCTOS LEARN · 二维角色小样")}</span></header>
+    <header><Link to="/teach/avatar-2d">{tr("← 回到互动试验室")}</Link><span>{tr("OCTOS LEARN · 二维角色小样")}</span></header>
     <div className="fox-preview-title"><p>{tr("小讲师，开讲啦")}</p><h1>{tr("让插画里的星狐，讲出你的想法。")}</h1>
       <span>{tr("嘴型、眼神和轻轻的点头。先把一个角色做好。")}</span></div>
     <div className="fox-preview-grid">

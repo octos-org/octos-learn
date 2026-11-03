@@ -4,8 +4,8 @@ import { tr } from "@/i18n";
 import { type FaceFrame } from "./face-frame";
 import { loadStarFoxAsset, disposeAvatarModel } from "./star-fox-asset";
 import { percentile } from "./performance-track";
-
-export interface AvatarRenderMetrics { fps: number; submissionP95Ms: number; geometries: number; textures: number; renderer: string }
+import type { AvatarRenderMetrics } from "./avatar-render-metrics";
+export type { AvatarRenderMetrics } from "./avatar-render-metrics";
 
 export function AvatarStage({ frame, fpsLimit, active, onMetrics, onError }: {
   frame: (time: number) => FaceFrame;

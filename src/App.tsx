@@ -86,7 +86,8 @@ export function AppRoutes() {
         <Route path="/records" element={<RecordsPage />} />
         <Route path="/teach" element={<TeachPlanPage />} />
         <Route path="/teach/avatar-lab" element={<Suspense fallback={null}><AvatarLabPage /></Suspense>} />
-        <Route path="/teach/avatar-2d" element={<Suspense fallback={null}><IllustratedAvatarPage /></Suspense>} />
+        <Route path="/teach/avatar-2d" element={<Suspense fallback={null}><AvatarLabPage /></Suspense>} />
+        <Route path="/teach/avatar-2d/example" element={<Suspense fallback={null}><IllustratedAvatarPage /></Suspense>} />
         <Route path="/teach/package" element={<Suspense fallback={null}><LearnerPackageViewer /></Suspense>} />
         <Route path="/teach/:id" element={<TeachStudioPage />} />
         <Route path="/teach/:id/watch" element={<TeachWatchPage />} />

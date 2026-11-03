@@ -20,9 +20,9 @@ export function drawIllustratedFox(ctx: CanvasRenderingContext2D, image: CanvasI
   // Body is steady; a narrow neck overlap conceals small cutout head tilts.
   ctx.save(); ctx.beginPath(); ctx.rect(0, NECK - 6, W, H - NECK + 6); ctx.clip(); ctx.drawImage(image, 0, 0, W, H); ctx.restore();
   const tilt = bounded(-frame.rotation[2], -.1, .1) + (idleMotion ? Math.sin(time * .72) * .022 : 0);
-  const nod = bounded(frame.rotation[0], -.35, .35) * 12 + (idleMotion ? Math.sin(time * 1.35) * 2 : 0);
+  const nod = bounded(frame.rotation[0], -.35, .35) * 38 + (idleMotion ? Math.sin(time * 1.35) * 2 : 0);
   ctx.save(); ctx.translate(W / 2, NECK); ctx.rotate(tilt); ctx.translate(-W / 2, -NECK + nod);
-  ctx.translate(bounded(-frame.rotation[1], -.6, .6) * 12, 0);
+  ctx.translate(bounded(-frame.rotation[1], -.6, .6) * 38, 0);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, NECK + 4); ctx.clip(); ctx.drawImage(image, 0, 0, W, H); ctx.restore();
 
   // Natural blinks are an explicit idle animation, never labelled as capture.
