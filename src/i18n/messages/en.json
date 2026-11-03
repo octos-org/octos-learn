@@ -2719,5 +2719,6 @@
   "左右偏头": "Head turn",
   "点头幅度": "Head nod",
   "歪头角度": "Head tilt",
-  "← 回到互动试验室": "← Back to the interactive lab"
+  "← 回到互动试验室": "← Back to the interactive lab",
+  "直接使用原始星狐插画。打开摄像头，让原画跟随你眨眼、开口和小幅点头；也可以拖动滑杆检查。静止时保留原图。": "Uses the original star fox illustration. Turn on the camera for blinking, speaking and gentle head movement, or use the sliders. The neutral pose preserves the original image."
 }

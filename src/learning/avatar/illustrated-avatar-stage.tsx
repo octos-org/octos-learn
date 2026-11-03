@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import type { FaceFrame } from "./face-frame";
-import { drawIllustratedFox, ILLUSTRATED_FOX_ASSET } from "./illustrated-fox";
+import { createOriginalFoxPainter, ORIGINAL_FOX_ASSETS } from "./original-fox";
 import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
@@ -19,7 +19,8 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     if (!ctx) { callbacks.current.onError?.(); return; }
     let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
     const samples: number[] = [];
-    const image = new Image();
+    const images = Object.entries(ORIGINAL_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
+    let loaded = 0, painter: ReturnType<typeof createOriginalFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
     const render = (now: number) => {
@@ -31,7 +32,7 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
         const w = Math.max(1, element.clientWidth), h = Math.max(1, element.clientHeight), ratio = Math.min(devicePixelRatio || 1, 1.5);
         if (element.width !== Math.round(w * ratio) || element.height !== Math.round(h * ratio)) { element.width = Math.round(w * ratio); element.height = Math.round(h * ratio); }
         const input = callbacks.current.frame(now), start = performance.now();
-        drawIllustratedFox(ctx, image, element.width, element.height, input, { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion });
+        painter!.draw(ctx, element.width, element.height, input, { timeMs: now, idleMotion: callbacks.current.active && callbacks.current.idleMotion });
         samples.push(performance.now() - start); count++; last = now - ((now - last) % interval);
         if (now - lastReport >= 1000) {
           callbacks.current.onMetrics?.({ fps: count * 1000 / (now - lastReport), submissionP95Ms: percentile(samples, .95), renderer: "Canvas 2D" });
@@ -42,13 +43,26 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     };
     const request = () => { if (!disposed && ready && !handle && !document.hidden) { idleAt = 0; lastReport = performance.now(); count = 0; samples.length = 0; handle = requestAnimationFrame(render); } };
     wake.current = request;
-    image.onload = () => { clearTimeout(timeout); if (disposed || failed) return; ready = true; setState("ready"); request(); };
-    image.onerror = () => { clearTimeout(timeout); fail(); };
-    image.src = `${import.meta.env.BASE_URL}${ILLUSTRATED_FOX_ASSET}`;
+    for (const asset of images) {
+      asset.image.onload = () => {
+        if (disposed || failed || ++loaded !== images.length) return;
+        clearTimeout(timeout);
+        try {
+          painter = createOriginalFoxPainter(images[0]!.image, images[1]!.image, images[2]!.image, (width, height) => {
+            const buffer = element.ownerDocument.createElement("canvas"); buffer.width = width; buffer.height = height;
+            const context = buffer.getContext("2d"); if (!context) throw new Error("canvas_unavailable");
+            return { canvas: buffer, context };
+          });
+          ready = true; setState("ready"); request();
+        } catch { fail(); }
+      };
+      asset.image.onerror = () => { clearTimeout(timeout); fail(); };
+      asset.image.src = `${import.meta.env.BASE_URL}${asset.path}`;
+    }
     const observer = new ResizeObserver(request); observer.observe(element);
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(handle); handle = 0; } else request(); };
     document.addEventListener("visibilitychange", visibility);
-    return () => { disposed = true; clearTimeout(timeout); wake.current = null; cancelAnimationFrame(handle); observer.disconnect(); image.onload = null; image.onerror = null; image.removeAttribute("src"); document.removeEventListener("visibilitychange", visibility); };
+    return () => { disposed = true; clearTimeout(timeout); wake.current = null; cancelAnimationFrame(handle); observer.disconnect(); painter = null; for (const { image } of images) { image.onload = null; image.onerror = null; image.removeAttribute("src"); } document.removeEventListener("visibilitychange", visibility); };
   }, []);
   return <div className={`illustrated-avatar ${className}`}><canvas ref={canvas} role="img" aria-label={tr("二维星狐动画")} />
     {state !== "ready" && <span role="status">{state === "failed" ? tr("二维角色未能载入，请刷新重试。") : tr("正在载入二维星狐…")}</span>}</div>;

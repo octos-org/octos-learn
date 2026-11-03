@@ -164,7 +164,7 @@ export default function AvatarLabPage() {
       <div className="course-launcher-inner">
         <AcademyHeader />
         <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维星狐互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
-        <p className="avatar-lab-intro">{tr("打开摄像头，试试眨眼、张嘴、微笑和点头，让二维星狐跟随你。也可以不用摄像头，拖动下方滑杆或点击定格表情。")}</p>
+        <p className="avatar-lab-intro">{tr("直接使用原始星狐插画。打开摄像头，让原画跟随你眨眼、开口和小幅点头；也可以拖动滑杆检查。静止时保留原图。")}</p>
         <div className="avatar-lab-pose" aria-label={tr("星狐定格检查")}>
           <span>{tr("定格检查")}</span>
           {[

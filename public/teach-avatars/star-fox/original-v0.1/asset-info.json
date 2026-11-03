@@ -1,0 +1,26 @@
+{
+  "id": "star-fox-original-art",
+  "version": "0.1.0",
+  "size": [
+    1254,
+    1254
+  ],
+  "base": "../concept-thinking.png",
+  "files": {
+    "concept-thinking.png": {
+      "bytes": 1601598,
+      "sha256": "05fda2d9c914dbdd6bb8079f403ab27effe2493f050be8f72235d7f1e5110a15"
+    },
+    "original-v0.1/clean.png": {
+      "bytes": 1588493,
+      "sha256": "56beea0c2818012ed999b3b1a2a7d10f381e1005066de5e81f8d8abfeb36bf30"
+    },
+    "original-v0.1/expressions.png": {
+      "bytes": 1562818,
+      "sha256": "ddb8a4998f6e6c539ddedb1df113054d2033f7b7d6f4cd4e78a2b1d34353df46"
+    }
+  },
+  "method": "Original unmodified source PNG; generated edits used only as local clean/eyelid/mouth patches; bounded texture deformation.",
+  "neutralVerification": "Actual native Canvas RGBA exactly matches directly drawing the source at the same placement.",
+  "status": "Camera input wiring retained; no real-face/browser/device quality acceptance this round."
+}
