@@ -191,7 +191,7 @@ it("shows the star atlas as its own page, without a second list of topics", asyn
 
 it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
-  expect(await screen.findByRole("img", { name: "已点亮 3 / 74 枚" })).toBeTruthy();
+  expect(await screen.findByRole("img", { name: "已点亮 3 / 80 枚" })).toBeTruthy();
   expect(within(screen.getByRole("list", { name: tr("最近获得") })).getAllByRole("button").length).toBe(3);
   expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);
