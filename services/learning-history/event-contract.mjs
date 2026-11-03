@@ -117,6 +117,17 @@ export function validateHistoryEvent(candidate) {
       taskSource();
       text(d.task_id, "task_id", 256); integer(d.hint_index, "hint_index");
       break;
+    case "lesson_taught":
+      // Recorded by the learner-lessons service when a learner saves a
+      // checked lesson they taught; one run per lesson.
+      fields(d, ["lesson_id", "topic_id", "cards", "practice_tasks", "content_sha256"], ["lesson_id", "cards", "practice_tasks", "content_sha256"]);
+      id(d.lesson_id, "lesson id");
+      if (e.run_id !== `taught:${d.lesson_id}`) fail("A taught lesson is its own run");
+      if (d.topic_id !== undefined && !/^mt_[A-Za-z0-9_-]{1,64}$/.test(d.topic_id)) fail("Invalid taught topic");
+      integer(d.cards, "cards"); integer(d.practice_tasks, "practice_tasks");
+      if (!d.cards) fail("A taught lesson has cards");
+      if (typeof d.content_sha256 !== "string" || !/^[a-f0-9]{64}$/.test(d.content_sha256)) fail("Invalid taught lesson digest");
+      break;
     default: fail("Unknown history event kind");
   }
   // Copy only after validation; the caller cannot mutate a queued event later.

@@ -9,15 +9,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson } from "octos-lesson-language";
 
-import { getSelectedProfileId } from "@/api/client";
+import { getSelectedProfileId, getToken } from "@/api/client";
 import { availableService, type LessonVoices } from "@/byok/providers";
 import { getService, prepareClientServices } from "@/byok/services";
 
 import { AcademyHeader } from "../academy/academy-header";
+import { holdAwards } from "../academy/award-events";
+import { openHistoryApi } from "../history/history-api";
 import { LearningWhiteboard } from "../oll/oll-lesson-runtime";
 import { useOllLessonRuntime, type OllLessonTopicDefinition } from "../oll/use-oll-lesson-runtime";
 import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { compileRecording } from "./compile-recording";
+import { syncLessonDrafts } from "./draft-sync";
+import { listLessons, saveLessonPackage } from "./learner-lessons-api";
 import { LEARNER_PACKAGE_EXTENSION, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage, writeStoredLearnerPackage, type StoredLearnerPackage } from "./learner-package-store";
 import { cardChecks, lessonReady } from "./lesson-check";
@@ -28,7 +32,7 @@ import { recordingComplete, setPresenter, type Presenter } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
-import { nodeSections } from "./teaching-board-setup";
+import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
 
 /** A short, stable fingerprint of the lesson, so a changed lesson starts again from the top. */
@@ -39,6 +43,9 @@ function fingerprint(text: string): string {
 }
 
 type Audio = "checking" | "on" | "unavailable";
+
+/** What "My lessons" holds for this lesson: the saved version's content hash, or nothing yet. */
+type Saved = { status: "checking" | "unreachable" } | { status: "known"; contentSha256: string | null };
 
 type PackState =
   | { status: "loading" | "none" | "outdated" }
@@ -67,12 +74,7 @@ export function TeachWatchPage() {
         lessonId: `learner-${recording.id}`, boardId: `learner-${recording.id}-board`, baseRevision: 0, resourceContext: compiled.resourceContext,
       });
       const source = events.map((event) => JSON.stringify(event)).join("\n");
-      const sections = nodeSections(events);
-      const stepIds = [...new Set(events.flatMap((event) => (event.step?.id ? [event.step.id] : [])))];
-      const topics: OllLessonTopicDefinition[] = [{
-        id: "learner-lesson", title: recording.topic.text, language: compiled.lesson.lesson.language,
-        stepIds, nodeIds: Object.keys(sections), nodeSections: sections,
-      }];
+      const topics: OllLessonTopicDefinition[] = [learnerLessonTopic(events, recording.topic.text, compiled.lesson.lesson.language)];
       return { compiled, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
     } catch {
       return null;
@@ -122,18 +124,39 @@ export function TeachWatchPage() {
   const privateTitles = recording ? [recording.topic.text, ...recording.goals, ...recording.cards.map((card) => card.title)].flatMap((text) => findPersonalDetails(text)) : [];
   const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
   const [makeFailed, setMakeFailed] = useState<string | null>(null);
-  const makePackage = async () => {
+  const [saved, setSaved] = useState<Saved>({ status: "checking" });
+  const recordingId = recording?.id;
+  useEffect(() => {
+    if (!recordingId) return;
+    let active = true;
+    void listLessons()
+      .then((lessons) => ({ status: "known", contentSha256: lessons.find((item) => item.lesson_id === recordingId)?.saved?.content_sha256 ?? null }) as Saved)
+      .catch(() => ({ status: "unreachable" }) as Saved)
+      .then((state) => { if (active) setSaved(state); });
+    return () => { active = false; };
+  }, [recordingId]);
+  // Saving makes the package when the lesson has none that matches, then keeps it in "My lessons".
+  const saveLesson = async () => {
     if (!recording || !lesson) return;
     setMakeFailed(null);
     setMaking({ done: 0, total: 0 });
     try {
-      const { archive, manifest } = await makeLearnerPackage({
-        lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
-        voices, signal: new AbortController().signal, onProgress: (done, total) => setMaking({ done, total }),
-      });
-      const stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
-      await writeStoredLearnerPackage(stored);
-      setPack({ status: "ready", stored, loaded: await readLearnerPackage(stored.archive) });
+      let stored = pack.status === "ready" ? pack.stored : undefined;
+      if (!stored) {
+        const { archive, manifest } = await makeLearnerPackage({
+          lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
+          voices, signal: new AbortController().signal, onProgress: (done, total) => setMaking({ done, total }),
+        });
+        stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
+        await writeStoredLearnerPackage(stored);
+        setPack({ status: "ready", stored, loaded: await readLearnerPackage(stored.archive) });
+      }
+      await syncLessonDrafts(localStorage, profileId);
+      const lessonSaved = await saveLessonPackage(recording.id, stored.archive);
+      setSaved({ status: "known", contentSha256: lessonSaved.saved?.content_sha256 ?? null });
+      // A first lesson can earn an award; it plays when the lesson is not playing.
+      const token = getToken();
+      if (token) void openHistoryApi(token).then((api) => api.achievements()).catch(() => undefined);
     } catch (error) {
       setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
     } finally {
@@ -164,6 +187,11 @@ export function TeachWatchPage() {
   const onComplete = useCallback((beatId: string) => runtimeRef.current?.completeNarration(beatId), []);
   const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
   const speaking = Boolean(runtime?.playing && runtime.activeSpeech.trim());
+  const playing = Boolean(runtime?.playing);
+  useEffect(() => {
+    holdAwards("teach-watch", playing);
+    return () => holdAwards("teach-watch", false);
+  }, [playing]);
   const narration = useOllNarrationTts({
     language: lesson?.language,
     enabled: narrated,
@@ -252,22 +280,26 @@ export function TeachWatchPage() {
             )}
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
-          <section className="teach-package" aria-label={tr("分享前的准备")}>
-            {pack.status === "ready" ? (
+          <section className="teach-package" aria-label={tr("保存这节课")}>
+            {making ? (
+              <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…")}</p>
+            ) : pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256 ? (
               <>
-                <p role="status">{tr("这节课已经准备好分享了：声音已经做好，不联网也能播放。")}</p>
+                <p role="status">{tr("这节课已经保存在“我的课”里，只有你能看到。声音已经做好，不联网也能播放。")}</p>
+                <Link to="/teach/lessons" className="teach-secondary">{tr("去“我的课”")}</Link>
                 <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>
               </>
-            ) : making ? (
-              <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在准备…")}</p>
             ) : (
               <>
-                <p className="academy-muted">{pack.status === "outdated" ? tr("课改过了，要重新准备一次。") : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能准备分享。")
+                <p className="academy-muted">{!checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能保存。")
                   : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
-                    : audio !== "on" ? tr("准备分享需要连接语音合成。") : tr("会用你选的声音把每张卡片讲一遍并保存，以后不联网也能播放。")}</p>
-                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || audio !== "on"} onClick={() => void makePackage()}>
-                  <PackageCheck size={16} aria-hidden="true" />{tr("准备分享")}
+                    : pack.status === "ready" ? tr("声音已经做好了，保存到“我的课”就完成了。")
+                      : audio !== "on" ? tr("保存这节课需要连接语音合成，用来给每张卡片做声音。")
+                        : pack.status === "outdated" ? tr("课改过了，保存时会重新做一遍声音。") : tr("会用你选的声音把每张卡片讲一遍，再保存到“我的课”，以后不联网也能播放。")}</p>
+                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || (pack.status !== "ready" && audio !== "on")} onClick={() => void saveLesson()}>
+                  <PackageCheck size={16} aria-hidden="true" />{tr("保存到我的课")}
                 </button>
+                {pack.status === "ready" && <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>}
               </>
             )}
             {makeFailed && <p role="alert">{makeFailed}</p>}
@@ -281,7 +313,7 @@ export function TeachWatchPage() {
 }
 
 /** An avatar's artwork, or a placeholder with its initial until the artwork is added. */
-function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
+export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
   const [missing, setMissing] = useState(false);
   if (missing) {
     return <span className="teach-avatar-placeholder" aria-hidden="true" style={{ width: size, height: size, background: avatar.color }}>{avatar.name().slice(0, 1)}</span>;

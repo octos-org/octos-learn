@@ -34,6 +34,7 @@ import {
   type RecordingEvent,
 } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
+import { syncLessonDrafts } from "./draft-sync";
 import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { NeatFormulaPanel, OctoQuestionPanel } from "./assist-panels";
@@ -119,6 +120,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const card = recording?.cards.find((candidate) => candidate.key === selected);
   const recordingTake = card ? currentTake(card) : undefined;
   const isRecording = Boolean(recordingTake);
+  // The draft is also kept with the account, a few seconds after the learner stops changing it and never mid-take.
+  const changedAt = recording?.updatedAt;
+  useEffect(() => {
+    if (!changedAt || isRecording) return;
+    const timer = setTimeout(() => { void syncLessonDrafts(localStorage, profileId).catch(() => undefined); }, 4_000);
+    return () => clearTimeout(timer);
+  }, [changedAt, isRecording, profileId]);
   const now = () => new Date(clock()).toISOString();
   const elapsed = () => Math.max(0, clock() - (takeStartedAt.current ?? clock()));
 
@@ -472,7 +480,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   return (
     <main className="teach-page teach-studio" data-recording={isRecording || undefined}>
       <header className="teach-studio-head">
-        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
+        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{recording.topic.text}</h1>
         {isRecording ? (
           <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>

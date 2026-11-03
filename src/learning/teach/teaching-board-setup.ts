@@ -31,3 +31,10 @@ export function teachingRegionLayout(events: CanonicalEvent[], width: number, he
     },
   };
 }
+
+/** The single topic a learner lesson plays as, with its cards laid out one step each. */
+export function learnerLessonTopic(events: CanonicalEvent[], title: string, language: string) {
+  const sections = nodeSections(events);
+  const stepIds = [...new Set(events.flatMap((event) => (event.step?.id ? [event.step.id] : [])))];
+  return { id: "learner-lesson", title, language, stepIds, nodeIds: Object.keys(sections), nodeSections: sections };
+}

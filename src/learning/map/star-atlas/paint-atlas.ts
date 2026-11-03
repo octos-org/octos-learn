@@ -1,5 +1,5 @@
 import { localizedCatalog, tr } from "@/i18n";
-import type { LearningMapTopic } from "../../history/history-api";
+import type { LearningMapTaught, LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
 import { frameLevel, STAR_LEVEL, type Atlas, type View } from "./atlas-model";
 
@@ -11,6 +11,8 @@ const FONT_DISPLAY = '"ZCOOL XiaoWei", "Songti SC", "STSong", serif';
 export interface PaintState {
   view: View; width: number; height: number; time: number; reduceMotion: boolean;
   lit: Map<number, LearningMapTopic>; near: Set<number>; unveil: boolean;
+  /** Stars the learner taught a saved lesson on; they wear an outer ring. */
+  taught?: Map<number, LearningMapTaught>;
   selected: number | null; hover: number | null;
   /** When the stars started igniting; null once the opening has finished. */
   igniteFrom: number | null;
@@ -48,6 +50,18 @@ function frame(ctx: CanvasRenderingContext2D, x: number, y: number, size: number
   ctx.restore();
 }
 
+/** The ring of a star the learner taught: a teal circle outside every other
+ * mark, with three small lamps turning slowly around it. */
+function taughtRing(ctx: CanvasRenderingContext2D, x: number, y: number, k: number, alpha: number, spin: number, lit: boolean) {
+  const r = (lit ? 20 : 9) * k;
+  ctx.save(); ctx.translate(x, y);
+  ctx.strokeStyle = `rgba(120,220,205,${0.8 * alpha})`; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.rotate(spin); ctx.fillStyle = `rgba(200,245,236,${alpha})`;
+  for (let n = 0; n < 3; n++) { const a = n * Math.PI * 2 / 3; ctx.beginPath(); ctx.arc(Math.cos(a) * r, Math.sin(a) * r, 1.8, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+
 /** The order explored stars ignite in during the opening: dimmest first. */
 export const igniteOrder = (s: Pick<PaintState, "lit">) => [...s.lit.keys()].sort((a, b) => STAR_LEVEL[s.lit.get(a)!.state] - STAR_LEVEL[s.lit.get(b)!.state] || a - b);
 const IGNITE_STEP = (count: number) => Math.min(260, 2600 / Math.max(1, count));
@@ -58,6 +72,13 @@ function star(ctx: CanvasRenderingContext2D, atlas: Atlas, s: PaintState, i: num
   if (x < -60 || y < -60 || x > s.width + 60 || y > s.height + 60) return;
   const topic = s.lit.get(i), k = Math.min(1.8, Math.max(0.6, s.view.k));
   const twinkle = s.reduceMotion ? 1 : 0.85 + 0.15 * Math.sin(s.time / 700 + i);
+  const taught = s.taught?.get(i);
+  if (taught) taughtRing(ctx, x, y, k, alpha, s.reduceMotion ? 0 : s.time / 5000 + i, Boolean(topic));
+  if (!topic && taught) {
+    glow(ctx, x, y, 10 * k, "120,220,205", 0.45 * twinkle * alpha);
+    ctx.fillStyle = `rgba(200,245,236,${0.95 * alpha})`; ctx.beginPath(); ctx.arc(x, y, 2.4 * k, 0, Math.PI * 2); ctx.fill();
+    return;
+  }
   if (!topic) {
     const a = (s.unveil ? 0.55 : s.near.has(i) ? 0.5 : 0) * alpha;
     if (a <= 0) return;

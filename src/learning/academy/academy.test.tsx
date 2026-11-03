@@ -186,12 +186,12 @@ it("shows the star atlas as its own page, without a second list of topics", asyn
   expect(await screen.findByRole("img", { name: /数之星域：点亮 \d+ 颗/ })).toBeTruthy();
   expect(screen.getByRole("button", { name: tr("揭开全部迷雾") })).toBeTruthy();
   expect(screen.queryByText(/按星域列出/)).toBeNull();
-  expect(screen.getByText(new RegExp(tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求；讲过：自己讲了这颗星并保存了课。这些都不等于已经掌握。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
-  expect(await screen.findByRole("img", { name: "已点亮 3 / 74 枚" })).toBeTruthy();
+  expect(await screen.findByRole("img", { name: "已点亮 3 / 80 枚" })).toBeTruthy();
   expect(within(screen.getByRole("list", { name: tr("最近获得") })).getAllByRole("button").length).toBe(3);
   expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);

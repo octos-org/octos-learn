@@ -50,3 +50,16 @@ test("days follow the learner's local calendar", () => {
   assert.equal(localDay("2026-10-21T17:30:00.000Z", 480), "2026-10-22");
   assert.equal(localDay("2026-10-21T17:30:00.000Z", 0), "2026-10-21");
 });
+
+test("a saved taught lesson marks its star map topic as taught, without changing its state", () => {
+  const store = new HistoryStore(":memory:");
+  const taught = (lesson, version, topic = "mt_WBdHkc2HTf") => ({ version: 1, id: `taught:${lesson}:${version}`, kind: "lesson_taught", occurred_at: at(22), device_id: "learner-lessons",
+    session_id: "learner-lessons", run_id: `taught:${lesson}`, data: { lesson_id: lesson, topic_id: topic, cards: 2, practice_tasks: 0, content_sha256: version.repeat(64) } });
+  store.append("alice", [taught("rec-a", "a"), taught("rec-a", "b"), taught("rec-b", "c"), taught("rec-c", "d", "mt_not_in_catalog")]);
+  const map = queryLearningMap(store, "alice", {}, approved);
+  assert.deepEqual(map.taught.map(({ topic_id, lessons }) => ({ topic_id, lessons })), [{ topic_id: "mt_WBdHkc2HTf", lessons: 2 }]);
+  assert.deepEqual(map.topics, []);
+  store.deleteRun("alice", "taught:rec-a");
+  assert.equal(queryLearningMap(store, "alice", {}, approved).taught[0].lessons, 1);
+  store.close();
+});

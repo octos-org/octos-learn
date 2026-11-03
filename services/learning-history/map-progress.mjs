@@ -63,6 +63,23 @@ export function summarizeFacts(facts, utcOffsetMinutes = 0) {
   };
 }
 
+/** Star map topics the learner taught a saved lesson on; the map draws these with an outer ring. */
+export function taughtTopics(store, owner, through) {
+  const rows = store.db.prepare(`SELECT json_extract(body,'$.data.topic_id') AS topic_id, json_extract(body,'$.data.lesson_id') AS lesson_id, occurred_at
+    FROM events WHERE owner=? AND seq<=? AND kind='lesson_taught' AND json_extract(body,'$.data.topic_id') IS NOT NULL ORDER BY occurred_at, seq`).all(owner, through);
+  const byTopic = new Map();
+  for (const row of rows) {
+    if (!topicCatalog().has(row.topic_id)) continue;
+    const entry = byTopic.get(row.topic_id) ?? { topic_id: row.topic_id, lessons: new Set(), first_at: row.occurred_at, last_at: row.occurred_at };
+    entry.lessons.add(row.lesson_id); entry.last_at = row.occurred_at;
+    byTopic.set(row.topic_id, entry);
+  }
+  return [...byTopic.values()].sort((a, b) => a.topic_id.localeCompare(b.topic_id)).map(entry => {
+    const [topic] = topicCatalog().read([entry.topic_id]);
+    return { topic_id: entry.topic_id, name: topic.name, lessons: entry.lessons.size, first_at: entry.first_at, last_at: entry.last_at };
+  });
+}
+
 export function queryLearningMap(store, owner, { through, utcOffsetMinutes = 0 } = {}, mappings = TOPIC_MAPPINGS) {
   const upper = Math.min(through ?? store.upperBound(owner), store.upperBound(owner));
   store.checkSnapshot(owner, upper);
@@ -77,6 +94,6 @@ export function queryLearningMap(store, owner, { through, utcOffsetMinutes = 0 }
   }
   return { rules_version: MAP_RULES_VERSION, taxonomy: { commit: TOPIC_TAXONOMY.commit, catalog_sha256: TOPIC_TAXONOMY.catalog_sha256 },
     through: upper, utc_offset_minutes: utcOffsetMinutes,
-    meaning: "explored = played associated teaching; practising = attempted an associated task; did-it = met a task's program check without hints. None of these is mastery.",
-    topics };
+    meaning: "explored = played associated teaching; practising = attempted an associated task; did-it = met a task's program check without hints. taught = the learner saved a lesson they taught on the topic. None of these is mastery.",
+    topics, taught: taughtTopics(store, owner, upper) };
 }

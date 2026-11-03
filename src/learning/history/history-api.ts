@@ -33,7 +33,9 @@ export interface LearningMapTopic {
   topic_id: string; subject: string; domain: string; name: string; state: MapState;
   evidence: { played_beats: number; runs: number; task_attempts: number; unassisted_successes: number; assisted_successes: number; days: string[]; first_at: string | null; last_at: string | null };
 }
-export interface LearningMap { rules_version: string; through: number; taxonomy: { commit: string }; topics: LearningMapTopic[] }
+/** A star map topic the learner taught a saved lesson on. */
+export interface LearningMapTaught { topic_id: string; name: string; lessons: number; first_at: string; last_at: string }
+export interface LearningMap { rules_version: string; through: number; taxonomy: { commit: string }; topics: LearningMapTopic[]; taught?: LearningMapTaught[] }
 export interface EarnedAchievement {
   /** An id from the shared achievement catalog. `scope` is a topic for topic-scoped ones, a year for seasonal ones, otherwise empty. */
   achievement_id: string; scope: string; topic_name: string | null;
