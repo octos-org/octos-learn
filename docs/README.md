@@ -60,6 +60,8 @@
 
 ## 专题计划
 
+- [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：头像分支已整合 M0–M6 main；当前正面 2D 画稿、完整代码/素材/验证地图、用户最新约束，以及 v2 课程包保存和正式播放接入的未完成事项。接手头像工作先读本文。
+
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。
 - [正式星狐模型交付规范](LEARNER_AVATAR_MODEL_SPEC.md)：可交给建模/绑定制作人员的通道、资产、自动检查和组合表情验收要求。
