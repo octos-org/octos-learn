@@ -1,0 +1,27 @@
+{
+  "mode": "animal",
+  "inputs": {
+    "original-face": [
+      {
+        "label": "neutral",
+        "seconds": 3.714435959
+      },
+      {
+        "label": "wink-template",
+        "seconds": 4.097530165999999
+      },
+      {
+        "label": "mouth-template",
+        "seconds": 4.164158875
+      },
+      {
+        "label": "manual-wink",
+        "seconds": 3.8758677090000013
+      },
+      {
+        "label": "both-lids",
+        "seconds": 3.894575208999999
+      }
+    ]
+  }
+}

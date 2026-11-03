@@ -1,0 +1,109 @@
+{
+  "mode": "human",
+  "torch": "2.3.0",
+  "device": "CPU 3D + Metal 2D",
+  "inputs": {
+    "original-face": {
+      "pose": {
+        "pitch": 12.719757080078125,
+        "yaw": -5.379035949707031,
+        "roll": -9.201080322265625
+      },
+      "frames": [
+        {
+          "label": "neutral",
+          "seconds": 7.175878790999995,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "blink",
+          "seconds": 4.718085792000004,
+          "eye_target": 0,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "open",
+          "seconds": 4.499353124999999,
+          "eye_target": null,
+          "lip_target": 0.28,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "turn-left",
+          "seconds": 4.3046425,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": -10
+        },
+        {
+          "label": "turn-right",
+          "seconds": 4.338872583000004,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": 10
+        },
+        {
+          "label": "blink-strong",
+          "seconds": 4.472018417000001,
+          "eye_target": -0.1,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        }
+      ]
+    },
+    "upright-face": {
+      "pose": {
+        "pitch": 8.372703552246094,
+        "yaw": -5.504692077636719,
+        "roll": -3.6583404541015625
+      },
+      "frames": [
+        {
+          "label": "neutral",
+          "seconds": 4.569925624999996,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "blink",
+          "seconds": 4.492167207999998,
+          "eye_target": 0,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "open",
+          "seconds": 4.614438957999994,
+          "eye_target": null,
+          "lip_target": 0.28,
+          "yaw_delta_degrees": 0
+        },
+        {
+          "label": "turn-left",
+          "seconds": 4.439520000000002,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": -10
+        },
+        {
+          "label": "turn-right",
+          "seconds": 4.958108124999995,
+          "eye_target": null,
+          "lip_target": null,
+          "yaw_delta_degrees": 10
+        },
+        {
+          "label": "blink-strong",
+          "seconds": 8.180392542000007,
+          "eye_target": -0.1,
+          "lip_target": null,
+          "yaw_delta_degrees": 0
+        }
+      ]
+    }
+  }
+}
