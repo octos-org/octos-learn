@@ -8,6 +8,8 @@
 
 **最新互动修正：** 用户进一步澄清需要与三维版一样可操作的效果。`/teach/avatar-2d` 与 `/teach/avatar-lab` 现已共用[二维互动试验室](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准、录制/回放、本机库、八个连续滑杆和配音试听均接入二维舞台。固定讲课示例迁至 `/teach/avatar-2d/example`，聊天内另提供不依赖摄像头的直接拖动版本。真实相机质量与浏览器整页验收仍未完成。
 
+**最新美术修正：** 用户明确否定简化卡通与原图的差距，要求原图效果。现已直接使用 `concept-thinking.png`，仅取生成编辑图的局部眼睛/嘴部素材参与动画，头部做有限纹理形变；详见[原始插画驱动](LEARNER_AVATAR_ORIGINAL_ART.md)。自然状态的实际像素与同位置绘制源 PNG 一致。最终 191 文件/1639 项通过、构建/TypeScript/中英消息通过；真人与大屏验收仍待完成。
+
 独立分支 `codex/avatar-capture-prototype`。从已更新的 `origin/main` 创建后，快进包含录课候选 `claude/learner-m5` 的提交，以复用尚未合并的 M5；没有合并远端 PR。
 
 用户已确认有可测试的 iPhone/iPad，电视先使用此前项目的安卓触摸大屏。
