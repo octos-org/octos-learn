@@ -2659,5 +2659,19 @@
   "播放课程": "Play lesson",
   "播放声音": "Play sound",
   "显示动态头像预览": "Show animated avatar preview",
-  "选择一个 .olesson 文件开始观看。": "Choose an .olesson file to start watching."
+  "选择一个 .olesson 文件开始观看。": "Choose an .olesson file to start watching.",
+  "星狐三维小样": "Star fox 3D sample",
+  "正在载入星狐…": "Loading star fox…",
+  "星狐小样 · 第一版": "Star fox sample · First version",
+  "这是第一版星狐三维小样。可以定格检查表情，也可以播放动作或配音；外形和组合表情仍在打磨。": "This is the first star fox 3D sample. Inspect a pose or play motion and audio; appearance and combined expressions are still being refined.",
+  "当前使用星狐三维小样和基础嘴型，外形、组合表情与精细发音仍在完善。": "This uses a star fox 3D sample and basic mouth motion. Appearance, combined expressions and precise speech shapes are still being refined.",
+  "星狐定格检查": "Star fox pose review",
+  "定格检查": "Inspect pose",
+  "自然正面": "Neutral front",
+  "张嘴": "Open mouth",
+  "闭唇": "Closed lips",
+  "圆唇": "Rounded lips",
+  "微笑开口": "Smile and speak",
+  "双眼闭合": "Both eyes closed",
+  "侧面检查": "Inspect side view"
 }

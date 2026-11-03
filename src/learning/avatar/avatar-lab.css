@@ -40,6 +40,11 @@
 .avatar-lab-whiteboard .teach-board-frame { display: block; }
 .avatar-lab-whiteboard .teach-board { position: relative; min-height: 330px; height: 330px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 12px; background: #fbf9f3; }
 .avatar-lab-error { padding: 14px; color: #8e371e; background: #fbe4da; border-radius: 12px; }
+.avatar-lab-pose { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+.avatar-lab-pose > span { font-size: 13px; color: #617384; margin-right: 4px; }
+.avatar-lab-pose button { padding: 8px 12px; border: 1px solid #c9d2da; border-radius: 999px; background: #fffef9; color: #24394b; font: inherit; font-size: 13px; cursor: pointer; }
+.avatar-lab-pose button:hover { border-color: #273e75; background: #edf1f7; }
+.avatar-model-loading { position: absolute; left: 0; right: 0; top: 45%; text-align: center; color: #617384; font-size: 13px; }
 .avatar-lab-library, .avatar-lab-samples { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
 .avatar-lab-library h2, .avatar-lab-samples h2 { margin: 0; font-size: 18px; }
 .avatar-lab-library p, .avatar-lab-samples p { color: #617384; font-size: 13px; line-height: 1.65; }

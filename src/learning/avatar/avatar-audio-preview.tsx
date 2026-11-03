@@ -83,7 +83,7 @@ export function AvatarAudioPreview() {
     <div className="avatar-audio-grid">
       <div className="avatar-audio-stage">
         <AvatarStage frame={frame} fpsLimit={30} active={playing} onMetrics={ignoreMetrics} onError={onGraphicsError} />
-        <span className="avatar-lab-stage-label">{tr("工程测试角色")}</span>
+        <span className="avatar-lab-stage-label">{tr("星狐小样 · 第一版")}</span>
       </div>
       <div className="avatar-audio-controls">
         <div className="avatar-lab-actions">

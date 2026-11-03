@@ -25,12 +25,12 @@ export default function LessonAvatarPreview({ track, clock, playing, preparing }
   return <aside className="teach-watch-avatar" aria-label={tr("课程动态头像预览")}>
     <div className="teach-watch-avatar-stage">
       {!failed && <AvatarStage frame={frame} fpsLimit={30} active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />}
-      <span>{tr("工程测试角色")}</span>
+      <span>{tr("星狐小样 · 第一版")}</span>
     </div>
     <p role="status">{failed ? tr("这台设备暂时无法显示动态头像，声音和白板仍可播放。")
       : preparing ? tr("正在准备配音…") : !playing ? tr("播放课程时，头像会跟随配音。")
         : !track ? tr("这张卡片没有配音嘴型。") : clock ? tr("正在跟随课程配音")
           : tr("当前播放方式暂不支持头像同步，声音和白板仍可播放。")}</p>
-    <small>{tr("当前使用工程测试角色和基础嘴型，正式星狐与精细发音仍待完善。")}</small>
+    <small>{tr("当前使用星狐三维小样和基础嘴型，外形、组合表情与精细发音仍在完善。")}</small>
   </aside>;
 }

@@ -12,7 +12,7 @@ import { AvatarAudioPreview } from "./avatar-audio-preview";
 import { EXPRESSION_SAMPLES, expressionSample } from "./expression-samples";
 import { FaceCapture, selfTestFaceModel, type CaptureError, type CaptureState } from "./face-capture";
 import { demoFaceFrame, FaceSmoother, neutralFrame, type FaceFrame } from "./face-frame";
-import { MAX_TRACK_MS, parseAvatarTrack, percentile, PerformanceRecorder, sampleAvatarTrack, type AvatarTrack } from "./performance-track";
+import { AVATAR_TRACK_SCHEMA, MAX_TRACK_MS, parseAvatarTrack, percentile, PerformanceRecorder, sampleAvatarTrack, type AvatarTrack } from "./performance-track";
 import "../teach/teach.css";
 import "./avatar-lab.css";
 
@@ -47,13 +47,11 @@ export default function AvatarLabPage() {
   const inputFrame = useRef<FaceFrame>(neutralFrame());
   const smoother = useRef(new FaceSmoother());
   const recorder = useRef(new PerformanceRecorder());
-  const controls = useRef({ mode, track, replayPlaying, replayTime });
   const playback = useRef({ anchor: 0, offset: 0 });
   const sourceRevision = useRef(0);
   const [inkId] = useState(() => `avatar-lab-${getSelectedProfileId() ?? "local"}`);
   const captureSamples = useRef<{ processing: number[]; pipeline: number[]; lastReport: number }>({ processing: [], pipeline: [], lastReport: 0 });
 
-  useEffect(() => { controls.current = { mode, track, replayPlaying, replayTime }; }, [mode, track, replayPlaying, replayTime]);
   const finishRecording = useCallback(() => {
     if (!recorder.current.recording) return;
     const value = recorder.current.finish(performance.now());
@@ -92,7 +90,7 @@ export default function AvatarLabPage() {
   }, [finishRecording]);
 
   const getFrame = useCallback((now: number) => {
-    const state = controls.current;
+    const state = { mode, track, replayPlaying, replayTime };
     let frame: FaceFrame;
     if (state.mode === "replay" && state.track) {
       const time = state.replayPlaying ? Math.min(state.track.durationMs, playback.current.offset + now - playback.current.anchor) : state.replayTime;
@@ -106,7 +104,7 @@ export default function AvatarLabPage() {
     const displayed = smoother.current.update(frame, now);
     if (recorder.current.recording && !recorder.current.append(displayed, now)) finishRecording();
     return displayed;
-  }, [finishRecording]);
+  }, [finishRecording, mode, track, replayPlaying, replayTime]);
 
   useEffect(() => {
     if (!replayPlaying || !track) return;
@@ -117,12 +115,12 @@ export default function AvatarLabPage() {
     return () => clearInterval(timer);
   }, [replayPlaying, track]);
 
-  const stop = () => {
+  const stop = useCallback(() => {
     sourceRevision.current++;
     modelCheckAbort.current?.abort(); modelCheckAbort.current = null; setModelCheck("idle");
     capture.current?.stop(); finishRecording(); setReplayPlaying(false); setMode("idle");
     inputFrame.current = neutralFrame(); smoother.current.reset();
-  };
+  }, [finishRecording]);
   const demo = () => { stop(); setError(null); setMode("demo"); };
   const startCamera = () => {
     stop(); setError(null); setMode("camera");
@@ -141,10 +139,10 @@ export default function AvatarLabPage() {
     setReplayTime(Math.min(track?.durationMs ?? 0, playback.current.offset + performance.now() - playback.current.anchor));
     setReplayPlaying(false);
   };
-  const openTrack = (value: AvatarTrack, play = false) => {
+  const openTrack = useCallback((value: AvatarTrack, play = false) => {
     stop(); setTrack(value); setReplayTime(0); setMode("replay"); setError(null);
     playback.current = { anchor: performance.now(), offset: 0 }; setReplayPlaying(play);
-  };
+  }, [stop]);
   const download = (value: unknown, filename: string) => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: "application/json" }));
     const link = document.createElement("a"); link.href = url; link.download = filename; link.click();
@@ -161,11 +159,26 @@ export default function AvatarLabPage() {
       <div className="course-launcher-inner">
         <AcademyHeader />
         <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("动态头像试验室")}</h1></div><span>{tr("技术预览")}</span></div>
-        <p className="avatar-lab-intro">{tr("先试试表情跟随，再在白板上写几笔。当前角色是工程测试模型，星狐正式模型仍需制作。")}</p>
+        <p className="avatar-lab-intro">{tr("这是第一版星狐三维小样。可以定格检查表情，也可以播放动作或配音；外形和组合表情仍在打磨。")}</p>
+        <div className="avatar-lab-pose" aria-label={tr("星狐定格检查")}>
+          <span>{tr("定格检查")}</span>
+          {[
+            { label: tr("自然正面"), channels: {}, rotation: [0, 0, 0] },
+            { label: tr("张嘴"), channels: { jawOpen: .9 }, rotation: [0, 0, 0] },
+            { label: tr("闭唇"), channels: { jawOpen: .9, mouthClose: 1 }, rotation: [0, 0, 0] },
+            { label: tr("圆唇"), channels: { mouthPucker: .9 }, rotation: [0, 0, 0] },
+            { label: tr("微笑开口"), channels: { mouthSmileLeft: .8, mouthSmileRight: .8, jawOpen: .65 }, rotation: [0, 0, 0] },
+            { label: tr("双眼闭合"), channels: { eyeBlinkLeft: 1, eyeBlinkRight: 1 }, rotation: [0, 0, 0] },
+            { label: tr("侧面检查"), channels: { jawOpen: .65 }, rotation: [0, -.65, 0] },
+          ].map((pose) => <button key={pose.label} type="button" onClick={() => {
+            const frame: FaceFrame = { timeMs: 0, source: "demo", tracked: true, channels: pose.channels, rotation: pose.rotation as FaceFrame["rotation"] };
+            openTrack({ schema: AVATAR_TRACK_SCHEMA, durationMs: 1000, frames: [frame, { ...frame, timeMs: 1000 }] });
+          }}>{pose.label}</button>)}
+        </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <AvatarStage frame={getFrame} fpsLimit={fpsLimit} active={mode !== "idle"} onMetrics={setMetrics} onError={onGraphicsError} />
-            <span className="avatar-lab-stage-label">{tr("工程测试角色")}</span>
+            <AvatarStage frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <span className="avatar-lab-stage-label">{tr("星狐小样 · 第一版")}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录表情片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>

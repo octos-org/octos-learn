@@ -2,11 +2,13 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { CaptureCallbacks } from "./face-capture";
+import type { FaceFrame } from "./face-frame";
 
 const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbacks: null as CaptureCallbacks | null }));
+const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
-vi.mock("./avatar-stage", () => ({ AvatarStage: () => <div /> }));
+vi.mock("./avatar-stage", () => ({ AvatarStage: ({ frame, active }: { frame: (now: number) => FaceFrame; active: boolean }) => { stageMock.frame = frame; stageMock.active = active; return <div />; } }));
 vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
@@ -30,6 +32,16 @@ it("does not open the camera on entry or when checking the local model", async (
   fireEvent.click(screen.getByRole("button", { name: "自检表情模型" }));
   await screen.findByText("表情模型自检通过，未使用摄像头。");
   expect(captureMock.starts).not.toHaveBeenCalled();
+});
+
+it("inspects fixed model poses without opening the camera or running continuous animation", () => {
+  open(); fireEvent.click(screen.getByRole("button", { name: "双眼闭合", exact: true }));
+  expect(captureMock.starts).not.toHaveBeenCalled();
+  expect(stageMock.active).toBe(false);
+  expect(stageMock.frame!(0).channels).toEqual({ eyeBlinkLeft: 1, eyeBlinkRight: 1 });
+  fireEvent.click(screen.getByRole("button", { name: "侧面检查", exact: true }));
+  expect(stageMock.frame!(0).rotation).toEqual([0, -.65, 0]);
+  expect(stageMock.frame!(0).source).toBe("demo");
 });
 
 it("cannot record a pending permission request and releases capture when leaving", () => {
