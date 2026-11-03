@@ -2,7 +2,7 @@ import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes } from "./painted-eyes";
 
-const root = "teach-avatars/star-fox/painted-v0.1/";
+const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png` } as const;
 export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource>;
 type Point = [number, number];
@@ -14,7 +14,7 @@ const smooth = (v: number) => { v = bounded(v); return v * v * (3 - 2 * v); };
 export const paintedBlinkAmount = (score: number, source: FaceFrame["source"]) => source === "mediapipe"
   ? smooth((bounded(score) - .06) / .74) : bounded(score);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
-const mouthCurve: Point[] = [[220,280],[230,282],[240,286],[253,286],[266,283],[276,281],[286,284],[295,286],[305,281],[315,280]];
+const mouthCurve: Point[] = [[224,272],[235,276],[247,277],[260,274],[272,277],[284,276],[296,272]];
 function curve(points: Point[], x: number) {
   for (let i = 1; i < points.length; i++) if (x <= points[i][0]) {
     const a = points[i - 1], b = points[i], t = bounded((x - a[0]) / (b[0] - a[0]));
@@ -35,13 +35,13 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   const pixels = (image: CanvasImageSource) => { ctx.clearRect(0, 0, 512, 512); ctx.drawImage(image, 0, 0, 512, 512); return ctx.getImageData(0, 0, 512, 512); };
   const source = pixels(images.base), oral = pixels(images.mouth), browClean = pixels(images.brows);
   const eyes = preparePaintedEyes(surface, images.base, images.clean);
-  const mouthRect = { x: 210, y: 263, w: 120, h: 65 };
+  const mouthRect = { x: 210, y: 254, w: 104, h: 66 };
   const { x: mx, y: my, w: mw, h: mh } = mouthRect;
   const mouthBase = new Float32Array(mw * mh * 3), upper = new Float32Array(mw * mh * 4), lower = new Float32Array(mw * mh * 4), interior = new Float32Array(512 * 512 * 4);
   const mouthOutput = ctx.createImageData(mw, mh);
   for (let x = 0; x < mw; x++) for (let y = 0; y < mh; y++) {
     const px = mx + x, py = my + y, k = y * mw + x, i = (py * 512 + px) * 4;
-    const matte = smooth((px - 218) / 6) * smooth((315 - px) / 6) * smooth((10 - Math.abs(py - curve(mouthCurve, px))) / 3);
+    const matte = smooth((px - 222) / 5) * smooth((298 - px) / 5) * smooth((10 - Math.abs(py - curve(mouthCurve, px))) / 3);
     const u = bounded(.5 + (curve(mouthCurve, px) - py) / 2);
     upper[k * 4 + 3] = matte * u; lower[k * 4 + 3] = matte * (1 - u);
     for (let c = 0; c < 3; c++) {
@@ -62,8 +62,8 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     interior[i * 4 + 3] = a;
   }
   const brows = [
-    { rect: [145,137,90,45], points: [[151,165],[170,154],[190,155],[211,161],[226,170]] },
-    { rect: [300,138,80,45], points: [[307,166],[325,155],[346,156],[370,167]] },
+    { rect: [145,136,100,48], points: [[154,160],[173,153],[192,151],[212,154],[234,162]] },
+    { rect: [277,136,103,48], points: [[285,161],[306,154],[326,151],[348,153],[370,160]] },
   ].map(({ rect, points }) => {
     const [x,y,w,h] = rect, base = new Float32Array(w*h*3), residual = new Float32Array(w*h*4), output = ctx.createImageData(w,h);
     for(let xx=0;xx<w;xx++)for(let yy=0;yy<h;yy++) {
@@ -77,16 +77,17 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   function paintMouth(open: number, round: number, smile: number) {
     if (open === 0 && round === 0 && smile === 0) return;
     const scaleX = (1 - .32 * open) * (1 - .45 * round) * (1 + .18 * smile);
-    const center = mix(266,272,open);
+    const center = 260;
     for (let x = 0; x < mw; x++) {
-      const px = mx + x, sx = 266 + (px - center) / scaleX, cy = curve(mouthCurve, sx), ox = 272 + (px - center) / (1.5 * scaleX);
-      const ix = Math.max(0, Math.min(510, Math.floor(ox))), fraction = bounded(ox-ix), top = mix(roof[ix],roof[ix+1],fraction), bottom = mix(floor[ix],floor[ix+1],fraction);
-      const lift = -smile * 3 * Math.min(1, ((sx - 266) / 38) ** 2);
+      const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(mouthCurve, sx), ox = 272 + (px - center) / (1.5 * scaleX);
+      // Reuse the painted oral interior; the new neutral mouth is 10px higher.
+      const ix = Math.max(0, Math.min(510, Math.floor(ox))), fraction = bounded(ox-ix), top = mix(roof[ix],roof[ix+1],fraction)-10, bottom = mix(floor[ix],floor[ix+1],fraction)-10;
+      const lift = -smile * 3 * Math.min(1, ((sx - center) / 32) ** 2);
       const uy = mix(cy, top, open) + lift, ly = mix(cy, bottom, open) + lift;
       for (let y = 0; y < mh; y++) {
         const py = my + y, k = y * mw + x, syU = py - uy + cy - my, syL = py - ly + cy - my;
         const uw = sample(upper,mw,mh,sx-mx,syU,3), lw = sample(lower,mw,mh,sx-mx,syL,3), norm = Math.max(1, uw + lw);
-        const oy = open > 0 ? cy + (py - cy - lift) / open : -100;
+        const oy = open > 0 ? cy + (py - cy - lift) / open + 10 : -100;
         const alpha = sample(interior,512,512,ox,oy,3);
         const coverage = Math.min(1,open*Math.max(0,bottom-top));
         // Interior coverage tends to zero with opening area, rather than popping on.
@@ -115,9 +116,9 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push([x*512/cols,y*512/rows]);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+1,c=a+cols+1;triangles.push([a,b,c],[b,c+1,c]);}
   function headPoint([x,y]:Point,pitch:number,yaw:number,roll:number):Point {
-    const weight=(1-smooth((y-300)/75))*smooth(x/30)*smooth((512-x)/30)*smooth(y/28),dx=x-277,dy=y-305;
+    const weight=(1-smooth((y-290)/85))*smooth(x/30)*smooth((512-x)/30)*smooth(y/28),dx=x-256,dy=y-337;
     // Shallow portrait parallax; it does not invent a hidden side of the face.
-    const depth=Math.exp(-((dx/150)**2+((y-215)/175)**2));
+    const depth=Math.exp(-((dx/150)**2+((y-205)/175)**2));
     return [x+((Math.cos(roll)-1)*dx-Math.sin(roll)*dy+yaw*(10+18*depth))*weight,
       y+(Math.sin(roll)*dx+(Math.cos(roll)-1)*dy+pitch*(8+14*depth))*weight];
   }
