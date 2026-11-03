@@ -40,8 +40,8 @@ export function AtlasPage() {
           {error && <p role="status">{tr("暂时读不到星图，请稍后再试。")}</p>}
           {!error && !map && <p role="status">{tr("正在读取星图…")}</p>}
           {map && <>
-            <StarAtlas topics={map.topics} onAsk={(draft) => navigate(newBoardHref(draft))} />
-            <p className="academy-muted">{tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。")}</p>
+            <StarAtlas topics={map.topics} taught={map.taught} onAsk={(draft) => navigate(newBoardHref(draft))} />
+            <p className="academy-muted">{tr("已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求；讲过：自己讲了这颗星并保存了课。这些都不等于已经掌握。")}</p>
           </>}
         </section>
       </div>

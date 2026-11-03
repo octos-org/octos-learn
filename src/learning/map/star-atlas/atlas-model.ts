@@ -1,4 +1,4 @@
-import type { LearningMapTopic, MapState } from "../../history/history-api";
+import type { LearningMapTaught, LearningMapTopic, MapState } from "../../history/history-api";
 import atlasJson from "./atlas.json";
 
 /** One star per catalog topic, laid out once by scripts/build-star-atlas.mjs. */
@@ -28,19 +28,26 @@ export function buildAtlas(source: { rings: number[]; domains: string[]; topics:
 
 export const STAR_LEVEL: Record<MapState, 1 | 2 | 3> = { explored: 1, practising: 2, "did-it": 3 };
 
-/** The learner's stars on this atlas. Topics outside it (other subjects)
- * are returned separately so the page can still list them. */
-export function placeTopics(atlas: Atlas, topics: LearningMapTopic[]) {
+/** The learner's stars on this atlas, and the ones they taught. Topics
+ * outside it (other subjects) are returned separately so the page can still list them. */
+export function placeTopics(atlas: Atlas, topics: LearningMapTopic[], taughtTopics: LearningMapTaught[] = []) {
   const lit = new Map<number, LearningMapTopic>();
   const elsewhere: LearningMapTopic[] = [];
   for (const topic of topics) {
     const index = atlas.byId.get(topic.topic_id);
     if (index === undefined) elsewhere.push(topic); else lit.set(index, topic);
   }
-  // The mist thins only next to a star the learner has been to.
+  const taught = new Map<number, LearningMapTaught>();
+  for (const topic of taughtTopics) {
+    const index = atlas.byId.get(topic.topic_id);
+    if (index !== undefined) taught.set(index, topic);
+  }
+  // The mist thins only next to a star the learner has been to or taught.
   const near = new Set<number>();
-  for (const index of lit.keys()) for (const other of [...atlas.prerequisites[index], ...atlas.leadsTo[index]]) if (!lit.has(other)) near.add(other);
-  return { lit, near, elsewhere };
+  for (const index of new Set([...lit.keys(), ...taught.keys()])) {
+    for (const other of [...atlas.prerequisites[index], ...atlas.leadsTo[index]]) if (!lit.has(other) && !taught.has(other)) near.add(other);
+  }
+  return { lit, taught, near, elsewhere };
 }
 
 /** A star's frame grows with the number of different days it was practised:

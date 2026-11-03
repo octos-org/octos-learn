@@ -26,12 +26,13 @@ function decodeSynced(value: unknown): Record<string, SyncedDraft> {
 }
 
 function loadSynced(storage: Storage, profileId: string) {
-  return loadRecoverableJson({ storage, key: draftSyncKey(profileId), fallback: () => ({}), decode: decodeSynced });
+  return loadRecoverableJson<Record<string, SyncedDraft>>({ storage, key: draftSyncKey(profileId), fallback: () => ({}), decode: decodeSynced });
 }
 
 export function forgetSyncedDraft(storage: Storage, profileId: string, id: string) {
-  const { [id]: _gone, ...rest } = loadSynced(storage, profileId);
-  writeRecoverableJson(storage, draftSyncKey(profileId), rest);
+  const synced = loadSynced(storage, profileId);
+  delete synced[id];
+  writeRecoverableJson(storage, draftSyncKey(profileId), synced);
 }
 
 /** The handwriting a recording uses, by snapshot id. */

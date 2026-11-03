@@ -78,7 +78,8 @@ export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest"
  * catalog achievement ({name} is its name). */
 /** Achievements that grant a title get a line of their own. */
 export type TitledAchievementId = "hundred-stars" | "many-stars" | "three-domains" | "thirty-days" | "hundred-days" | "fifty-alone"
-  | "fifty-questions" | "alan-30" | "doudou-30" | "sufei-30" | "three-teachers" | "night-owl" | "early-star" | "old-friend" | "pi-day" | "leap-day";
+  | "fifty-questions" | "alan-30" | "doudou-30" | "sufei-30" | "three-teachers" | "night-owl" | "early-star" | "old-friend" | "pi-day" | "leap-day"
+  | "ten-lessons";
 export type AwardRarity = AchievementDefinition["rarity"];
 /** Plain award wording: the four first awards each have a line; `other`
  * ({name} is the award's name) covers the rest. */
@@ -176,6 +177,7 @@ export const TEACHERS: readonly TeacherDefinition[] = localizedCatalog([
         "old-friend": "一百节课。我们是老朋友了。",
         "pi-day": "三月十四日，和圆一起过。π 写不完，问题也是。",
         "leap-day": "二月二十九日，四年才有一次。这节课，值得记住。",
+        "ten-lessons": "十节课，都是你自己讲的。我也坐在下面听过几回。",
       },
     },
     report: {
@@ -278,6 +280,7 @@ export const TEACHERS: readonly TeacherDefinition[] = localizedCatalog([
         "old-friend": "一百节课！老朋友，来，击个掌！",
         "pi-day": "π 日快乐！今天的圆，都在为你转圈圈！",
         "leap-day": "闰日！四年才一次的日子，被你用来上课啦！",
+        "ten-lessons": "十节课！小先生，下一节我要坐第一排！",
       },
     },
     report: {
@@ -379,6 +382,7 @@ export const TEACHERS: readonly TeacherDefinition[] = localizedCatalog([
         "old-friend": "一百节课。这个数字，我不需要再核对。",
         "pi-day": "三月十四日，一节关于圆的课。π 的朋友，确认。",
         "leap-day": "二月二十九日的一节课。四年一次，记录在案。",
+        "ten-lessons": "十节课，每一节都讲清了来处。小先生，名副其实。",
       },
     },
     report: {
