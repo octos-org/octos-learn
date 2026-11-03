@@ -1,0 +1,128 @@
+// Plays a lesson from "My lessons" the way its viewers will see it: from the
+// saved package only, so no model, no speech service and no key is needed.
+// The course player lets the viewer pause and try the board's components,
+// and opens the lesson's "Your turn" practice when the lesson ends.
+
+import { tr } from "@/i18n";
+import { useLocale } from "@/i18n/use-locale";
+import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+
+import { AcademyHeader } from "../academy/academy-header";
+import { holdAwards } from "../academy/award-events";
+import { LearningWhiteboard } from "../oll/oll-lesson-runtime";
+import { useOllLessonRuntime } from "../oll/use-oll-lesson-runtime";
+import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
+import { fetchLessonPackage } from "./learner-lessons-api";
+import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
+import { readStoredLearnerPackage } from "./learner-package-store";
+import { presenterAvatar } from "./presenters";
+import { AvatarPicture } from "./teach-watch-page";
+import { learnerLessonTopic } from "./teaching-board-setup";
+import "./teach.css";
+
+type Loaded = { status: "loading" } | { status: "missing" } | { status: "ready"; lesson: LoadedLearnerPackage };
+
+/** The saved package, or the one made on this device when the service cannot be reached. */
+async function loadPackage(id: string): Promise<Loaded> {
+  try {
+    return { status: "ready", lesson: await readLearnerPackage(await fetchLessonPackage(id)) };
+  } catch {
+    const stored = await readStoredLearnerPackage(id).catch(() => undefined);
+    return stored ? { status: "ready", lesson: await readLearnerPackage(stored.archive) } : { status: "missing" };
+  }
+}
+
+export function TeachLessonPlayerPage() {
+  useLocale();
+  const { id } = useParams();
+  const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    void loadPackage(id).then((state) => { if (active) setLoaded(state); });
+    return () => { active = false; };
+  }, [id]);
+  const lesson = loaded.status === "ready" ? loaded.lesson : undefined;
+  const topics = useMemo(() => (lesson ? [learnerLessonTopic(lesson.events, lesson.manifest.title, lesson.manifest.language)] : undefined), [lesson]);
+  const cards = lesson?.events.flatMap((event) => event.step?.beats ?? []).length ?? 0;
+
+  const [sound, setSound] = useState(true);
+  const runtime = useOllLessonRuntime({
+    source: lesson?.source ?? null,
+    storageKey: `octos-learn:teach-lesson:${id ?? "none"}:${lesson?.manifest.contentSha256 ?? ""}`,
+    narrationTiming: sound ? "external" : "estimated",
+    topics,
+  });
+  const runtimeRef = useRef(runtime);
+  useEffect(() => { runtimeRef.current = runtime; }, [runtime]);
+  const onStart = useCallback((beatId: string) => runtimeRef.current?.startNarration(beatId), []);
+  const onComplete = useCallback((beatId: string) => runtimeRef.current?.completeNarration(beatId), []);
+  const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
+  const resolveAudio = useCallback((beatId: string, text: string) => lesson?.narration(beatId, text) ?? null, [lesson]);
+  const narration = useOllNarrationTts({
+    language: lesson?.manifest.language,
+    enabled: sound && Boolean(lesson),
+    playing: Boolean(runtime?.playing && runtime.activeSpeech.trim()),
+    text: runtime?.activeSpeech ?? "",
+    narrationId: runtime?.currentBeatId,
+    upcomingText: runtime?.nextNarration?.text,
+    upcomingNarrationId: runtime?.nextNarration?.beatId,
+    prefetchEnabled: true,
+    voices: null,
+    resolveAudio,
+    onPlaybackStart: onStart,
+    onPlaybackComplete: onComplete,
+    onPlaybackEnd: onEnd,
+  });
+  const playing = Boolean(runtime?.playing);
+  useEffect(() => {
+    holdAwards("teach-lesson-player", playing);
+    return () => holdAwards("teach-lesson-player", false);
+  }, [playing]);
+
+  if (loaded.status !== "ready" || !lesson) {
+    return (
+      <main className="course-launcher academy-page teach-page">
+        <div className="course-launcher-inner">
+          <AcademyHeader />
+          {loaded.status === "loading" ? <p role="status">{tr("正在打开这节课…")}</p> : <p role="alert">{tr("找不到这节课。它可能已经删除，或者还没有保存。")}</p>}
+          <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        </div>
+      </main>
+    );
+  }
+
+  const card = !runtime ? 0 : runtime.completed ? cards : Math.min(cards, runtime.beatIndex + 1);
+  const avatar = presenterAvatar(lesson.manifest.author.avatar_ref.replace(/^avatar:/, ""));
+  return (
+    <main className="teach-page teach-studio teach-watch">
+      <header className="teach-studio-head">
+        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        <h1>{lesson.manifest.title}</h1>
+        <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: cards })}</span>
+      </header>
+      <section className="teach-watch-stage" aria-label={tr("这节课")}>
+        <LearningWhiteboard runtime={runtime} resolveAsset={lesson.resolveAsset} />
+      </section>
+      <div className="teach-watch-bar">
+        <AvatarPicture avatar={avatar} size={44} />
+        <button type="button" className="teach-primary" disabled={!runtime}
+          onClick={() => (runtime?.completed ? runtime.restart() : runtime?.playing ? runtime.pause() : runtime?.play())}>
+          {runtime?.playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+          {runtime?.completed ? tr("再看一遍") : runtime?.playing ? tr("暂停播放") : tr("播放这节课")}
+        </button>
+        <button type="button" className="teach-icon-button" aria-label={tr("从头开始")} disabled={!runtime} onClick={() => runtime?.restart()}>
+          <RotateCcw size={18} aria-hidden="true" />
+        </button>
+        <button type="button" className="teach-icon-button" aria-pressed={!sound} aria-label={sound ? tr("关掉声音") : tr("打开声音")} onClick={() => setSound(!sound)}>
+          {sound ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
+        </button>
+        <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
+      </div>
+      {!runtime?.playing && !runtime?.completed && card > 1 && <p className="academy-muted teach-notice">{tr("暂停的时候，可以自己拖一拖、转一转白板上的图。")}</p>}
+      {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}
+    </main>
+  );
+}

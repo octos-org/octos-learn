@@ -12,12 +12,12 @@ const day = (d, hour = 8) => `${d}T${String(hour).padStart(2, "0")}:00:00.000Z`;
 const run = (events, extra = {}) => accountAwards({ events, factsByTopic: new Map(), topics: [], teacherOfRun: () => null, ...extra });
 const earned = result => new Map(result.awards.map(award => [`${award.achievement_id}${award.scope ? `@${award.scope}` : ""}`, award.event.id]));
 
-test("the catalog has 74 achievements in 8 categories, unique titles, and no mastery claims", () => {
-  assert.equal(ACHIEVEMENTS.length, 74);
-  assert.equal(new Set(ACHIEVEMENTS.map(item => item.id)).size, 74);
-  assert.deepEqual(ACHIEVEMENT_CATEGORIES.map(category => ACHIEVEMENTS.filter(item => item.category === category.id).length), [10, 9, 9, 8, 8, 10, 10, 10]);
-  assert.equal(TITLES.length, 17);
-  assert.equal(new Set(TITLES.map(title => title.name)).size, 17);
+test("the catalog has 80 achievements in 9 categories, unique titles, and no mastery claims", () => {
+  assert.equal(ACHIEVEMENTS.length, 80);
+  assert.equal(new Set(ACHIEVEMENTS.map(item => item.id)).size, 80);
+  assert.deepEqual(ACHIEVEMENT_CATEGORIES.map(category => ACHIEVEMENTS.filter(item => item.category === category.id).length), [10, 9, 9, 8, 8, 10, 6, 10, 10]);
+  assert.equal(TITLES.length, 18);
+  assert.equal(new Set(TITLES.map(title => title.name)).size, 18);
   for (const item of ACHIEVEMENTS) {
     assert.ok(["b", "s", "g", "x"].includes(item.rarity), item.id);
     assert.doesNotMatch(`${item.name}${item.condition}`, /掌握|学会|精通|满分/, item.id);
@@ -123,4 +123,19 @@ test("seasonal awards repeat per year and follow the lunar table", () => {
   assert.equal(got.get("national-day@2026"), events[8].id);
   assert.equal(got.get("pi-day@2027"), circle[0].id);
   for (const award of result.awards) assert.ok(ACHIEVEMENT_BY_ID.has(award.achievement_id));
+});
+
+test("teaching awards count each saved lesson once and follow what the lesson holds", () => {
+  const taught = (when, lesson, data = {}) => ev("lesson_taught", when, { lesson_id: lesson, cards: 2, practice_tasks: 0, content_sha256: "a".repeat(64), ...data }, { run: `taught:${lesson}`, session: "learner-lessons" });
+  const events = [taught(day("2026-11-01"), "one"), taught(day("2026-11-02"), "one"), taught(day("2026-11-03"), "two", { topic_id: "mt_slope" }),
+    taught(day("2026-11-04"), "three", { practice_tasks: 1, topic_id: "mt_lit" })];
+  const result = run(events, { topics: [{ topic_id: "mt_lit", state: "did-it", name: "x" }] });
+  const got = earned(result);
+  assert.equal(got.get("first-lesson"), events[0].id);
+  assert.equal(got.get("three-lessons"), events[3].id);
+  assert.equal(got.get("teach-a-star"), events[2].id);
+  assert.equal(got.get("teach-lit-star"), events[3].id);
+  assert.equal(got.get("your-turn"), events[3].id);
+  assert.deepEqual(result.progress.get("ten-lessons"), { current: 3, target: 10 });
+  assert.equal(earned(run([taught(day("2026-11-01"), "one")])).has("teach-lit-star"), false);
 });

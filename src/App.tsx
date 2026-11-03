@@ -22,6 +22,8 @@ import { RecordsPage } from "./learning/academy/records-page";
 import { TeachPlanPage } from "./learning/teach/teach-plan-page";
 import { TeachStudioPage } from "./learning/teach/teach-studio-page";
 import { TeachWatchPage } from "./learning/teach/teach-watch-page";
+import { TeachLessonsPage } from "./learning/teach/teach-lessons-page";
+import { TeachLessonPlayerPage } from "./learning/teach/teach-lesson-player-page";
 import { AwardHost } from "./learning/academy/award-host";
 import { lazy, Suspense } from "react";
 
@@ -89,6 +91,8 @@ export function AppRoutes() {
         <Route path="/teach/avatar-2d" element={<Suspense fallback={null}><AvatarLabPage /></Suspense>} />
         <Route path="/teach/avatar-2d/example" element={<Suspense fallback={null}><IllustratedAvatarPage /></Suspense>} />
         <Route path="/teach/package" element={<Suspense fallback={null}><LearnerPackageViewer /></Suspense>} />
+        <Route path="/teach/lessons" element={<TeachLessonsPage />} />
+        <Route path="/teach/lessons/:id/play" element={<TeachLessonPlayerPage />} />
         <Route path="/teach/:id" element={<TeachStudioPage />} />
         <Route path="/teach/:id/watch" element={<TeachWatchPage />} />
         <Route path="/report" element={<Navigate to="/records?tab=week" replace />} />

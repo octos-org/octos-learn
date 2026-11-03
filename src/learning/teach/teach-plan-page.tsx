@@ -99,6 +99,7 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
       <div className="course-launcher-inner">
         <AcademyHeader />
         <h1 className="academy-title">{tr("我来讲一课")}</h1>
+        <Link to="/teach/lessons" className="teach-secondary teach-my-lessons">{tr("我的课")}</Link>
         <Link className="teach-secondary" to="/teach/avatar-2d">{tr("体验动态头像")}</Link>
         <Link className="teach-secondary" to="/teach/package">{tr("播放课程包")}</Link>
 

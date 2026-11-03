@@ -27,6 +27,7 @@
 .star-atlas-tally { display: flex; gap: 14px; font-size: 12px; color: var(--atlas-dim); font-variant-numeric: tabular-nums; }
 .star-atlas-tally b { display: block; font-size: 20px; color: var(--atlas-ink); }
 .star-atlas-tally .lit b { color: var(--atlas-gold); }
+.star-atlas-tally .taught b { color: #78dccd; }
 .star-atlas-chip { min-height: 44px; padding: 0 16px; border: 1px solid var(--atlas-line); border-radius: 999px; background: var(--atlas-panel); color: var(--atlas-ink); }
 .star-atlas-chip[aria-pressed="true"] { border-color: var(--atlas-gold); color: var(--atlas-gold-soft); }
 .star-atlas-zoom { position: absolute; right: 14px; bottom: 14px; display: grid; gap: 8px; }

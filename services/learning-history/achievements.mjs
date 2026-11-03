@@ -154,6 +154,18 @@ export function accountAwards({ events, factsByTopic, topics, teacherOfRun, utcO
     lastByRun.set(event.run_id, event);
   }
 
+  // Teaching: lessons the learner taught and saved, each counted once however often it is saved again.
+  const taughtEvents = all.filter(event => event.kind === "lesson_taught");
+  const firstSave = new Map();
+  for (const event of taughtEvents) if (!firstSave.has(event.data.lesson_id)) firstSave.set(event.data.lesson_id, event);
+  const taughtLessons = [...firstSave.values()];
+  const litTopics = new Set(topics.filter(topic => topic.state === "did-it").map(topic => topic.topic_id));
+  award("first-lesson", taughtLessons[0]);
+  reach("three-lessons", taughtLessons, 3); reach("ten-lessons", taughtLessons, 10);
+  award("teach-a-star", taughtEvents.find(event => event.data.topic_id));
+  award("teach-lit-star", taughtEvents.find(event => litTopics.has(event.data.topic_id)));
+  award("your-turn", taughtEvents.find(event => event.data.practice_tasks > 0));
+
   // Practice, one task per run and task id.
   const tasks = new Map();
   for (const event of all.filter(event => event.kind === "task_attempt")) {

@@ -3,7 +3,7 @@ import { useLocale } from "@/i18n/use-locale";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-import type { LearningMapTopic } from "../../history/history-api";
+import type { LearningMapTaught, LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
 import { recommendedPrompt, topicPrompts, usePromptBank } from "../topic-prompts";
 import { buildAtlas, fitView, frameLevel, placeTopics, type View } from "./atlas-model";
@@ -18,10 +18,10 @@ const ease = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3
 /** The learner's lit topics on the academy's star atlas (Mathematics for
  * now). Stars only reflect recorded facts: lighting one means "did it once
  * without hints", never mastery, and a lit star never dims. */
-export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk?: (draft: string) => void }) {
+export function StarAtlas({ topics, taught = [], onAsk }: { topics: LearningMapTopic[]; taught?: LearningMapTaught[]; onAsk?: (draft: string) => void }) {
   useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const placed = useMemo(() => placeTopics(atlas, topics), [topics]);
+  const placed = useMemo(() => placeTopics(atlas, topics, taught), [topics, taught]);
   const [selected, setSelected] = useState<number | null>(null);
   const [unveil, setUnveil] = useState(false);
   const prompts = usePromptBank(Boolean(onAsk));
@@ -38,7 +38,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
     if (reduceMotion || !ms) { state.view = to; state.flight = null; return; }
     state.flight = { from: { ...state.view }, to, start: performance.now(), ms };
   };
-  const home = (ms = 900) => flyTo(fitView(atlas, [...live.current.placed.lit.keys()], live.current.width, live.current.height), ms);
+  const home = (ms = 900) => flyTo(fitView(atlas, [...new Set([...live.current.placed.lit.keys(), ...live.current.placed.taught.keys()])], live.current.width, live.current.height), ms);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,7 +67,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
       }
       if (state.igniteFrom !== null && time > state.igniteFrom + igniteDuration(state.placed.lit.size)) state.igniteFrom = null;
       if (!document.hidden && state.width && state.height) {
-        const paint: PaintState = { view: state.view, width: state.width, height: state.height, time, reduceMotion, lit: state.placed.lit, near: state.placed.near,
+        const paint: PaintState = { view: state.view, width: state.width, height: state.height, time, reduceMotion, lit: state.placed.lit, taught: state.placed.taught, near: state.placed.near,
           unveil: state.unveil, selected: state.selected, hover: state.hover, igniteFrom: state.igniteFrom };
         paintAtlas(ctx, atlas, paint);
       }
@@ -90,7 +90,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
       const paint = { view: state.view, width: state.width, height: state.height } as PaintState;
       let best: number | null = null, bestDistance = 24 * 24;
       atlas.stars.forEach((star, i) => {
-        if (!state.unveil && !state.placed.lit.has(i) && !state.placed.near.has(i)) return;
+        if (!state.unveil && !state.placed.lit.has(i) && !state.placed.taught.has(i) && !state.placed.near.has(i)) return;
         const [x, y] = toScreen(paint, star.x, star.y), d = (x - sx) ** 2 + (y - sy) ** 2;
         if (d < bestDistance) { bestDistance = d; best = i; }
       });
@@ -137,6 +137,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
 
   const star = selected === null ? null : atlas.stars[selected];
   const topic = selected === null ? undefined : placed.lit.get(selected);
+  const taughtHere = selected === null ? undefined : placed.taught.get(selected);
   const name = star ? topicLabel(star.id, topic?.name ?? star.id) : "";
   const links = (indices: number[], title: string) => indices.length ? <div className="star-atlas-links">
     <h4>{title}</h4>
@@ -152,6 +153,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
       <div className="star-atlas-title"><span>{tr("Star Atlas Academy")}</span><strong>{tr("数之星域")}</strong></div>
       <div className="star-atlas-tally" aria-live="polite">
         <span className="lit"><b>{counts.lit}</b>{tr("点亮")}</span><span><b>{counts.sealed}</b>{tr("正在破印")}</span><span><b>{counts.seen}</b>{tr("显现")}</span>
+        {placed.taught.size > 0 && <span className="taught"><b>{placed.taught.size}</b>{tr("讲过")}</span>}
       </div>
       <button type="button" className="star-atlas-chip" aria-pressed={unveil} onClick={toggleUnveil}>{unveil ? tr("恢复迷雾") : tr("揭开全部迷雾")}</button>
     </div>
@@ -174,11 +176,13 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
           <dt>{tr("不看提示做对")}</dt><dd>{topic.evidence.unassisted_successes} {tr("次")}</dd>
           <dt>{tr("学过的日子")}</dt><dd>{topic.evidence.days.length} {tr("天")}</dd>
         </>}
+        {taughtHere && <><dt>{tr("讲过的课")}</dt><dd>{taughtHere.lessons} {tr("节")}</dd></>}
       </dl>
       {topic && <Link className="star-atlas-evidence" to={`/records?${new URLSearchParams({ topic: topic.topic_id, name: topic.name })}`}>{tr("查看这颗星的学习依据 →")}</Link>}
       {frameLevel(topic) > 0 && <p className="star-atlas-note">{FRAME_TEXT[frameLevel(topic)]}</p>}
       {topic?.state === "did-it" && <p className="star-atlas-note">{tr("“做出来过”表示不看提示做对过，不等于已经掌握。点亮的星辰不会熄灭。")}</p>}
-      {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? tr("它就在你去过的星辰旁边，迷雾已经变薄。") : tr("这片星空还被迷雾遮着。")}</p>}
+      {taughtHere && <p className="star-atlas-note">{tr("外圈的青色光环：你讲过这颗星，并把课保存在了“我的课”里。")}</p>}
+      {!topic && !taughtHere && <p className="star-atlas-note">{placed.near.has(selected!) ? tr("它就在你去过的星辰旁边，迷雾已经变薄。") : tr("这片星空还被迷雾遮着。")}</p>}
       {onAsk && <div className="star-atlas-asks" role="group" aria-label={tr("在新白板上问问")}>
         <h4>{tr("在新白板上问问")}</h4>
         {/* The real questions, once loaded; never a stand-in to be tapped meanwhile. */}

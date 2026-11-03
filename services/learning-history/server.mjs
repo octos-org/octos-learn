@@ -35,10 +35,11 @@ function integer(search, name, fallback, max = Number.MAX_SAFE_INTEGER) {
   return value;
 }
 
-export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore, mappings = TOPIC_MAPPINGS } = {}) {
+export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore, sharedStore, mappings = TOPIC_MAPPINGS } = {}) {
   const base = new URL(octosBaseUrl).origin;
   let storage = suppliedStore;
-  const store = () => storage ??= new HistoryStore(databasePath);
+  // `sharedStore` opens a store another product handler also uses; its opener closes it.
+  const store = () => storage ??= sharedStore ? sharedStore() : new HistoryStore(databasePath);
   const controls = new AnalysisControlStore(analysisControlDirectory);
   const reportControls = new AnalysisControlStore(join(dirname(analysisControlDirectory), "report-host-controls"), validReportControl);
   const handle = async (request, response) => {
@@ -186,6 +187,8 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         const body = await limitedJson(request, 8 * 1024 * 1024);
         if (!body || Object.keys(body).some(key => !["events", "materials"].includes(key)) || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT
           || (body.materials !== undefined && (!Array.isArray(body.materials) || body.materials.length > body.events.length))) throw new HttpError(400, "Invalid event batch");
+        // A taught lesson is recorded only by the learner-lessons service, after it has checked the saved package.
+        if (body.events.some(event => event?.kind === "lesson_taught")) throw new HttpError(403, "Taught lessons are recorded when a lesson is saved");
         send(200, { profile_id: owner, ...store().append(owner, body.events, body.materials) });
       } else if (request.method === "GET" && path.length === 1 && ["map", "achievements"].includes(path[0])) {
         if ([...url.searchParams.keys()].some(key => key !== "utc_offset_minutes") || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
@@ -308,6 +311,6 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
     }
     return true;
   };
-  handle.close = () => { if (!suppliedStore) storage?.close(); };
+  handle.close = () => { if (!suppliedStore && !sharedStore) storage?.close(); };
   return handle;
 }
