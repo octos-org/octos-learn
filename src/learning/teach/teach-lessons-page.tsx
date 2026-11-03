@@ -59,7 +59,8 @@ function stateLine(row: LessonRow): string {
 export function TeachLessonsPage() {
   useLocale();
   const profileId = getSelectedProfileId() ?? "local";
-  const [list, setList] = useState<LessonRow[]>(() => rows(loadRecordingDrafts(localStorage, profileId), []));
+  // Listed once the account answers, so a saved lesson never shows as a draft first.
+  const [list, setList] = useState<LessonRow[]>([]);
   const [reachable, setReachable] = useState<"checking" | "yes" | "no">("checking");
   const [confirming, setConfirming] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -114,6 +115,7 @@ export function TeachLessonsPage() {
         <h1 className="academy-title">{tr("我的课")}</h1>
         <p className="academy-muted">{tr("你讲过和正在讲的课。现在只有你自己能看到。")}</p>
         <Link to="/teach" className="teach-primary teach-new-lesson"><Plus size={16} aria-hidden="true" />{tr("讲一节新课")}</Link>
+        {reachable === "checking" && <p role="status" className="academy-muted">{tr("正在打开“我的课”…")}</p>}
         {reachable === "no" && <p role="status" className="teach-notice">{tr("现在连不上“我的课”，下面是这台设备上的草稿。")}</p>}
         {failure && <p role="alert">{failure}</p>}
         {list.length === 0 ? (

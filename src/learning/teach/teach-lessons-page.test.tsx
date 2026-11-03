@@ -68,6 +68,6 @@ it("shows this device's drafts when the account cannot be reached", async () => 
   service.reachable = false;
   saveRecordingDraft(localStorage, "learner-1", planCards(createRecording({ id: "rec-draft", now, topic: { text: "Area", type: "math_off_map" }, goals: [] }), now, [{ title: "One" }]));
   renderPage();
-  expect((await screen.findByRole("status")).textContent).toBe("Can't reach My lessons right now. These are the drafts on this device.");
+  expect(await screen.findByText("Can't reach My lessons right now. These are the drafts on this device.")).toBeTruthy();
   expect(screen.getByRole("link", { name: "Keep editing" })).toBeTruthy();
 });

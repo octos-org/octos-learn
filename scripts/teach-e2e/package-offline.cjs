@@ -1,8 +1,9 @@
 // Real-browser check of the learner teaching studio; see docs/LEARNER_TEACHING_MODE_HANDOFF.md (E2E).
-// Usage: node scripts/teach-e2e/package-offline.cjs <work-dir>   (dev server on 127.0.0.1:5217, Octos solo, work-dir from make-speech.sh)
+// Usage: node scripts/teach-e2e/package-offline.cjs <work-dir>   (TEACH_E2E_BASE, default http://127.0.0.1:5217; Octos solo; work-dir from make-speech.sh)
 const path = require('path');
 const { chromium } = require(path.resolve('node_modules/playwright'));
 const SP = process.argv[2];
+const BASE = process.env.TEACH_E2E_BASE || 'http://127.0.0.1:5217';
 const shot = (p, name) => p.screenshot({ path: path.join(SP, `pk-${name}.png`) });
 (async () => {
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -13,10 +14,10 @@ const shot = (p, name) => p.screenshot({ path: path.join(SP, `pk-${name}.png`) }
   const frames = []; p.on('websocket', (ws) => ws.on('framesent', (f) => { const t = String(f.payload); if (t.includes('skill/action')) frames.push(t.slice(0, 120)); }));
   try {
     await p.addInitScript(() => localStorage.setItem('octos-locale', 'en-US'));
-    await p.goto('http://127.0.0.1:5217/login');
+    await p.goto(`${BASE}/login`);
     await p.getByRole('button', { name: 'Continue without a password' }).click();
     await p.waitForTimeout(3000);
-    await p.goto('http://127.0.0.1:5217/teach');
+    await p.goto(`${BASE}/teach`);
     await p.getByRole('textbox', { name: 'Topic' }).fill('Plotting two points');
     await p.getByRole('button', { name: /teach what I typed|Teach this/ }).first().click();
     await p.getByRole('button', { name: 'Yes, math' }).click();
@@ -47,7 +48,7 @@ const shot = (p, name) => p.screenshot({ path: path.join(SP, `pk-${name}.png`) }
     await p.goto(url + '/watch');
     await p.waitForTimeout(2500);
     console.log('package panel', JSON.stringify(await p.locator('.teach-package').innerText()));
-    await p.getByRole('button', { name: 'Get ready to share' }).click();
+    await p.getByRole('button', { name: 'Save to My lessons' }).click();
     await p.getByRole('button', { name: 'Download the lesson package' }).waitFor({ timeout: 120000 });
     console.log('ready', JSON.stringify(await p.locator('.teach-package p').innerText()));
     const [download] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Download the lesson package' }).click()]);
