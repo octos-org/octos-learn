@@ -6,6 +6,8 @@
 
 **最新方向调整（2026-11-02）：** 用户明确认为三维效果不好，不再要求接近苹果 Emoji；团队没有三维专家，希望改做有自身特色的二维效果。当前主方向转为[二维绘本讲师与图层动画](LEARNER_AVATAR_2D_DIRECTION.md)。已有四种表现概念，并已按后续请求实现[二维可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)，入口 `/teach/avatar-2d`，录课页“体验动态头像”进入新小样。下文保留三维历史；尚未替换完整课程播放器。
 
+**最新互动修正：** 用户进一步澄清需要与三维版一样可操作的效果。`/teach/avatar-2d` 与 `/teach/avatar-lab` 现已共用[二维互动试验室](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准、录制/回放、本机库、八个连续滑杆和配音试听均接入二维舞台。固定讲课示例迁至 `/teach/avatar-2d/example`，聊天内另提供不依赖摄像头的直接拖动版本。真实相机质量与浏览器整页验收仍未完成。
+
 独立分支 `codex/avatar-capture-prototype`。从已更新的 `origin/main` 创建后，快进包含录课候选 `claude/learner-m5` 的提交，以复用尚未合并的 M5；没有合并远端 PR。
 
 用户已确认有可测试的 iPhone/iPad，电视先使用此前项目的安卓触摸大屏。

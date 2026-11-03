@@ -4,6 +4,8 @@
 
 实现提交：`e9a79485`，独立分支 `codex/avatar-capture-prototype`。尚未推送、合并或部署。
 
+后续修正：用户要求与三维版一样的实际互动，已进一步完成[完整二维互动试验室](LEARNER_AVATAR_2D_INTERACTIVE.md)。原 `/teach/avatar-2d` 现为互动入口；本页记录的固定配音演示迁至 `/teach/avatar-2d/example`，以下描述保留为首轮历史。
+
 ## 可以查看的效果
 
 本机正常应用：`https://127.0.0.1:5173/teach/avatar-2d`，需要既有登录；录课规划页“体验动态头像”也进入此处。既有 HTTPS 5173 和后端 50080 实例保留，不需要先合并 PR。
