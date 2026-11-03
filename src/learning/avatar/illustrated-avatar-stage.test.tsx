@@ -44,6 +44,17 @@ it("stops scheduling when inactive and redraws a changed paused pose", () => {
   advance(300); expect(clear.mock.calls.length).toBeGreaterThan(previous);
 });
 
+it('releases the old painter and ignores its late loading callbacks when switching characters',()=>{
+  const page=render(<IllustratedAvatarStage frame={neutralFrame} active />);
+  const oldImages=[...images],lateLoad=images[0].onload!;
+  act(()=>oldImages.forEach(image=>image.onload!()));advance(100);
+  clear.mockClear();page.rerender(<IllustratedAvatarStage characterId='moon-cat' frame={neutralFrame} active />);
+  expect(oldImages.every(image=>image.onload===null)).toBe(true);
+  expect(images.slice(5).every(image=>image.src.includes('moon-cat')||image.src.includes('mouth.png'))).toBe(true);
+  act(()=>lateLoad());advance(200);expect(clear).not.toHaveBeenCalled();
+  act(()=>images.slice(5).forEach(image=>image.onload!()));advance(300);expect(clear).toHaveBeenCalled();
+});
+
 it("shows a load timeout and ignores a late image", () => {
   vi.useFakeTimers(); const error = vi.fn();
   render(<IllustratedAvatarStage frame={neutralFrame} active onError={error} />);

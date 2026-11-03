@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import type { FaceFrame } from "./face-frame";
-import { createPaintedFoxPainter, PAINTED_FOX_ASSETS, type PaintedFoxImages } from "./painted-fox";
+import { createPaintedFoxPainter, type PaintedFoxImages } from "./painted-fox";
+import {paintedCharacter,type PaintedCharacterId} from './painted-characters';
 import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
 
-export function IllustratedAvatarStage({ frame, active, idleMotion = false, className = "", fpsLimit = 30, onMetrics, onError }: {
+export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, className = "", fpsLimit = 30, onMetrics, onError }: {
+  characterId?:PaintedCharacterId;
   frame: (now: number) => FaceFrame; active: boolean; idleMotion?: boolean; className?: string; fpsLimit?: 30 | 60; onMetrics?: (metrics: AvatarRenderMetrics) => void; onError?: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null), wake = useRef<(() => void) | null>(null);
   const callbacks = useRef({ frame, active, idleMotion, fpsLimit, onMetrics, onError });
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  const character=paintedCharacter(characterId);
   useEffect(() => { callbacks.current = { frame, active, idleMotion, fpsLimit, onMetrics, onError }; wake.current?.(); }, [frame, active, idleMotion, fpsLimit, onMetrics, onError]);
   useEffect(() => {
     const element = canvas.current; if (!element) return;
@@ -19,7 +22,7 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     if (!ctx) { callbacks.current.onError?.(); return; }
     let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
     const samples: number[] = [];
-    const images = Object.entries(PAINTED_FOX_ASSETS).map(([key, path]) => ({ key, path, image: new Image() }));
+    const images = Object.entries(character.assets).map(([key, path]) => ({ key, path, image: new Image() }));
     let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
@@ -53,7 +56,7 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
             const buffer = element.ownerDocument.createElement("canvas"); buffer.width = width; buffer.height = height;
             const context = buffer.getContext("2d", { willReadFrequently: true }); if (!context) throw new Error("canvas_unavailable");
             return { canvas: buffer, context };
-          });
+          },character.rig);
           ready = true; setState("ready"); request();
         } catch { fail(); }
       };
@@ -64,7 +67,7 @@ export function IllustratedAvatarStage({ frame, active, idleMotion = false, clas
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(handle); handle = 0; } else request(); };
     document.addEventListener("visibilitychange", visibility);
     return () => { disposed = true; clearTimeout(timeout); wake.current = null; cancelAnimationFrame(handle); observer.disconnect(); painter = null; for (const { image } of images) { image.onload = null; image.onerror = null; image.removeAttribute("src"); } document.removeEventListener("visibilitychange", visibility); };
-  }, []);
-  return <div className={`illustrated-avatar ${className}`}><canvas ref={canvas} role="img" aria-label={tr("二维星狐动画")} />
-    {state !== "ready" && <span role="status">{state === "failed" ? tr("二维角色未能载入，请刷新重试。") : tr("正在载入二维星狐…")}</span>}</div>;
+  }, [character]);
+  return <div className={`illustrated-avatar ${className}`}><canvas ref={canvas} role="img" aria-label={tr("{{v0}}动画",{v0:character.name()})} />
+    {state !== "ready" && <span role="status">{state === "failed" ? tr("二维角色未能载入，请刷新重试。") : tr("正在载入角色…")}</span>}</div>;
 }

@@ -7,6 +7,7 @@ import { getSelectedProfileId } from "@/api/client";
 import { AcademyHeader } from "../academy/academy-header";
 import { TeachBoard, type TeachBoardHandle } from "../teach/teach-board";
 import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
+import {PAINTED_CHARACTERS,paintedCharacter,type PaintedCharacterId} from './painted-characters';
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import { AvatarClipLibrary } from "./avatar-clip-library";
 import { AvatarAudioPreview } from "./avatar-audio-preview";
@@ -31,6 +32,7 @@ export default function AvatarLabPage() {
   useLocale();
   const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay" | "manual">("idle");
   const [manual, setManual] = useState(INITIAL_MANUAL);
+  const [characterId,setCharacterId]=useState<PaintedCharacterId>('star-fox');
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
   const [metrics, setMetrics] = useState<AvatarRenderMetrics | null>(null);
@@ -174,8 +176,13 @@ export default function AvatarLabPage() {
     <main className="course-launcher academy-page teach-page avatar-lab">
       <div className="course-launcher-inner">
         <AcademyHeader />
-        <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维星狐互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
-        <p className="avatar-lab-intro">{tr("同一幅星狐画稿，连续眨眼、开口、圆唇和轻微转头。摄像头、手动调节和动作回放使用同一套表情。手臂暂不启用。")}</p>
+        <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维虚拟形象互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
+        <p className="avatar-lab-intro">{tr("选择你的小讲师，跟随表情和轻微头动。摄像头、手动调节和动作回放使用同一套控制。手臂暂不启用。")}</p>
+        <div className="avatar-lab-characters" role="group" aria-label={tr("选择虚拟形象")}>
+          {PAINTED_CHARACTERS.map(character=><button key={character.id} type="button" aria-pressed={characterId===character.id} disabled={recording} onClick={()=>{setCharacterId(character.id);setError(previous=>previous==='graphics'?null:previous);setMetrics(null);}}>
+            <img src={`${import.meta.env.BASE_URL}${character.assets.extended}`} alt="" /><span>{character.name()}</span>
+          </button>)}
+        </div>
         <div className="avatar-lab-pose" aria-label={tr("星狐定格检查")}>
           <span>{tr("定格检查")}</span>
           {[
@@ -199,8 +206,8 @@ export default function AvatarLabPage() {
         </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <IllustratedAvatarStage className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
-            <span className="avatar-lab-stage-label">{tr("二维星狐 · 互动小样")}</span>
+            <IllustratedAvatarStage key={characterId} characterId={characterId} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <span className="avatar-lab-stage-label">{paintedCharacter(characterId).name()}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录动作片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
@@ -266,7 +273,7 @@ export default function AvatarLabPage() {
           <div className="avatar-lab-actions">{EXPRESSION_SAMPLES.map((sample) => <button key={sample.id} type="button" className="teach-secondary" disabled={recording} onClick={() => openTrack(expressionSample(sample.id), true)}>{sample.name()}</button>)}</div>
         </section>
         <AvatarClipLibrary key={`library:${profileId}`} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
-        <AvatarAudioPreview key={`audio:${profileId}`} />
+        <AvatarAudioPreview key={`audio:${profileId}`} characterId={characterId} />
         <section className="avatar-lab-metrics" aria-label={tr("性能观察")}>
           <dl><div><dt>{tr("实际显示帧率")}</dt><dd>{metrics && mode !== "idle" ? metrics.fps.toFixed(0) : "—"} {tr("FPS")}</dd></div><div><dt>{tr("识别耗时 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.processing.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("取帧到结果 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.pipeline.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("绘制提交耗时 p95")}</dt><dd>{metrics && mode !== "idle" ? metrics.submissionP95Ms.toFixed(1) : "—"} ms</dd></div></dl>
           <p>{tr("取帧到结果不包含摄像头传感延迟，绘制提交耗时不等于 GPU 总耗时；这些数字不能当作完整动作响应延迟。")}</p>

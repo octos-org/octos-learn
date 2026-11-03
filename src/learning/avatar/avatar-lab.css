@@ -5,6 +5,13 @@
 .avatar-lab-heading h1 { margin: 10px 0 0; font-size: 30px; font-weight: 600; }
 .avatar-lab-heading > span, .avatar-lab-stage-label { padding: 6px 12px; border-radius: 999px; color: #605230; background: #eee4ca; font-size: 12px; }
 .avatar-lab-intro { margin: 14px 0 22px; max-width: 760px; color: #53697c; line-height: 1.7; }
+.avatar-lab-characters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; max-width: 620px; margin-bottom: 22px; }
+.avatar-lab-characters button { display: grid; justify-items: center; gap: 6px; padding: 8px; min-width: 0; border: 2px solid #d7dfe2; border-radius: 14px; background: #fffdf7; color: #24394b; cursor: pointer; }
+.avatar-lab-characters button[aria-pressed="true"] { border-color: #506e89; background: #eaf0f3; }
+.avatar-lab-characters button:focus-visible { outline: 3px solid #9d7940; outline-offset: 3px; }
+.avatar-lab-characters button:disabled { opacity: .6; cursor: default; }
+.avatar-lab-characters img { display: block; width: 100%; max-height: 108px; object-fit: contain; border-radius: 8px; }
+.avatar-lab-characters span { font-size: 14px; }
 .avatar-lab-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
 .avatar-lab-stage { position: relative; min-height: 440px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 22px; background: radial-gradient(ellipse at 50% 43%, #f9f6eb 0%, #e6edf2 80%); }
 .avatar-lab-stage > .avatar-lab-illustrated { position: absolute; inset: 0 0 45px; width: auto; height: auto; }

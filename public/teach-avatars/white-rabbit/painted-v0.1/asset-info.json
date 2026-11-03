@@ -1,0 +1,58 @@
+{
+  "id": "white-rabbit",
+  "name": "白兔",
+  "version": "painted-v0.1",
+  "date": "2026-11-03",
+  "tool": "Built-in image_gen: reference-based portrait generation, then aligned underpainting edit. No CLI/API key.",
+  "reference": "../concept-original.png",
+  "generatedSources": {
+    "portrait": "exec-b136363e-d1bf-4fff-8508-3ba3ac67f58c.png",
+    "clean": "exec-cf68f627-dde5-4575-a1c1-99696f3ef8d9.png"
+  },
+  "preparation": {
+    "script": "scripts/prepare-painted-character-materials.mjs",
+    "portraitSize": [
+      704,
+      704
+    ],
+    "translation": [
+      -5,
+      0
+    ],
+    "faceCrop": [
+      96,
+      192,
+      512,
+      512
+    ],
+    "cleanSize": [
+      512,
+      512
+    ]
+  },
+  "rig": "src/learning/avatar/painted-characters.ts; individual eye geometry, pupil masks, brows and mouth curve. Shared mouth interior from star-fox/painted-v0.2/mouth.png.",
+  "prompts": {
+    "portrait": "Use case: stylized-concept. Asset type: production animated 2D white rabbit student-teacher portrait. Image 1 is the WHITE RABBIT identity, clothing and detailed painted anime reference; image 2 is the accepted FOX portrait, used ONLY as the exact front-facing layout and face-placement guide. Make ONE coherent upright WHITE RABBIT portrait, directly front facing, neck vertical, head not tilted, both shoulders level. Preserve the soft short ivory-white swept hair, fluffy white rabbit face, big warm golden eyes, little pink rabbit nose, large white/pink LONG rabbit ears, coral-red ribbon with gold star beside one ear, coral-red short academy jacket over ivory Chinese stand-collar shirt with gold embroidery. Friendly relaxed neutral CLOSED mouth, open eyes. Detailed fine painted fur and locks, delicate ink, soft warm shading, matching the fox painting quality. This is a FACE AND SHOULDERS portrait, no arms/hands or gestures, no props or full body. Both long ears must be entirely visible with generous margin, gently upright/curved within the canvas rather than cropped or folded offscreen. Exact square composition using 704-coordinate layout like image2: eye pupils near(294,401),(422,401), nose(357,440), closed mouth(356,466), chin(354,516), collar(352,564), shoulders y610 and garment reaching bottom y704. The face sits in the LOWER central part just like the fox image, leaving the TOP for the long ears. Place ear roots near y230 and long ear tips around y45-90, not outside the square. Avoid shrinking the face excessively or moving eyes upward. Keep warm uniform cream paper background. One continuous painted portrait only; no captions, panels, frames or watermarks. Do not make an orange fox or red panda; this must unmistakably be the same WHITE RABBIT as image1.",
+    "clean": "Use case: precise-object-edit. Edit target is the supplied exact 512x512 cropped production portrait. Create ONLY an internal facial underpainting for 2D animation. Preserve exact image size, canvas composition, hair, fur markings, hair crossing forehead, face shape, nose, philtrum, neck, clothing and background, every other pixel's placement. REMOVE BOTH EYES completely including pupils, irises, whites, lashes, outer eye contours AND the small eyelid creases, REMOVE BOTH EYEBROWS, and REMOVE ONLY THE CLOSED MOUTH LINE. Seamlessly fill the removed eye/brow/mouth areas with the matching local facial fur and its original shading/markings, no holes or sockets. Keep nose, hair strands and all red/white or cream facial color boundaries. Do not remove any hair, cheeks or nose. Do not change pose or redraw the clothing. This texture is deliberately eyeless/without brows/mouth, an internal animation underpainting, not a visible final character. Return one square image with the same framing and alignment. No new marks, no text."
+  },
+  "limits": [
+    "Bounded 2D head following, no side-view reconstruction or arms",
+    "Author-fitted rig, not automatic arbitrary-image animation",
+    "Mouth interior shared; no phoneme-specific mouth artwork",
+    "This catalog is preview-only until the lesson/presenter package integration is implemented"
+  ],
+  "materials": {
+    "source.png": {
+      "sha256": "8fdbb546bd1a8f5277724c6cfd7e720e965a0f44e101d9bb9e9d962a9d7160f2",
+      "bytes": 472485
+    },
+    "clean.png": {
+      "sha256": "ef5707f54aea752bc5618fa24096776ad4dbd16926711d923a367cf4342399e3",
+      "bytes": 409422
+    },
+    "portrait.png": {
+      "sha256": "08cdd8aac86a0bb71f32c4d5955e22684dd98e8662fb3f63c22c62d5f44c23d2",
+      "bytes": 748272
+    }
+  }
+}

@@ -60,6 +60,9 @@
 
 ## 专题计划
 
+- [四款学生虚拟形象：同页互动预览](LEARNER_AVATAR_FOUR_CHARACTERS.md)：星狐、小熊猫、白兔、女性月猫，独立绑定与同页切换，附真实绘制器输出和原星狐零差异检查。
+- [给手势白板研究 agent 的 prompt](LEARNER_GESTURE_WHITEBOARD_RESEARCH_PROMPT.md)：MediaPipe Hand Landmarker、本地白板笔画映射与独立分支协作范围。
+
 - [星狐完整耳朵、随动与眉眼表情](LEARNER_AVATAR_EARS_EXPRESSIONS.md)：当前星狐工作入口；补绘完整耳朵、耳尖/发梢随动、皱眉覆盖修复与眉眼联动、口腔采样改善，附实际程序动画和像素验证。
 
 - [双线推进：星狐优化与神经卡通化实验](LEARNER_AVATAR_TWO_TRACK_PROGRESS.md)：最新工作入口。星狐新增视线、笑眼、眉毛/嘴角独立变化；DCT-Net 真实本地输出、ONNX 转换与 WASM 计算验证，附对照动画、数值检查和实际性能边界。

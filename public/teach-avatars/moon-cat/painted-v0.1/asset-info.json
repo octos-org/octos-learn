@@ -1,0 +1,58 @@
+{
+  "id": "moon-cat",
+  "name": "月猫",
+  "version": "painted-v0.1",
+  "date": "2026-11-03",
+  "tool": "Built-in image_gen: reference-based portrait generation, then aligned underpainting edit. No CLI/API key.",
+  "reference": "../../star-fox/painted-v0.3/portrait-extended.png",
+  "generatedSources": {
+    "portrait": "exec-6779eab5-9e52-4144-b812-ec3f70e2504d.png",
+    "clean": "exec-8d505b5c-d4c8-420a-a7ee-c6b4a38adbc3.png"
+  },
+  "preparation": {
+    "script": "scripts/prepare-painted-character-materials.mjs",
+    "portraitSize": [
+      704,
+      704
+    ],
+    "translation": [
+      0,
+      26
+    ],
+    "faceCrop": [
+      96,
+      192,
+      512,
+      512
+    ],
+    "cleanSize": [
+      512,
+      512
+    ]
+  },
+  "rig": "src/learning/avatar/painted-characters.ts; individual eye geometry, pupil masks, brows and mouth curve. Shared mouth interior from star-fox/painted-v0.2/mouth.png.",
+  "prompts": {
+    "portrait": "Use case: stylized-concept. Asset type: complete 2D speaking student-teacher portrait. Reference image is ONLY the approved fox portrait's detailed painted anime quality and exact frontal layout. Create a DISTINCT FEMALE anthropomorphic CAT student-teacher, name Moon Cat, feminine child-friendly academy character, neutral friendly face. Silver-lilac softly layered shoulder-length hair, two rounded triangular soft gray/lilac CAT ears with pale pink inner fur, pale cream/very light gray fluffy feline cheeks and short muzzle, large luminous teal-blue eyes, small mauve pink cat nose, gently smiling CLOSED mouth. A small gold crescent hair clip above one temple. Feminine but modest, nonsexual academy outfit: elegant muted lavender/deep violet cape-jacket with delicate silver moon and constellation embroidery, ivory Chinese stand-collar shirt, a small silver crescent medallion. Do not copy the fox's orange hair, amber eyes or navy star robe. Upright, perfectly front facing with no tilt, vertical neck and shirt, level shoulders. FACE AND SHOULDERS ONLY, no hands, arms, props or full body. Both ears and all top hair fully in frame with ample margins. Exact SQUARE 704-coordinate layout like reference: pupils near(294,401),(422,401), nose(357,440), small closed mouth(356,466), chin(354,516), collar around(352,564), shoulders y610, robe to bottom704. Face stays in the lower center and is the SAME SIZE as reference, not zoomed to fill the entire canvas. Hair/ears around y120-300, leave headroom for movement. Warm uniform cream paper backdrop, richly painted fur and hair, fine clean ink, soft warm light and polished detailed illustration. One coherent portrait, no panels, borders, labels or watermark.",
+    "clean": "Use case: precise-object-edit. Edit target is the supplied exact 512x512 cropped production portrait. Create ONLY an internal facial underpainting for 2D animation. Preserve exact image size, canvas composition, hair, fur markings, hair crossing forehead, face shape, nose, philtrum, neck, clothing and background, every other pixel's placement. REMOVE BOTH EYES completely including pupils, irises, whites, lashes, outer eye contours AND the small eyelid creases, REMOVE BOTH EYEBROWS, and REMOVE ONLY THE CLOSED MOUTH LINE. Seamlessly fill the removed eye/brow/mouth areas with the matching local facial fur and its original shading/markings, no holes or sockets. Keep nose, hair strands and all red/white or cream facial color boundaries. Do not remove any hair, cheeks or nose. Do not change pose or redraw the clothing. This texture is deliberately eyeless/without brows/mouth, an internal animation underpainting, not a visible final character. Return one square image with the same framing and alignment. No new marks, no text."
+  },
+  "limits": [
+    "Bounded 2D head following, no side-view reconstruction or arms",
+    "Author-fitted rig, not automatic arbitrary-image animation",
+    "Mouth interior shared; no phoneme-specific mouth artwork",
+    "This catalog is preview-only until the lesson/presenter package integration is implemented"
+  ],
+  "materials": {
+    "source.png": {
+      "sha256": "8af8df47a9304c431f72cc6128548c319d4c6dfe573f55e2a09348052f7c8efb",
+      "bytes": 521428
+    },
+    "clean.png": {
+      "sha256": "7ba164b716933b66b5ee339da8ef2f854ff754bf4a8f370cda7125b42ad23da4",
+      "bytes": 453460
+    },
+    "portrait.png": {
+      "sha256": "e1c5346a14a4766bf284fa1396e99328eb8d57e4e8d724cd0cb4555ecd88bfaf",
+      "bytes": 729751
+    }
+  }
+}

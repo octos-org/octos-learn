@@ -5,10 +5,10 @@ import type { CaptureCallbacks } from "./face-capture";
 import type { FaceFrame } from "./face-frame";
 
 const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbacks: null as CaptureCallbacks | null }));
-const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false }));
+const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'' }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
-vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active }: { frame: (now: number) => FaceFrame; active: boolean }) => { stageMock.frame = frame; stageMock.active = active; return <div />; } }));
+vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox'; return <div />; } }));
 vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
@@ -24,6 +24,20 @@ import AvatarLabPage from "./avatar-lab-page";
 beforeEach(() => { captureMock.starts.mockClear(); captureMock.stops.mockClear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const open = () => render(<MemoryRouter><AvatarLabPage /></MemoryRouter>);
+
+it('switches the fitted character without restarting capture or losing the current expression',()=>{
+  open();expect(stageMock.characterId).toBe('star-fox');
+  fireEvent.change(screen.getByRole('slider',{name:'嘴巴开合'}),{target:{value:'.65'}});
+  fireEvent.click(screen.getByRole('button',{name:'白兔',exact:true}));
+  expect(stageMock.characterId).toBe('white-rabbit');expect(stageMock.frame!(0).channels.jawOpen).toBe(.65);
+  expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'开启摄像头跟随'}));
+  const stops=captureMock.stops.mock.calls.length;
+  fireEvent.click(screen.getByRole('button',{name:'月猫',exact:true}));
+  expect(stageMock.characterId).toBe('moon-cat');expect(captureMock.starts).toHaveBeenCalledTimes(1);
+  expect(captureMock.stops).toHaveBeenCalledTimes(stops);
+  expect(screen.getByRole('button',{name:'月猫',exact:true}).getAttribute('aria-pressed')).toBe('true');
+});
 
 it("does not open the camera on entry or when checking the local model", async () => {
   open();

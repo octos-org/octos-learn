@@ -1,6 +1,6 @@
 import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
-import { paintEyes, preparePaintedEyes } from "./painted-eyes";
+import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -8,6 +8,11 @@ export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}cl
 export const PAINTED_FOX_VIEW = { size:704, x:96, y:192, frame:736 } as const;
 export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource>;
 type Point = [number, number];
+export interface PaintedFaceRig {
+  eyes?:readonly[EyeProfile,EyeProfile];
+  mouth?:{curve:Point[];rect:{x:number;y:number;w:number;h:number};center:number};
+  brows?:Array<{rect:[number,number,number,number];points:Point[]}>;
+}
 const bounded = (v: number, min = 0, max = 1) => Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : 0;
 const smooth = (v: number) => { v = bounded(v); return v * v * (3 - 2 * v); };
 /** Retarget model coefficients to the painted lid travel, without inventing blinks.
@@ -88,19 +93,20 @@ function sampleOral(array:Float32Array,x:number,y:number,ch:number) {
 }
 
 /** One painted portrait with internal facial layers; no independent body pieces. */
-export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSurfaceFactory) {
+export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSurfaceFactory,rig:PaintedFaceRig={}) {
   const texture = surface(512, 512), ctx = texture.context;
   const pixels = (image: CanvasImageSource) => { ctx.clearRect(0, 0, 512, 512); ctx.drawImage(image, 0, 0, 512, 512); return ctx.getImageData(0, 0, 512, 512); };
   const source = pixels(images.base), oral = pixels(images.mouth), browClean = pixels(images.brows);
-  const eyes = preparePaintedEyes(surface, images.base, images.clean);
-  const mouthRect = { x: 210, y: 254, w: 104, h: 80 };
+  const eyes = preparePaintedEyes(surface, images.base, images.clean,rig.eyes);
+  const lipCurve=rig.mouth?.curve??mouthCurve,center=rig.mouth?.center??260;
+  const mouthRect = rig.mouth?.rect??{ x: 210, y: 254, w: 104, h: 80 };
   const { x: mx, y: my, w: mw, h: mh } = mouthRect;
   const mouthBase = new Float32Array(mw * mh * 3), upper = new Float32Array(mw * mh * 4), lower = new Float32Array(mw * mh * 4), interior = new Float32Array(512 * 512 * 4);
   const mouthOutput = ctx.createImageData(mw, mh);
   for (let x = 0; x < mw; x++) for (let y = 0; y < mh; y++) {
     const px = mx + x, py = my + y, k = y * mw + x, i = (py * 512 + px) * 4;
-    const matte = smooth((px - 222) / 5) * smooth((298 - px) / 5) * smooth((10 - Math.abs(py - curve(mouthCurve, px))) / 3);
-    const u = bounded(.5 + (curve(mouthCurve, px) - py) / 2);
+    const matte = smooth((px - (rig.mouth?lipCurve[0][0]-2:222)) / 5) * smooth(((rig.mouth?lipCurve[lipCurve.length-1][0]+2:298) - px) / 5) * smooth((10 - Math.abs(py - curve(lipCurve, px))) / 3);
+    const u = bounded(.5 + (curve(lipCurve, px) - py) / 2);
     upper[k * 4 + 3] = matte * u; lower[k * 4 + 3] = matte * (1 - u);
     for (let c = 0; c < 3; c++) {
       const d = source.data[i + c] - browClean.data[i + c];
@@ -121,10 +127,10 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     for (let c = 0; c < 3; c++) interior[i * 4 + c] = oral.data[i * 4 + c] * a;
     interior[i * 4 + 3] = a;
   }
-  const brows = [
+  const brows = (rig.brows??[
     { rect: [145,136,100,48], points: [[154,160],[173,153],[192,151],[212,154],[234,162]] },
     { rect: [277,136,103,48], points: [[285,161],[306,154],[326,151],[348,153],[370,160]] },
-  ].map(({ rect, points }) => {
+  ]).map(({ rect, points }) => {
     const [x,y,w,h] = rect, base = new Float32Array(w*h*3), residual = new Float32Array(w*h*4), output = ctx.createImageData(w,h);
     for(let xx=0;xx<w;xx++)for(let yy=0;yy<h;yy++) {
       const i=((y+yy)*512+x+xx)*4,k=yy*w+xx;
@@ -138,9 +144,8 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     if (open === 0 && round === 0 && leftSmile === 0 && rightSmile === 0) return;
     const smile=(leftSmile+rightSmile)/2;
     const scaleX = (1 - .08 * open) * (1 - .45 * round) * (1 + .18 * smile);
-    const center = 260;
     for (let x = 0; x < mw; x++) {
-      const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(mouthCurve, sx), ox = 272 + (px - center) / (1.5 * scaleX);
+      const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(lipCurve, sx), ox = 272 + (px - center) / (1.5 * scaleX);
       const ix = Math.max(0, Math.min(510, Math.floor(ox))), fraction = bounded(ox-ix), top = mix(roof[ix],roof[ix+1],fraction), bottom = mix(floor[ix],floor[ix+1],fraction);
       // Author the visible travel independently of the small oral source crop.
       // Keep the upper lip near the muzzle; most opening travels downwards.

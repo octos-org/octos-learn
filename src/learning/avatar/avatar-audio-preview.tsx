@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tr } from "@/i18n";
 import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
+import {paintedCharacter,type PaintedCharacterId} from './painted-characters';
 import { audioDigest, calibrationWav, lipSyncFrame, parseLipSyncTrack, type LipSyncTrack } from "./lip-sync";
 import { preparePreviewAudio } from "./prepare-preview-audio";
 import type { LoadedLearnerPackage } from "../teach/learner-package";
@@ -10,7 +11,7 @@ const blobBytes = (blob: Blob): Promise<ArrayBuffer> => typeof blob.arrayBuffer 
   const reader = new FileReader(); reader.onload = () => resolve(reader.result as ArrayBuffer); reader.onerror = () => reject(reader.error); reader.readAsArrayBuffer(blob);
 });
 
-export function AvatarAudioPreview() {
+export function AvatarAudioPreview({characterId='star-fox'}:{characterId?:PaintedCharacterId}={}) {
   const audio = useRef<HTMLAudioElement>(null);
   const sourceUrl = useRef<string | null>(null);
   const work = useRef<AbortController | null>(null);
@@ -82,8 +83,8 @@ export function AvatarAudioPreview() {
     <p>{tr("导入一段已生成的配音，嘴型会跟随音频的实际进度。这里只在本机预览，不录音、不上传，也不会调用付费语音服务。")}</p>
     <div className="avatar-audio-grid">
       <div className="avatar-audio-stage">
-        <IllustratedAvatarStage frame={frame} fpsLimit={30} active={playing} onMetrics={ignoreMetrics} onError={onGraphicsError} />
-        <span className="avatar-lab-stage-label">{tr("二维星狐 · 互动小样")}</span>
+        <IllustratedAvatarStage key={characterId} characterId={characterId} frame={frame} fpsLimit={30} active={playing} onMetrics={ignoreMetrics} onError={onGraphicsError} />
+        <span className="avatar-lab-stage-label">{paintedCharacter(characterId).name()}</span>
       </div>
       <div className="avatar-audio-controls">
         <div className="avatar-lab-actions">

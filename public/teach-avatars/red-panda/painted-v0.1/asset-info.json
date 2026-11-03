@@ -1,0 +1,58 @@
+{
+  "id": "red-panda",
+  "name": "小熊猫",
+  "version": "painted-v0.1",
+  "date": "2026-11-03",
+  "tool": "Built-in image_gen: reference-based portrait generation, then aligned underpainting edit. No CLI/API key.",
+  "reference": "../concept-original.png",
+  "generatedSources": {
+    "portrait": "exec-cba1ba70-8a78-412f-903e-c01cb0401675.png",
+    "clean": "exec-0af4d0c2-1f30-45e6-80c3-fe7239a1224c.png"
+  },
+  "preparation": {
+    "script": "scripts/prepare-painted-character-materials.mjs",
+    "portraitSize": [
+      704,
+      704
+    ],
+    "translation": [
+      6,
+      46
+    ],
+    "faceCrop": [
+      96,
+      192,
+      512,
+      512
+    ],
+    "cleanSize": [
+      512,
+      512
+    ]
+  },
+  "rig": "src/learning/avatar/painted-characters.ts; individual eye geometry, pupil masks, brows and mouth curve. Shared mouth interior from star-fox/painted-v0.2/mouth.png.",
+  "prompts": {
+    "portrait": "Use case: stylized-concept. Asset type: production 2D animated student-teacher portrait. Image 1 is the RED PANDA identity, outfit and detailed painted anime style reference. Image 2 is the approved FOX portrait and must be used ONLY as the exact framing/face-placement template, NOT as identity. Create ONE upright, directly front-facing RED PANDA student-teacher, not a fox: rounded red panda ears, chestnut reddish-brown layered swept hair, white fluffy cheeks and pale eyebrows/eye markings, warm reddish amber eyes, small dark red-panda nose, relaxed closed-mouth gentle smile. Preserve the black charcoal academy coat with burgundy lining and gold compass/star brooch from image 1, ivory Chinese stand collar and gold trim. Both shoulders level, shirt buttons vertical, no tilt or lean. Detailed soft painted hair/fur, fine ink, warm lighting matching the approved fox quality. No hands, book, pen, props, tail or full body: face and shoulders only. Entire head and both rounded ears must be visible with ample margin. Square 704-coordinate composition: face and shoulders placement MUST closely match image 2. On a 704 square, eye pupils at approximately (294,401) and (422,401), eye opening width 90px each height50px, nose (357,440), small CLOSED mouth centered(356,466), chin(354,516), collar(352,564), shoulders around y610, robe reaching bottom y704. Forehead hair around y215-335, ear tips around y115-180, all ears/hair complete and inside frame. Do not zoom or change the face placement to fill the top margin. Background uniform warm cream paper like image 2. Return one continuous high-detail painted portrait, not a sprite sheet, no labels, border, watermarks or panels.",
+    "clean": "Use case: precise-object-edit. This exact 512x512 RED PANDA portrait needs an internal animation underpainting. Keep the exact same image size, alignment, nose, hair, fur, robe and every outside pixel's placement. Remove BOTH EYES (lashes, irises, whites, contours, eyelid crease), remove ONLY the thin DARK BROWN ink eyebrow strokes, and remove the closed mouth stroke. CRITICAL: The pale creamy WHITE EYEBROW FUR PATCHES and WHITE EYE MASK MARKINGS around and ABOVE both eyes are permanent red-panda fur colors, NOT the removable eyebrows. PRESERVE these white curved patches exactly and fill the removed dark eyebrow strokes with that same white fur. Fill the eye holes with the matching pale cream/white mask fur, NOT red forehead fur. Keep the RED central forehead stripe between the eyes and the red cheeks unchanged. No dark eyes or ink eyebrows remain, but the underlying broad WHITE fur patches ABOVE the eye locations MUST remain clearly visible in their exact old shapes. Preserve nose and philtrum, retain the fluffy cream muzzle, clear only the mouth line. Do not move or reshape any feature, do not change hair or pose. Output one aligned square internal texture, no text."
+  },
+  "limits": [
+    "Bounded 2D head following, no side-view reconstruction or arms",
+    "Author-fitted rig, not automatic arbitrary-image animation",
+    "Mouth interior shared; no phoneme-specific mouth artwork",
+    "This catalog is preview-only until the lesson/presenter package integration is implemented"
+  ],
+  "materials": {
+    "source.png": {
+      "sha256": "92889ace2e349115f412ee34eb8c0e76f938479cdf5e896335a88222bd683a62",
+      "bytes": 518567
+    },
+    "clean.png": {
+      "sha256": "acac924bfaa5d3843fb8bbbd3ba32435d436c74707d54470922b1c4d891c8f7b",
+      "bytes": 446191
+    },
+    "portrait.png": {
+      "sha256": "feb7375f80d488d3614cb92f807020a2ec16a36cb77d07a8a9b596d41d07ae3d",
+      "bytes": 730529
+    }
+  }
+}

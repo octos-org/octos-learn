@@ -1,7 +1,7 @@
 import type { FoxSurfaceFactory } from "./original-fox";
 
 type Point = [number, number];
-interface EyeProfile { rect: [number, number, number, number]; range: [number, number]; pupil: Point; upper: Point[]; lower: Point[]; closed: Point[]; }
+export interface EyeProfile { rect: [number, number, number, number]; range: [number, number]; pupil: Point; upper: Point[]; lower: Point[]; closed: Point[]; irisRadius?:Point; whiteOffset?:number; }
 /** Painted residuals preserve the original eye at neutral. Gaze moves the iris
  * within the eye opening; the lashes, lids and surrounding fur stay attached.
  */
@@ -20,6 +20,7 @@ const right: EyeProfile={
   lower:[[284,210],[293,221],[306,231],[321,235],[337,232],[350,225],[364,211],[377,199]],
   closed:[[284,213],[293,218],[306,222],[321,223],[337,222],[350,218],[364,210],[377,203]],
 };
+export const DEFAULT_PAINTED_EYES:readonly[EyeProfile,EyeProfile]=[left,right];
 function curve(points: Point[],x: number){
   for(let i=1;i<points.length;i++)if(x<=points[i][0]){
     const a=points[i-1],b=points[i],t=bound((x-a[0])/(b[0]-a[0]));
@@ -29,12 +30,13 @@ function curve(points: Point[],x: number){
   }
   return points[points.length - 1][1];
 }
-function prepareEye(ctx: CanvasRenderingContext2D,original: ImageData,clean: ImageData,profile: EyeProfile){
+function prepareEye(ctx: CanvasRenderingContext2D,original: ImageData,clean: ImageData,profile: EyeProfile,innerAtRight:boolean){
   const [rx,ry,w,h]=profile.rect,len=w*h;
   const base=new Float32Array(len*3),upper=new Float32Array(len*4),lower=new Float32Array(len*4),iris=new Float32Array(len*4);
   const sclera=new Float32Array(len*3),pupil=new Float32Array(len*4);
   const [cx,cy]=profile.pupil;
-  const white=[0,1,2].map(ch=>(original.data[((cy+1)*512+cx-33)*4+ch]+original.data[((cy+1)*512+cx+33)*4+ch])/2);
+  const whiteOffset=profile.whiteOffset??33,[irisX,irisY]=profile.irisRadius??[25,29];
+  const white=[0,1,2].map(ch=>(original.data[((cy+1)*512+cx-whiteOffset)*4+ch]+original.data[((cy+1)*512+cx+whiteOffset)*4+ch])/2);
   const upperCurve=new Float32Array(w),lowerCurve=new Float32Array(w),closedCurve=new Float32Array(w);
   for(let x=0;x<w;x++){
     const px=x+rx,u=curve(profile.upper,px),l=curve(profile.lower,px),c=curve(profile.closed,px);
@@ -44,7 +46,7 @@ function prepareEye(ctx: CanvasRenderingContext2D,original: ImageData,clean: Ima
       const matte=smooth((px-profile.range[0])/4)*smooth((profile.range[1]-px)/4)*smooth((py-u+17)/4)*smooth((l+9-py)/4);
       const uWeight=bound((u+5-py)/4),lWeight=(1-uWeight)*bound((py-l+4)/4),iWeight=1-uWeight-lWeight;
       upper[k*4+3]=matte*uWeight;lower[k*4+3]=matte*lWeight;iris[k*4+3]=matte*iWeight;
-      const pupilMask=smooth((1-((px-cx)/25)**2-((py-cy)/29)**2)/.18);
+      const pupilMask=smooth((1-((px-cx)/irisX)**2-((py-cy)/irisY)**2)/.18);
       pupil[k*4+3]=iris[k*4+3]*pupilMask;
       for(let ch=0;ch<3;ch++){
         const diff=original.data[i+ch]-clean.data[i+ch];
@@ -55,12 +57,12 @@ function prepareEye(ctx: CanvasRenderingContext2D,original: ImageData,clean: Ima
       }
     }
   }
-  return {profile,w,h,base,upper,lower,iris,sclera,pupil,upperCurve,lowerCurve,closedCurve,output:ctx.createImageData(w,h)};
+  return {profile,innerAtRight,w,h,base,upper,lower,iris,sclera,pupil,upperCurve,lowerCurve,closedCurve,output:ctx.createImageData(w,h)};
 }
-export function preparePaintedEyes(surface: FoxSurfaceFactory,source: CanvasImageSource,clean: CanvasImageSource){
+export function preparePaintedEyes(surface: FoxSurfaceFactory,source: CanvasImageSource,clean: CanvasImageSource,profiles:readonly[EyeProfile,EyeProfile]=[left,right]){
   const {context:ctx}=surface(512,512);ctx.drawImage(source,0,0);const original=ctx.getImageData(0,0,512,512);
   ctx.clearRect(0,0,512,512);ctx.drawImage(clean,0,0);const cleanPixels=ctx.getImageData(0,0,512,512);
-  return {left:prepareEye(ctx,original,cleanPixels,left),right:prepareEye(ctx,original,cleanPixels,right)};
+  return {left:prepareEye(ctx,original,cleanPixels,profiles[0],true),right:prepareEye(ctx,original,cleanPixels,profiles[1],false)};
 }
 function sample(layer: Float32Array,w: number,h: number,x: number,y: number,ch: number){
   if(x<0||x>w-1||y<0||y>h-1)return 0;
@@ -69,7 +71,7 @@ function sample(layer: Float32Array,w: number,h: number,x: number,y: number,ch: 
 }
 function renderEye(ctx: CanvasRenderingContext2D,eye: ReturnType<typeof prepareEye>,blink: number,squint: number,tension:number,gaze: readonly [number,number]){
   if(blink===0&&squint===0&&tension===0&&gaze[0]===0&&gaze[1]===0)return;
-  const {profile,w,h,base,upper,lower,iris,sclera,pupil,upperCurve,lowerCurve,closedCurve,output}=eye;
+  const {profile,innerAtRight,w,h,base,upper,lower,iris,sclera,pupil,upperCurve,lowerCurve,closedCurve,output}=eye;
   const dx=gaze[0]*7,dy=gaze[1]*4.5;
   const thickness=mix(1,.32,blink),lowerOpacity=1-blink;
   for(let x=0;x<w;x++){
@@ -77,7 +79,7 @@ function renderEye(ctx: CanvasRenderingContext2D,eye: ReturnType<typeof prepareE
     // A cheek-raised smile narrows from below; reusing blink travel looks sleepy.
     // Frowning lowers the inner upper lid into an angled, tense contour. Moving
     // only the thin eyebrows underneath the bangs was almost imperceptible.
-    const inner=bound(profile===left?(x+profile.rect[0]-160)/65:(363-x-profile.rect[0])/65);
+    const inner=bound(innerAtRight?(x+profile.rect[0]-profile.range[0]-15)/65:(profile.range[1]-14-x-profile.rect[0])/65);
     const movedU=Math.min(c,mix(u,c,blink)+(1-blink)*(squint*2+tension*inner*18));
     const movedL=Math.max(movedU,mix(l,c,blink)-(1-blink)*squint*Math.max(0,l-c+14));
     for(let y=0;y<h;y++){
