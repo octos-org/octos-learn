@@ -1,0 +1,357 @@
+// A learner's lesson recording: the cards they planned, every take of each
+// card, and the timed board actions of a take. The recording is the source the
+// deterministic compiler turns into an OLL learner-taught lesson; it never
+// holds raw audio.
+
+export const LEARNER_RECORDING_SCHEMA = "octos.learner-recording.v1" as const;
+
+/** How the chosen topic relates to the star map; it sets help, checks and sharing. */
+export type TopicType = "on_map_lit" | "on_map_unlit" | "math_off_map" | "other";
+
+export interface RecordingTopic {
+  text: string;
+  type: TopicType;
+  /** Star map topic id when the topic is on the star map. */
+  starTopicId?: string;
+}
+
+/** A selection of the learner's own ink, frozen when it is used. */
+export interface InkTarget {
+  inkSelection: string;
+}
+
+/** A board node, or one addressable part of it. */
+export interface NodeTarget {
+  node: string;
+  part?: string;
+}
+
+export type BoardTarget = InkTarget | NodeTarget;
+
+/** Components the insert panel offers, with the settings the learner chose. */
+/** Where an inserted component goes: by default a new row; or beside a card in the current row. */
+export interface ComponentPlacement { nextTo?: string }
+
+export type ComponentInsert = ComponentPlacement & (
+  | { panel: "graph"; alias: string; expression: string; x: [number, number]; y: [number, number]; title?: string;
+      /** Shows the point (v, f(v)) for a lesson variable v, so the graph follows a slider or dragged point. */
+      linkedVariable?: string }
+  | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
+  | { panel: "unit_circle"; alias: string; variable: string; title?: string }
+  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string });
+
+export type ComponentPanel = ComponentInsert["panel"];
+
+/** One board action of a take, `t` milliseconds after the take started. */
+export type RecordingEvent =
+  | { t: number; type: "tool.laser" | "tool.highlighter"; target: BoardTarget }
+  | { t: number; type: "tool.arrow"; from: BoardTarget; to: BoardTarget; label?: string }
+  | ({ t: number; type: "component.insert" } & ComponentInsert)
+  | { t: number; type: "point_tool.place"; node: string; point: string; x: number; y: number; label: string }
+  | { t: number; type: "variable.drag"; variable: string; via: "slider" | "geometry_point"; from: number; to: number; durationMs: number }
+  | { t: number; type: "view.rotate"; node: string; yaw: number; pitch: number }
+  | { t: number; type: "make_neat.confirmed"; selection: string; latex: string; alias: string; replacesInk: boolean }
+  /** Older drafts: a line through two points as its own graph card. New lines are drawn on the grid (line_tool.draw). */
+  | { t: number; type: "graph_it.confirmed"; points: string[]; expression: string; alias: string; x: [number, number]; y: [number, number] }
+  /** A line through two points of a coordinate grid, drawn across that grid. */
+  | { t: number; type: "line_tool.draw"; node: string; from: string; to: string; alias: string }
+  | { t: number; type: "make_point.confirmed"; selection: string; node: string; point: string; x: number; y: number; label: string }
+  | { t: number; type: "ink.hide"; node: string }
+  | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
+  | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
+  | { t: number; type: "your_turn.hint_spoken"; text: string };
+
+export type TakeStatus = "recording" | "kept" | "superseded";
+
+export interface Take {
+  take: number;
+  status: TakeStatus;
+  startedAt: string;
+  durationMs?: number;
+  /** Transcript as recognised, before the learner's corrections. */
+  asrText?: string;
+  /** Transcript the lesson narrates; personal details are removed before publishing. */
+  text?: string;
+  /** Start and end of speech inside the take, for action phases. */
+  speechSpanMs?: [number, number];
+  events: RecordingEvent[];
+  /** Ink frozen during the take, such as handwriting made neat; it joins the card's ink when the take is kept. */
+  ink?: CardInk[];
+  /** The learner started the card over: the card's earlier board and ink are replaced when this take is kept. */
+  fresh?: boolean;
+  /**
+   * Strokes of the take's live writing the learner pointed at, by their box on
+   * the board. When the writing is frozen each becomes a selection of that ink.
+   */
+  inkMarks?: InkMark[];
+}
+
+/** A stroke of live writing the learner pointed at: the selection it will become, and its box on the board. */
+export interface InkMark {
+  selection: string;
+  box: { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * A piece of the learner's ink on a card, frozen when the card stops. Ink
+ * belongs to the card, not a take. Ink drawn on a component annotates it at a
+ * position on that component (fractions of its card).
+ */
+export interface CardInk {
+  snapshotId: string;
+  sha256: string;
+  selections: string[];
+  annotates?: { node: string; x: number; y: number; width: number; height: number };
+  /** The neat math the learner confirmed for this ink, shown in its place. */
+  neat?: { selection: string; latex: string; alias: string };
+}
+
+/** Octo's question after a card, and the learner's answer; private, never part of the lesson. */
+export interface OctoExchange {
+  question: string;
+  answer?: string;
+}
+
+export interface RecordingCard {
+  key: string;
+  title: string;
+  kind: "teach" | "your_turn";
+  takes: Take[];
+  ink?: CardInk[];
+  octo?: OctoExchange;
+}
+
+/** The review of the recorded lesson, kept with the draft for the learner. */
+/** The last "Check my lesson": Octo's review and, card by card, what the screen check found. */
+export interface RecordingReview {
+  at: string;
+  cards: Array<{ key: string; status: "good" | "check"; kind: "none" | "slip" | "misconception" | "unclear"; message: string }>;
+  overall: string;
+  /** Cards not readable at their end on a checked screen; absent in drafts checked before the screen check joined. */
+  screen?: Array<{ card: string; board: "chromebook" | "large"; problems: Array<"small_text" | "small_diagram" | "out_of_view" | "overflow" | "missing_ink" | "no_focus"> }>;
+}
+
+export interface LearnerRecording {
+  schema: typeof LEARNER_RECORDING_SCHEMA;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  topic: RecordingTopic;
+  goals: string[];
+  cards: RecordingCard[];
+  review?: RecordingReview;
+}
+
+export class RecordingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecordingError";
+  }
+}
+
+const MAX_CARDS = 6;
+
+export function createRecording(input: { id: string; now: string; topic: RecordingTopic; goals: string[] }): LearnerRecording {
+  if (!input.topic.text.trim()) throw new RecordingError("A recording needs a topic");
+  return {
+    schema: LEARNER_RECORDING_SCHEMA,
+    id: input.id,
+    createdAt: input.now,
+    updatedAt: input.now,
+    topic: { ...input.topic, text: input.topic.text.trim() },
+    goals: input.goals.map((goal) => goal.trim()).filter(Boolean),
+    cards: [],
+  };
+}
+
+function cardKey(index: number): string {
+  return `card-${index + 1}`;
+}
+
+function touch(recording: LearnerRecording, now: string, cards: RecordingCard[]): LearnerRecording {
+  return { ...recording, updatedAt: now, cards };
+}
+
+function findCard(recording: LearnerRecording, key: string): RecordingCard {
+  const card = recording.cards.find((candidate) => candidate.key === key);
+  if (!card) throw new RecordingError(`Unknown card ${key}`);
+  return card;
+}
+
+function replaceCard(recording: LearnerRecording, key: string, update: (card: RecordingCard) => RecordingCard): RecordingCard[] {
+  return recording.cards.map((card) => (card.key === key ? update(card) : card));
+}
+
+/** Plans the cards. Keys follow the final order; cards without takes may be reordered or removed freely. */
+export function planCards(
+  recording: LearnerRecording,
+  now: string,
+  cards: Array<{ title: string; kind?: RecordingCard["kind"]; from?: string }>,
+): LearnerRecording {
+  if (cards.length === 0) throw new RecordingError("A lesson needs at least one card");
+  if (cards.length > MAX_CARDS) throw new RecordingError(`A lesson has at most ${MAX_CARDS} cards`);
+  const kept = new Set(cards.map((card) => card.from).filter(Boolean));
+  const dropped = recording.cards.filter((card) => !kept.has(card.key) && card.takes.length > 0);
+  if (dropped.length) throw new RecordingError(`Card ${dropped[0]!.key} already has a recording`);
+  const next = cards.map((card, index): RecordingCard => {
+    const previous = card.from ? findCard(recording, card.from) : undefined;
+    const title = card.title.trim();
+    if (!title) throw new RecordingError("Every card needs a title");
+    return {
+      key: cardKey(index),
+      title,
+      kind: card.kind ?? previous?.kind ?? "teach",
+      takes: previous?.takes ?? [],
+      ...(previous?.ink ? { ink: previous.ink } : {}),
+    };
+  });
+  return touch(recording, now, next);
+}
+
+/** The take whose board a card shows now: the one being recorded, else the kept one. */
+export function boardTake(card: RecordingCard): Take | undefined {
+  return currentTake(card) ?? keptTake(card);
+}
+
+export function currentTake(card: RecordingCard): Take | undefined {
+  return card.takes.find((take) => take.status === "recording");
+}
+
+/** The take the lesson uses: the latest kept one. */
+export function keptTake(card: RecordingCard): Take | undefined {
+  return [...card.takes].reverse().find((take) => take.status === "kept");
+}
+
+/** What a card's board is built from, as opposed to the learner's words and pointing. */
+const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide",
+  "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
+]);
+
+/**
+ * Starts a take. Re-recording a card replaces what the learner says and how
+ * they point and drag; the board they built (components, points, lines, the
+ * exercise, ink and neat math) stays, already shown when the take begins.
+ * Starting the card over (`fresh`) begins from an empty card instead.
+ */
+export function startTake(recording: LearnerRecording, key: string, now: string, options: { fresh?: boolean } = {}): LearnerRecording {
+  const card = findCard(recording, key);
+  if (currentTake(card)) throw new RecordingError(`Card ${key} is already recording`);
+  if (recording.cards.some((other) => currentTake(other))) {
+    throw new RecordingError("Another card is recording");
+  }
+  const board = options.fresh ? [] : (keptTake(card)?.events ?? []).filter((event) => BOARD_CONTENT.has(event.type)).map((event) => ({ ...event, t: 0 }));
+  const take: Take = { take: card.takes.length + 1, status: "recording", startedAt: now, events: board, ...(options.fresh ? { fresh: true } : {}) };
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, takes: [...existing.takes, take] })));
+}
+
+export function appendEvent(recording: LearnerRecording, key: string, event: RecordingEvent, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!Number.isFinite(event.t) || event.t < 0) throw new RecordingError("Event time must be a non-negative number");
+  const last = take.events.at(-1);
+  if (last && event.t < last.t) throw new RecordingError("Events must be in time order");
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, events: [...take.events, event] } : candidate)),
+  })));
+}
+
+/** Adds ink frozen during the take, for example handwriting the learner just made neat. */
+export function addTakeInk(recording: LearnerRecording, key: string, ink: CardInk, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, ink: [...(take.ink ?? []), ink] } : candidate)),
+  })));
+}
+
+/** Remembers a stroke of live writing the learner pointed at. */
+export function addInkMark(recording: LearnerRecording, key: string, mark: InkMark, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, inkMarks: [...(take.inkMarks ?? []), mark] } : candidate)),
+  })));
+}
+
+/** Ends the take, keeps it, and marks the card's earlier kept take as superseded. */
+export function finishTake(
+  recording: LearnerRecording,
+  key: string,
+  now: string,
+  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk[] },
+): LearnerRecording {
+  const card = findCard(recording, key);
+  const take = currentTake(card);
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!(result.durationMs > 0)) throw new RecordingError("A take must have a duration");
+  // Ink belongs to the card: a re-take adds its new strokes to what is already there.
+  const ink = [...(take.ink ?? []), ...(result.ink ?? [])];
+  const kept: Take = { ...take };
+  delete kept.ink;
+  delete kept.inkMarks;
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({
+    ...existing,
+    ...(take.fresh ? { ink } : ink.length ? { ink: [...(existing.ink ?? []), ...ink] } : {}),
+    takes: existing.takes.map((candidate): Take => {
+      if (candidate === take) {
+        return {
+          ...kept,
+          status: "kept",
+          durationMs: result.durationMs,
+          asrText: result.asrText,
+          text: result.asrText,
+          ...(result.speechSpanMs ? { speechSpanMs: result.speechSpanMs } : {}),
+        };
+      }
+      return candidate.status === "kept" ? { ...candidate, status: "superseded" } : candidate;
+    }),
+  })));
+}
+
+/** Discards an unfinished take, for example when the learner cancels. */
+export function cancelTake(recording: LearnerRecording, key: string, now: string): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) return recording;
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.filter((candidate) => candidate !== take),
+  })));
+}
+
+/** The learner fixes what speech recognition heard. */
+export function correctTranscript(recording: LearnerRecording, key: string, text: string, now: string): LearnerRecording {
+  const take = keptTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} has no recording to correct`);
+  const corrected = text.trim();
+  if (!corrected) throw new RecordingError("The transcript cannot be empty");
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, text: corrected } : candidate)),
+  })));
+}
+
+/** Whether every card has a kept take and nothing is still recording. */
+export function recordingComplete(recording: LearnerRecording): boolean {
+  return recording.cards.length > 0
+    && recording.cards.every((card) => !currentTake(card) && keptTake(card));
+}
+
+/** Octo asked about a card; a new question replaces an earlier one and its answer. */
+export function setOctoQuestion(recording: LearnerRecording, key: string, question: string, now: string): LearnerRecording {
+  findCard(recording, key);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({ ...card, octo: { question: question.trim() } })));
+}
+
+export function answerOcto(recording: LearnerRecording, key: string, answer: string, now: string): LearnerRecording {
+  const card = findCard(recording, key);
+  if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
+  return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+export function setReview(recording: LearnerRecording, review: RecordingReview, now: string): LearnerRecording {
+  return { ...recording, updatedAt: now, review };
+}

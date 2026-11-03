@@ -92,4 +92,7 @@ export const domainLabel = (domain: string) => DOMAIN_LABELS[domain] ?? domain;
 const TOPIC_NAMES: Readonly<Record<string, string>> = topicNames.names;
 const ENGLISH_NAMES: Readonly<Record<string, string>> = englishNames.names;
 export const topicLabel = (topicId: string, name: string, locale = getLocale()) => (locale === "zh-CN" ? TOPIC_NAMES : ENGLISH_NAMES)[topicId] ?? name;
+/** Every topic name catalog, for matching what a learner types in either language. */
+export const TOPIC_NAME_CATALOGS: ReadonlyArray<Readonly<Record<string, string>>> = [ENGLISH_NAMES, TOPIC_NAMES];
+export const topicNameLabels = (locale = getLocale()): Readonly<Record<string, string>> => ({ ...ENGLISH_NAMES, ...(locale === "zh-CN" ? TOPIC_NAMES : {}) });
 

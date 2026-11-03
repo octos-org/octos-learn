@@ -23,7 +23,12 @@ export interface VoiceCapture {
   /** Resolves once the VAD is fully torn down. Await before starting reply
    *  playback so the Silero ONNX/WASM + mic AudioContext shutdown doesn't
    *  contend with the playback render thread. */
-  stop: () => Promise<void>;
+  /**
+   * Stops listening. With `submitSpeech`, speech still in progress is first
+   * delivered as a last utterance instead of being dropped, for a recorder
+   * whose user presses Stop right after speaking.
+   */
+  stop: (options?: { submitSpeech?: boolean }) => Promise<void>;
   error: string | null;
   /** Current failure, available immediately after start() resolves false. */
   getError: () => string | null;
@@ -212,7 +217,7 @@ export function useVoiceCapture(): VoiceCapture {
     return () => window.removeEventListener(NATIVE_AUDIO_EVENT, onNativeAudio);
   }, [setError]);
 
-  const stop = useCallback((): Promise<void> => {
+  const stopNow = useCallback((): Promise<void> => {
     startGenRef.current++;
     callbacksRef.current = null;
     if (nativeCaptureActiveRef.current) {
@@ -256,6 +261,22 @@ export function useVoiceCapture(): VoiceCapture {
     });
     return teardown;
   }, []);
+
+  const stop = useCallback((options: { submitSpeech?: boolean } = {}): Promise<void> => {
+    const vad = vadRef.current;
+    if (!options.submitSpeech || !vad || nativeCaptureActiveRef.current) return stopNow();
+    // Pausing with submission ends the current speech segment and hands it to
+    // onSpeechEnd while the callbacks are still attached.
+    return (async () => {
+      try {
+        vad.setOptions({ submitUserSpeechOnPause: true });
+        await vad.pause();
+      } catch {
+        // already paused / destroyed: nothing in progress to deliver
+      }
+      await stopNow();
+    })();
+  }, [stopNow]);
 
   const start = useCallback(async (
     onUtterance: (wav: Blob) => void,

@@ -161,7 +161,16 @@ export async function synthesizeTeacherSample(text: string, voices: Readonly<Rec
     return await synthesizeWith(text, config, config.params.voice, signal, language);
   } catch (error) { throw serviceFailure("tts", error, false); }
 }
-export async function transcribeDirect(wav: Blob, signal: AbortSignal, draft?: ClientService): Promise<{ status: "speech" | "no_speech"; transcript: string }> {
+/**
+ * Volcano's language for what is spoken: English is pinned, because unpinned
+ * recognition hears Chinese and English and can turn a short English clip into
+ * unrelated Chinese. Other languages keep the default.
+ */
+export function speechRecognitionLanguage(language: string | undefined): string | undefined {
+  return language && /^en(?:-|$)/i.test(language) ? "en-US" : undefined;
+}
+
+export async function transcribeDirect(wav: Blob, signal: AbortSignal, draft?: ClientService, options: { language?: string } = {}): Promise<{ status: "speech" | "no_speech"; transcript: string }> {
   const owned = serviceRequest(signal, "asr");
   signal = owned.signal;
   try {
@@ -169,7 +178,8 @@ export async function transcribeDirect(wav: Blob, signal: AbortSignal, draft?: C
     if (wav.size > 5_760_044) throw new ServiceError("network_error", tr("语音过长，请分成短句。"));
     const config = draft ?? requiredService("asr");
     const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1]); reader.onerror = () => reject(new Error(tr("读取失败"))); reader.readAsDataURL(wav); });
-    const response = await directJson("asr", config, { user: { uid: "byok-client" }, audio: { data }, request: { model_name: "bigmodel", enable_itn: true, enable_punc: true } }, signal);
+    const language = speechRecognitionLanguage(options.language);
+    const response = await directJson("asr", config, { user: { uid: "byok-client" }, audio: { data, ...(language ? { language } : {}) }, request: { model_name: "bigmodel", enable_itn: true, enable_punc: true } }, signal);
     if (response.code === "20000003") return { status: "no_speech", transcript: "" };
     if (response.code !== "20000000") throw statusError(502, response.code ?? undefined);
     const result = JSON.parse(response.body) as { result?: { text?: unknown } };

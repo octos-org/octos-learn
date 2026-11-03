@@ -374,6 +374,26 @@ describe("useVoiceCapture", () => {
     unmount();
   });
 
+  it("delivers speech still in progress when stopped with submitSpeech", async () => {
+    const onUtterance = vi.fn();
+    const { result, unmount } = renderHook(() => useVoiceCapture());
+    await act(async () => {
+      await result.current.start(onUtterance);
+    });
+    const vad = vadInstances[0]!;
+    // Pausing with submission ends the segment, as MicVAD does.
+    vad.pause.mockImplementationOnce(async () => {
+      (vad.options.onSpeechEnd as (audio: Float32Array) => void)(new Float32Array([0.1, 0.2]));
+    });
+    await act(async () => {
+      await result.current.stop({ submitSpeech: true });
+    });
+    expect(vad.setOptions).toHaveBeenCalledWith({ submitUserSpeechOnPause: true });
+    expect(onUtterance).toHaveBeenCalledTimes(1);
+    expect(vad.destroy).toHaveBeenCalled();
+    unmount();
+  });
+
   it("prefers V5 and falls back to legacy when V5 fails to start", async () => {
     const err = new Error("V5 not supported");
     vadNewMock.mockReset();
