@@ -2,6 +2,30 @@
 
 2026-11-02。用户授权继续验证。**结果：局部绘画素材能保留画风，闭眼、开口端点比上一轮 LivePortrait 输出可控；完整动画质量仍未通过。** 本轮没有替换录课舞台，手臂暂缓。
 
+## 后续进展：单眼固定虹膜遮挡（同日）
+
+用户询问是否需要配合。当前没有必须由用户处理的设备、素材或授权阻塞；直接继续单眼变形验证。上一轮保存在提交 `57a274d5`。
+
+- [五档闭合对照](avatar-animation-phase-a/facial-rig/blink-v2/comparison.png)：上排 V1 将整块眼睛压缩，下排 V2 保持眼球原始绘画位置，由上下眼皮遮挡；0 / 25 / 50 / 75 / 100% 均实际渲染。
+- [单眼慢速对照动画](avatar-animation-phase-a/facial-rig/blink-v2/validation.gif)与[视频](avatar-animation-phase-a/facial-rig/blink-v2/validation.mp4)：左侧旧版、右侧新版，故意慢速展示闭合与睁开。只验证画面左眼，没有扩到另一眼或接摄像头。
+- [可独立打开的单眼交互页](avatar-animation-phase-a/facial-rig/blink-preview.html)：同一滑杆同步控制新旧版，提供五档定格和慢速演示，不需要服务器。完成内嵌资源与脚本语法检查；**未完成真实浏览器点击或截图验收**。
+
+V2 使用原画本身的眼白与虹膜纹理，保持坐标不变；从原画提取深色眼睫毛窄条，沿手工拟合的平滑曲线移动并单独改变厚度。没有新生成整张脸，也没有压缩眼球。它是遮挡变形试验，**不是已经得到可独立转动的虹膜/眼白完整模型**。
+
+[检查报告](avatar-animation-phase-a/facial-rig/blink-v2/report.json)确认：五档中眼部区域以外的像素不变，复位与原画逐像素一致；在 0 / 25 / 50 / 75% 闭合时，可见虹膜内部一个 15×3px 探针区域与原图保持一致。这只证明没有压缩这个可见区域，不是自然眨眼质量分数。已解码检查 120 帧 / 24 FPS 视频与实际 5000ms GIF；播放速度不等于实时采集帧率。
+
+**仍未判为成品：** 眼睫毛边缘有栅格锯齿，手工遮挡曲线还不够贴合眼角。从恰好 0 闭合切到极小正值时，原图切换为重建睫毛，局部仍有跳变；已测眼部矩形平均 RGB 差约 2.02、最大单通道差 190，不能只用均值隐藏局部大差异。该问题和原先虹膜被压扁的问题分开记录。下一步先修复中性状态与眼角的连续性，再扩到另一眼；嘴型、头颈和设备验收仍待办。当前不要求用户测试或批准。
+
+复现单眼渲染、编码和交互导出：
+
+```sh
+node scripts/avatar-blink-validate.mjs /absolute/path/to/@napi-rs/canvas
+scratch/avatar-single-image/venv/bin/python scripts/avatar-blink-media.py
+node scripts/avatar-face-rig-export.mjs
+```
+
+编码脚本使用已有 Pillow、NumPy、imageio/ffmpeg 可选制作环境，不加入产品依赖。此前六状态、PSD 和整体面部试验保留如下，未被这次单眼实验冒称为全部修复。
+
 ## 本轮可检查的输出
 
 - [六状态实际渲染对照](avatar-animation-phase-a/facial-rig/comparison.jpg)：原画/复位、半闭眼、全闭眼、小开口、大开口、组合。

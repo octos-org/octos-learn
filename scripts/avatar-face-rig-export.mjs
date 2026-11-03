@@ -12,4 +12,10 @@ html = html.replace("import {MATERIALS,drawFace} from './renderer.mjs';", `${ren
 html = html.replace("image.src='materials/'+key+'.png'", 'image.src=embeddedImages[key]');
 html = html.replace('src="materials/source.png"', `src="${data.source}"`);
 fs.writeFileSync(`${root}/preview.html`, html);
-console.log('Exported self-contained preview.html; no network or camera access.');
+const blinkRenderer=fs.readFileSync(`${root}/blink-study.mjs`,'utf8').replaceAll('export ','');
+let blinkHtml=fs.readFileSync(`${root}/blink-study.html`,'utf8');
+blinkHtml=blinkHtml.replace("import {MATERIALS,drawFace} from './renderer.mjs';",`const {MATERIALS,drawFace}=(()=>{${renderer}\nreturn {MATERIALS,drawFace};})();\nconst embeddedImages=${JSON.stringify(data)};`);
+blinkHtml=blinkHtml.replace("import {prepareBlinkStudy,drawBlinkStudy} from './blink-study.mjs';",`const {prepareBlinkStudy,drawBlinkStudy}=(()=>{${blinkRenderer}\nreturn {prepareBlinkStudy,drawBlinkStudy};})();`);
+blinkHtml=blinkHtml.replace("image.src='materials/'+key+'.png'",'image.src=embeddedImages[key]');
+fs.writeFileSync(`${root}/blink-preview.html`,blinkHtml);
+console.log('Exported self-contained preview.html + blink-preview.html; no network or camera access.');

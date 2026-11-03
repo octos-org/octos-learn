@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>星狐 · 单眼眨眼验证</title>
+<style>body{margin:0;background:#f4f1ea;color:#243649;font:16px/1.6 system-ui,sans-serif}main{max-width:900px;margin:32px auto;padding:0 20px}h1{font-size:26px;margin-bottom:6px}p{margin:8px 0 20px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}canvas{display:block;width:100%;border-radius:16px}figcaption{margin:8px 0}.controls{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}label{display:block;margin:20px 0}input{width:100%;accent-color:#956a2f}button{font:inherit;color:inherit;padding:8px 16px;border:1px solid #bec8cb;border-radius:24px;background:#fff;cursor:pointer}.note{color:#52616e;font-size:14px}</style>
+<main><h1>单眼眨眼 · 两种方式对照</h1><p>只调整画面左侧眼睛。右侧眼睛、头发、衣服与嘴保持原样。</p>
+<div class="pair"><figure><canvas id="old" width="420" height="300"></canvas><figcaption>上一版：虹膜随眼睛一起压缩</figcaption></figure><figure><canvas id="next" width="420" height="300"></canvas><figcaption>本轮：虹膜不变形，由眼皮遮挡</figcaption></figure></div>
+<label>闭合程度 <output id="value">0%</output><input type="range" min="0" max="1" step=".001" value="0" id="blink" aria-label="闭合程度"></label>
+<div class="controls"><button disabled data-pose="0">自然睁眼</button><button disabled data-pose=".25">闭合 25%</button><button disabled data-pose=".5">闭合 50%</button><button disabled data-pose=".75">闭合 75%</button><button disabled data-pose="1">完全闭眼</button><button disabled id="play" aria-pressed="false">慢速演示</button></div>
+<p id="status" role="status">正在读取本地素材…</p><p class="note">这是制作中的单眼试验，没有使用摄像头。眼皮边缘还有锯齿；从原画切到极小闭合量时，局部轮廓仍有变化。嘴型、另一眼与转头尚未改进，不能视为完整头像验收通过。</p></main>
+<script type="module">
+import {MATERIALS,drawFace} from './renderer.mjs';
+import {prepareBlinkStudy,drawBlinkStudy} from './blink-study.mjs';
+const makeCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+const stage=makeCanvas(512,512),ctx=stage.getContext('2d'),slider=document.querySelector('#blink'),play=document.querySelector('#play');
+const a=document.querySelector('#old').getContext('2d'),b=document.querySelector('#next').getContext('2d');let images,rig,playing=false,raf=0,start=0;
+function draw(){const blink=Number(slider.value);drawFace(ctx,images,{left:blink});a.clearRect(0,0,420,300);a.drawImage(stage,120,165,140,100,0,0,420,300);drawBlinkStudy(ctx,images,rig,blink);b.clearRect(0,0,420,300);b.drawImage(stage,120,165,140,100,0,0,420,300);document.querySelector('#value').value=Math.round(blink*100)+'%';}
+function stop(){playing=false;cancelAnimationFrame(raf);play.textContent='慢速演示';play.setAttribute('aria-pressed','false');}
+function tick(now){if(!playing)return;const t=((now-start)/1000)%5,smooth=p=>{p=Math.max(0,Math.min(1,p));return p*p*(3-2*p);};slider.value=t<1?0:t<2?smooth(t-1):t<2.3?1:1-smooth(t-2.3);draw();raf=requestAnimationFrame(tick);}
+try{images=Object.fromEntries(await Promise.all(MATERIALS.map(async key=>{const image=new Image();image.src='materials/'+key+'.png';await image.decode();return[key,image];})));rig=prepareBlinkStudy(makeCanvas,images.source);draw();slider.oninput=()=>{stop();draw();};for(const button of document.querySelectorAll('[data-pose]'))button.onclick=()=>{stop();slider.value=button.dataset.pose;draw();};play.onclick=()=>{if(playing){stop();return;}playing=true;start=performance.now();play.textContent='暂停演示';play.setAttribute('aria-pressed','true');raf=requestAnimationFrame(tick);};for(const button of document.querySelectorAll('button'))button.disabled=false;document.querySelector('#status').textContent='素材就绪 · 两侧使用同一个闭合程度';}catch{document.querySelector('#status').textContent='素材读取失败，请打开独立打包的 blink-preview.html。';}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});window.addEventListener('pagehide',stop);
+</script></html>
