@@ -1,0 +1,41 @@
+{
+  "baseline": "f78b4218",
+  "source": "Synthetic MediaPipe coefficients; both painters use identical painted-v0.2 assets",
+  "mouth": [
+    {
+      "cameraJawScore": 0,
+      "beforeRows": 2,
+      "afterRows": 2
+    },
+    {
+      "cameraJawScore": 0.1,
+      "beforeRows": 4,
+      "afterRows": 10
+    },
+    {
+      "cameraJawScore": 0.25,
+      "beforeRows": 6,
+      "afterRows": 21
+    },
+    {
+      "cameraJawScore": 0.5,
+      "beforeRows": 11,
+      "afterRows": 39
+    },
+    {
+      "cameraJawScore": 0.75,
+      "beforeRows": 15,
+      "afterRows": 48
+    },
+    {
+      "cameraJawScore": 1,
+      "beforeRows": 21,
+      "afterRows": 48
+    }
+  ],
+  "headPairDistanceMaxRelativeError": {
+    "before": 0.18801307596205152,
+    "after": 6.661338147750939e-16
+  },
+  "limits": "Central dark/pink row count is an image measurement, not human-mouth tracking accuracy. Head geometry includes crop-edge hair/ears and measures the mesh control field, not recognition or inferred 3D rotation. Artwork outside the source crop is unavailable and may clip during movement."
+}

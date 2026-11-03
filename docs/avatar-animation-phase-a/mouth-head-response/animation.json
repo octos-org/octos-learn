@@ -1,0 +1,7 @@
+{
+  "frames": 110,
+  "frameDelayMs": 100,
+  "durationMs": 11000,
+  "input": "Existing native-model recorded-track.json; same parameters replayed through old/new product painters. No new inference or camera capture.",
+  "limitation": "Offline GIF timing is not a live browser or device performance measurement."
+}

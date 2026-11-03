@@ -25,8 +25,8 @@ for(const key of ['jawOpen','mouthPucker','mouthSmileLeft','eyeBlinkLeft','eyeBl
   const probes=[.0001,.000001].map(epsilon=>({epsilon,max:diff(render(frame({[key]:epsilon})),neutral)}));boundaries[key]=probes;
 }
 const headBoundaries=[.0001,.000001].map(epsilon=>({epsilon,max:diff(render(frame({},[epsilon,-epsilon,epsilon])),neutral)}));
-// Painted v0.2 mouth ROI [210,254,104,66] plus the 12px stage margin.
-const mouthOutsideMax=diff(render(frame({jawOpen:1})),neutral,(x,y)=>x<222||x>=326||y<266||y>=332);
+// Current painted mouth ROI [210,254,104,80] plus the 12px stage margin.
+const mouthOutsideMax=diff(render(frame({jawOpen:1})),neutral,(x,y)=>x<222||x>=326||y<266||y>=346);
 const closedMax=diff(render(frame({jawOpen:1,mouthClose:1})),neutral);
 let clothesMax=0,minHeadAlpha=255;
 for(const p of [-.35,.35])for(const y of [-.45,.45])for(const r of [-.1,.1]){

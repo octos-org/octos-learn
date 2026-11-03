@@ -1,0 +1,82 @@
+{
+  "neutralMax": 0,
+  "mouthOutsideMax": 0,
+  "closedMax": 0,
+  "clothesMax": 0,
+  "minHeadAlpha": 255,
+  "invalidMax": 0,
+  "resetMax": 0,
+  "boundaries": {
+    "jawOpen": [
+      {
+        "epsilon": 0.0001,
+        "max": 0
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ],
+    "mouthPucker": [
+      {
+        "epsilon": 0.0001,
+        "max": 0
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ],
+    "mouthSmileLeft": [
+      {
+        "epsilon": 0.0001,
+        "max": 0
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ],
+    "eyeBlinkLeft": [
+      {
+        "epsilon": 0.0001,
+        "max": 1
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ],
+    "eyeBlinkRight": [
+      {
+        "epsilon": 0.0001,
+        "max": 1
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ],
+    "browInnerUp": [
+      {
+        "epsilon": 0.0001,
+        "max": 0
+      },
+      {
+        "epsilon": 0.000001,
+        "max": 0
+      }
+    ]
+  },
+  "headBoundaries": [
+    {
+      "epsilon": 0.0001,
+      "max": 6
+    },
+    {
+      "epsilon": 0.000001,
+      "max": 0
+    }
+  ],
+  "note": "Actual native Canvas pixels; not camera accuracy, browser/TV FPS or final art approval."
+}
