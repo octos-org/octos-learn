@@ -17,6 +17,7 @@ import { LEARNER_PACKAGE_EXTENSION } from "./learner-package";
 import { deleteStoredLearnerPackage } from "./learner-package-store";
 import { keptTake, type LearnerRecording } from "./recording";
 import { deleteRecordingDraft, loadRecordingDrafts } from "./recording-store";
+import { deleteRecordingPerformances } from "./take-performance-store";
 import "./teach.css";
 
 interface LessonRow {
@@ -85,6 +86,7 @@ export function TeachLessonsPage() {
       deleteRecordingDraft(localStorage, profileId, row.id);
       forgetSyncedDraft(localStorage, profileId, row.id);
       await deleteStoredLearnerPackage(row.id).catch(() => undefined);
+      await deleteRecordingPerformances(profileId, row.id).catch(() => undefined);
       setConfirming(null);
       setList((current) => current.filter((item) => item.id !== row.id));
     } catch (error) {

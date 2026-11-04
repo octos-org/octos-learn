@@ -2846,5 +2846,12 @@
   "正在打开“我的课”…": "Opening My lessons…",
   "这节课的课程包超过 32 MB，不能存到“我的课”。课还保存在这台设备上，也可以下载课程包；把很长的卡片分成几张后再试。": "This lesson's package is over 32 MB, so it can't be saved to My lessons. The lesson is still on this device and you can download the package; try splitting very long cards into several cards.",
   "讲课的形象": "The presenter",
-  "形象只跟随最终配音的基础张嘴，精细发音嘴型仍在完善；摄像头表情还不会存进课里。": "The presenter follows only the basic mouth opening of the final narration. Detailed speech mouth shapes are still in progress, and camera expressions aren't saved in the lesson yet."
+  "形象只跟随最终配音的基础张嘴，精细发音嘴型仍在完善；摄像头表情还不会存进课里。": "The presenter follows only the basic mouth opening of the final narration. Detailed speech mouth shapes are still in progress, and camera expressions aren't saved in the lesson yet.",
+  "这次的摄像头动作没能保存，形象会只跟着配音动嘴。": "This take's camera movement couldn't be saved. Your character will only move its mouth with the narration.",
+  "用摄像头带动我的形象": "Let my camera move my character",
+  "录的时候，形象会学你的表情和转头。只在这台设备上记下动作，不保存、不上传你的画面。": "While you record, your character copies your expressions and head turns. Only the movement is kept, on this device. Your picture is never saved or uploaded.",
+  "摄像头：形象正在跟着你": "Camera: your character is following you",
+  "摄像头：看不到你的脸，形象会先停在原来的样子": "Camera: can't see your face, so your character holds still for now",
+  "摄像头不能用，这次形象只跟着配音动嘴。": "The camera isn't working. This time your character will only move its mouth with the narration.",
+  "摄像头：正在准备…": "Camera: getting ready…"
 }

@@ -182,3 +182,8 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-lesson-more button { min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; color: #2f4a52; background: transparent; font: inherit; text-align: left; cursor: pointer; }
 .teach-lesson-more button:hover { background: #f6efdc; }
 .teach-lessons .teach-question { flex-basis: 100%; }
+.teach-camera-feed { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.teach-camera-toggle { margin-top: 8px; font-size: 14px; }
+.teach-camera-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
+.teach-camera-status { margin: 8px 0 0; padding: 6px 10px; border-radius: 10px; background: #eef4f1; color: #24584a; font-size: 13px; }
+.teach-camera-status[data-state="lost"], .teach-camera-status[data-state="failed"] { background: #fbf1e3; color: #7a4b12; }

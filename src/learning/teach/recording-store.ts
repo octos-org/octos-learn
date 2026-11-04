@@ -33,6 +33,7 @@ export function decodeRecording(value: unknown): LearnerRecording {
   if (recording.presenter !== undefined) {
     const presenter = record(recording.presenter, "presenter");
     if (presenter.mouthMotion !== undefined && presenter.mouthMotion !== "off" && presenter.mouthMotion !== "basic") throw new Error("Unknown mouth motion mode");
+    if (presenter.cameraMotion !== undefined && presenter.cameraMotion !== "off" && presenter.cameraMotion !== "on") throw new Error("Unknown camera motion mode");
   }
   if (recording.schema !== LEARNER_RECORDING_SCHEMA) throw new Error("Unknown recording schema");
   text(recording.id, "id");

@@ -74,6 +74,8 @@ export interface Take {
   text?: string;
   /** Start and end of speech inside the take, for action phases. */
   speechSpanMs?: [number, number];
+  /** The take's camera performance (face and head parameters, no images) is kept on this device (take-performance-store). */
+  camera?: true;
   events: RecordingEvent[];
   /** Ink frozen during the take, such as handwriting made neat; it joins the card's ink when the take is kept. */
   ink?: CardInk[];
@@ -149,8 +151,14 @@ export interface LearnerRecording {
 export interface Presenter {
   avatar?: string;
   voice?: string;
-  /** Opt-in basic final-audio mouth motion; no camera performance or model is published. */
+  /** Opt-in basic final-audio mouth motion. */
   mouthMotion?: "off" | "basic";
+  /**
+   * Opt-in: the camera moves the character while the learner records. Only
+   * expression and head parameters are kept, on this device; a prepared
+   * lesson carries them re-timed onto the synthetic narration. Needs mouth motion.
+   */
+  cameraMotion?: "off" | "on";
 }
 
 export class RecordingError extends Error {
@@ -293,7 +301,7 @@ export function finishTake(
   recording: LearnerRecording,
   key: string,
   now: string,
-  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk[] },
+  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk[]; camera?: boolean },
 ): LearnerRecording {
   const card = findCard(recording, key);
   const take = currentTake(card);
@@ -316,6 +324,7 @@ export function finishTake(
           asrText: result.asrText,
           text: result.asrText,
           ...(result.speechSpanMs ? { speechSpanMs: result.speechSpanMs } : {}),
+          ...(result.camera ? { camera: true as const } : {}),
         };
       }
       return candidate.status === "kept" ? { ...candidate, status: "superseded" } : candidate;
