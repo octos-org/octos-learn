@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { unzipSync, zipSync } from "fflate";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 import { describe, expect, it } from "vitest";
@@ -178,6 +179,8 @@ describe("learner lesson package", () => {
       files[manifest.lesson] = new TextEncoder().encode(new TextDecoder().decode(files[manifest.lesson]!).replace("Here is a grid.", "Here are changed words."));
     });
     expect(() => checkLearnerPackage(Buffer.from(changed), "rec-1")).toThrow("narration does not match its lesson");
+    const calibration = readFileSync("docs/avatar-animation-phase-a/calibration-mouth-course.olesson");
+    expect(checkLearnerPackage(calibration, "synthetic-mouth-calibration").cards).toBe(2);
     const swapped = await editedPackage((files) => { files["narration/1.mp3"] = new Uint8Array([1, 2, 3]); });
     expect(() => checkLearnerPackage(Buffer.from(swapped), "rec-1")).toThrow("mouth track does not match its narration");
   });

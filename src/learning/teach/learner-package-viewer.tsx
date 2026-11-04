@@ -8,6 +8,7 @@ import { LearningWhiteboard } from "../oll/oll-lesson-runtime";
 import { useOllLessonRuntime } from "../oll/use-oll-lesson-runtime";
 import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
+import { presenterOfReference } from "./presenters";
 import { nodeSections } from "./teaching-board-setup";
 import "./teach.css";
 
@@ -82,7 +83,7 @@ export default function LearnerPackageViewer() {
     </div>
     {pack ? <>
       <div className="teach-watch-layout"><section className="teach-watch-stage" aria-label={tr("你的课")}><LearningWhiteboard embedded runtime={runtime} resolveAsset={pack.resolveAsset} /></section>
-        {hasMouth && showAvatar && <Suspense fallback={null}><LessonAvatarPreview track={mouth}
+        {hasMouth && showAvatar && <Suspense fallback={null}><LessonAvatarPreview characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth}
           clock={media && media.beatId === narrationBeatId && media.packageHash === pack.manifest.contentSha256 ? media.clock : null}
           playing={speaking && sound} preparing={narration.preparing} /></Suspense>}
       </div>

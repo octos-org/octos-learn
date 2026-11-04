@@ -1,18 +1,28 @@
 import { useCallback, useState } from "react";
 import { tr } from "@/i18n";
 import type { AudioPlaybackClock } from "@/home/voice/audio-playback";
-import { AvatarStage } from "./avatar-stage";
+import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
 import { lipSyncFrame, type LipSyncTrack } from "./lip-sync";
+import { paintedCharacter, type PaintedCharacterId } from "./painted-characters";
 import "./lesson-avatar-preview.css";
 
 const ignoreMetrics = () => undefined;
 
-/** Shares the existing lesson audio; no second player, capture or synthesis. */
-export default function LessonAvatarPreview({ track, clock, playing, preparing }: {
+/**
+ * The lesson's presenter, animated by the package's final-audio mouth motion.
+ * Shares the existing lesson audio: no second player, capture or synthesis.
+ * The mouth follows the narration's own media clock; nothing is guessed from
+ * wall-clock time. Decorative ear and hair motion stays off here until its
+ * naturalness is approved in the avatar lab.
+ */
+export default function LessonAvatarPreview({ characterId, track, clock, playing, preparing, mode = "preview" }: {
+  characterId: PaintedCharacterId;
   track: LipSyncTrack | null;
   clock: AudioPlaybackClock | null;
   playing: boolean;
   preparing: boolean;
+  /** "preview" for the author's "Watch my lesson", "player" for a saved lesson. */
+  mode?: "preview" | "player";
 }) {
   const [failed, setFailed] = useState(false);
   const onGraphicsError = useCallback(() => setFailed(true), []);
@@ -22,15 +32,18 @@ export default function LessonAvatarPreview({ track, clock, playing, preparing }
     // borrows another clip's mouth motion or guesses from wall-clock time.
     return lipSyncFrame(track, time?.positionMs ?? 0, Boolean(time));
   }, [track, clock, playing]);
-  return <aside className="teach-watch-avatar" aria-label={tr("课程动态头像预览")}>
+  const character = paintedCharacter(characterId);
+  const status = failed ? tr("这台设备暂时无法显示动态头像，声音和白板仍可播放。")
+    : preparing ? tr("正在准备配音…") : !playing ? tr("播放课程时，头像会跟随配音。")
+      : !track ? tr("这张卡片没有配音嘴型。") : clock ? tr("正在跟随课程配音")
+        : tr("当前播放方式暂不支持头像同步，声音和白板仍可播放。");
+  return <aside className={`teach-watch-avatar teach-watch-avatar-${mode}`} aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
     <div className="teach-watch-avatar-stage">
-      {!failed && <AvatarStage frame={frame} fpsLimit={30} active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />}
-      <span>{tr("星狐小样 · 第一版")}</span>
+      {!failed && <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30}
+        active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />}
+      <span>{character.name()}</span>
     </div>
-    <p role="status">{failed ? tr("这台设备暂时无法显示动态头像，声音和白板仍可播放。")
-      : preparing ? tr("正在准备配音…") : !playing ? tr("播放课程时，头像会跟随配音。")
-        : !track ? tr("这张卡片没有配音嘴型。") : clock ? tr("正在跟随课程配音")
-          : tr("当前播放方式暂不支持头像同步，声音和白板仍可播放。")}</p>
-    <small>{tr("当前使用星狐三维小样和基础嘴型，外形、组合表情与精细发音仍在完善。")}</small>
+    <p role="status" className={mode === "player" && !failed ? "teach-visually-hidden" : undefined}>{status}</p>
+    {mode === "preview" && <small>{tr("形象只跟随最终配音的基础张嘴，精细发音嘴型仍在完善；摄像头表情还不会存进课里。")}</small>}
   </aside>;
 }

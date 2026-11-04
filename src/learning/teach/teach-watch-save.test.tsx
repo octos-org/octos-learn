@@ -72,7 +72,7 @@ it("does not upload a package completed after the learner changes the presenter"
   await waitFor(() => expect(saving.make).toHaveBeenCalledOnce());
   const signal = saving.make.mock.calls[0]![0].signal as AbortSignal;
   fireEvent.click(screen.getByRole("button", { name: "Change the avatar or voice" }));
-  fireEvent.click(screen.getByRole("button", { name: "Avatar 3" }));
+  fireEvent.click(screen.getByRole("button", { name: "Moon Cat" }));
   expect(signal.aborted).toBe(true);
   await act(async () => { finish(built()); });
   expect(saving.write).not.toHaveBeenCalled();

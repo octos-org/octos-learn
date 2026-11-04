@@ -30,7 +30,7 @@ import { findPersonalDetails } from "./privacy";
 import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
 import { recordingComplete, setPresenter, type Presenter } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterVoices, type PresenterAvatar } from "./presenters";
+import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { learnerLessonTopic } from "./teaching-board-setup";
@@ -292,7 +292,7 @@ export function TeachWatchPage() {
               <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
             </section>
             {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
-              track={mouthTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
+              characterId={presenterOfReference(packaged?.manifest.author.avatar_ref).id} track={mouthTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
               playing={speaking && narrated} preparing={narration.preparing}
             /></Suspense>}
           </div>
@@ -351,11 +351,13 @@ export function TeachWatchPage() {
   );
 }
 
-/** An avatar's artwork, or a placeholder with its initial until the artwork is added. */
+/** An avatar's portrait, cropped to the face, or a placeholder with its initial if it cannot load. */
 export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
-  const [missing, setMissing] = useState(false);
-  if (missing) {
+  const [missing, setMissing] = useState<string | null>(null);
+  if (missing === avatar.id) {
     return <span className="teach-avatar-placeholder" aria-hidden="true" style={{ width: size, height: size, background: avatar.color }}>{avatar.name().slice(0, 1)}</span>;
   }
-  return <img className="teach-avatar" src={avatarArtUrl(avatar.id)} alt="" width={size} height={size} onError={() => setMissing(true)} />;
+  return <span className="teach-avatar" style={{ width: size, height: size, background: avatar.color }}>
+    <img src={avatarArtUrl(avatar)} alt="" width={size} height={size} onError={() => setMissing(avatar.id)} />
+  </span>;
 }
