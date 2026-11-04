@@ -65,12 +65,21 @@ it("gives camera mouth scores usable travel while preserving manual and ARKit va
 });
 
 it("moves hair and ears at the crop edges with the head without stretching them",()=>{
-  const features:Array<[number,number]>=[[0,0],[512,0],[0,180],[512,180],[10,280],[500,280],[145,182],[377,182],[198,210],[328,210],[261,248],[260,276],[256,328]];
+  // The outline (hair and ears at the crop edges) moves as one rigid piece; only
+  // the middle of the face travels a few pixels further, so a turn reads as a turn.
+  const features:Array<[number,number]>=[[0,0],[512,0],[0,180],[512,180],[10,280],[500,280]];
+  const face:Array<[number,number]>=[[145,182],[377,182],[198,210],[328,210],[261,248],[260,276],[256,328]];
   const distance=(a:number[],b:number[])=>Math.hypot(a[0]-b[0],a[1]-b[1]);
   for(const pitch of [-.35,.35])for(const yaw of [-.45,.45])for(const roll of [-.1,.1]){
     const moved=features.map(p=>paintedHeadPoint(p,pitch,yaw,roll));
     for(let a=0;a<features.length;a++)for(let b=a+1;b<features.length;b++)
       expect(distance(moved[a],moved[b])).toBeCloseTo(distance(features[a],features[b]),9);
+    const rigid=paintedHeadPoint([0,180],0,yaw,0)[0];
+    for(const point of face){
+      // Further in the direction of the turn, by at most the authored parallax (9 px).
+      const extra=paintedHeadPoint(point,0,yaw,0)[0]-point[0]-rigid;
+      expect(extra*Math.sign(yaw)).toBeGreaterThanOrEqual(0);expect(Math.abs(extra)).toBeLessThanOrEqual(9*.45+1e-9);
+    }
     expect(paintedHeadPoint([256,420],pitch,yaw,roll)).toEqual([256,420]);
     expect(paintedHeadPoint([0,180],pitch,yaw,roll)).not.toEqual([0,180]);
   }

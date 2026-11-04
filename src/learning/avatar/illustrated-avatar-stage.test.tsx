@@ -2,20 +2,20 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
 import { neutralFrame } from "./face-frame";
-const painterMock = vi.hoisted(() => ({ fail: false }));
+const painterMock = vi.hoisted(() => ({ fail: false, settling: false }));
 
 // This suite covers image loading and render-loop ownership. Actual painted
 // pixels are verified by the native Canvas export/validation script.
 vi.mock("./painted-fox", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./painted-fox")>();
-  return { ...actual, createPaintedFoxPainter: () => ({ draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => { if (painterMock.fail) throw new Error("paint_failed"); ctx.clearRect(0, 0, w, h); } }) };
+  return { ...actual, createPaintedFoxPainter: () => ({ draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => { if (painterMock.fail) throw new Error("paint_failed"); ctx.clearRect(0, 0, w, h); return { settling: painterMock.settling }; } }) };
 });
 
 const images: Array<{ onload: (() => void) | null; onerror: (() => void) | null; src: string }> = [];
 let raf: Map<number, FrameRequestCallback>, serial: number;
 const clear = vi.fn();
 beforeEach(() => {
-  images.length = 0; serial = 0; raf = new Map(); clear.mockReset(); painterMock.fail = false;
+  images.length = 0; serial = 0; raf = new Map(); clear.mockReset(); painterMock.fail = false; painterMock.settling = false;
   const noop = () => undefined;
   const ctx = new Proxy({ clearRect: clear, createLinearGradient: () => ({ addColorStop: noop }), createRadialGradient: () => ({ addColorStop: noop }) }, { get: (obj, key) => obj[key as keyof typeof obj] ?? noop, set: () => true });
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
@@ -42,6 +42,14 @@ it("stops scheduling when inactive and redraws a changed paused pose", () => {
   const previous = clear.mock.calls.length;
   page.rerender(<IllustratedAvatarStage frame={() => ({ ...neutralFrame(), channels: { jawOpen: 1 } })} active={false} />);
   advance(300); expect(clear.mock.calls.length).toBeGreaterThan(previous);
+});
+
+it("keeps drawing while ears and hair catch up after the head stops, then rests", () => {
+  render(<IllustratedAvatarStage frame={neutralFrame} active={false} />);
+  painterMock.settling = true;
+  act(() => images.forEach((image) => image.onload!())); advance(100); advance(200); advance(300);
+  expect(raf.size).toBe(1);
+  painterMock.settling = false; advance(400); advance(500); expect(raf.size).toBe(0);
 });
 
 it('continues natural ear and hair motion without active capture and stops it when disabled',()=>{

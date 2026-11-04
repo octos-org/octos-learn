@@ -26,7 +26,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };
     const timeout = setTimeout(fail, 15000);
-    let naturalAt:number|undefined;
+    let naturalAt:number|undefined, settling = false;
     const render = (now: number) => {
       handle = 0; if (disposed || !ready || document.hidden) return;
       const animating=callbacks.current.active||callbacks.current.idleMotion;
@@ -38,7 +38,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
         if (element.width !== Math.round(w * ratio) || element.height !== Math.round(h * ratio)) { element.width = Math.round(w * ratio); element.height = Math.round(h * ratio); }
         const input = callbacks.current.frame(now), start = performance.now();
         naturalAt=callbacks.current.idleMotion?(naturalAt??now):undefined;
-        try { painter!.draw(ctx, element.width, element.height, input, { timeMs: naturalAt===undefined?now:now-naturalAt, idleMotion: callbacks.current.idleMotion }); }
+        try { settling = painter!.draw(ctx, element.width, element.height, input, { timeMs: naturalAt===undefined?now:now-naturalAt, idleMotion: callbacks.current.idleMotion }).settling; }
         catch { fail(); return; }
         samples.push(performance.now() - start); count++; last = now - ((now - last) % interval);
         if (now - lastReport >= 1000) {
@@ -46,7 +46,8 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
           lastReport = now; count = 0; samples.length = 0;
         }
       }
-      if (animating || now - idleAt < 70) handle = requestAnimationFrame(render);
+      // Ears and hair may still be catching up after the head stopped.
+      if (animating || settling || now - idleAt < 70) handle = requestAnimationFrame(render);
     };
     const request = () => { if (!disposed && ready && !handle && !document.hidden) { idleAt = 0; lastReport = performance.now(); count = 0; samples.length = 0; handle = requestAnimationFrame(render); } };
     wake.current = request;

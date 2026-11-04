@@ -1,7 +1,7 @@
 import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
-import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
+import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,HEAD_SHIFT,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -50,8 +50,11 @@ export function paintedHeadPoint([x,y]: Point, pitch:number, yaw:number, roll:nu
   const weight=1-smooth((y-340)/60);
   const dx=x-256,dy=y-337;
   const angle=bounded(roll,-.1,.1);
-  return [x+((Math.cos(angle)-1)*dx-Math.sin(angle)*dy+bounded(yaw,-.45,.45)*18)*weight,
-    y+(Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+bounded(pitch,-.35,.35)*14)*weight];
+  // The middle of the face (nearest the viewer) travels a little further than
+  // the outline, which reads as the head turning rather than sliding.
+  const centre=1-smooth(Math.hypot(x-256,(y-235)*1.15)/230);
+  return [x+((Math.cos(angle)-1)*dx-Math.sin(angle)*dy+bounded(yaw,-.45,.45)*(HEAD_SHIFT.yaw+9*centre))*weight,
+    y+(Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+bounded(pitch,-.35,.35)*(HEAD_SHIFT.pitch+6*centre))*weight];
 }
 export function paintedMotionPoint(point:Point,pitch:number,yaw:number,roll:number,pose?:PaintedSecondaryPose,profile:PaintedMotionProfile=FOX_MOTION):Point {
   const secondary=pose??createPaintedSecondaryMotion().sample(pitch,yaw,roll);
@@ -107,18 +110,43 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       upper[k * 4 + c] = d * matte * u; lower[k * 4 + c] = d * matte * (1 - u);
     }
   }
-  const roof = new Float32Array(512).fill(281), floor = new Float32Array(512).fill(281);
+  // Rows of the oral texture per column, smoothed: they only choose which
+  // texels fill the opening, never the shape of the lips.
+  const roofRaw = new Float32Array(512).fill(281), floorRaw = new Float32Array(512).fill(281);
   for (let x = 240; x <= 305; x++) {
     let top = 512, bottom = 0;
     for (let y = 274; y <= 308; y++) if (oral.data[(y * 512 + x) * 4 + 3] > 80) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
-    if (bottom > top) { roof[x] = top; floor[x] = bottom; }
+    if (bottom > top) { roofRaw[x] = top; floorRaw[x] = bottom; }
   }
-  let interiorHeight=1;
-  for(let x=240;x<=305;x++) interiorHeight=Math.max(interiorHeight,floor[x]-roof[x]);
+  const roof = new Float32Array(512), floor = new Float32Array(512);
+  for (let x = 0; x < 512; x++) {
+    let a = 0, b = 0, n = 0;
+    for (let k = -6; k <= 6; k++) { const i = Math.max(244, Math.min(301, x + k)); a += roofRaw[i]!; b += floorRaw[i]!; n++; }
+    // Stay a little inside the painted interior so its soft rim never shows as a ragged edge.
+    roof[x] = a / n + 1.5; floor[x] = b / n - 1.5;
+  }
   for (let i = 0; i < 512 * 512; i++) {
     const a = oral.data[i * 4 + 3] / 255;
     for (let c = 0; c < 3; c++) interior[i * 4 + c] = oral.data[i * 4 + c] * a;
     interior[i * 4 + 3] = a;
+  }
+  // The painted lip line's own colour, for the drawn lower lip edge.
+  const lineColor = [0, 0, 0];
+  {
+    let darkest = Infinity;
+    for (let x = lipCurve[1]![0]; x <= lipCurve[lipCurve.length - 2]![0]; x++) for (let dy = -3; dy <= 3; dy++) {
+      const y = Math.round(curve(lipCurve, x)) + dy, i = (y * 512 + x) * 4;
+      const value = source.data[i]! + source.data[i + 1]! + source.data[i + 2]!;
+      if (value < darkest) { darkest = value; lineColor[0] = source.data[i]!; lineColor[1] = source.data[i + 1]!; lineColor[2] = source.data[i + 2]!; }
+    }
+  }
+  const lipLeft = lipCurve[0]![0], lipRight = lipCurve[lipCurve.length - 1]![0];
+  // A smooth lower boundary under the whole painted line: the painted "ω" upper
+  // lip stays, the dropped jaw shows a single clean arc rather than a copy of it.
+  let hullDepth = 0;
+  for (let x = lipLeft + 1; x < lipRight; x++) {
+    const u = (2 * x - lipLeft - lipRight) / (lipRight - lipLeft), chord = mix(curve(lipCurve, lipLeft), curve(lipCurve, lipRight), (u + 1) / 2);
+    hullDepth = Math.max(hullDepth, (curve(lipCurve, x) - chord) / (1 - u * u));
   }
   const brows = (rig.brows??[
     { rect: [145,136,100,48], points: [[154,160],[173,153],[192,151],[212,154],[234,162]] },
@@ -137,26 +165,41 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     if (open === 0 && round === 0 && leftSmile === 0 && rightSmile === 0) return;
     const smile=(leftSmile+rightSmile)/2;
     const scaleX = (1 - .08 * open) * (1 - .45 * round) * (1 + .18 * smile);
+    const depth = 46 * open, settle = smooth(open / .18), halfWidth = (lipRight - lipLeft) / 2 * scaleX;
     for (let x = 0; x < mw; x++) {
-      const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(lipCurve, sx), ox = 272 + (px - center) / (1.5 * scaleX);
-      const ix = Math.max(0, Math.min(510, Math.floor(ox))), fraction = bounded(ox-ix), top = mix(roof[ix],roof[ix+1],fraction), bottom = mix(floor[ix],floor[ix+1],fraction);
-      // Author the visible travel independently of the small oral source crop.
-      // Keep the upper lip near the muzzle; most opening travels downwards.
-      const travel=48*bounded((bottom-top)/interiorHeight);
-      const corner=mix(leftSmile,rightSmile,bounded(.5+(sx-center)/64));
+      const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(lipCurve, sx);
+      const u = (px + .5 - center) / halfWidth, inside = Math.abs(u) < 1;
+      // Rounded at the corners, fullest in the middle; zero outside the lips.
+      const profile = inside ? Math.pow(1 - u * u, .7) : 0;
+      const corner = mix(leftSmile, rightSmile, bounded(.5 + (sx - center) / 64));
       const lift = -corner * 6 * Math.min(1, ((sx - center) / 32) ** 2);
-      const uy = cy-.18*travel*open+lift, ly = cy+.82*travel*open+lift;
+      const chord = mix(curve(lipCurve, lipLeft), curve(lipCurve, lipRight), bounded((sx - lipLeft) / (lipRight - lipLeft)));
+      const arc = chord + hullDepth * (inside ? 1 - u * u : 0);
+      // Upper lip: the painted line, raised a little. Lower lip: blends from the
+      // painted line (closed) into one smooth arc as soon as the mouth opens.
+      const upperY = cy - .14 * depth * profile + lift;
+      const lowerY = mix(cy, Math.max(cy, arc), settle) + .86 * depth * (inside ? Math.pow(1 - u * u, 1.05) : 0) + lift;
+      const ox = Math.max(244, Math.min(300, 272 + (px - center) / (1.5 * scaleX))), ix = Math.floor(ox), fraction = ox - ix;
+      const top = mix(roof[ix]!, roof[ix + 1]!, fraction), bottom = mix(floor[ix]!, floor[ix + 1]!, fraction);
+      const edge = inside ? settle * Math.sqrt(profile) * .8 : 0;
       for (let y = 0; y < mh; y++) {
-        const py = my + y, k = y * mw + x, syU = py - uy + cy - my, syL = py - ly + cy - my;
-        const uw = sample(upper,mw,mh,sx-mx,syU,3), lw = sample(lower,mw,mh,sx-mx,syL,3), norm = Math.max(1, uw + lw);
-        const oy = ly>uy ? top+(py-uy)/(ly-uy)*(bottom-top) : -100;
-        const coverage = Math.min(1,open*travel);
-        // Interior coverage tends to zero with opening area, rather than popping on.
-        const inside = smooth((py-uy)/1.6)*smooth((ly-py)/1.6)*coverage;
-        const alpha=inside>0?sampleOral(interior,ox,oy,3):0;
+        const py = my + y, k = y * mw + x, centreY = py + .5;
+        // The painted line moves with the upper lip (both its halves together).
+        const syU = py - (upperY - cy) - my;
+        const uw = sample(upper,mw,mh,sx-mx,syU,3) + sample(lower,mw,mh,sx-mx,syU,3), norm = Math.max(1, uw);
+        // Analytic per-pixel coverage of the opening: smooth, anti-aliased edges.
+        const opening = lowerY > upperY ? bounded(Math.min(lowerY, py + 1) - Math.max(upperY, py)) : 0;
+        const v = lowerY > upperY ? bounded((centreY - upperY) / (lowerY - upperY)) : 0;
+        const oy = top + v * (bottom - top);
+        const alpha = opening > 0 ? sampleOral(interior, ox, oy, 3) : 0;
+        const rim = edge * Math.exp(-(((centreY - lowerY) / .9) ** 2));
         for (let c = 0; c < 3; c++) {
-          const skin = mouthBase[k*3+c], pigment=inside>0?Math.min(255*alpha,sampleOral(interior,ox,oy,c)):0;
-          mouthOutput.data[k*4+c] = Math.round(skin*(1-alpha*inside)+pigment*inside+(sample(upper,mw,mh,sx-mx,syU,c)+sample(lower,mw,mh,sx-mx,syL,c))/norm);
+          const skin = mouthBase[k*3+c]!;
+          // Unpremultiplied interior colour, darkened where the texture is thin.
+          const mouth = alpha > .02 ? sampleOral(interior, ox, oy, c) / alpha * Math.min(1, alpha + .35) + (1 - Math.min(1, alpha + .35)) * 70 : 70;
+          let value = skin * (1 - opening) + mouth * opening;
+          value = value * (1 - rim) + lineColor[c]! * rim;
+          mouthOutput.data[k*4+c] = Math.round(bounded(value + (sample(upper,mw,mh,sx-mx,syU,c) + sample(lower,mw,mh,sx-mx,syU,c)) / norm * (1 - opening), 0, 255));
         }
         mouthOutput.data[k*4+3]=255;
       }
@@ -217,7 +260,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     deformed.context.putImageData(headOutput,0,0);return deformed.canvas;
   }
   return {
-    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean}={}) {
+    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean}={}):{settling:boolean} {
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
@@ -233,7 +276,9 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       // inside the outpainted portrait, so this patch has no visible boundary.
       portraitCtx.drawImage(texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
       const pitch=bounded(frame.rotation[0],-.35,.35),yaw=bounded(-frame.rotation[1],-.45,.45),roll=bounded(-frame.rotation[2],-.10,.10);
-      const secondary=secondaryMotion.sample(pitch,yaw,roll,options.timeMs===undefined?undefined:frame.timeMs);
+      // Ears and hair follow on the render clock: camera frames arrive at about
+      // 20 Hz with repeated timestamps, which would step the follow-through.
+      const secondary=secondaryMotion.sample(pitch,yaw,roll,options.timeMs);
       if(options.idleMotion){
         const idle=paintedIdlePose(options.timeMs??0,motionProfile);
         for(const key of Object.keys(secondary)as Array<keyof PaintedSecondaryPose>)secondary[key]+=idle[key];
@@ -244,6 +289,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,size,size);}
       target.drawImage(moving?deformHead(pitch,yaw,roll,secondary):portrait.canvas,0,0);
       target.restore();
+      return { settling: secondaryMotion.settling() };
     },
   };
 }

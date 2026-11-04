@@ -31,7 +31,9 @@ if(Object.values(checks).some(n=>n!==0)||minAlpha!==255||Object.values(continuit
 reports[character.id]={checks,minAlpha,continuity,frownDelta};
 // Head/ear following was intentionally changed after this baseline. Preserve
 // the approved still facial artwork, rather than asserting the old head motion.
-if(character.id==='star-fox'){const previous=accepted.createPaintedFoxPainter(images,surface);for(const p of[...poses.filter(p=>p.value.rotation.every(n=>n===0)),{value:frame({mouthPucker:.8,mouthSmileLeft:.6,browInnerUp:.7})}]){previous.draw(oldSurface.context,sz,sz,p.value);acceptedFoxMax=Math.max(acceptedFoxMax,diff(render(p.value),oldSurface.context.getImageData(0,0,sz,sz).data).max);}}
+// The open mouth was redrawn on 2026-11-03 at the user's request (crooked,
+// jagged lips), so open-mouth poses compare everything except the mouth area.
+if(character.id==='star-fox'){const previous=accepted.createPaintedFoxPainter(images,surface);for(const p of[...poses.filter(p=>p.value.rotation.every(n=>n===0)),{value:frame({mouthPucker:.8,mouthSmileLeft:.6,browInnerUp:.7})}]){previous.draw(oldSurface.context,sz,sz,p.value);const opened=Object.keys(p.value.channels).some(key=>/^(jaw|mouth)/.test(key));acceptedFoxMax=Math.max(acceptedFoxMax,diff(render(p.value),oldSurface.context.getImageData(0,0,sz,sz).data,opened?(x,y)=>!(x>=208&&x<=316&&y>=252&&y<=336):undefined).max);}}
 for(const[j,p]of poses.entries()){render(p.value);g.fillStyle='#243649';g.fillText(character.name()+' · '+p.label,i*320+10,j*340+24);g.drawImage(canvas,i*320,j*340+30,310,310);}
 render(frame());await writeFile(`${output}/${character.id}-neutral.png`,canvas.toBuffer('image/png'));
 }
