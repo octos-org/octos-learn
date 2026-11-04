@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, chmod, symlink } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash, createCipheriv, randomBytes } from "node:crypto";
-import { createByokServer, SERVICE_FIELDS } from "./server.mjs";
+import { createByokServer, SERVICE_FIELDS, azureRequest } from "./server.mjs";
 let root, server, base, calls, writes, supplierReply;
 const key = "synthetic-alice-speech-key";
 const otherKey = "synthetic-bob-speech-key";
@@ -176,4 +176,75 @@ test("client cancellation aborts the supplier request", async () => {
 test("HTTPS development accepts same-origin HTTP/2 authority without a Host header", async () => {
   const response = await call("/prepare", "POST", null, { origin: base, "x-test-http2-authority": "yes" });
   assert.equal(response.status, 200); assert.equal((await response.json()).profile_id, "alice");
+});
+
+// Azure AI Speech: US English recognition and narration with the learner's own key.
+const azureTts = { region: "eastus", voice: "en-US-AnaNeural" };
+function wav16k(seconds = 0.1, rate = 16000) {
+  const samples = Math.round(seconds * rate); const buffer = Buffer.alloc(44 + samples * 2);
+  buffer.write("RIFF", 0, "ascii"); buffer.writeUInt32LE(36 + samples * 2, 4); buffer.write("WAVE", 8, "ascii");
+  buffer.write("fmt ", 12, "ascii"); buffer.writeUInt32LE(16, 16); buffer.writeUInt16LE(1, 20); buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(rate, 24); buffer.writeUInt32LE(rate * 2, 28); buffer.writeUInt16LE(2, 32); buffer.writeUInt16LE(16, 34);
+  buffer.write("data", 36, "ascii"); buffer.writeUInt32LE(samples * 2, 40);
+  return buffer;
+}
+test("Azure narration is saved, relayed as escaped SSML and returned base64", async () => {
+  const own = await meta();
+  const saved = await call("/tts", "PUT", { provider: "azure", enabled: true, params: azureTts, key: "synthetic-azure-key", expected_revision: own.revision });
+  assert.equal(saved.status, 200);
+  const record = (await saved.json()).services.tts;
+  assert.equal(record.provider, "azure"); assert.deepEqual(record.params, azureTts);
+  supplierReply = () => new Response(Uint8Array.from([0xff, 0xf3, 0x00, 0x01]), { headers: { "content-type": "audio/mpeg" } });
+  const response = await call("/tts/relay", "POST", { provider: "azure", params: azureTts, payload: { text: "Slope is <rise> & run", voice: "en-US-AnaNeural" }, expected_revision: record.revision });
+  assert.equal(response.status, 200);
+  const relayed = await response.json();
+  assert.equal(relayed.status, 200); assert.equal(relayed.code, null);
+  assert.deepEqual([...Buffer.from(relayed.body, "base64")], [0xff, 0xf3, 0x00, 0x01]);
+  const [{ url, options }] = calls;
+  assert.equal(url, "https://eastus.tts.speech.microsoft.com/cognitiveservices/v1");
+  assert.equal(options.headers["Ocp-Apim-Subscription-Key"], "synthetic-azure-key");
+  assert.equal(options.headers["X-Microsoft-OutputFormat"], "audio-24khz-48kbitrate-mono-mp3");
+  assert.match(options.body, /xml:lang="en-US"><voice name="en-US-AnaNeural">Slope is &lt;rise&gt; &amp; run<\/voice>/);
+  assert.ok(!JSON.stringify(relayed).includes("synthetic-azure-key"));
+});
+test("Azure recognition relays 16 kHz WAV to the regional endpoint", async () => {
+  const own = (await (await call()).json()).services.asr;
+  const saved = await call("/asr", "PUT", { provider: "azure", enabled: true, params: { region: "westus2" }, key: "synthetic-azure-key", expected_revision: own?.revision ?? null });
+  assert.equal(saved.status, 200);
+  const record = (await saved.json()).services.asr;
+  supplierReply = () => Response.json({ RecognitionStatus: "Success", DisplayText: "The slope is two." });
+  const response = await call("/asr/relay", "POST", { provider: "azure", params: { region: "westus2" }, payload: { audio: wav16k().toString("base64"), language: "en-US" }, expected_revision: record.revision });
+  const relayed = await response.json();
+  assert.equal(relayed.status, 200); assert.equal(JSON.parse(relayed.body).DisplayText, "The slope is two.");
+  const [{ url, options }] = calls;
+  assert.equal(url, "https://westus2.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=simple&profanity=raw");
+  assert.equal(options.headers["content-type"], "audio/wav; codecs=audio/pcm; samplerate=16000");
+  assert.ok(Buffer.isBuffer(options.body));
+});
+test("Azure configuration and payloads are validated before any supplier call", async () => {
+  const own = await meta();
+  for (const params of [{ region: "east us" }, { region: "https://evil.example" }, { region: "eastus", voice: "<voice>" }, { region: "eastus", resource_id: "x" }]) {
+    assert.equal((await call("/tts", "PUT", { provider: "azure", enabled: true, params, key: "k", expected_revision: own.revision })).status, 400, JSON.stringify(params));
+  }
+  assert.equal((await call("/tts", "PUT", { provider: "azure", enabled: true, params: { region: "eastus", auth_mode: "api-key" }, key: "k", expected_revision: own.revision })).status, 400);
+  assert.equal((await call("/admission", "PUT", { provider: "azure", enabled: true, params: { region: "eastus" }, key: "k", expected_revision: null })).status, 400);
+  assert.throws(() => azureRequest("tts", azureTts, "k", { text: "hi", voice: "en-US-Ana\"Neural" }), /Invalid speech request/);
+  assert.throws(() => azureRequest("tts", azureTts, "k", { text: "", voice: "en-US-AnaNeural" }), /Invalid speech request/);
+  assert.throws(() => azureRequest("asr", { region: "eastus" }, "k", { audio: wav16k(0.1, 44100).toString("base64"), language: "en-US" }), /Unsupported audio/);
+  assert.throws(() => azureRequest("asr", { region: "eastus" }, "k", { audio: wav16k(61).toString("base64"), language: "en-US" }), /Unsupported audio/);
+  assert.throws(() => azureRequest("asr", { region: "eastus" }, "k", { audio: wav16k().toString("base64"), language: "fr-FR" }), /Invalid speech request/);
+  const response = await call("/tts/relay", "POST", { provider: "azure", params: azureTts, key: "k", payload: { text: "hi", voice: "bad voice" } });
+  assert.equal(response.status, 400); assert.equal(calls.length, 0);
+});
+test("switching provider never carries the previous provider's key", async () => {
+  const own = await meta();
+  const response = await call("/tts", "PUT", { provider: "azure", enabled: true, params: azureTts, expected_revision: own.revision });
+  assert.equal(response.status, 400);
+  assert.equal((await meta()).provider, "volcano");
+  assert.equal(writes.length, 0);
+});
+test("a saved key is never sent to a different provider", async () => {
+  const own = await meta();
+  const response = await call("/tts/relay", "POST", { provider: "azure", params: azureTts, payload: { text: "hi", voice: "en-US-AnaNeural" }, expected_revision: own.revision });
+  assert.equal(response.status, 409); assert.equal(calls.length, 0);
 });

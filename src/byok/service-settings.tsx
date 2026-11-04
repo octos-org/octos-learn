@@ -5,7 +5,7 @@ import { listClientServices, prepareClientServices, getService, getServiceStatus
 import { directJson, serviceFailure, synthesizeDirect, transcribeDirect, validateService } from "./providers";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 import { useTestVoiceCapture } from "@/home/voice/use-test-voice-capture";
-import { SERVICE_DEFINITIONS } from "./service-config";
+import { SERVICE_DEFINITIONS, SPEECH_PROVIDERS, SPEECH_PROVIDER_IDS, defaultParams, isSpeechProvider, savedProvider } from "./service-config";
 
 const titles: Record<Capability, string> = localizedCatalog({ tts: "听讲解", asr: "语音输入", admission: "输入预判（Jev，可选）" });
 const inputClass = "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text border border-border";
@@ -32,13 +32,12 @@ export function ServiceSettings({ only, compact = false }: { only?: Capability; 
 }
 function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Capability; collapsed: boolean; saved?: ServiceMetadata; onSaved: () => void }) {
   useLocale();
-  const provider = capability === "admission" ? "typesafe" : "volcano";
-  const needsNewKey = !!saved && (saved.provider !== provider || (capability !== "admission" && (saved.params.auth_mode === "legacy" || !!saved.params.app_id)));
-  const defaults: Record<string, string> = capability === "admission" ? { model: "jev-latest" }
-    : { auth_mode: "api-key", resource_id: capability === "tts" ? "seed-tts-2.0" : "volc.bigasr.auc_turbo", ...(capability === "tts" ? { voice: "" } : {}) };
-  const [params, setParams] = useState(() => Object.fromEntries(Object.entries(defaults).map(([name, value]) => [name,
-    name === "auth_mode" ? "api-key" : saved?.provider === provider ? saved.params[name] ?? value : value,
-  ])));
+  const [provider, setProvider] = useState(() => savedProvider(capability, saved));
+  const needsNewKey = !!saved && (saved.provider !== provider || (provider === "volcano" && (saved.params.auth_mode === "legacy" || !!saved.params.app_id)));
+  const paramsFor = (next: string) => Object.fromEntries(Object.entries(defaultParams(capability, next)).map(([name, value]) => [name,
+    name === "auth_mode" ? "api-key" : saved?.provider === next ? saved.params[name] ?? value : value,
+  ]));
+  const [params, setParams] = useState(() => paramsFor(provider));
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -61,7 +60,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   async function save() {
     setBusy(true); setMessage("");
     try {
-      if (needsNewKey && !key.trim()) { setMessage(tr("请填写火山新版 API Key，旧凭据不能继续使用。")); return; }
+      if (needsNewKey && !key.trim()) { setMessage(provider === "azure" ? tr("Enter your Azure Speech key to switch to Azure.") : tr("请填写火山新版 API Key，旧凭据不能继续使用。")); return; }
       await saveClientService(capability, { provider, enabled: !!key.trim() || !!saved?.has_credential, params, key: key.trim() || (needsNewKey ? "" : undefined) }, saved?.revision);
       setKey(""); setMessage(tr("已保存；是否可用以当前设备真实测试为准。")); onSaved();
     } catch (error) { setMessage(error instanceof Error ? error.message : tr("保存失败，请重试；输入仍保留。")); }
@@ -97,14 +96,20 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   const field = (name: string, label: string) => <label className="block space-y-2" key={name}>{label}<input className={inputClass} value={params[name] ?? ""} onChange={event => { setParams(value => ({ ...value, [name]: event.target.value })); setMessage(""); setAudio(null); }} autoComplete="off" spellCheck={false} /></label>;
   const content = <div className="space-y-4">
     <p>{capability === "admission" ? tr("帮助过滤无关口语、判断是否需要补充问题。保存 Key 后自动使用；未配置或不可用时跳过，其他能力照常工作。") : tr("保存 Key 后自动使用；未配置时仍可继续文字学习。")}</p>
-    <p>{tr("供应商：")}{capability === "admission" ? "TypeSafe Jev" : tr("火山引擎 · 新版 API Key")}</p>
+    {capability === "admission" ? <p>{tr("供应商：")}TypeSafe Jev</p> : <label className="block space-y-2">{tr("供应商：")}<select className={inputClass} value={provider} onChange={event => {
+      const next = event.target.value;
+      if (!isSpeechProvider(next)) return;
+      setProvider(next); setParams(paramsFor(next)); setMessage(""); setAudio(null);
+    }}>{SPEECH_PROVIDER_IDS.map(id => <option key={id} value={id}>{id === "volcano" ? tr("火山引擎 · 新版 API Key") : SPEECH_PROVIDERS[id].name}</option>)}</select></label>}
     <p>{window.OctosNativeByok ? tr("本机通过原生网络直连供应商。") : tr("当前网页接口不支持所需跨域调用，将经服务器转发；语音录音和 Jev 输入会经过服务器。")}</p>
-    {needsNewKey && <p role="alert">{tr("原供应商或旧版鉴权已不再支持，请填写火山新版 API Key 后保存。")}</p>}
+    {needsNewKey && <p role="alert">{provider === "azure" ? tr("Enter your Azure Speech key to switch to Azure.") : tr("原供应商或旧版鉴权已不再支持，请填写火山新版 API Key 后保存。")}</p>}
     {provider === "volcano" && <>{field("resource_id", tr("已开通的资源 ID"))}{capability === "tts" && field("voice", tr("与资源匹配的音色 ID"))}</>}
+    {provider === "azure" && <>{field("region", tr("Azure Speech region (for example eastus)"))}{capability === "tts" && field("voice", tr("Azure voice name (for example en-US-AnaNeural)"))}</>}
     {provider === "typesafe" && field("model", tr("Jev 模型"))}
     <label className="block space-y-2">API Key<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider && !needsNewKey ? tr("本人凭据已保存；留空保留") : tr("粘贴你自己的 Key")} /></label>
     {provider === "volcano" && <p>{tr("请使用豆包语音控制台的新版 API Key；火山方舟 Ark / 大模型 Key 和旧版 Access Token 不能用于语音服务。")}</p>}
-    <p>{tr("凭据保存在本人 Octos 账号。电视需在本机录入一次并加密保存，退出登录会清除；网页通过服务器使用已保存的 Key。")}<a href={SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">{tr("打开供应商控制台")}</a></p>
+    {provider === "azure" && <p>{tr("Use Key 1 or Key 2 of your Azure AI Speech resource, and the region it was created in. Azure works on the web; the TV app supports Volcano only for now.")}</p>}
+    <p>{tr("凭据保存在本人 Octos 账号。电视需在本机录入一次并加密保存，退出登录会清除；网页通过服务器使用已保存的 Key。")}<a href={isSpeechProvider(provider) ? SPEECH_PROVIDERS[provider].consoleUrl : SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">{tr("打开供应商控制台")}</a></p>
     <p role="status">{saved?.local_credential === false ? tr("账号已保存 Key，请在这台电视录入一次以直接调用。") : saved?.account_synced === false ? tr("Key 已保存在本机，但账号尚未同步成功，请重试保存。") : saved?.has_credential && !needsNewKey ? tr("本人 Key 已保存，服务已连接；无需额外启用。") : status.detail}</p>
     <div className="flex flex-wrap gap-3">
       <button disabled={busy} onClick={() => void save()}>{tr("保存配置")}</button>
@@ -142,7 +147,7 @@ function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage
     const draft = config();
     try { validateService("asr", draft); } catch (error) { onMessage(serviceFailure("asr", error, false).message); return; }
     const controller = new AbortController(); active.current = controller; setWorking(true);
-    onMessage(tr("正在准备麦克风；请说一小句，识别后停止。录音将发往火山引擎；网页直连受限时会经过服务器转发。"));
+    onMessage(draft.provider === "azure" ? tr("Getting the microphone ready. Say a short sentence; recognition stops after it. The recording goes to Azure AI Speech through the server.") : tr("正在准备麦克风；请说一小句，识别后停止。录音将发往火山引擎；网页直连受限时会经过服务器转发。"));
     let claimed = false;
     const ok = await capture.start(wav => {
       if (claimed || controller.signal.aborted) return; claimed = true;

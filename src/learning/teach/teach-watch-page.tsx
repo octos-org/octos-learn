@@ -10,7 +10,7 @@ import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
-import { availableService, type LessonVoices } from "@/byok/providers";
+import { availableService, speechResource, type LessonVoices } from "@/byok/providers";
 import { getService, prepareClientServices } from "@/byok/services";
 
 import { AcademyHeader } from "../academy/academy-header";
@@ -119,7 +119,7 @@ export function TeachWatchPage() {
     void prepareClientServices().catch(() => undefined).then(() => {
       if (!active) return;
       setAudio(availableService("tts") ? "on" : "unavailable");
-      setResource(getService("tts")?.params.resource_id);
+      setResource(speechResource(getService("tts")));
     });
     return () => { active = false; };
   }, []);

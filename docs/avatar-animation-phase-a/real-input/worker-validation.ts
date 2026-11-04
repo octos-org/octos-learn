@@ -20,13 +20,13 @@ start.onclick=async()=>{
   say('准备本地视频和识别模型…');const loaded=waitMedia('loadeddata',token);video.src='/scratch/avatar-single-image/LivePortrait/assets/examples/driving/d10.mp4';video.load();await loaded;
   if(token!==generation)return;
   const ownWorker=new Worker('/avatar-runtime/face-capture.worker.js');worker=ownWorker;
-  await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('model_timeout')),45000);ownWorker.onerror=()=>{clearTimeout(timer);reject(new Error('worker_failed'));};ownWorker.onmessage=event=>{clearTimeout(timer);event.data.type==='ready'?resolve():reject(new Error('model_failed'));};ownWorker.postMessage({type:'init',assetRoot:location.origin+'/avatar-runtime'});});
+  await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('model_timeout')),45000);ownWorker.onerror=()=>{clearTimeout(timer);reject(new Error('worker_failed'));};ownWorker.onmessage=event=>{clearTimeout(timer);{if(event.data.type==='ready')resolve();else reject(new Error('model_failed'));};};ownWorker.postMessage({type:'init',assetRoot:location.origin+'/avatar-runtime'});});
   const blank=document.createElement('canvas');blank.width=512;blank.height=512;const bctx=blank.getContext('2d')!;bctx.fillStyle='#888';bctx.fillRect(0,0,512,512);
   for(let i=0;i<220;i++){
    if(token!==generation)return;const phase=i<160?'video':i<200?'blank':'recovery',timeMs=i*50;
    if(i<160&&Math.abs(video.currentTime-i/20)>.001){const seeked=waitMedia('seeked',token);video.currentTime=i/20;await seeked;}
    const image=await createImageBitmap(phase==='blank'?blank:video);if(token!==generation){image.close();return;}
-   const result=await new Promise<{frame:FaceFrame;processingMs:number}>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('frame_timeout')),10000);ownWorker.onmessage=event=>{clearTimeout(timer);event.data.type==='frame'?resolve(event.data):reject(new Error('frame_failed'));};try{ownWorker.postMessage({type:'frame',image,timeMs},[image]);}catch(error){clearTimeout(timer);image.close();reject(error);}});
+   const result=await new Promise<{frame:FaceFrame;processingMs:number}>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('frame_timeout')),10000);ownWorker.onmessage=event=>{clearTimeout(timer);{if(event.data.type==='frame')resolve(event.data);else reject(new Error('frame_failed'));};};try{ownWorker.postMessage({type:'frame',image,timeMs},[image]);}catch(error){clearTimeout(timer);image.close();reject(error);}});
    if(token!==generation)return;const display=smoother.update(result.frame,timeMs);recorder.append(display,timeMs);painter.draw(ctx,536,536,display);observations.push({timeMs,phase,tracked:result.frame.tracked,processingMs:result.processingMs});progress.value=i+1;say(`已识别 ${i+1}/220 帧 · ${phase==='video'?'视频':phase==='blank'?'空白归位':'恢复'} · ${result.frame.tracked?'检测到人脸':'无人脸'}`);
    await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
   }

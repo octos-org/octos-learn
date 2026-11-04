@@ -2,23 +2,29 @@ import { useLocale } from "@/i18n/use-locale";
 import { tr, translateStatus } from "@/i18n";
 import { useEffect, useState } from "react";
 import { AlertCircle, Brain, Check, CheckCircle2, Info, KeyRound, Loader2, Mic, RotateCcw, Save, Volume2 } from "lucide-react";
-import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsService } from "@/byok/service-config";
+import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, SPEECH_PROVIDERS, providersFor, savedProvider, serviceParams, supportsService } from "@/byok/service-config";
+import { AZURE_REGION } from "@/byok/providers";
 import { saveClientService, type Capability, type ServiceMetadata } from "@/byok/services";
 import { useServiceMetadata, type ServiceMetadataMap } from "@/byok/use-service-metadata";
 import { formatSettingsError, type Profile } from "./settings-api";
 import { VolcanoVoiceSelect } from "./volcano-voice-select";
+import { AzureVoiceSelect } from "./azure-voice-select";
 import { VoiceServiceTest } from "./voice-service-test";
 
-interface ServiceForm { params: Record<string, string> }
+/** `key` is only used when switching to another provider, which needs that provider's key. */
+interface ServiceForm { provider: string; params: Record<string, string>; key?: string }
 type VoiceForm = Record<Capability, ServiceForm>;
 const icons = { tts: Volume2, asr: Mic, admission: Brain };
 const inputClass = "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 disabled:opacity-50 transition";
 const labelClass = "mb-2 block text-xs font-medium text-muted";
 function serviceForm(capability: Capability, saved?: ServiceMetadata): ServiceForm {
-  return { params: serviceParams(capability, saved) };
+  return { provider: savedProvider(capability, saved), params: serviceParams(capability, saved) };
 }
 function initialForm(metadata: ServiceMetadataMap): VoiceForm {
   return Object.fromEntries(SERVICE_CAPABILITIES.map(capability => [capability, serviceForm(capability, metadata[capability])])) as VoiceForm;
+}
+function providerName(capability: Capability, provider: string): string {
+  return capability !== "admission" && (provider === "volcano" || provider === "azure") ? SPEECH_PROVIDERS[provider].name : SERVICE_DEFINITIONS[capability].providerName;
 }
 export function VoiceTab({ profile }: { profile: Profile; onProfileUpdated: (profile: Profile) => void }) {
   useLocale();
@@ -52,13 +58,18 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
       for (const capability of capabilities) {
         const current = metadata[capability];
         const draft = form[capability];
-        if (!supportsService(capability, current)) throw new Error(tr("Replace the {{v0}} credential in API Keys first.", { v0: SERVICE_DEFINITIONS[capability].title }));
-        if (current?.has_credential && capability !== "admission" && !draft.params.resource_id.trim()) throw new Error(tr("Enter a resource ID for your speech service."));
-        if (current?.has_credential && capability === "tts" && !draft.params.voice.trim()) throw new Error(tr("Choose a voice for narration."));
+        const switching = draft.provider !== savedProvider(capability, current);
+        if (switching && !draft.key?.trim()) throw new Error(tr("Enter the {{v0}} key to switch providers.", { v0: providerName(capability, draft.provider) }));
+        if (!switching && !supportsService(capability, current)) throw new Error(tr("Replace the {{v0}} credential in API Keys first.", { v0: SERVICE_DEFINITIONS[capability].title }));
+        const configured = current?.has_credential || !!draft.key?.trim();
+        if (configured && draft.provider === "volcano" && !draft.params.resource_id?.trim()) throw new Error(tr("Enter a resource ID for your speech service."));
+        if (configured && draft.provider === "azure" && !AZURE_REGION.test(draft.params.region?.trim() ?? "")) throw new Error(tr("Enter your Azure Speech region, for example eastus."));
+        if (configured && capability === "tts" && !draft.params.voice?.trim()) throw new Error(tr("Choose a voice for narration."));
       }
       for (const capability of capabilities) {
         const params = Object.fromEntries(Object.entries(form[capability].params).map(([name, value]) => [name, value.trim()]));
-        const next = await saveClientService(capability, { provider: SERVICE_DEFINITIONS[capability].provider, enabled: !!metadata[capability]?.has_credential, params }, metadata[capability]?.revision);
+        const key = form[capability].key?.trim();
+        const next = await saveClientService(capability, { provider: form[capability].provider, enabled: !!metadata[capability]?.has_credential || !!key, params, ...(key ? { key } : {}) }, metadata[capability]?.revision);
         if (!next) throw new Error(tr("Configuration changed. Reload the page before saving again."));
         const nextForm = serviceForm(capability, next);
         setMetadata(previous => ({ ...previous, [capability]: next }));
@@ -76,8 +87,9 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
       const Icon = icons[capability];
       const current = metadata[capability];
       const draft = form[capability];
-      const compatible = supportsService(capability, current);
-      const hasKey = !!current?.has_credential && compatible && current?.local_credential !== false;
+      const switching = draft.provider !== savedProvider(capability, current);
+      const compatible = switching || supportsService(capability, current);
+      const hasKey = !switching && !!current?.has_credential && compatible && current?.local_credential !== false;
       const missingSavedVoice = capability === "tts" && hasKey && !current?.params.voice?.trim();
       const edited = dirty.includes(capability);
       const field = (name: string, label: string, placeholder?: string) => <label className="block min-w-0">
@@ -93,11 +105,20 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
         </div>
         <fieldset disabled={saving} className="min-w-0 space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
-            <label className="block min-w-0"><span className={labelClass}>{tr("Provider")}</span><select className={inputClass} value={definition.provider} onChange={() => {}}><option value={definition.provider}>{definition.providerName}</option></select></label>
-            {capability === "admission" ? field("model", tr("Model"), "jev-latest") : field("resource_id", tr("Resource ID"))}
+            <label className="block min-w-0"><span className={labelClass}>{tr("Provider")}</span><select className={inputClass} value={draft.provider}
+              onChange={event => update(capability, { provider: event.target.value, params: serviceParams(capability, current, event.target.value), key: event.target.value === savedProvider(capability, current) ? undefined : "" })}>
+              {providersFor(capability).map(provider => <option key={provider} value={provider}>{providerName(capability, provider)}</option>)}</select></label>
+            {capability === "admission" ? field("model", tr("Model"), "jev-latest") : draft.provider === "azure" ? field("region", tr("Region"), "eastus") : field("resource_id", tr("Resource ID"))}
           </div>
+          {switching && <div className="min-w-0"><label className="block"><span className={labelClass}>{tr("{{v0}} key", { v0: providerName(capability, draft.provider) })}</span>
+            <input className={`${inputClass} font-mono`} type="password" autoComplete="new-password" spellCheck={false} value={draft.key ?? ""} placeholder={tr("Paste your own key")}
+              onChange={event => update(capability, { key: event.target.value })} /></label>
+            <p className="mt-2 text-xs leading-5 text-muted">{tr("Switching providers replaces the saved key for this service.")}{" "}
+              <a className="text-accent hover:underline" href={draft.provider === "azure" ? SPEECH_PROVIDERS.azure.consoleUrl : SPEECH_PROVIDERS.volcano.consoleUrl} target="_blank" rel="noreferrer">{tr("Get API Key")}</a></p></div>}
+          {capability !== "admission" && draft.provider === "azure" && <p className="text-xs leading-5 text-muted">{tr("Use Key 1 or Key 2 of your Azure AI Speech resource, and the region it was created in. Azure works on the web; the TV app supports Volcano only for now.")}</p>}
           {capability === "tts" && <>
-            <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id} value={draft.params.voice} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />
+            {draft.provider === "azure" ? <AzureVoiceSelect value={draft.params.voice ?? ""} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />
+              : <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id ?? ""} value={draft.params.voice ?? ""} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />}
             {missingSavedVoice && <p className="text-xs leading-5 text-amber-500">{tr("Your API key is saved, but lessons have no saved voice. Choose a Voice ID and save it to enable narration.")}</p>}
           </>}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
@@ -106,8 +127,8 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
           </div>
           <p className="text-xs leading-5 text-muted">{current?.local_credential === false ? tr("Open API Keys and enter your key on this TV. It will be encrypted locally for direct calls; the server does not download it to this device.") : current?.account_synced === false ? tr("Using the key saved on this TV. Account sync failed; save it again in API Keys to retry.") : hasKey ? tr("Connected automatically with your saved API key. Remove the key in API Keys to disconnect.") : tr("Optional. Save your API key to connect; text learning remains available without it.")}</p>
         </fieldset>
-        <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft])} capability={capability}
-          draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving || (capability === "tts" && !draft.params.voice.trim())} /></div>
+        <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft.provider, draft.params])} capability={capability}
+          draft={{ provider: draft.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving || (capability === "tts" && !draft.params.voice?.trim())} /></div>
         {edited && <div className="mt-4 space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
           <p role="status" className="text-xs leading-5 text-amber-500">{tr("Unsaved changes. Tests preview these edits; lessons still use your saved settings.")}</p>
           <button type="button" className="inline-flex items-center gap-2 text-xs font-medium text-accent disabled:opacity-30" disabled={saving} onClick={() => void save([capability])}>
