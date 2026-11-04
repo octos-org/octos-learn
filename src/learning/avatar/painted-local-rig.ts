@@ -1,13 +1,21 @@
+import {STAR_FOX_HAIR,STAR_FOX_RIGHT_EAR,type HairPartSpec} from './star-fox-parts';
+import type {PaintedSecondaryPose} from './painted-secondary-motion';
 /** A limited Star Fox material/rig experiment. Coordinates are in the 704px
  * portrait, independent of the face-fitting crop. No capture data lives here. */
 export type RigPoint = [number, number];
-export interface LocalRigPose { ear: number; hair: number }
+export interface LocalRigPose { ear:number; hair:number; rightEar?:number; leftHair?:number; forelock?:number }
 export const LOCAL_RIG_ASSETS = {
-  base: 'teach-avatars/star-fox/local-rig-v0.2/base.png',
-  ear: 'teach-avatars/star-fox/local-rig-v0.2/ear-front.png',
-  back: 'teach-avatars/star-fox/local-rig-v0.2/ear-back.png',
-  hair: 'teach-avatars/star-fox/local-rig-v0.2/hair.png',
-  foreground: 'teach-avatars/star-fox/local-rig-v0.2/foreground.png',
+  base: 'teach-avatars/star-fox/local-rig-v0.3/base.png',
+  ear: 'teach-avatars/star-fox/local-rig-v0.3/ear-front.png',
+  back: 'teach-avatars/star-fox/local-rig-v0.3/ear-back.png',
+  hair: 'teach-avatars/star-fox/local-rig-v0.3/hair.png',
+  foreground: 'teach-avatars/star-fox/local-rig-v0.3/foreground.png',
+  rightEar:'teach-avatars/star-fox/local-rig-v0.3/right-ear-front.png',
+  rightBack:'teach-avatars/star-fox/local-rig-v0.3/right-ear-back.png',
+  leftHair:'teach-avatars/star-fox/local-rig-v0.3/leftHair.png',
+  forelock:'teach-avatars/star-fox/local-rig-v0.3/forelock.png',
+  restore:'teach-avatars/star-fox/local-rig-v0.3/restore.png',
+  oral:'teach-avatars/star-fox/local-rig-v0.3/oral.png',
 } as const;
 export type LocalRigImages = Record<keyof typeof LOCAL_RIG_ASSETS, CanvasImageSource>;
 export const LOCAL_EAR_ROOT: RigPoint = [180, 307];
@@ -26,10 +34,10 @@ const rotate = ([x, y]: RigPoint, [cx, cy]: RigPoint, angle: number): RigPoint =
 /** The entire root band stays on the scalp, not just a pivot hidden under the
  * hair. The upper pinna has a limited local turn, blended into its attachment. */
 export const localEarWeight = (y: number) => 1 - smooth((y - 195) / 60);
-export function localEarMotionWeight([x,y]:RigPoint):number {
+function earAttachmentWeight([x,y]:RigPoint,attachment:readonly RigPoint[]):number {
   let distance=Infinity;
-  for(let i=1;i<LOCAL_EAR_ATTACHMENT.length;i++){
-    const a=LOCAL_EAR_ATTACHMENT[i-1],b=LOCAL_EAR_ATTACHMENT[i],dx=b[0]-a[0],dy=b[1]-a[1];
+  for(let i=1;i<attachment.length;i++){
+    const a=attachment[i-1],b=attachment[i],dx=b[0]-a[0],dy=b[1]-a[1];
     const t=clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);
     distance=Math.min(distance,Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy));
   }
@@ -37,11 +45,46 @@ export function localEarMotionWeight([x,y]:RigPoint):number {
   // mesh triangle, then ease into the moving outer pinna.
   return localEarWeight(y)*smooth((distance-20)/70);
 }
+export const localEarMotionWeight=(point:RigPoint)=>earAttachmentWeight(point,LOCAL_EAR_ATTACHMENT);
 export function localEarPoint(point: RigPoint, value: number): RigPoint {
   const v = clamp(value), [cx] = LOCAL_EAR_ROOT;
   const width = Math.cos(.2 + v * .6) / Math.cos(.2);
   const turned = rotate([cx + (point[0] - cx) * width, point[1]], LOCAL_EAR_ROOT, -.12 * v), weight = localEarMotionWeight(point);
   return [point[0] + (turned[0] - point[0]) * weight, point[1] + (turned[1] - point[1]) * weight];
+}
+
+export const localRightEarMotionWeight=(point:RigPoint)=>earAttachmentWeight(point,STAR_FOX_RIGHT_EAR.attachment);
+export function localRightEarPoint(point:RigPoint,value:number):RigPoint {
+  const v=clamp(value),root=STAR_FOX_RIGHT_EAR.root,width=Math.cos(.2+v*.6)/Math.cos(.2);
+  const turned=rotate([root[0]+(point[0]-root[0])*width,point[1]],root,.12*v),w=localRightEarMotionWeight(point);
+  return [point[0]+(turned[0]-point[0])*w,point[1]+(turned[1]-point[1])*w];
+}
+export function starFoxHairPoint(point:RigPoint,value:number,spec:HairPartSpec):RigPoint {
+  if(spec.id==='hair')return localHairPoint(point,value);
+  const v=clamp(value),[a,b,c]=spec.chain,joint=rotate(b,a,v*spec.angles[0]),first=rotate(point,a,v*spec.angles[0]);
+  const secondLocal=rotate(point,b,v*spec.angles[1]),second:RigPoint=[joint[0]+secondLocal[0]-b[0],joint[1]+secondLocal[1]-b[1]];
+  const length=Math.hypot(c[0]-a[0],c[1]-a[1]),axis:RigPoint=[(c[0]-a[0])/length,(c[1]-a[1])/length];
+  const half=Math.min(Math.hypot(b[0]-a[0],b[1]-a[1]),Math.hypot(c[0]-b[0],c[1]-b[1]))*.65;
+  const jointWeight=smooth(((point[0]-b[0])*axis[0]+(point[1]-b[1])*axis[1]+half)/(2*half));
+  const rootWeight=smooth((Math.hypot(point[0]-a[0],point[1]-a[1])-10)/Math.max(1,Math.hypot(b[0]-a[0],b[1]-a[1])*.7-10));
+  const moved:RigPoint=[first[0]+(second[0]-first[0])*jointWeight,first[1]+(second[1]-first[1])*jointWeight];
+  return [point[0]+(moved[0]-point[0])*rootWeight,point[1]+(moved[1]-point[1])*rootWeight];
+}
+/** A deterministic authored idle schedule, not environmental sound detection.
+ * Quiet intervals and per-cycle variation avoid simultaneous mechanical loops. */
+export function starFoxNaturalPose(timeMs:number):LocalRigPose {
+  const t=Math.max(0,Number.isFinite(timeMs)?timeMs:0)/1000,cycle=Math.floor(t/22),local=t%22;
+  const random=(salt:number)=>{const x=Math.sin((cycle+1)*127.1+salt*311.7)*43758.5453;return x-Math.floor(x);};
+  const event=(start:number,hold:number,amplitude:number)=>{
+    const elapsed=local-start;if(elapsed<=0)return 0;if(elapsed<.22)return amplitude*smooth(elapsed/.22);
+    if(elapsed<.22+hold)return amplitude;if(elapsed<.92+hold)return amplitude*(1-smooth((elapsed-.22-hold)/.7));return 0;
+  };
+  const drift=event(17+random(5)*1.5,.2,.12)*(random(6)>.5?1:-1);
+  return {ear:event(2+random(1)*3,.65+random(2)*.55,.48),rightEar:event(10.5+random(3)*3,.55+random(4)*.6,.4),hair:drift,leftHair:drift*.65,forelock:drift*.5};
+}
+export function starFoxFollowingPose(p:PaintedSecondaryPose):LocalRigPose {
+  return {ear:clamp(p.leftEar/.5-p.leftTilt*1.5,-.4,1),rightEar:clamp(p.rightEar/.5+p.rightTilt*1.5,-.4,1),
+    hair:clamp(-p.hair/14),leftHair:clamp(-p.hair/14*.8),forelock:clamp(-p.forelock/9)};
 }
 
 /** Two finite-length bones, with a small skinning region at their joint.
@@ -94,41 +137,28 @@ function createPartMesh(input: ImageData, surface: Surface, region: MeshRegion) 
   };
 }
 
-/** Draws matched layers on the prepared base. The root band is a real region
- * of colored ear texels overlapping the scalp, rather than one fixed pivot. */
-export function createLocalRigPainter(images: LocalRigImages, surface: Surface) {
-  const read = (image: CanvasImageSource) => { const s = surface(704, 704); s.context.drawImage(image, 0, 0); return s.context.getImageData(0, 0, 704, 704); };
-  const front = read(images.ear), back = read(images.back), hair = read(images.hair), ear = read(images.ear);
-  const rowBounds: Array<[number, number]> = [],earWeights=new Float32Array(704*704);
-  for (let y = 0; y < 704; y++) { let left = 704, right = 0; for (let x = 0; x < 704; x++) if (front.data[(y * 704 + x) * 4 + 3] > 0) { earWeights[y*704+x]=localEarMotionWeight([x,y]);if(front.data[(y*704+x)*4+3]>128){left = Math.min(left, x); right = x;} } rowBounds.push([left, right]); }
-  const earMesh = createPartMesh(ear, surface, { x: 88, y: 72, width: 190, height: 270, columns: 20, rows: 27, output: [40, 40, 270, 320] });
-  const hairMesh = createPartMesh(hair, surface, { x: 500, y: 305, width: 96, height: 88, columns: 12, rows: 8, output: [480, 290, 140, 130] });
-  function drawEar(target: CanvasRenderingContext2D, value: number) {
-    const amount = clamp(value);
-    if (Math.abs(amount) < 1e-8) { target.drawImage(images.ear, 0, 0); return; }
-    ear.data.set(front.data);
-    // Reveal only a narrow outer surface at this limited turn. Changing the
-    // entire ear from white/pink to orange resembled a detached paper cutout.
-    for (let y = 72; y < 255; y++) {
-      const [left, right] = rowBounds[y];
-      if (left >= right || amount<=0) continue;
-      for (let x = left; x <= right; x++) {
-        const i = (y * 704 + x) * 4, across = (x - left) / (right - left), reveal=amount*.32*earWeights[y*704+x],w = smooth((reveal - across) / .1);
-        if (!front.data[i + 3] || !back.data[i + 3] || !w) continue;
-        for (let c = 0; c < 3; c++) ear.data[i + c] = front.data[i + c] * (1 - w) + back.data[i + c] * w;
+/** Both ears use their own original texture and attachment trace. Hair layers
+ * restore exposed paint after the old face patch, then draw from back to front. */
+export function createLocalRigPainter(images:LocalRigImages,surface:Surface){
+  const read=(image:CanvasImageSource)=>{const s=surface(704,704);s.context.drawImage(image,0,0);return s.context.getImageData(0,0,704,704);};
+  function earPart(frontImage:CanvasImageSource,backImage:CanvasImageSource,right:boolean){
+    const front=read(frontImage),back=read(backImage),ear=read(frontImage),bounds:Array<[number,number]>=[],weights=new Float32Array(704*704);
+    for(let y=0;y<704;y++){let left=704,end=0;for(let x=0;x<704;x++)if(front.data[(y*704+x)*4+3]>0){weights[y*704+x]=right?localRightEarMotionWeight([x,y]):localEarMotionWeight([x,y]);if(front.data[(y*704+x)*4+3]>128){left=Math.min(left,x);end=x;}}bounds.push([left,end]);}
+    const mesh=createPartMesh(ear,surface,{x:right?426:88,y:72,width:190,height:270,columns:20,rows:27,output:[right?394:40,40,270,320]});
+    return(target:CanvasRenderingContext2D,value:number)=>{
+      const amount=clamp(value);if(Math.abs(amount)<1e-8){target.drawImage(frontImage,0,0);return;}
+      ear.data.set(front.data);
+      if(amount>0)for(let y=72;y<255;y++){
+        const[left,end]=bounds[y];if(left>=end)continue;
+        for(let x=left;x<=end;x++){const i=(y*704+x)*4,across=right?(end-x)/(end-left):(x-left)/(end-left),reveal=amount*.32*weights[y*704+x],w=smooth((reveal-across)/.1);if(!front.data[i+3]||!back.data[i+3]||!w)continue;for(let c=0;c<3;c++)ear.data[i+c]=front.data[i+c]*(1-w)+back.data[i+c]*w;}
       }
-    }
-    earMesh(target, point => localEarPoint(point, amount));
+      mesh(target,point=>right?localRightEarPoint(point,amount):localEarPoint(point,amount));
+    };
   }
-  return {
-    // Shared by the material continuity check: inspect actual rendered alpha and
-    // texels before the foreground hides them, not just the geometry's pivot.
-    drawEar,
-    draw(target: CanvasRenderingContext2D, pose: LocalRigPose) {
-      drawEar(target, pose.ear); target.drawImage(images.foreground, 0, 0);
-      const value = clamp(pose.hair);
-      if (Math.abs(value) < 1e-8) target.drawImage(images.hair, 0, 0);
-      else hairMesh(target, point => localHairPoint(point, value));
-    },
-  };
+  const drawEar=earPart(images.ear,images.back,false),drawRightEar=earPart(images.rightEar,images.rightBack,true);
+  const hairs=STAR_FOX_HAIR.map(spec=>{const[x,y,width,height]=spec.box;return{spec,image:images[spec.id],mesh:createPartMesh(read(images[spec.id]),surface,{x,y,width,height,columns:12,rows:12,output:[...spec.output]})};});
+  return {drawEar,drawRightEar,draw(target:CanvasRenderingContext2D,pose:LocalRigPose){
+    target.drawImage(images.restore,0,0);drawEar(target,pose.ear);drawRightEar(target,pose.rightEar??0);target.drawImage(images.foreground,0,0);
+    for(const part of hairs){const value=clamp(pose[part.spec.id]??0);if(Math.abs(value)<1e-8)target.drawImage(part.image,0,0);else part.mesh(target,point=>starFoxHairPoint(point,value,part.spec));}
+  }};
 }

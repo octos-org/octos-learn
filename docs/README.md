@@ -91,6 +91,7 @@
 - [星狐单耳与侧发 v0.1 记录](LEARNER_AVATAR_LOCAL_RIG_PROGRESS.md)：独立分支 `codex/avatar-local-rig` 的初期小样；50 项测试未覆盖实际耳根接合和相邻发尖误选，用户已否定视觉效果，最新修正见下一项。
 - [局部绑定用户反馈与可见接缝修正](LEARNER_AVATAR_LOCAL_RIG_FEEDBACK.md)：v0.1 与 v0.2 均被指出耳部割裂；当前改为沿真实斜向接缝保留连接带，87 个模拟状态无原裂口，52 项相关测试通过，未获整体自然度认可。
 - [星狐完整样板持续执行清单](LEARNER_AVATAR_STAR_FOX_TODO.md)：双耳、主要发束、自然动作、高清嘴部及验证的完整工作门槛；机器可读状态与完成检查防止把局部小样当成全部完成。
+- [星狐完整样板当前交付](LEARNER_AVATAR_STAR_FOX_2D_SAMPLE.md)：双耳独立绑定、三组主要发束、偶发自然动作、高清口腔与独立口型；素材来源、程序检查、预览与未完成的真人/设备验收边界。
 
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。

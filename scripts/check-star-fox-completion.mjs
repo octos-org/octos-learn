@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import {createHash} from 'node:crypto';
 const path='docs/avatar-animation-phase-a/star-fox-sample/task-status.json';
 const state=JSON.parse(readFileSync(path,'utf8'));
 const required=['baseline','both_ears','main_hair_locks','natural_motion','mouth_material_and_shapes','validation_and_preview'];
@@ -13,5 +14,17 @@ for(const id of required){
     else if(!existsSync(evidence))errors.push(`${id}: evidence does not exist: ${evidence}`);
   }
 }
+const reportPath='docs/avatar-animation-phase-a/star-fox-sample/report.json';
+if(existsSync(reportPath)){
+ const report=JSON.parse(readFileSync(reportPath,'utf8'));
+ if(report.neutralDiff.max>1||report.expressionMax>1||report.bodyMax!==0||report.minAlpha!==255||report.rightRootMax>1||report.minimumPartTriangle<.35||report.mouthCloseMax>1)errors.push('Current material/geometry report failed');
+ if(!report.natural||report.natural.overlap!==0||report.natural.quiet<report.natural.states*.7||report.natural.settled>.001)errors.push('Natural motion/settling evidence failed');
+ for(const[path,hash]of Object.entries(report.inputSha256??{}))if(!existsSync(path)||createHash('sha256').update(readFileSync(path)).digest('hex')!==hash)errors.push(`Validation is stale: ${path}`);
+ if(Object.keys(report.inputSha256??{}).length<10)errors.push('Missing source/material freshness hashes');
+ for(const side of['left','right']){const path=`docs/avatar-animation-phase-a/star-fox-sample/${side}-seam.json`;if(!existsSync(path)){errors.push(`Missing ${side} seam evidence`);continue;}const seam=JSON.parse(readFileSync(path,'utf8'));if(seam.sweepStates<87||seam.maximumExposedPaper!==0||seam.maximumSeamDifference>1)errors.push(`${side} visible seam failed`);}
+ const validationPath='docs/avatar-animation-phase-a/star-fox-sample/validation.json';
+ if(!existsSync(validationPath))errors.push('Missing final test/build/preview evidence');
+ else{const v=JSON.parse(readFileSync(validationPath,'utf8'));if(!v.fullUnit?.passed||v.fullUnit.tests<1700||!v.finalUi?.passed||!v.buildPassed||!v.lintPassed||!v.i18n?.passed||v.preview?.pageHttp!==200||v.preview?.allImageHttp!==200)errors.push('Final required checks are incomplete');if(JSON.stringify(v.inputSha256)!==JSON.stringify(report.inputSha256))errors.push('Final checks refer to a different source/material set');}
+}else errors.push('Missing current product-rendering report');
 if(errors.length){console.error('Star Fox work is incomplete:\n'+errors.map(x=>' - '+x).join('\n'));process.exit(1);}
 console.log('All six Star Fox work items have completion records and available evidence. This gate does not replace visual or device acceptance.');

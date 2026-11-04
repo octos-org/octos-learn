@@ -2,11 +2,60 @@
   "schema": "octos.star-fox-work.v1",
   "scope": "Complete the Star Fox sample; four-character expansion and final phoneme alignment are later scope.",
   "tasks": [
-    { "id": "baseline", "status": "in_progress", "evidence": [] },
-    { "id": "both_ears", "status": "pending", "evidence": [] },
-    { "id": "main_hair_locks", "status": "pending", "evidence": [] },
-    { "id": "natural_motion", "status": "pending", "evidence": [] },
-    { "id": "mouth_material_and_shapes", "status": "pending", "evidence": [] },
-    { "id": "validation_and_preview", "status": "pending", "evidence": [] }
-  ]
+    {
+      "id": "baseline",
+      "status": "complete",
+      "evidence": [
+        "git:dc3ac1b6",
+        "docs/avatar-animation-phase-a/ear-seam-fix/report.json"
+      ]
+    },
+    {
+      "id": "both_ears",
+      "status": "complete",
+      "evidence": [
+        "docs/avatar-animation-phase-a/star-fox-sample/left-seam.json",
+        "docs/avatar-animation-phase-a/star-fox-sample/right-seam.json",
+        "src/learning/avatar/painted-local-rig.ts"
+      ]
+    },
+    {
+      "id": "main_hair_locks",
+      "status": "complete",
+      "evidence": [
+        "src/learning/avatar/star-fox-parts.ts",
+        "docs/avatar-animation-phase-a/star-fox-sample/hair-layers.jpg",
+        "docs/avatar-animation-phase-a/star-fox-sample/report.json"
+      ]
+    },
+    {
+      "id": "natural_motion",
+      "status": "complete",
+      "evidence": [
+        "src/learning/avatar/star-fox-sample.test.ts",
+        "docs/avatar-animation-phase-a/star-fox-sample/following-poses.jpg",
+        "docs/avatar-animation-phase-a/star-fox-sample/report.json"
+      ]
+    },
+    {
+      "id": "mouth_material_and_shapes",
+      "status": "complete",
+      "evidence": [
+        "docs/avatar-animation-phase-a/star-fox-sample/mouth-shapes.jpg",
+        "public/teach-avatars/star-fox/local-rig-v0.3/oral.png",
+        "docs/avatar-animation-phase-a/star-fox-sample/report.json"
+      ]
+    },
+    {
+      "id": "validation_and_preview",
+      "status": "complete",
+      "evidence": [
+        "docs/avatar-animation-phase-a/star-fox-sample/validation.json",
+        "docs/LEARNER_AVATAR_STAR_FOX_2D_SAMPLE.md",
+        "docs/avatar-animation-phase-a/star-fox-sample/report.json"
+      ]
+    }
+  ],
+  "updated": "2026-11-04",
+  "acceptance": "Implementation and automated/native rendering complete; no claim of user visual approval, browser/camera or device acceptance."
 }

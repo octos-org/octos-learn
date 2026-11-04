@@ -38,15 +38,15 @@ it("draws only after loading and releases pending frames when unmounted", () => 
 
 it('loads local layers only for the explicitly enabled fox and releases them on rollback',()=>{
   const page=render(<IllustratedAvatarStage frame={neutralFrame} active localRig />);
-  expect(images).toHaveLength(10);
-  expect(images.filter(i=>i.src.includes('local-rig-v0.2'))).toHaveLength(5);
+  expect(images).toHaveLength(16);
+  expect(images.filter(i=>i.src.includes('local-rig-v0.3'))).toHaveLength(11);
   const local=[...images];act(()=>local.forEach(i=>i.onload!()));advance(100);
   page.rerender(<IllustratedAvatarStage frame={neutralFrame} active localRig={false} />);
   expect(local.every(i=>i.onload===null&&i.src==='')).toBe(true);
-  expect(images.slice(10)).toHaveLength(5);
+  expect(images.slice(16)).toHaveLength(5);
   page.rerender(<IllustratedAvatarStage frame={neutralFrame} active characterId="white-rabbit" localRig />);
-  expect(images.slice(15)).toHaveLength(5);
-  expect(images.slice(15).some(i=>i.src.includes('local-rig-v0.2'))).toBe(false);
+  expect(images.slice(21)).toHaveLength(5);
+  expect(images.slice(21).some(i=>i.src.includes('local-rig-v0.3'))).toBe(false);
 });
 
 it("stops scheduling when inactive and redraws a changed paused pose", () => {

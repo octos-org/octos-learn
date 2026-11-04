@@ -2863,5 +2863,13 @@
   "单耳转向": "Ear direction",
   "侧发摆动": "Hair lock sway",
   "回到自动跟随": "Return to automatic following",
-  "先比较画面左侧单耳和右侧一撮头发；取消勾选可查看旧版。": "Compare the left ear and one hair lock on the right. Uncheck to see the previous version."
+  "先比较画面左侧单耳和右侧一撮头发；取消勾选可查看旧版。": "Compare the left ear and one hair lock on the right. Uncheck to see the previous version.",
+  "使用新版双耳与发束": "Use the new ears and hair rig",
+  "左耳转向": "Left ear direction",
+  "右耳转向": "Right ear direction",
+  "右侧发束": "Right hair lock",
+  "左侧发束": "Left hair lock",
+  "刘海轻摆": "Forelock sway",
+  "双耳独立转动，刘海和两侧发束随动；取消勾选可查看旧版。": "Both ears move independently; the forelock and side locks follow the head. Uncheck to compare the previous version.",
+  "横向口型": "Wide mouth shape"
 }

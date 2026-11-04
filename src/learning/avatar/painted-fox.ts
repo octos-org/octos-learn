@@ -2,7 +2,7 @@ import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
 import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,HEAD_SHIFT,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
-import { createLocalRigPainter, type LocalRigImages, type LocalRigPose } from './painted-local-rig';
+import { createLocalRigPainter, starFoxFollowingPose,starFoxNaturalPose,type LocalRigImages, type LocalRigPose } from './painted-local-rig';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -26,6 +26,11 @@ export const paintedBlinkAmount = (score: number, source: FaceFrame["source"]) =
 /** A detector coefficient is not a fraction of the character's mouth travel. */
 export const paintedJawAmount = (score: number, source: FaceFrame["source"]) =>
   bounded(score * (source === "mediapipe" ? 1.6 : 1));
+export function paintedMouthControls(frame:FaceFrame,enhanced=false){
+  const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
+  const round=Math.max(c('mouthPucker'),c('mouthFunnel')),jaw=paintedJawAmount(c('jawOpen'),frame.source);
+  return{round,open:(enhanced?jaw:Math.max(jaw,round*.85))*(1-c('mouthClose')),wide:enhanced?Math.max(c('mouthStretchLeft'),c('mouthStretchRight')):0};
+}
 /** Gaze is in portrait/screen coordinates; positive X is right, positive Y down.
  * Squint/cheek channels raise the lids without turning every smile into a blink.
  */
@@ -95,6 +100,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   const texture = surface(512, 512), ctx = texture.context;
   const pixels = (image: CanvasImageSource) => { ctx.clearRect(0, 0, 512, 512); ctx.drawImage(image, 0, 0, 512, 512); return ctx.getImageData(0, 0, 512, 512); };
   const source = pixels(images.base), oral = pixels(images.mouth), browClean = pixels(images.brows);
+  const highOral=localImages?pixels(localImages.oral):null;
   const eyes = preparePaintedEyes(surface, images.base, images.clean,rig.eyes);
   const lipCurve=rig.mouth?.curve??mouthCurve,center=rig.mouth?.center??260;
   const mouthRect = rig.mouth?.rect??{ x: 210, y: 254, w: 104, h: 80 };
@@ -163,11 +169,11 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     }
     return { x,y,w,h,base,residual,output };
   });
-  function paintMouth(open: number, round: number, leftSmile: number, rightSmile: number) {
-    if (open === 0 && round === 0 && leftSmile === 0 && rightSmile === 0) return;
+  function paintMouth(open: number, round: number, leftSmile: number, rightSmile: number,wide=0) {
+    if (open === 0 && round === 0 && leftSmile === 0 && rightSmile === 0&&wide===0) return;
     const smile=(leftSmile+rightSmile)/2;
-    const scaleX = (1 - .08 * open) * (1 - .45 * round) * (1 + .18 * smile);
-    const depth = 46 * open, settle = smooth(open / .18), halfWidth = (lipRight - lipLeft) / 2 * scaleX;
+    const scaleX = (1 - .08 * open) * (1 - .45 * round) * (1 + .18 * smile+.22*wide);
+    const depth = 46 * open*(1-.28*wide), settle = smooth(open / .18), halfWidth = (lipRight - lipLeft) / 2 * scaleX;
     for (let x = 0; x < mw; x++) {
       const px = mx + x, sx = center + (px - center) / scaleX, cy = curve(lipCurve, sx);
       const u = (px + .5 - center) / halfWidth, inside = Math.abs(u) < 1;
@@ -198,7 +204,12 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
         for (let c = 0; c < 3; c++) {
           const skin = mouthBase[k*3+c]!;
           // Unpremultiplied interior colour, darkened where the texture is thin.
-          const mouth = alpha > .02 ? sampleOral(interior, ox, oy, c) / alpha * Math.min(1, alpha + .35) + (1 - Math.min(1, alpha + .35)) * 70 : 70;
+          let mouth = alpha > .02 ? sampleOral(interior, ox, oy, c) / alpha * Math.min(1, alpha + .35) + (1 - Math.min(1, alpha + .35)) * 70 : 70;
+          if(highOral&&opening>0){
+            // Use the whole 512px cavity texture, not the old 56x34px patch.
+            const hx=bounded((u+1)/2,.02,.98)*511,hy=bounded(v,.03,.97)*511,ix=Math.floor(hx),iy=Math.floor(hy),fx=hx-ix,fy=hy-iy;
+            const hd=highOral.data;mouth=mix(mix(hd[(iy*512+ix)*4+c],hd[(iy*512+ix+1)*4+c],fx),mix(hd[((iy+1)*512+ix)*4+c],hd[((iy+1)*512+ix+1)*4+c],fx),fy);
+          }
           let value = skin * (1 - opening) + mouth * opening;
           value = value * (1 - rim) + lineColor[c]! * rim;
           mouthOutput.data[k*4+c] = Math.round(bounded(value + (sample(upper,mw,mh,sx-mx,syU,c) + sample(lower,mw,mh,sx-mx,syU,c)) / norm * (1 - opening), 0, 255));
@@ -266,26 +277,37 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
-      const eyeState=paintedEyeControls(frame),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
-      const open=Math.max(paintedJawAmount(c('jawOpen'),frame.source),round*.85)*(1-c('mouthClose'));
+      const eyeState=paintedEyeControls(frame),mouth=paintedMouthControls(frame,Boolean(localPainter));
       ctx.clearRect(0,0,512,512);ctx.drawImage(images.base,0,0,512,512);
       paintEyes(ctx,eyes,{...eyeState,left:Math.max(eyeState.left,auto),right:Math.max(eyeState.right,auto)});
-      paintMouth(open,round,c('mouthSmileLeft')-c('mouthFrownLeft'),c('mouthSmileRight')-c('mouthFrownRight'));
+      paintMouth(mouth.open,mouth.round,c('mouthSmileLeft')-c('mouthFrownLeft'),c('mouthSmileRight')-c('mouthFrownRight'),mouth.wide);
       paintBrows([{inner:c('browInnerUp'),outer:c('browOuterUpLeft'),down:eyeState.leftTension},
         {inner:c('browInnerUp'),outer:c('browOuterUpRight'),down:eyeState.rightTension}]);
       portraitCtx.clearRect(0,0,size,size);portraitCtx.drawImage(localImages?.base??images.extended,0,0,size,size);
       // Only facial pixels change. The original fitted face is preserved exactly
       // inside the outpainted portrait, so this patch has no visible boundary.
-      portraitCtx.drawImage(texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
+      portraitCtx.drawImage(localPainter?images.base:texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
       const pitch=bounded(frame.rotation[0],-.35,.35),yaw=bounded(-frame.rotation[1],-.45,.45),roll=bounded(-frame.rotation[2],-.10,.10);
       // Ears and hair follow on the render clock: camera frames arrive at about
       // 20 Hz with repeated timestamps, which would step the follow-through.
       const secondary=secondaryMotion.sample(pitch,yaw,roll,options.timeMs);
-      if(options.idleMotion){
+      if(options.idleMotion&&!localPainter){
         const idle=paintedIdlePose(options.timeMs??0,motionProfile);
         for(const key of Object.keys(secondary)as Array<keyof PaintedSecondaryPose>)secondary[key]+=idle[key];
       }
-      localPainter?.draw(portraitCtx,options.localPose??{ear:bounded(secondary.leftEar/.5+secondary.leftTilt*2,-.4,1),hair:bounded(secondary.hair/14,-1,1)});
+      if(localPainter){
+        const pose=starFoxFollowingPose(secondary);
+        if(options.idleMotion){const idle=starFoxNaturalPose(options.timeMs??0);for(const key of Object.keys(idle)as Array<keyof LocalRigPose>)pose[key]=(pose[key]??0)+(idle[key]??0);}
+        localPainter.draw(portraitCtx,options.localPose??pose);
+        // Treat expression residuals as the top facial layer. A moving bang
+        // must not restore the original brow pixels over a raised/lowered brow.
+        const facial=portraitCtx.getImageData(padX+128,padY+128,272,210),posed=ctx.getImageData(128,128,272,210);
+        for(let y=0;y<210;y++)for(let x=0;x<272;x++){
+          const i=(y*272+x)*4,original=((y+128)*512+x+128)*4;
+          for(let ch=0;ch<3;ch++)facial.data[i+ch]=bounded(facial.data[i+ch]+posed.data[i+ch]-source.data[original+ch],0,255);
+        }
+        portraitCtx.putImageData(facial,padX+128,padY+128);
+      }
       const moving=pitch!==0||yaw!==0||roll!==0||(!localPainter&&Object.values(secondary).some(n=>Math.abs(n)>.00001));
       target.clearRect(0,0,width,height);const scale=Math.min(width/PAINTED_FOX_VIEW.frame,height/PAINTED_FOX_VIEW.frame),ox=(width-size*scale)/2,oy=(height-size*scale)/2;
       target.save();target.translate(ox,oy);target.scale(scale,scale);

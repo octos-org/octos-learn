@@ -20,7 +20,7 @@ import "./avatar-lab.css";
 import type { LocalRigPose } from './painted-local-rig';
 
 const noAssets = () => undefined;
-const INITIAL_MANUAL = { mouth: 0, round: 0, smile: 0, frown: 0, leftEye: 0, rightEye: 0, squint: 0, gazeX: 0, gazeY: 0, brows: 0, browDown: 0, yaw: 0, pitch: 0, tilt: 0 };
+const INITIAL_MANUAL = { mouth: 0, round: 0,wide:0, smile: 0, frown: 0, leftEye: 0, rightEye: 0, squint: 0, gazeX: 0, gazeY: 0, brows: 0, browDown: 0, yaw: 0, pitch: 0, tilt: 0 };
 const errorMessage = (code: CaptureError) => ({
   camera_unavailable: tr("没有找到可用摄像头，请检查连接。"),
   permission_denied: tr("摄像头权限未开启，你仍可播放演示。"),
@@ -101,7 +101,7 @@ export default function AvatarLabPage() {
   const getFrame = useCallback((now: number) => {
     if (mode === "manual") {
       const frame: FaceFrame = { timeMs: now, source: "demo", tracked: true, rotation: [manual.pitch, manual.yaw, manual.tilt],
-        channels: { jawOpen: manual.mouth, mouthPucker: manual.round, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile,
+        channels: { jawOpen: manual.mouth, mouthPucker: manual.round,mouthStretchLeft:manual.wide,mouthStretchRight:manual.wide, mouthSmileLeft: manual.smile, mouthSmileRight: manual.smile,
           mouthFrownLeft: manual.frown, mouthFrownRight: manual.frown,
           eyeBlinkLeft: manual.leftEye, eyeBlinkRight: manual.rightEye, eyeSquintLeft: manual.squint, eyeSquintRight: manual.squint,
           eyeLookInLeft: Math.max(0,manual.gazeX), eyeLookOutRight: Math.max(0,manual.gazeX),
@@ -219,12 +219,11 @@ export default function AvatarLabPage() {
           <section className="avatar-lab-controls" aria-label={tr("头像控制")}>
             {characterId==='star-fox'&&<fieldset className="avatar-lab-local-rig">
               <legend>{tr('星狐耳发对照')}</legend>
-              <label><input type="checkbox" checked={localRig} disabled={recording} onChange={e=>{setLocalRig(e.target.checked);setLocalPose(undefined);}} />{tr('使用新版单耳与侧发')}</label>
+              <label><input type="checkbox" checked={localRig} disabled={recording} onChange={e=>{setLocalRig(e.target.checked);setLocalPose(undefined);}} />{tr('使用新版双耳与发束')}</label>
               {localRig&&<>
-                <label>{tr('单耳转向')}<input aria-label={tr('单耳转向')} type="range" min="-.4" max="1" step=".01" value={localPose?.ear??0} disabled={recording} onChange={e=>setLocalPose(p=>({ear:Number(e.target.value),hair:p?.hair??0}))} /></label>
-                <label>{tr('侧发摆动')}<input aria-label={tr('侧发摆动')} type="range" min="-1" max="1" step=".01" value={localPose?.hair??0} disabled={recording} onChange={e=>setLocalPose(p=>({ear:p?.ear??0,hair:Number(e.target.value)}))} /></label>
+                {([{key:'ear',label:tr('左耳转向'),min:-.4},{key:'rightEar',label:tr('右耳转向'),min:-.4},{key:'hair',label:tr('右侧发束'),min:-1},{key:'leftHair',label:tr('左侧发束'),min:-1},{key:'forelock',label:tr('刘海轻摆'),min:-1}] as const).map(control=><label key={control.key}>{control.label}<input aria-label={control.label} type="range" min={control.min} max="1" step=".01" value={localPose?.[control.key]??0} disabled={recording} onChange={e=>{const value=Number(e.target.value);setLocalPose(p=>({ear:0,hair:0,...p,[control.key]:value}));}} /></label>)}
                 <button type="button" className="teach-secondary" onClick={()=>setLocalPose(undefined)}>{tr('回到自动跟随')}</button>
-                <small>{tr('先比较画面左侧单耳和右侧一撮头发；取消勾选可查看旧版。')}</small>
+                <small>{tr('双耳独立转动，刘海和两侧发束随动；取消勾选可查看旧版。')}</small>
               </>}
             </fieldset>}
             <label className="avatar-lab-natural-motion"><input type="checkbox" checked={naturalMotion} onChange={event=>setNaturalMotion(event.target.checked)} />{tr('耳朵与毛发自然小动作')}</label>
@@ -250,14 +249,14 @@ export default function AvatarLabPage() {
           <div className="avatar-lab-manual-heading"><div><h2>{tr("拖动滑杆，马上看效果")}</h2><p>{tr("无需摄像头。手动调整会停止当前跟随或回放，也可以录制动作片段。")}</p></div>
             <button type="button" className="teach-secondary" onClick={() => { stop(); setManual(INITIAL_MANUAL); setMode("manual"); }}>{tr("恢复自然表情")}</button></div>
           <div className="avatar-lab-sliders">{([
-            { key: "mouth", label: tr("嘴巴开合"), min: 0, max: 1 }, { key: "round", label: tr("圆唇程度"), min: 0, max: 1 }, { key: "smile", label: tr("微笑程度"), min: 0, max: 1 },
+            { key: "mouth", label: tr("嘴巴开合"), min: 0, max: 1 }, { key: "round", label: tr("圆唇程度"), min: 0, max: 1 },{key:'wide',label:tr('横向口型'),min:0,max:1}, { key: "smile", label: tr("微笑程度"), min: 0, max: 1 },
             { key: "leftEye", label: tr("左眼闭合"), min: 0, max: 1 }, { key: "rightEye", label: tr("右眼闭合"), min: 0, max: 1 },
             { key: "gazeX", label: tr("左右视线"), min: -1, max: 1 }, { key: "gazeY", label: tr("上下视线"), min: -1, max: 1 },
             { key: "squint", label: tr("眯眼程度"), min: 0, max: 1 }, { key: "frown", label: tr("嘴角下压"), min: 0, max: 1 },
             { key: "browDown", label: tr("皱眉程度"), min: 0, max: 1 },
             { key: "brows", label: tr("抬眉程度"), min: 0, max: 1 }, { key: "yaw", label: tr("左右偏头"), min: -.6, max: .6 },
             { key: "pitch", label: tr("点头幅度"), min: -.35, max: .35 }, { key: "tilt", label: tr("歪头角度"), min: -.1, max: .1 },
-          ] as const).map((item) => <label key={item.key} htmlFor={`avatar-manual-${item.key}`}><span>{item.label}<output>{manual[item.key].toFixed(2)}</output></span>
+          ] as const).filter(item=>item.key!=='wide'||(localRig&&characterId==='star-fox')).map((item) => <label key={item.key} htmlFor={`avatar-manual-${item.key}`}><span>{item.label}<output>{manual[item.key].toFixed(2)}</output></span>
             <input id={`avatar-manual-${item.key}`} aria-label={item.label} type="range" min={item.min} max={item.max} step="0.01" value={manual[item.key]} onChange={(event) => {
               if (mode !== "manual") stop();
               const value = Number(event.target.value);
@@ -289,7 +288,7 @@ export default function AvatarLabPage() {
           <div className="avatar-lab-actions">{EXPRESSION_SAMPLES.map((sample) => <button key={sample.id} type="button" className="teach-secondary" disabled={recording} onClick={() => openTrack(expressionSample(sample.id), true)}>{sample.name()}</button>)}</div>
         </section>
         <AvatarClipLibrary key={`library:${profileId}`} profileId={profileId} track={track} disabled={recording} sourceKey={mode} onOpen={(value) => openTrack(value)} />
-        <AvatarAudioPreview key={`audio:${profileId}`} characterId={characterId} />
+        <AvatarAudioPreview key={`audio:${profileId}`} characterId={characterId} localRig={localRig&&characterId==='star-fox'} />
         <section className="avatar-lab-metrics" aria-label={tr("性能观察")}>
           <dl><div><dt>{tr("实际显示帧率")}</dt><dd>{metrics && mode !== "idle" ? metrics.fps.toFixed(0) : "—"} {tr("FPS")}</dd></div><div><dt>{tr("识别耗时 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.processing.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("取帧到结果 p95")}</dt><dd>{hasCaptureMetrics ? captureMetrics.pipeline.toFixed(1) : "—"} ms</dd></div><div><dt>{tr("绘制提交耗时 p95")}</dt><dd>{metrics && mode !== "idle" ? metrics.submissionP95Ms.toFixed(1) : "—"} ms</dd></div></dl>
           <p>{tr("取帧到结果不包含摄像头传感延迟，绘制提交耗时不等于 GPU 总耗时；这些数字不能当作完整动作响应延迟。")}</p>
