@@ -10,6 +10,7 @@ import type { ImageAssetResolver } from "octos-lesson-language/web-runtime";
 
 import { inkSnapshotResolver, type StoredInkSnapshot } from "./ink-snapshot-store";
 import { parseLipSyncTrack, type LipSyncTrack } from "../avatar/lip-sync";
+import { parseLessonPerformance, type LessonPerformanceTrack } from "../avatar/lesson-performance";
 
 export const LEARNER_PACKAGE_SCHEMA = "octos.learner-lesson-package.v1";
 export const LEARNER_MOUTH_PACKAGE_SCHEMA = "octos.learner-lesson-package.v2";
@@ -20,12 +21,13 @@ export interface LearnerPackageFile {
   sha256: string;
   bytes: number;
   mediaType: string;
-  role: "lesson" | "ink" | "narration" | "lip-sync";
+  role: "lesson" | "ink" | "narration" | "lip-sync" | "performance";
 }
 
 export interface LearnerPackageManifest {
   schema: typeof LEARNER_PACKAGE_SCHEMA | typeof LEARNER_MOUTH_PACKAGE_SCHEMA;
-  requiredCapabilities?: ["avatar-lip-sync-v1"];
+  /** Mouth motion alone, or with the learner's camera performance (expression and head, re-timed onto the narration). */
+  requiredCapabilities?: ["avatar-lip-sync-v1"] | ["avatar-lip-sync-v1", "avatar-performance-v1"];
   lessonId: string;
   title: string;
   language: string;
@@ -36,6 +38,8 @@ export interface LearnerPackageManifest {
   ink: Array<{ snapshotId: string; file: string; width: number; height: number; regions: Record<string, { x: number; y: number; width: number; height: number }> }>;
   narration: Array<{ beatId: string; file: string; textSha256: string; durationMs: number }>;
   lipSync?: Array<{ beatId: string; file: string; audioSha256: string; textSha256: string }>;
+  /** Cards the learner recorded with the camera on; others are presented with mouth motion only. */
+  performance?: Array<{ beatId: string; file: string; audioSha256: string; textSha256: string }>;
   files: LearnerPackageFile[];
   /** SHA-256 over the sorted file list, so one value names the whole package content. */
   contentSha256: string;
@@ -48,6 +52,8 @@ export interface NarrationClip {
   durationMs: number;
   mediaType?: "audio/mpeg" | "audio/wav" | "audio/ogg" | "audio/mp4";
   lipSync?: LipSyncTrack;
+  /** Camera performance already re-timed onto this clip; needs `lipSync`. */
+  performance?: LessonPerformanceTrack;
 }
 
 export class LearnerPackageError extends Error {
@@ -127,7 +133,10 @@ export async function buildLearnerPackage(input: {
 
   const narration: LearnerPackageManifest["narration"] = [];
   const lipSync: NonNullable<LearnerPackageManifest["lipSync"]> = [];
+  const performance: NonNullable<LearnerPackageManifest["performance"]> = [];
   const withMouth = input.narration.some((clip) => clip.lipSync !== undefined);
+  const withPerformance = input.narration.some((clip) => clip.performance !== undefined);
+  if (withPerformance && !withMouth) throw new LearnerPackageError("Camera performance needs mouth motion");
   const audioExtensions = { "audio/mpeg": "mp3", "audio/wav": "wav", "audio/ogg": "ogg", "audio/mp4": "m4a" };
   if (new Set(input.narration.map((clip) => clip.beatId)).size !== input.narration.length) throw new LearnerPackageError("Duplicate narration clips");
   for (const { beatId, text } of lessonNarration(input.events)) {
@@ -147,12 +156,20 @@ export async function buildLearnerPackage(input: {
       const mouthFile = `mouth/${lipSync.length + 1}.json`;
       await add(mouthFile, encoder.encode(JSON.stringify(track)), "application/json", "lip-sync");
       lipSync.push({ beatId, file: mouthFile, audioSha256, textSha256 });
+      if (clip.performance) {
+        const moves = parseLessonPerformance(clip.performance, { audioSha256, durationMs });
+        const moveFile = `performance/${performance.length + 1}.json`;
+        await add(moveFile, encoder.encode(JSON.stringify(moves)), "application/json", "performance");
+        performance.push({ beatId, file: moveFile, audioSha256, textSha256 });
+      }
     }
   }
 
   const manifest: LearnerPackageManifest = {
     schema: withMouth ? LEARNER_MOUTH_PACKAGE_SCHEMA : LEARNER_PACKAGE_SCHEMA,
-    ...(withMouth ? { requiredCapabilities: ["avatar-lip-sync-v1"] as ["avatar-lip-sync-v1"], lipSync } : {}),
+    ...(withMouth ? { requiredCapabilities: withPerformance ? ["avatar-lip-sync-v1", "avatar-performance-v1"] as ["avatar-lip-sync-v1", "avatar-performance-v1"]
+      : ["avatar-lip-sync-v1"] as ["avatar-lip-sync-v1"], lipSync } : {}),
+    ...(withPerformance ? { performance } : {}),
     lessonId: input.lessonId, title: input.title, language: input.language, createdAt: input.createdAt,
     author: author(input.events), lesson, ink, narration, files, contentSha256: await listDigest(files),
   };
@@ -176,6 +193,8 @@ export interface LoadedLearnerPackage {
   narration(beatId: string, text: string): Promise<Blob | null>;
   /** Verified final-audio mouth motion; absent for legacy packages or changed words. */
   mouthTrack(beatId: string, text: string): LipSyncTrack | null;
+  /** The learner's re-timed camera performance for the card, when it was recorded with the camera. */
+  performanceTrack(beatId: string, text: string): LessonPerformanceTrack | null;
 }
 
 const AUDIO_TYPES = new Set(["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4"]);
@@ -191,14 +210,17 @@ function decodeManifest(raw: unknown): LearnerPackageManifest {
     || !HASH.test(value.contentSha256)) return fail();
   const animated = value.schema === LEARNER_MOUTH_PACKAGE_SCHEMA;
   if (animated) {
-    if (!Array.isArray(value.requiredCapabilities) || value.requiredCapabilities.length !== 1 || value.requiredCapabilities[0] !== "avatar-lip-sync-v1"
+    const capabilities = Array.isArray(value.requiredCapabilities) ? value.requiredCapabilities.join() : "";
+    const moving = capabilities === "avatar-lip-sync-v1,avatar-performance-v1";
+    if ((capabilities !== "avatar-lip-sync-v1" && !moving)
       || !Array.isArray(value.lipSync) || value.lipSync.length !== value.narration.length || !value.lipSync.length) return fail();
-  } else if (value.lipSync !== undefined || value.requiredCapabilities !== undefined) return fail();
+    if (moving ? !Array.isArray(value.performance) || !value.performance.length || value.performance.length > value.narration.length : value.performance !== undefined) return fail();
+  } else if (value.lipSync !== undefined || value.requiredCapabilities !== undefined || value.performance !== undefined) return fail();
   const paths = new Set<string>();
   for (const file of value.files) {
     if (!file || typeof file.path !== "string" || !/^[a-zA-Z0-9_./-]+$/.test(file.path) || file.path.split("/").some((part) => !part || part === "." || part === "..")
       || paths.has(file.path) || !HASH.test(file.sha256) || !Number.isSafeInteger(file.bytes) || file.bytes <= 0 || file.bytes > 25_000_000
-      || !["lesson", "ink", "narration", ...(animated ? ["lip-sync"] : [])].includes(file.role) || typeof file.mediaType !== "string") return fail();
+      || !["lesson", "ink", "narration", ...(animated ? ["lip-sync", "performance"] : [])].includes(file.role) || typeof file.mediaType !== "string") return fail();
     paths.add(file.path);
   }
   const referenced = new Set<string>();
@@ -223,6 +245,11 @@ function decodeManifest(raw: unknown): LearnerPackageManifest {
   for (const entry of value.lipSync ?? []) {
     if (!entry || !beats.has(entry.beatId) || mouths.has(entry.beatId) || !HASH.test(entry.audioSha256) || !HASH.test(entry.textSha256)) return fail();
     mouths.add(entry.beatId); reference(entry.file, "lip-sync", "application/json");
+  }
+  const moves = new Set<string>();
+  for (const entry of value.performance ?? []) {
+    if (!entry || !beats.has(entry.beatId) || moves.has(entry.beatId) || !HASH.test(entry.audioSha256) || !HASH.test(entry.textSha256)) return fail();
+    moves.add(entry.beatId); reference(entry.file, "performance", "application/json");
   }
   if (referenced.size !== paths.size) return fail();
   return value;
@@ -278,6 +305,15 @@ export async function readLearnerPackage(archive: ArrayBuffer | Uint8Array): Pro
       mouths.set(entry.beatId, { text: lines.find((line) => line.beatId === entry.beatId)!.text, track });
     } catch { throw new LearnerPackageError("The package has an invalid mouth track"); }
   }
+  const performances = new Map<string, { text: string; track: LessonPerformanceTrack }>();
+  for (const entry of manifest.performance ?? []) {
+    const narration = manifest.narration.find((clip) => clip.beatId === entry.beatId)!;
+    if (entry.textSha256 !== narration.textSha256 || entry.audioSha256 !== await sha256(files[narration.file]!)) throw new LearnerPackageError("The camera performance does not match its narration");
+    try {
+      const track = parseLessonPerformance(JSON.parse(new TextDecoder().decode(files[entry.file]!)), { audioSha256: entry.audioSha256, durationMs: narration.durationMs });
+      performances.set(entry.beatId, { text: lines.find((line) => line.beatId === entry.beatId)!.text, track });
+    } catch { throw new LearnerPackageError("The package has an invalid camera performance"); }
+  }
   const snapshots = Object.fromEntries(manifest.ink.map((entry) => [entry.snapshotId, {
     svg: new TextDecoder().decode(files[entry.file]!), width: entry.width, height: entry.height, regions: entry.regions,
   } satisfies StoredInkSnapshot]));
@@ -291,6 +327,10 @@ export async function readLearnerPackage(archive: ArrayBuffer | Uint8Array): Pro
     },
     mouthTrack(beatId, text) {
       const value = mouths.get(beatId);
+      return value?.text === text.trim() ? structuredClone(value.track) : null;
+    },
+    performanceTrack(beatId, text) {
+      const value = performances.get(beatId);
       return value?.text === text.trim() ? structuredClone(value.track) : null;
     },
   };

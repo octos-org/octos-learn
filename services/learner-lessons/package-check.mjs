@@ -5,7 +5,8 @@ import { readZip, ZipError } from "./zip.mjs";
 // manifest the app wrote (see src/learning/teach/learner-package.ts) and the
 // manifest matches the lesson inside it. The package may hold the lesson,
 // frozen handwriting, pre-made narration and, in v2, the mouth motion made
-// from that narration, and nothing else: no recorded voice, no camera frames,
+// from that narration and optionally the learner's expression and head
+// parameters re-timed onto it, and nothing else: no recorded voice, no camera frames,
 // no images of the learner, no other files or manifest fields.
 export const LEARNER_PACKAGE_SCHEMA = "octos.learner-lesson-package.v1";
 export const LEARNER_MOUTH_PACKAGE_SCHEMA = "octos.learner-lesson-package.v2";
@@ -26,14 +27,27 @@ export const MOUTH_CHANNELS = Object.freeze([
   "mouthUpperUpLeft", "mouthUpperUpRight", "tongueOut",
 ]);
 const MOUTH = new Set(MOUTH_CHANNELS);
+export const LESSON_PERFORMANCE_SCHEMA = "octos.avatar-lesson-performance.v1";
+// PERFORMANCE_CHANNELS of src/learning/avatar/lesson-performance.ts: expression only,
+// never jaw or lip articulation; a test keeps the two lists equal.
+export const PERFORMANCE_CHANNELS = Object.freeze([
+  "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
+  "cheekPuff", "cheekSquintLeft", "cheekSquintRight", "eyeBlinkLeft", "eyeBlinkRight",
+  "eyeLookDownLeft", "eyeLookDownRight", "eyeLookInLeft", "eyeLookInRight", "eyeLookOutLeft", "eyeLookOutRight",
+  "eyeLookUpLeft", "eyeLookUpRight", "eyeSquintLeft", "eyeSquintRight", "eyeWideLeft", "eyeWideRight",
+  "mouthFrownLeft", "mouthFrownRight", "mouthSmileLeft", "mouthSmileRight", "noseSneerLeft", "noseSneerRight",
+]);
+const PERFORMANCE = new Set(PERFORMANCE_CHANNELS);
+const MAX_PERFORMANCE_KEYS = MAX_LIP_SYNC_MS / 50 + 2;
 const AUDIO = Object.freeze({ mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", m4a: "audio/mp4" });
 const ROLES = Object.freeze({
   lesson: { path: /^lesson\.canonical\.jsonl$/, mediaType: () => "application/x-ndjson" },
   ink: { path: /^ink\/[a-f0-9]{64}\.svg$/, mediaType: () => "image/svg+xml" },
   narration: { path: /^narration\/[1-9]\d{0,3}\.(mp3|wav|ogg|m4a)$/, mediaType: path => AUDIO[path.slice(path.lastIndexOf(".") + 1)] },
   "lip-sync": { path: /^mouth\/[1-9]\d{0,3}\.json$/, mediaType: () => "application/json", mouthOnly: true },
+  performance: { path: /^performance\/[1-9]\d{0,3}\.json$/, mediaType: () => "application/json", mouthOnly: true },
 });
-const MANIFEST_KEYS = new Set(["schema", "requiredCapabilities", "lessonId", "title", "language", "createdAt", "author", "lesson", "ink", "narration", "lipSync", "files", "contentSha256"]);
+const MANIFEST_KEYS = new Set(["schema", "requiredCapabilities", "lessonId", "title", "language", "createdAt", "author", "lesson", "ink", "narration", "lipSync", "performance", "files", "contentSha256"]);
 const REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const HASH = /^[a-f0-9]{64}$/;
 
@@ -68,6 +82,26 @@ function checkLipSyncTrack(raw, expected) {
   if (raw.keys[0].timeMs !== 0 || raw.keys.at(-1).timeMs !== raw.durationMs) bad();
 }
 
+/** The same rules as the app's parseLessonPerformance (src/learning/avatar/lesson-performance.ts). */
+function checkPerformanceTrack(raw, expected) {
+  const bad = () => fail("The package has an invalid camera performance");
+  if (!keysAre(raw, ["schema", "audioSha256", "durationMs", "keys"]) || raw.schema !== LESSON_PERFORMANCE_SCHEMA) bad();
+  if (raw.audioSha256 !== expected.audioSha256) fail("The camera performance does not match its narration");
+  if (!positive(raw.durationMs) || raw.durationMs > MAX_LIP_SYNC_MS || Math.abs(raw.durationMs - expected.durationMs) > 50
+    || !Array.isArray(raw.keys) || raw.keys.length < 2 || raw.keys.length > MAX_PERFORMANCE_KEYS) bad();
+  let previous = -1;
+  for (const key of raw.keys) {
+    if (!keysAre(key, ["timeMs", "channels", "rotation"]) || typeof key.timeMs !== "number" || !Number.isFinite(key.timeMs)
+      || key.timeMs <= previous || key.timeMs < 0 || key.timeMs > raw.durationMs || !object(key.channels)
+      || !Array.isArray(key.rotation) || key.rotation.length !== 3 || !key.rotation.every(n => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 1.25)) bad();
+    for (const [channel, weight] of Object.entries(key.channels)) {
+      if (!PERFORMANCE.has(channel) || typeof weight !== "number" || !Number.isFinite(weight) || weight < 0 || weight > 1) bad();
+    }
+    previous = key.timeMs;
+  }
+  if (raw.keys[0].timeMs !== 0 || raw.keys.at(-1).timeMs !== raw.durationMs) bad();
+}
+
 /** Checks a package archive and returns what the service records about it. */
 export function checkLearnerPackage(archive, lessonId) {
   if (!Buffer.isBuffer(archive) || !archive.length) fail("Empty lesson package");
@@ -82,10 +116,12 @@ export function checkLearnerPackage(archive, lessonId) {
   if (!object(manifest) || ![LEARNER_PACKAGE_SCHEMA, LEARNER_MOUTH_PACKAGE_SCHEMA].includes(manifest.schema)) fail("Unknown lesson package schema");
   if (Object.keys(manifest).some(key => !MANIFEST_KEYS.has(key))) fail("The package manifest has unknown fields");
   const animated = manifest.schema === LEARNER_MOUTH_PACKAGE_SCHEMA;
+  const capabilities = Array.isArray(manifest.requiredCapabilities) ? manifest.requiredCapabilities.join() : "";
+  const moving = capabilities === "avatar-lip-sync-v1,avatar-performance-v1";
   if (animated) {
-    if (!Array.isArray(manifest.requiredCapabilities) || manifest.requiredCapabilities.length !== 1 || manifest.requiredCapabilities[0] !== "avatar-lip-sync-v1"
-      || !Array.isArray(manifest.lipSync) || !manifest.lipSync.length) fail("Invalid mouth motion in the package manifest");
-  } else if (manifest.requiredCapabilities !== undefined || manifest.lipSync !== undefined) fail("Unknown lesson package schema");
+    if ((capabilities !== "avatar-lip-sync-v1" && !moving) || !Array.isArray(manifest.lipSync) || !manifest.lipSync.length) fail("Invalid mouth motion in the package manifest");
+    if (moving ? !Array.isArray(manifest.performance) || !manifest.performance.length : manifest.performance !== undefined) fail("Invalid camera performance in the package manifest");
+  } else if (manifest.requiredCapabilities !== undefined || manifest.lipSync !== undefined || manifest.performance !== undefined) fail("Unknown lesson package schema");
   if (manifest.lessonId !== lessonId) fail("The package belongs to a different lesson");
   if (typeof manifest.title !== "string" || !manifest.title.trim() || manifest.title.length > 200) fail("Invalid lesson title");
   if (typeof manifest.language !== "string" || !/^[a-z]{2}(-[A-Z]{2})?$/.test(manifest.language)) fail("Invalid lesson language");
@@ -147,6 +183,17 @@ export function checkLearnerPackage(archive, lessonId) {
       let track;
       try { track = JSON.parse(entries.get(file.path).toString("utf8")); } catch { fail("The package has an invalid mouth track"); }
       checkLipSyncTrack(track, clip);
+    }
+    const moves = new Set();
+    for (const entry of manifest.performance ?? []) {
+      const clip = object(entry) ? narration.get(entry.beatId) : undefined;
+      if (!keysAre(entry, ["beatId", "file", "audioSha256", "textSha256"]) || !clip || moves.has(entry.beatId)) fail("Invalid camera performance in the package manifest");
+      if (entry.audioSha256 !== clip.audioSha256 || entry.textSha256 !== clip.textSha256) fail("The camera performance does not match its narration");
+      moves.add(entry.beatId);
+      const file = use(entry.file, "performance");
+      let track;
+      try { track = JSON.parse(entries.get(file.path).toString("utf8")); } catch { fail("The package has an invalid camera performance"); }
+      checkPerformanceTrack(track, clip);
     }
   }
   if (used.size !== listed.size) fail("The package manifest refers to its files wrongly");

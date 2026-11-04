@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import { compileRecording } from "./compile-recording";
 import { buildLearnerPackage, lessonNarration, readLearnerPackage, LearnerPackageError, sha256, LEARNER_PACKAGE_SCHEMA, LEARNER_MOUTH_PACKAGE_SCHEMA, type NarrationClip, type LearnerPackageManifest } from "./learner-package";
 import { LIP_SYNC_SCHEMA, MOUTH_CHANNELS } from "../avatar/lip-sync";
-import { checkLearnerPackage, MOUTH_CHANNELS as SERVICE_MOUTH_CHANNELS } from "../../../services/learner-lessons/package-check.mjs";
+import { checkLearnerPackage, MOUTH_CHANNELS as SERVICE_MOUTH_CHANNELS, PERFORMANCE_CHANNELS as SERVICE_PERFORMANCE_CHANNELS } from "../../../services/learner-lessons/package-check.mjs";
+import { PERFORMANCE_CHANNELS, retimePerformance } from "../avatar/lesson-performance";
+import { AVATAR_TRACK_SCHEMA } from "../avatar/performance-track";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake } from "./recording";
 import { learnerAuthor, learnerReference } from "./studio-helpers";
 
@@ -183,5 +185,56 @@ describe("learner lesson package", () => {
     expect(checkLearnerPackage(calibration, "synthetic-mouth-calibration").cards).toBe(2);
     const swapped = await editedPackage((files) => { files["narration/1.mp3"] = new Uint8Array([1, 2, 3]); });
     expect(() => checkLearnerPackage(Buffer.from(swapped), "rec-1")).toThrow("mouth track does not match its narration");
+  });
+
+  async function withPerformance() {
+    const input = await withMouth();
+    const take = { schema: AVATAR_TRACK_SCHEMA, durationMs: 3000, frames: [
+      { timeMs: 0, source: "mediapipe" as const, tracked: true, channels: { browInnerUp: .2 }, rotation: [0, 0, 0] as [number, number, number] },
+      { timeMs: 3000, source: "mediapipe" as const, tracked: true, channels: { browInnerUp: .8, jawOpen: 1 }, rotation: [0, .3, 0] as [number, number, number] }] };
+    // Only the first card was recorded with the camera on.
+    const first = input.narration[0]!;
+    first.performance = retimePerformance(take, [500, 2500], { sha256: await sha256(first.audio), durationMs: first.durationMs });
+    return input;
+  }
+
+  it("carries the learner's re-timed camera performance for the cards recorded with the camera", async () => {
+    expect([...SERVICE_PERFORMANCE_CHANNELS]).toEqual([...PERFORMANCE_CHANNELS]);
+    const input = await withPerformance();
+    const { archive, manifest } = await buildLearnerPackage(input);
+    expect(manifest.requiredCapabilities).toEqual(["avatar-lip-sync-v1", "avatar-performance-v1"]);
+    expect(manifest.performance).toHaveLength(1);
+    const loaded = await readLearnerPackage(archive), [first, second] = input.narration;
+    expect(loaded.performanceTrack(first!.beatId, first!.text)).toEqual(first!.performance);
+    expect(loaded.performanceTrack(first!.beatId, "Changed words")).toBeNull();
+    expect(loaded.performanceTrack(second!.beatId, second!.text)).toBeNull();
+    expect(checkLearnerPackage(Buffer.from(archive), "rec-1").content_sha256).toBe(manifest.contentSha256);
+    // Without mouth motion there is no performance; the capability cannot be dropped or faked.
+    const silent = await withPerformance(); for (const clip of silent.narration) delete clip.lipSync;
+    await expect(buildLearnerPackage(silent)).rejects.toThrow("Camera performance needs mouth motion");
+  });
+
+  it("refuses a camera performance that does not match its narration or carries articulation", async () => {
+    const built = async (edit: (files: Record<string, Uint8Array>, manifest: LearnerPackageManifest) => void) => {
+      const { archive } = await buildLearnerPackage(await withPerformance());
+      const files = unzipSync(archive), manifest = JSON.parse(new TextDecoder().decode(files["manifest.json"]!)) as LearnerPackageManifest;
+      edit(files, manifest);
+      for (const entry of manifest.files) { entry.sha256 = await sha256(files[entry.path]!); entry.bytes = files[entry.path]!.byteLength; }
+      manifest.contentSha256 = await sha256([...manifest.files].sort((a, b) => a.path.localeCompare(b.path)).map((file) => `${file.path}\u0000${file.sha256}\u0000${file.bytes}`).join("\n"));
+      files["manifest.json"] = new TextEncoder().encode(JSON.stringify(manifest));
+      return zipSync(files);
+    };
+    const talking = await built((files) => {
+      const track = JSON.parse(new TextDecoder().decode(files["performance/1.json"]!)); track.keys[1].channels.jawOpen = 1;
+      files["performance/1.json"] = new TextEncoder().encode(JSON.stringify(track));
+    });
+    await expect(readLearnerPackage(talking)).rejects.toThrow("invalid camera performance");
+    expect(() => checkLearnerPackage(Buffer.from(talking), "rec-1")).toThrow("invalid camera performance");
+    const moved = await built((_files, manifest) => { manifest.performance![0]!.beatId = manifest.narration[1]!.beatId; });
+    await expect(readLearnerPackage(moved)).rejects.toThrow("camera performance does not match");
+    expect(() => checkLearnerPackage(Buffer.from(moved), "rec-1")).toThrow("camera performance does not match");
+    const undeclared = await built((_files, manifest) => { manifest.requiredCapabilities = ["avatar-lip-sync-v1"]; });
+    await expect(readLearnerPackage(undeclared)).rejects.toThrow("Invalid lesson package manifest");
+    expect(() => checkLearnerPackage(Buffer.from(undeclared), "rec-1")).toThrow("Invalid camera performance");
   });
 });
