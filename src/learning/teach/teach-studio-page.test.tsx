@@ -111,7 +111,7 @@ vi.mock("./use-take-camera", () => ({ useTakeCamera: () => ({ video: { current: 
 vi.mock("./studio-avatar", () => ({ default: ({ characterId, state }: { characterId: string; state: string }) => <section aria-label="Your character" data-character={characterId} data-state={state} /> }));
 vi.mock("./take-performance-store", () => ({ saveTakePerformance: async (key: unknown) => { camera.saved.push(key); }, deleteRecordingPerformances: async () => undefined }));
 
-import { createRecording, keptTake, planCards } from "./recording";
+import { appendEvent, createRecording, finishTake, keptTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { TeachStudioPage } from "./teach-studio-page";
 
@@ -734,4 +734,66 @@ it("the highlighter's mark stays, unlike the laser's brief dot", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
   expect(screen.getByText(/flashes for a moment/)).toBeTruthy();
+});
+
+/** A lesson whose second card's graph follows the first card's unit circle. */
+function linkedLesson(): LearnerRecording {
+  const at = "2026-10-31T12:00:00.000Z";
+  let recording = planCards(createRecording({ id: "rec-2", now: at, topic: { text: "Sine", type: "math_off_map" }, goals: ["Read sin x"] }), at,
+    [{ title: "The circle" }, { title: "The wave" }]);
+  const take = (key: string, events: RecordingEvent[], text: string) => {
+    recording = startTake(recording, key, at);
+    for (const event of events) recording = appendEvent(recording, key, event, at);
+    recording = finishTake(recording, key, at, { durationMs: 3000, asrText: text, speechSpanMs: [0, 3000] });
+  };
+  take("card-1", [{ t: 0, type: "component.insert", panel: "unit_circle", alias: "unit-circle-1", variable: "theta" }], "The circle.");
+  take("card-2", [{ t: 0, type: "component.insert", panel: "graph", alias: "graph-1", expression: "sin(x)", x: [-5, 5], y: [-2, 2], linkedVariable: "theta" }], "The wave.");
+  saveRecordingDraft(localStorage, "learner-1", recording);
+  return recording;
+}
+
+it("renames a card from its panel", () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Rename card" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Card name" }), { target: { value: "  Two points  " } });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.title).toBe("Two points");
+  expect(screen.getByRole("heading", { name: "Two points" })).toBeTruthy();
+  expect(screen.getAllByRole("button", { name: /1 · Two points/ }).length).toBeGreaterThan(0);
+});
+
+it("will not start a card over when a later card builds on it, and says why", () => {
+  linkedLesson();
+  renderStudio("rec-2");
+  const startOver = screen.getAllByRole("button", { name: "Start this card over" })[0] as HTMLButtonElement;
+  expect(startOver.disabled).toBe(true);
+  expect(screen.getAllByText(/A later card uses something on this card/).length).toBeGreaterThan(0);
+  // The later card itself can start over.
+  fireEvent.click(screen.getAllByRole("button", { name: /2 · The wave/ })[0]!);
+  expect((screen.getAllByRole("button", { name: "Start this card over" })[0] as HTMLButtonElement).disabled).toBe(false);
+});
+
+it("advanced mode: edited OLL is checked, kept with the draft, and can be dropped", () => {
+  linkedLesson();
+  renderStudio("rec-2");
+  fireEvent.click(screen.getByRole("button", { name: "Advanced: lesson data" }));
+  const drawer = within(screen.getByRole("dialog", { name: "Advanced: lesson data" }));
+  const editor = drawer.getByRole("textbox", { name: "Lesson (OLL)" }) as HTMLTextAreaElement;
+  fireEvent.change(editor, { target: { value: "{ broken" } });
+  fireEvent.click(drawer.getByRole("button", { name: "Check and use" }));
+  expect(drawer.getByRole("alert").textContent).toMatch(/can't be used: JSON/);
+  expect(loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll).toBeUndefined();
+
+  const made = JSON.parse(JSON.stringify(board.compiled!.lesson));
+  made.steps[0].beats[1].say = "Now the wave.";
+  fireEvent.change(editor, { target: { value: JSON.stringify(made) } });
+  fireEvent.click(drawer.getByRole("button", { name: "Check and use" }));
+  const kept = loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll;
+  expect((kept?.lesson as typeof made).steps[0].beats[1].say).toBe("Now the wave.");
+  expect(drawer.getByText(/use your edited OLL/)).toBeTruthy();
+  fireEvent.click(drawer.getByRole("button", { name: "Back to the recording's version" }));
+  expect(loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll).toBeUndefined();
+  // The draft itself can be copied when something goes wrong.
+  fireEvent.click(drawer.getByRole("tab", { name: "Draft (for troubleshooting)" }));
+  expect((drawer.getByRole("textbox", { name: "Draft (for troubleshooting)" }) as HTMLTextAreaElement).value).toContain("\"rec-2\"");
 });

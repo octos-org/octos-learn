@@ -32,6 +32,8 @@ import { keptTake, recordingComplete, setPresenter, type Presenter } from "./rec
 import { readTakePerformance } from "./take-performance-store";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { useLiveNarrationAvatar } from "./live-narration-avatar";
+import { effectiveLesson } from "./oll-override";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
@@ -99,13 +101,14 @@ export function TeachWatchPage() {
   const lesson = useMemo(() => {
     if (!recording || !recordingComplete(recording)) return null;
     try {
-      const compiled = compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale() });
+      // The learner's hand-edited OLL (advanced mode) while it is current, else the lesson made from the recording.
+      const { compiled, override } = effectiveLesson(recording, compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale() }));
       const events = normalizeAuthoringLesson(compiled.lesson, {
         lessonId: `learner-${recording.id}`, boardId: `learner-${recording.id}-board`, baseRevision: 0, resourceContext: compiled.resourceContext,
       });
       const source = events.map((event) => JSON.stringify(event)).join("\n");
       const topics: OllLessonTopicDefinition[] = [learnerLessonTopic(events, recording.topic.text, compiled.lesson.lesson.language)];
-      return { compiled, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
+      return { compiled, override, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
     } catch {
       return null;
     }
@@ -285,6 +288,7 @@ export function TeachWatchPage() {
     );
   }
 
+  const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
   const card = !runtime ? 0 : runtime.completed ? lesson?.cards ?? 0 : Math.min(lesson?.cards ?? 0, runtime.beatIndex + 1);
   return (
     <main className="teach-page teach-studio teach-watch">
@@ -337,6 +341,7 @@ export function TeachWatchPage() {
               playing={speaking && narrated} preparing={narration.preparing}
             /></Suspense>}
           </div>
+          <LessonContents runtime={runtime} entries={contents} onJump={() => { if (narrated) unlockAudio(); }} />
           <div className="teach-watch-bar">
             <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
               <AvatarPicture avatar={avatar} size={44} />

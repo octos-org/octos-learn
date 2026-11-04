@@ -146,6 +146,21 @@ export interface LearnerRecording {
   review?: RecordingReview;
   /** Who presents the lesson: catalog IDs of the avatar and voice the learner chose. */
   presenter?: Presenter;
+  /**
+   * Advanced mode: the lesson's OLL as the learner edited it by hand. It is
+   * played and saved instead of the lesson made from the recording, while that
+   * lesson is still the one it was edited from (`basedOn`); once the recording
+   * changes, the edit is out of date and the recording's lesson is used again.
+   */
+  oll?: OllOverride;
+}
+
+export interface OllOverride {
+  /** The authoring lesson (OLL JSON) the learner wrote. */
+  lesson: unknown;
+  /** Fingerprint of the lesson made from the recording when the edit was made. */
+  basedOn: string;
+  editedAt: string;
 }
 
 export interface Presenter {
@@ -169,6 +184,7 @@ export class RecordingError extends Error {
 }
 
 const MAX_CARDS = 6;
+const MAX_CARD_TITLE = 80;
 
 export function createRecording(input: { id: string; now: string; topic: RecordingTopic; goals: string[] }): LearnerRecording {
   if (!input.topic.text.trim()) throw new RecordingError("A recording needs a topic");
@@ -395,6 +411,22 @@ export function answerOcto(recording: LearnerRecording, key: string, answer: str
   const card = findCard(recording, key);
   if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
   return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+/** The learner renames a card. */
+export function renameCard(recording: LearnerRecording, key: string, title: string, now: string): LearnerRecording {
+  const trimmed = title.trim();
+  if (!trimmed) throw new RecordingError("Every card needs a title");
+  if (trimmed.length > MAX_CARD_TITLE) throw new RecordingError(`A card title has at most ${MAX_CARD_TITLE} characters`);
+  findCard(recording, key);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({ ...card, title: trimmed })));
+}
+
+/** Advanced mode: keeps (or, with null, drops) the learner's hand-edited OLL. */
+export function setOllOverride(recording: LearnerRecording, override: OllOverride | null, now: string): LearnerRecording {
+  const next: LearnerRecording = { ...recording, updatedAt: now };
+  if (override) next.oll = override; else delete next.oll;
+  return next;
 }
 
 /** The learner chooses who presents the lesson. */

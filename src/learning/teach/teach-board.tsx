@@ -1,7 +1,8 @@
 import { getLocale, subscribeLocale } from "@/i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type CanonicalTarget, type SemanticBoardState } from "octos-lesson-language";
-import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type VariableControlsView } from "octos-lesson-language/web-runtime";
+import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type StudentVariableInputHandler, type VariableControlsView } from "octos-lesson-language/web-runtime";
+import { buildInteractionClusters } from "../oll/interaction-clusters";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
@@ -69,8 +70,15 @@ export interface TeachBoardHandle {
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
 /** How long the pointer stays where the learner tapped with the laser. */
 const POINTER_MS = 1_600;
-/** Room kept at the top of the board for the sliders of the lesson's variables, which float there. */
-const CONTROLS_SPACE = 64;
+/** One card's slider panel: the variables it shows, drawn in a layer of the board. */
+interface Slider { layer: HTMLDivElement; view: VariableControlsView; aliases: Set<string> }
+const renderSlider = (slider: Slider, state: SemanticBoardState) => slider.view.render({
+  ...state, variables: Object.fromEntries(Object.entries(state.variables ?? {}).filter(([alias]) => slider.aliases.has(alias))),
+});
+
+/** A slider row's height and the slider panel's width, in board units (as in playback). */
+const SLIDER_ROW = 34;
+const SLIDER_WIDTH = 360;
 /** How far, in board units, a highlighter mark reaches past the writing it marks. */
 const MARK_PAD = 6;
 /** How close, in board units, a tap must be to a stroke of writing to point at it. */
@@ -183,14 +191,13 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
   const marksRef = useRef<HTMLDivElement | null>(null);
-  // The board's insets: the dock below, and the sliders above when the lesson has any.
-  const insetsRef = useRef({ top: 0, bottom: bottomInset });
+  // The sliders of the lesson's variables, one panel per card they belong to, docked under that card as in playback.
+  const slidersRef = useRef(new Map<string, Slider>());
+  const variableInputRef = useRef<StudentVariableInputHandler | null>(null);
   // Live-ink changes the learner makes, told apart from the board's own (undo, cutting writing out).
   const inkEditsRef = useRef(new Set<(steps: number) => void>());
   const inkRevisionRef = useRef(0);
   const inkQuietRef = useRef(0);
-  const controlsRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<VariableControlsView | null>(null);
   // The compiled board, and what the learner's drags show on top of it until
   // the recording catches up.
   const boardStateRef = useRef<SemanticBoardState | null>(null);
@@ -216,7 +223,6 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     const setLocale = () => (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     setLocale();
     const unsubscribeLocale = subscribeLocale(setLocale);
-    insetsRef.current = { top: 0, bottom: bottomInset };
     mounted.view.setViewportInsets({ top: 0, right: 0, bottom: bottomInset, left: 0 });
     mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
@@ -245,7 +251,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const next = setLessonVariable(state, alias, value);
       boardStateRef.current = next;
       mounted.view.render(next);
-      sliderRef.current?.render(next);
+      for (const slider of slidersRef.current.values()) renderSlider(slider, next);
     };
     const variableInput = (alias: string, value: number, event: { phase: "start" | "update" | "commit"; control: string }) => {
       if (!gesturesRef.current.onVariableGesture) return;
@@ -272,7 +278,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       return `studio-gesture-${alias}`;
     };
     mounted.view.setVariableInputHandler((alias, value, event) => variableInput(alias, value, event));
-    if (controlsRef.current) sliderRef.current = mountVariableControls(controlsRef.current, (alias, value, event) => variableInput(alias, value, event));
+    variableInputRef.current = (alias, value, event) => variableInput(alias, value, event);
     mounted.view.setScene3dInputHandler((nodeId, view, event) => {
       if (!gesturesRef.current.onSceneGesture) return;
       mounted.view.setScene3dViews({ [nodeId]: view });
@@ -287,6 +293,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       viewport.removeEventListener("click", handleClick);
       unsubscribeLocale();
       marksRef.current = null;
+      for (const { layer } of slidersRef.current.values()) layer.remove();
+      slidersRef.current.clear();
       void inkRef.current?.destroy();
       inkRef.current = null;
       mounted.destroy();
@@ -427,12 +435,39 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     },
   }), []);
 
+  /** Puts each card's slider panel where the layout docked it, under the card, in the board's own coordinates. */
+  const placeSliders = (mounted: MountedInfiniteBoard, state: SemanticBoardState | null, clusters: ReturnType<typeof buildInteractionClusters>) => {
+    const sliders = slidersRef.current;
+    const rects = state ? mounted.view.getAttachmentBoundsMap() : {};
+    for (const [id, { layer }] of sliders) {
+      if (!clusters.some((cluster) => cluster.id === id) || !rects[id]) { layer.remove(); sliders.delete(id); }
+    }
+    if (!state) return;
+    for (const cluster of clusters) {
+      const rect = rects[cluster.id];
+      if (!rect) continue;
+      let slider = sliders.get(cluster.id);
+      if (!slider) {
+        const layer = document.createElement("div");
+        layer.className = "teach-board-sliders";
+        layer.dataset.ollInkInput = "ignore";
+        mounted.view.mountWorldLayer(layer);
+        slider = { layer, view: mountVariableControls(layer, (alias, value, event) => variableInputRef.current?.(alias, value, event)), aliases: new Set() };
+        sliders.set(cluster.id, slider);
+      }
+      Object.assign(slider.layer.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.width}px` });
+      slider.aliases = new Set(cluster.variableAliases);
+      renderSlider(slider, state);
+    }
+  };
+
   useEffect(() => {
     const mounted = mountedRef.current;
     const viewport = viewportRef.current;
     if (!mounted || !viewport) return;
     if (!compiled) {
       mounted.view.render(null);
+      placeSliders(mounted, null, []);
       return;
     }
     const events = normalizeAuthoringLesson(compiled.lesson, {
@@ -441,21 +476,23 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       baseRevision: 0,
       resourceContext: compiled.resourceContext,
     });
-    mounted.view.setRegionLayouts(teachingRegionLayout(events, viewport.clientWidth, viewport.clientHeight));
     const state = reduceCanonicalEvents(events);
+    // Each card's sliders are docked under it, and the layout keeps room for them, as in playback.
+    const clusters = buildInteractionClusters(state, { id: "__legacy__" }, Object.keys(state.variables ?? {}), []);
+    const layouts = teachingRegionLayout(events, viewport.clientWidth, viewport.clientHeight);
+    if (clusters.length) layouts.__legacy__ = { ...layouts.__legacy__!, attachments: clusters.map((cluster) => {
+      const height = 12 + cluster.variableAliases.length * SLIDER_ROW;
+      return { id: cluster.id, kind: "control" as const, anchorNodeId: cluster.anchorNodeId, ownerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId,
+        anchorNodeIds: cluster.nodeIds, width: SLIDER_WIDTH, height, focusHeight: height, gap: 24 };
+    }) };
+    mounted.view.setRegionLayouts(layouts);
     boardStateRef.current = state;
     // A 3D scene shows its recorded view: the camera of its last view intent.
     mounted.view.setScene3dViews(Object.fromEntries(Object.values(state.nodes)
       .filter((node) => node.kind === "scene3d")
       .map((node) => [node.id, node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, node.content.camera) : node.content.camera])));
     mounted.view.render(state);
-    sliderRef.current?.render(state);
-    // The sliders float inside the board, so the camera keeps cards clear of them.
-    const top = controlsRef.current?.childElementCount ? CONTROLS_SPACE : 0;
-    if (top !== insetsRef.current.top) {
-      insetsRef.current = { ...insetsRef.current, top };
-      mounted.view.setViewportInsets({ top, right: 0, bottom: insetsRef.current.bottom, left: 0 });
-    }
+    placeSliders(mounted, state, clusters);
     const framed = focusCard ? cardEndTargets(compiled, focusCard) : state.focus;
     if (framed.length) mounted.view.focusTargets(framed);
     // A redraw hides the pointer; the learner's tap still shows until it fades.
@@ -466,7 +503,6 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   return (
     <div className="teach-board-frame">
       <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} data-interactive={onVariableGesture ? "true" : undefined} />
-      <div ref={controlsRef} className="teach-board-controls" />
     </div>
   );
 });

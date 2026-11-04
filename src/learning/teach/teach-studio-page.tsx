@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
+import { ArrowUpRight, Braces, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, Pencil, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
@@ -24,6 +24,8 @@ import {
   answerOcto,
   keptTake,
   recordingComplete,
+  renameCard,
+  setOllOverride,
   setOctoQuestion,
   setPresenter,
   setReview,
@@ -49,6 +51,8 @@ import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
 import { useTakeCamera } from "./use-take-camera";
+import { OllDrawer } from "./oll-drawer";
+import { effectiveLesson } from "./oll-override";
 import { presenterAvatar } from "./presenters";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
@@ -121,6 +125,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stopSelecting = useRef<(() => void) | null>(null);
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const undoSteps = useRef<UndoStep[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const pushUndo = (step: UndoStep) => { undoSteps.current.push(step); setCanUndo(true); };
@@ -166,6 +171,16 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       return { lesson: null, error: (error as Error).message };
     }
   }, [recording, profileId]);
+  // Starting a card over removes its board; when later cards build on it, the lesson would break.
+  const startOverBreaks = useMemo(() => {
+    if (!recording || !card || isRecording || !keptTake(card)) return null;
+    try {
+      compileRecording(startTake(recording, card.key, new Date().toISOString(), { fresh: true }), { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true });
+      return null;
+    } catch (error) {
+      return error instanceof EmptyLessonError ? null : (error as Error).message;
+    }
+  }, [recording, card, isRecording, profileId]);
 
   /** Records board actions of the take; together they are one step for Undo unless `undo` is false (the caller adds its own). */
   const record = (events: RecordingEvent | RecordingEvent[], undo: false | { inkMarks?: string[] } = {}) => {
@@ -426,7 +441,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   // each found is kept with the draft, so the cards show it until re-checked.
   const runCheck = async () => {
     const current = latest.current;
-    const lesson = current ? compileQuietly(current) : null;
+    const made = current ? compileQuietly(current) : null;
+    // The lesson that will be watched and saved: the learner's hand-edited OLL while it is current.
+    const lesson = current && made ? effectiveLesson(current, made).compiled : null;
     if (!current || !lesson) return;
     const at = now();
     setCheckRun({ screen: "running", octo: "running" });
@@ -568,6 +585,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight],
   ];
   const cameraMotion = recording.presenter?.cameraMotion === "on";
+  const startOverHint = tr("后面的卡片用到了这张卡片上的东西，从头来会让它们出错。可以“重录我的话”，或者先把后面用到它的卡片从头来。");
   const avatarPreview = (
     <Suspense fallback={null}>
       <StudioAvatar characterId={presenterAvatar(recording.presenter?.avatar).id} frame={camera.frame} state={camera.state} onOpen={camera.open} />
@@ -594,6 +612,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           <>
             <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
               <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
+            </button>
+            <button type="button" className="teach-icon-button" aria-label={tr("高级：课程数据")} title={tr("高级：课程数据")} aria-pressed={advanced} onClick={() => setAdvanced(!advanced)}>
+              <Braces size={16} aria-hidden="true" />
             </button>
             {ready ? (
               <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
@@ -674,7 +695,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           {card && !isRecording && (
             <div className="teach-panel-title">
               <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
-              <h2>{card.title}</h2>
+              <CardTitle key={card.key} title={card.title} onRename={(title) => update((current) => renameCard(current, card.key, title, now()))} />
               {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
               <label className="teach-place teach-camera-toggle">
                 <input type="checkbox" checked={recording.presenter?.cameraMotion === "on"}
@@ -756,7 +777,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
-              <button type="button" className="teach-link-button" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+              <button type="button" className="teach-link-button" disabled={Boolean(startOverBreaks)} onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+              {startOverBreaks && <p className="academy-muted teach-centered">{startOverHint}</p>}
             </>
           )}
 
@@ -785,14 +807,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 )}
                 <div className="teach-panel-row">
                   <button type="button" className="teach-secondary" onClick={() => start()}>{tr("重录我的话")}</button>
-                  <button type="button" className="teach-secondary" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+                  <button type="button" className="teach-secondary" disabled={Boolean(startOverBreaks)} onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
                 </div>
+                {startOverBreaks && <p className="academy-muted">{startOverHint}</p>}
               </div>
             </>
           )}
           {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
           {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
         </aside>
+        {advanced && !isRecording && (
+          <OllDrawer recording={recording} compiled={compileQuietly(recording)}
+            onApply={(override) => update((current) => setOllOverride(current, override, now()))} onClose={() => setAdvanced(false)} />
+        )}
       </div>
 
       {checkRun && (
@@ -884,6 +911,34 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
           <button type="submit">{saved ? tr("已保存，可以再改") : tr("保存这道练习")}</button>
         </>
       )}
+    </form>
+  );
+}
+
+/** The card's title; the learner can rename it. */
+function CardTitle({ title, onRename }: { title: string; onRename: (title: string) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  if (draft === null) {
+    return (
+      <div className="teach-card-title">
+        <h2>{title}</h2>
+        <button type="button" className="teach-icon-button" aria-label={tr("改卡片名字")} title={tr("改卡片名字")} onClick={() => setDraft(title)}>
+          <Pencil size={14} aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+  const save = () => {
+    if (!draft.trim()) return;
+    if (draft.trim() !== title) onRename(draft);
+    setDraft(null);
+  };
+  return (
+    <form className="teach-card-title" onSubmit={(event) => { event.preventDefault(); save(); }}>
+      <input value={draft} maxLength={80} autoFocus aria-label={tr("卡片名字")} onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Escape") setDraft(null); }} />
+      <button type="submit" className="teach-secondary" disabled={!draft.trim()}>{tr("保存")}</button>
+      <button type="button" className="teach-link-button" onClick={() => setDraft(null)}>{tr("取消")}</button>
     </form>
   );
 }

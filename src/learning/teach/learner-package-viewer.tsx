@@ -10,6 +10,7 @@ import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { presenterOfReference } from "./presenters";
 import { nodeSections } from "./teaching-board-setup";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -89,6 +90,7 @@ export default function LearnerPackageViewer() {
           clock={media && media.beatId === narrationBeatId && media.packageHash === pack.manifest.contentSha256 ? media.clock : null}
           playing={speaking && sound} preparing={narration.preparing} /></Suspense>}
       </div>
+      <LessonContents runtime={runtime} entries={lessonContents(pack.events)} onJump={() => { if (sound) unlockAudio(); }} />
       <div className="teach-watch-bar"><button type="button" className="teach-primary" disabled={!runtime} onClick={() => {
         if (sound) unlockAudio();
         if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play();

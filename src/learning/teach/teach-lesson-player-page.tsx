@@ -22,6 +22,7 @@ import { readStoredLearnerPackage } from "./learner-package-store";
 import { presenterOfReference } from "./presenters";
 import { AvatarPicture } from "./teach-watch-page";
 import { learnerLessonTopic } from "./teaching-board-setup";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -134,6 +135,7 @@ export function TeachLessonPlayerPage() {
           <LearningWhiteboard runtime={runtime} resolveAsset={lesson.resolveAsset} />
         </section>
       )}
+      <LessonContents runtime={runtime} entries={lessonContents(lesson.events)} />
       <div className="teach-watch-bar">
         {!hasMouthTracks && <AvatarPicture avatar={avatar} size={44} />}
         <button type="button" className="teach-primary" disabled={!runtime}
