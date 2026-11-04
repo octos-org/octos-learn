@@ -25,7 +25,7 @@ M0–M6 已完成并通过真实浏览器 + 真实模型 + 真实火山语音验
 **合并后还没做的（上线相关，需要产品方决定时机）**：
 - 正式环境安装 learning-coach 0.24.0，并重启 Octos。
 - 公网部署前端（`scripts/deploy-public-web.sh`）；服务器 nginx 按 `deploy/nginx/octos-learn.conf.example` 加上 `/api/learn/lessons`（请求体上限 33 MiB），重启产品服务。我的课的数据库默认在学习记录库同目录（`learner-lessons.sqlite`）。
-- 虚拟形象分支 `codex/avatar-capture-prototype` 已在 2026-11-03 整合 main `619960e5`，但尚未合入 main。同日该分支已把四款二维角色接入形象目录、看我的课和“我的课”播放页，并让“我的课”服务端接受 v2 嘴型课包；形象目录的 ID 改为 `star-fox` 等，旧占位课按星狐显示。当前正面 2D 画稿、代码地图及课程包/正式播放接入缺口见[虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)；头像专项不能因 M6 完成而视为已经接通。
+- 虚拟形象分支 `codex/avatar-capture-prototype` 已在 2026-11-03 整合 main `619960e5`，但尚未合入 main。同日该分支已把四款二维角色接入形象目录、看我的课和“我的课”播放页，并让“我的课”服务端接受 v2 嘴型课包；形象目录的 ID 改为 `star-fox` 等，旧占位课按星狐显示。录课页新增可选“用摄像头带动我的形象”：只在本机记录表情/头部参数，准备课包时按最终配音重新对齐放入（新能力 `avatar-performance-v1`，服务端同样校验），播放时与配音嘴型合成；见 [录课摄像头动作接入课程](LEARNER_AVATAR_CAMERA_PERFORMANCE.md)。当前正面 2D 画稿、代码地图及课程包/正式播放接入缺口见[虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)；头像专项不能因 M6 完成而视为已经接通。
 
 **本机已安装** learning-coach 0.24.0（`~/.octos/profiles/yy/data/skills/learning-coach`，旧版本备份在 `~/.octos/backups/learning-coach-before-*`）。
 
