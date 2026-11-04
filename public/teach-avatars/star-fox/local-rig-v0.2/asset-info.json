@@ -1,0 +1,44 @@
+{
+  "schema": "octos.avatar-local-rig-assets.v1",
+  "date": "2026-11-03",
+  "character": "star-fox",
+  "scope": "One anchored ear and one clean hair lock. User rejected the v0.1 attachment and mask; this is a constrained correction, not full animal 3D motion.",
+  "derivedFrom": "../local-rig-v0.1/asset-info.json",
+  "tool": "No new image generation; reuse v0.1 generated inputs, refine extraction and local rig code.",
+  "prompts": {
+    "underpaint": "Use case: precise-object-edit. The attached image is an exact EDIT TARGET for a 2D animation hidden background plate. Keep the exact square composition, face, both eyes, mouth, hair on the image-left, and clothing. Make ONLY TWO removals. First, remove the ear on the LEFT of the image completely, replace its entire exposed triangle with the same cream paper background, and smoothly complete orange scalp where that ear attached. Second, on the RIGHT edge of the hairstyle, remove the THREE OUTERMOST sideways-pointing curled orange hair tips that stick out beside the temple and eye: the outward waving tip at roughly 3 o'clock, the tip just above it and the tip just below it. Shorten that outer right side of the hairstyle back close to the cheek, with softly finished shorter orange hair behind it. This must visibly remove those outer long curls from the silhouette so they can later be placed on top as moving animation layers. The face must NOT change. Preserve the remaining right ear, forehead bangs, ear colors, eyebrow, cream muzzle and jacket exactly. Same detailed orange painted hair texture. No labels or layout. No new objects. Output one square clean background plate registered to the input.",
+    "earFront": "Use case: identity-preserve. Asset type: 2D animation isolated FRONT fox ear sprite. Reference portrait is the precise style reference. Draw ONE COMPLETE ear matching the ear on the LEFT side of this portrait: warm orange outer fur, fine dark brown edge, pink inner skin, layered ivory/white inner fur, pointed tip leaning left. IMPORTANT: include the ENTIRE broad rounded bottom/root of the ear which is hidden by hair in the portrait. No forehead hair, no head, no face or eyes, no body, no second ear. The root should be broad and fluffy, not cropped or cut off. Three-quarter frontal orientation as in the source, not a side view. Same refined hand-painted glossy orange fur and detailed fine fur strokes. One ear only centered on genuinely transparent background with all tip/base visible and margin on every side. No text, no diagram, no watermark.",
+    "earBack": "Use case: identity-preserve. Asset type: transparent 2D animation sprite, REAR surface of the fox's ear on the LEFT SIDE of the supplied portrait. Reference image provides exact painted style, warm orange fur colors, brown fine outline and fluffy fur texture. Draw ONLY ONE isolated large fox ear viewed from its back: a gently tapered triangular pinna with pointed tip leaning slightly left, broad fluffy base, orange/copper outer fur with subtle golden highlights and a dark brown thin outer rim. The rear face must be orange fur, NOT pink or white inner-ear skin. No head, no face, no eyes, no hair bangs, no other ear, no body, no labels, no cast shadow. Preserve the elegant hand-painted 2D illustration look, sharp fine fur strokes, avoid simple flat cartoon. Entire ear including complete tip and base visible, generous transparent margins, transparent background. Its shape should match the left ear in the reference so it can be texture-mapped to that ear's rotating silhouette."
+  },
+  "preparation": "scripts/prepare-avatar-local-rig.ts; reads generated sources in ../local-rig-v0.1, writes five runtime layers here.",
+  "changes": [
+    "Hair contour traced along the single lock; 0.5px outline expansion instead of the previous 8px. Adjacent upper/lower tip alpha must be zero.",
+    "Ear root region y>=255 in 704px portrait is anchored, with a transition above it. Upper pinna has limited projection and rotation.",
+    "Rear surface only appears as a narrow outer strip. No whole-ear front/back fade.",
+    "Material validation renders actual ear alpha: colored root band continuity and scalp overlap, not only a fixed pivot.",
+    "User still saw an upper ear/head crack after the lower-root fix. The visible diagonal ear/front-hair seam now has its own anchored band, used for geometry and rear color alike. Runtime PNGs remain unchanged."
+  ],
+  "files": {
+    "base.png": {
+      "bytes": 664810,
+      "sha256": "a6fb014ce17bff12e48877f3b6c5b51ad016afa47affe514dc03172f83cf130d"
+    },
+    "ear-back.png": {
+      "bytes": 89834,
+      "sha256": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40"
+    },
+    "ear-front.png": {
+      "bytes": 84552,
+      "sha256": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4"
+    },
+    "foreground.png": {
+      "bytes": 51546,
+      "sha256": "06fcbcb227b166f017ae78e1f1a75739b74ad0f36583a1f917a10289a929fea2"
+    },
+    "hair.png": {
+      "bytes": 7481,
+      "sha256": "b29c67127b33b5ac7321982b1452c879e0c0a9b44c1c64eaafc2ee8155405eec"
+    }
+  },
+  "rigRevision": "visible-diagonal-seam-fix"
+}

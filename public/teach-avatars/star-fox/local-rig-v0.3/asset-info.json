@@ -1,0 +1,74 @@
+{
+  "schema": "octos.star-fox-sample-assets.v1",
+  "date": "2026-11-04",
+  "baseline": "dc3ac1b6",
+  "sourcePortrait": "../painted-v0.3/portrait-extended.png",
+  "tool": "Built-in image_gen; no CLI/API fallback",
+  "prompts": {
+    "underpaint": "Use case: precise-object-edit. Asset type: hidden underpainting plate for a layered animated fox portrait. EDIT TARGET is the supplied square portrait. Preserve the exact pose, framing, both eyes, eyebrows, nose, mouth, cream cheek fur and the whole academy clothing. Remove BOTH fox ears completely, replacing the exposed ear silhouettes with the SAME warm cream paper backdrop and subtle short orange scalp at their roots. Also remove the most prominent outer curling hair tips at BOTH temples, exposing shorter underlying orange fur; and remove the long central forehead bang that sweeps down toward the eye, exposing a natural cream/peach forehead underneath and short orange scalp at its upper root. Keep the remaining crown hair and all facial proportions precisely registered. This will ONLY be used underneath the original moving hair/ear layers: do not add a new design, change the face, add ears, or move anything. Fill hidden parts with coherent hand-painted fur and skin in the same warm refined style. One square image, same composition as reference, no panels, no text, no labels, no watermark.",
+    "oral": "Create a clean hand-painted 2D game texture: the inside of a friendly cartoon fox's open smiling mouth, matching the warm illustrated style of the supplied fox. Make a simple dark burgundy oval area with a small salmon-pink curved tongue shape at its lower edge. Friendly children's storybook animation, restrained colors and clean detailed brushwork. No surrounding character, no teeth, no realistic anatomy, no lettering. Use the entire square canvas for this close-up game texture; dark burgundy paint fills every edge and corner, with the small pink curved shape centered near the bottom. The canvas must be opaque. This is a texture for a small animated character, not a photographic image."
+  },
+  "sources": {
+    "underpaint": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-17d95a4f-a80b-4c91-9561-48e1ee2a14f4.png",
+    "oral": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-54c2bfa3-6e45-4a2f-93df-c5d35259dd7e.png"
+  },
+  "preparation": "scripts/prepare-star-fox-sample.ts /absolute/path/to/authoring-tools; visible parts retain original texels, hidden fill uses generated paint. Left ear and right curl reuse the accepted v0.2 extraction.",
+  "scope": "Both independent ears; right and left temple curls; central forelock; 512px internal mouth UV texture. Limited 2D movement, not full side-view reconstruction.",
+  "failureHistory": [
+    "First oral texture generation was rejected by tool output moderation (sexual category) and supplied no image. A new benign cartoon texture generation succeeded; no CLI/API fallback was used."
+  ],
+  "files": {
+    "base.png": {
+      "bytes": 637756,
+      "sha256": "010127ee792dbb6ea9d3772d35a859b27b7d39a9bb5b7ba80a56e2c758e6b004"
+    },
+    "ear-back.png": {
+      "bytes": 89834,
+      "sha256": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40"
+    },
+    "ear-front.png": {
+      "bytes": 84552,
+      "sha256": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4"
+    },
+    "foreground.png": {
+      "bytes": 99993,
+      "sha256": "47c7532532d495196fe0c555d8a05cbf412c6b3563ac8f5085d0ea511e7ada49"
+    },
+    "forelock.png": {
+      "bytes": 10837,
+      "sha256": "43867ca84b87c968e74804d93680e6ce238e3512703536258014b8bbce5dc809"
+    },
+    "hair.png": {
+      "bytes": 7481,
+      "sha256": "b29c67127b33b5ac7321982b1452c879e0c0a9b44c1c64eaafc2ee8155405eec"
+    },
+    "leftHair.png": {
+      "bytes": 7837,
+      "sha256": "13fd66b2b2ce9be869f4944befdeea21a29c29bf9314fed7dfb2e409c7d72b9d"
+    },
+    "oral-generated.png": {
+      "bytes": 1664065,
+      "sha256": "346afb6adbf0ddc59d3b0189c7b0c83727131d61bd14c30e50605a9fdfcfe156"
+    },
+    "oral.png": {
+      "bytes": 222928,
+      "sha256": "329fc9cde13bd42e243e7d454e67f740e72a75e38de178990e3788c5b716dcff"
+    },
+    "restore.png": {
+      "bytes": 20449,
+      "sha256": "13ffbede88fc3790414af511a9c2023df9858b12df73a645107af8f7e9037cee"
+    },
+    "right-ear-back.png": {
+      "bytes": 89785,
+      "sha256": "72ad9373c92bc093658fa91885cb4be2b30653adf33f9f31cbb787c6b1d6c022"
+    },
+    "right-ear-front.png": {
+      "bytes": 83786,
+      "sha256": "e12768aaf85b3675863fa7a86f8b1ebab4f3e55739a31153903e7b0f5137c594"
+    },
+    "underpaint-generated.png": {
+      "bytes": 2065392,
+      "sha256": "f9ad3086450ae56203361eb6bd3d25a8913112d69d2a211ac25a600b0cb902b1"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "validator": "2.0.0-dev.3.10",
+  "uri": "star-fox-sculpt-v0.1/model.glb",
+  "mimeType": "model/gltf-binary",
+  "validatorVersion": "2.0.0-dev.3.10",
+  "issues": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 0,
+    "numHints": 0,
+    "messages": [],
+    "truncated": false
+  },
+  "info": {
+    "version": "2.0",
+    "generator": "THREE.GLTFExporter r183",
+    "resources": [
+      {
+        "pointer": "/buffers/0",
+        "mimeType": "application/gltf-buffer",
+        "storage": "glb",
+        "byteLength": 1573776
+      }
+    ],
+    "animationCount": 0,
+    "materialCount": 16,
+    "hasMorphTargets": true,
+    "hasSkins": false,
+    "hasTextures": false,
+    "hasDefaultScene": true,
+    "drawCallCount": 36,
+    "totalVertexCount": 33305,
+    "totalTriangleCount": 56652,
+    "maxUVs": 0,
+    "maxInfluences": 0,
+    "maxAttributes": 2
+  },
+  "modelSha256": "c424a99d33ed8952e6dc7b071a3d93cb7ca2f0d9493e0474e0bb41b225f89a3d"
+}

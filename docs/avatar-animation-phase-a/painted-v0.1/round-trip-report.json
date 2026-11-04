@@ -1,0 +1,7 @@
+{
+  "frames": 160,
+  "durationMs": 8000,
+  "source": "demo",
+  "maxPixelDifferenceAtRecordedFrames": 0,
+  "note": "Native recording/serialization/import/playback path; not a browser download or human recording."
+}

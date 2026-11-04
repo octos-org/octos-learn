@@ -10,7 +10,7 @@ export default defineConfig([
   globalIgnores([
     'dist', '.pnpm-store/**', 'docs/development-artifacts/**', 'scratch/**', 'delivery/**', '.local-dev/**',
     'android/app/src/main/assets/**', 'android/app/build/**', 'public/vad/**',
-    'public/course-packs/**', 'public/handwriting-runtime/**', 'playwright-report/**', 'test-results/**',
+    'public/course-packs/**', 'public/avatar-runtime/**', 'public/handwriting-runtime/**', 'playwright-report/**', 'test-results/**',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

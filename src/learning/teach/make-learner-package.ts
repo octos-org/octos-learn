@@ -7,9 +7,16 @@ import { narrationDuration } from "octos-lesson-language/web-runtime";
 
 import { synthesizeSpeech } from "@/api/voice";
 import type { LessonVoices } from "@/byok/providers";
+import { tr } from "@/i18n";
 
 import type { StoredInkSnapshot } from "./ink-snapshot-store";
 import { buildLearnerPackage, lessonNarration, type NarrationClip } from "./learner-package";
+import { preparePreviewAudio } from "../avatar/prepare-preview-audio";
+import { retimePerformance } from "../avatar/lesson-performance";
+import type { AvatarTrack } from "../avatar/performance-track";
+
+/** A card's camera performance from its kept take, by the card's narration beat. */
+export type CardPerformances = Record<string, { track: AvatarTrack; speechSpanMs?: [number, number] }>;
 
 /** A clip's length from its audio, or a reading-time estimate when the browser cannot tell. */
 export function audioDuration(blob: Blob, text: string): Promise<number> {
@@ -45,17 +52,40 @@ export async function makeLearnerPackage(input: {
   voices: LessonVoices | null;
   signal: AbortSignal;
   onProgress: (done: number, total: number) => void;
+  includeLipSync?: boolean;
+  /** Re-timed onto each card's final narration; needs `includeLipSync`. */
+  performances?: CardPerformances;
 }) {
+  const cancelled = () => { if (input.signal.aborted) throw new DOMException("Aborted", "AbortError"); };
+  cancelled();
   const lines = lessonNarration(input.events);
   const narration: NarrationClip[] = [];
   for (const [index, { beatId, text }] of lines.entries()) {
+    cancelled();
     input.onProgress(index, lines.length);
     const clip = await synthesizeSpeech(text, input.signal, input.voices, input.language);
-    narration.push({ beatId, text, audio: await bytes(clip), durationMs: await audioDuration(clip, text) });
+    cancelled();
+    const audio = await bytes(clip);
+    let lipSync: NarrationClip["lipSync"];
+    if (input.includeLipSync) {
+      try { lipSync = await preparePreviewAudio(new Uint8Array(audio).buffer, input.signal); }
+      catch (error) {
+        cancelled();
+        if (error instanceof DOMException && error.name === "AbortError") throw error;
+        throw new Error(tr("第 {{v0}} 张卡片未能准备嘴型，请确认配音不超过 60 秒，或先取消保存基础嘴型后重试。", { v0: index + 1 }));
+      }
+    }
+    cancelled();
+    const mediaType = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4"].includes(clip.type) ? clip.type as NarrationClip["mediaType"] : undefined;
+    const moves = lipSync ? input.performances?.[beatId] : undefined;
+    const performance = moves && lipSync ? retimePerformance(moves.track, moves.speechSpanMs, { sha256: lipSync.audioSha256, durationMs: lipSync.durationMs }) : undefined;
+    narration.push({ beatId, text, audio, mediaType, durationMs: lipSync?.durationMs ?? await audioDuration(clip, text), ...(lipSync ? { lipSync } : {}), ...(performance ? { performance } : {}) });
   }
+  cancelled();
   input.onProgress(lines.length, lines.length);
-  return buildLearnerPackage({
+  const result = await buildLearnerPackage({
     lessonId: input.lessonId, title: input.title, language: input.language, createdAt: new Date().toISOString(),
     events: input.events, snapshots: input.snapshots, narration,
   });
+  cancelled(); return result;
 }

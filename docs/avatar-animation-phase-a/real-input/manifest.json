@@ -1,0 +1,90 @@
+{
+  "note": "Avatar-only validation artifacts and final code; local original face videos and matrices are not included.",
+  "files": [
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/after-poses.jpg",
+      "bytes": 481003,
+      "sha256": "4a95ca2ed4311aba56de195960837abaf765846e927c5ee818913885fd037755"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/after.json",
+      "bytes": 10154,
+      "sha256": "fc868219558548299994c3e202d69db7531231f8bd59b62bc82a7563b5090697"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/before-poses.jpg",
+      "bytes": 483335,
+      "sha256": "0f05a5be6b1443a7b94f7e87fd953d739f3c6d534f077be9b337c1a4b85bd514"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/before.json",
+      "bytes": 9324,
+      "sha256": "d2d91eee9507789de9b2745214b2643e66410c87731b1d7fc27c1bb18cce254e"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/checks.json",
+      "bytes": 827,
+      "sha256": "bb9613b4568a6dfd1f31bfc472ca29b4dee24b6f04a3ed0f716a52907440acc3"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/real-input.gif",
+      "bytes": 10172605,
+      "sha256": "be28b2d07b4c6ea686ba1c0e2ca05414553a4a5651b7c615bc76a48df08fa050"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/real-input.mp4",
+      "bytes": 2932747,
+      "sha256": "d141ada7b00b524a842630d3655e17650117ef5169bb1f1d1e477e5ed0bac67f"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/recorded-track.json",
+      "bytes": 454025,
+      "sha256": "27bb624869fad4578d3c773e7fcd9283d1a16337632f76e1484eda3d5e9d61a9"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/report.json",
+      "bytes": 2902,
+      "sha256": "5db2f9665c586de6d1185d2d351587a0a595283b6c6c21a60b5bdb380bb23b22"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/requirements.txt",
+      "bytes": 528,
+      "sha256": "e4ee55f975f2916b72e53575f4dcde6e5009f1862dac5c45cbab1d93024b2ee4"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/worker-validation.html",
+      "bytes": 2131,
+      "sha256": "5ce695930dc3f63f14e5847c3fb0bc59664cbc5e48c13d0eb9777cbf1de2130b"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/real-input/worker-validation.ts",
+      "bytes": 7348,
+      "sha256": "495390959e4a3439a2c8f6af919dc8f7c6166c1fd9647aeb05cf6f9f73fcd6cf"
+    },
+    {
+      "path": "src/learning/avatar/face-frame.ts",
+      "bytes": 6317,
+      "sha256": "51d08f786a5891459801ef9937a1a58537c75ff98a370c5ded3a908bb2e1ca87"
+    },
+    {
+      "path": "src/learning/avatar/painted-fox.ts",
+      "bytes": 11025,
+      "sha256": "0b4eb373a2f7400d72774ad91dd5c0062d6ceab64e47f17c61991d03b2b28bac"
+    },
+    {
+      "path": "scripts/avatar-infer-video.py",
+      "bytes": 5477,
+      "sha256": "dd365ee7a97086c8fdf90ed227820e4aa293d15b5291e1237ec14faad80bfde5"
+    },
+    {
+      "path": "scripts/avatar-real-input-validate.ts",
+      "bytes": 6302,
+      "sha256": "d62c948de87666e7277d78ebe042ee6c2a399e71bde87f5c0502cba491777beb"
+    },
+    {
+      "path": "scripts/encode-real-avatar-input.py",
+      "bytes": 3479,
+      "sha256": "5315111d69d27299d3b7c3072be39733ce2b4149c56f00c1f6354fef80ae0d83"
+    }
+  ]
+}

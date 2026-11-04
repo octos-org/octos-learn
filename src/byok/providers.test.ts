@@ -1,9 +1,11 @@
+import { tr } from "@/i18n";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/api/client", () => ({ getToken: () => "alice", getSelectedProfileId: () => "alice", request: api.request }));
 import { resetClientServices, prepareClientServices, getServiceStatus, type ClientService } from "./services";
-import { speechLanguageParameters, directJson, synthesizeDirect, transcribeDirect, validateService } from "./providers";
+import { speechLanguageParameters, directJson, synthesizeDirect, transcribeDirect, validateService, azureRecognitionLanguage, speechResource, AZURE_MAX_WAV_BYTES } from "./providers";
 const config = (provider = "volcano"): ClientService => ({ provider, enabled: true, key: "own-canary-key", params: { voice: "test-voice", auth_mode: "api-key", resource_id: "seed-tts-2.0" }, revision: "r1", execution_target: "client" });
+const azure = (params: Record<string, string> = { region: "eastus", voice: "en-US-AnaNeural" }): ClientService => ({ provider: "azure", enabled: true, key: "own-azure-key", params, revision: "a1", execution_target: "client" });
 beforeEach(() => { resetClientServices(); api.request.mockReset(); delete window.OctosNativeByok; });
 afterEach(() => { vi.unstubAllGlobals(); delete window.OctosNativeByok; });
 describe("BYOK provider transports", () => {
@@ -35,9 +37,10 @@ describe("BYOK provider transports", () => {
     expect((await directJson("admission", config("typesafe"), { state: "数学" })).body).toContain("answers");
     expect(api.request.mock.calls[0][0]).toBe("/api/learn/byok/admission/relay");
   });
-  it("refuses missing credentials, Azure and old auth before any paid request", async () => {
+  it("refuses missing credentials, unknown providers and old auth before any paid request", async () => {
     await expect(synthesizeDirect("hello")).rejects.toMatchObject({ state: "unconfigured" });
-    expect(() => validateService("tts", config("azure"))).toThrow("供应商");
+    expect(() => validateService("tts", config("google"))).toThrow("供应商");
+    expect(() => validateService("admission", azure())).toThrow("供应商");
     expect(() => validateService("tts", { ...config(), params: { ...config().params, auth_mode: "legacy", app_id: "old" } })).toThrow("新版 API Key");
     expect(api.request).not.toHaveBeenCalled();
   });
@@ -154,4 +157,52 @@ it("uses the course language and lets bilingual quotations auto-detect", () => {
   expect(speechLanguageParameters("zh-CN", "画 y = 2x。")).toEqual({ additions: JSON.stringify({ explicit_language: "zh-cn" }) });
   expect(speechLanguageParameters("en-US", 'Read the word “圆”.')).toEqual({});
   expect(speechLanguageParameters(undefined, "Legacy course")).toEqual({});
+});
+
+describe("Azure AI Speech (US English)", () => {
+  it("narrates through the relay with the chosen voice and plays the returned MP3", async () => {
+    api.request.mockResolvedValue({ status: 200, body: btoa("mp3!"), code: null });
+    const audio = await synthesizeDirect("The slope is rise over run.", undefined, azure());
+    expect(audio.type).toBe("audio/mpeg"); expect(audio.size).toBe(4);
+    const [url, init] = api.request.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/learn/byok/tts/relay");
+    expect(JSON.parse(init.body as string)).toEqual({ provider: "azure", params: { region: "eastus", voice: "en-US-AnaNeural" }, key: "own-azure-key", payload: { text: "The slope is rise over run.", voice: "en-US-AnaNeural" } });
+  });
+  it("narrates a lesson with the presenter's Azure voice, listed under the provider", async () => {
+    api.request.mockImplementation(async (url: string) => url === "/api/learn/byok/tts/relay"
+      ? { status: 200, body: btoa("mp3"), code: null }
+      : { profile_id: "alice", services: { tts: { ...azure(), key: undefined, has_credential: true } } });
+    await prepareClientServices();
+    await synthesizeDirect("Hi", undefined, undefined, { azure: { id: "en-US-AndrewNeural" }, "seed-tts-2.0": { id: "zh-voice" } });
+    const relayed = api.request.mock.calls.filter(([url]) => url === "/api/learn/byok/tts/relay").map(([, init]) => JSON.parse(init.body));
+    expect(relayed).toEqual([{ provider: "azure", params: { region: "eastus", voice: "en-US-AnaNeural" }, expected_revision: "a1", payload: { text: "Hi", voice: "en-US-AndrewNeural" } }]);
+    expect(speechResource(azure())).toBe("azure");
+    expect(speechResource(config())).toBe("seed-tts-2.0");
+  });
+  it("recognizes US English and reports silence as no speech", async () => {
+    api.request.mockResolvedValueOnce({ status: 200, body: JSON.stringify({ RecognitionStatus: "Success", DisplayText: " Point A is at two. " }), code: null });
+    expect(await transcribeDirect(new Blob(["wav"]), new AbortController().signal, azure({ region: "westus2" }), { language: "en-US" })).toEqual({ status: "speech", transcript: "Point A is at two." });
+    const body = JSON.parse((api.request.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.payload).toEqual({ audio: btoa("wav"), language: "en-US" });
+    api.request.mockResolvedValueOnce({ status: 200, body: JSON.stringify({ RecognitionStatus: "InitialSilenceTimeout" }), code: null });
+    expect((await transcribeDirect(new Blob(["wav"]), new AbortController().signal, azure({ region: "westus2" }))).status).toBe("no_speech");
+  });
+  it("chooses one recognition language: Chinese stays Chinese, everything else is US English", () => {
+    expect(azureRecognitionLanguage("en-GB")).toBe("en-US");
+    expect(azureRecognitionLanguage("zh-CN")).toBe("zh-CN");
+  });
+  it("validates region, voice, clip length and the TV bridge before any paid request", async () => {
+    expect(() => validateService("tts", azure({ region: "east us", voice: "en-US-AnaNeural" }))).toThrow(tr("Enter your Azure Speech region, for example eastus."));
+    expect(() => validateService("tts", azure({ region: "eastus", voice: "" }))).toThrow();
+    expect(() => validateService("asr", azure({ region: "eastus" }))).not.toThrow();
+    await expect(transcribeDirect(new Blob([new Uint8Array(AZURE_MAX_WAV_BYTES + 1)]), new AbortController().signal, azure({ region: "eastus" }))).rejects.toMatchObject({ state: "network_error" });
+    window.OctosNativeByok = { request: vi.fn(), cancel: vi.fn() };
+    expect(() => validateService("tts", azure())).toThrow(tr("Azure speech is available on the web for now. On this TV, use Volcano Engine."));
+    expect(api.request).not.toHaveBeenCalled();
+  });
+  it("explains a rejected Azure key without echoing it", async () => {
+    api.request.mockResolvedValue({ status: 401, body: "", code: null });
+    const error = await synthesizeDirect("Hi", undefined, azure()).catch(value => value as Error);
+    expect(error.message).toContain("Azure"); expect(error.message).not.toContain("own-azure-key");
+  });
 });

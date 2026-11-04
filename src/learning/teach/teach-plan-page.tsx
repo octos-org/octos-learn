@@ -100,6 +100,8 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
         <AcademyHeader />
         <h1 className="academy-title">{tr("我来讲一课")}</h1>
         <Link to="/teach/lessons" className="teach-secondary teach-my-lessons">{tr("我的课")}</Link>
+        <Link className="teach-secondary" to="/teach/avatar-2d">{tr("体验动态头像")}</Link>
+        <Link className="teach-secondary" to="/teach/package">{tr("播放课程包")}</Link>
 
         {step === "topic" && drafts.length > 0 && (
           <section className="teach-step" aria-labelledby="teach-drafts-title">

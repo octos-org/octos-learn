@@ -46,6 +46,9 @@ delivery/
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/
 
+# Rebuilt from the pinned vision package and verified face model.
+public/avatar-runtime/
+
 # Generated from the pinned CoursePack library; published packs live outside the web build.
 public/course-packs/
 

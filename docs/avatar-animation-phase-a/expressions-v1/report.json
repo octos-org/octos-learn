@@ -1,0 +1,32 @@
+{
+  "baseline": "51acb03f",
+  "checks": {
+    "neutralMax": 0,
+    "gazeOutsideEyesMax": 0,
+    "closedEyeGazeMax": 0,
+    "independentRightEyeMax": 0,
+    "invalidMax": 0,
+    "resetMax": 0
+  },
+  "continuity": {
+    "eyeLookInLeft": 0,
+    "eyeLookOutRight": 0,
+    "eyeLookUpLeft": 0,
+    "eyeSquintLeft": 0,
+    "mouthFrownLeft": 0,
+    "browDownLeft": 0
+  },
+  "gazeCentroids": {
+    "left": 194.01862774926147,
+    "neutral": 198.5633676164784,
+    "right": 202.40282027266105
+  },
+  "animation": {
+    "frames": 100,
+    "delayMs": 100,
+    "durationMs": 10000
+  },
+  "meanNativeDrawMs": 2.2814008499999954,
+  "source": "Actual old/new production Canvas painters, identical painted-v0.2 assets, deterministic synthetic coefficients.",
+  "limits": "No new face capture. Centroid verifies direction, not gaze tracking accuracy. Native draw times and GIF playback are not browser/TV FPS. No additional side-view geometry."
+}

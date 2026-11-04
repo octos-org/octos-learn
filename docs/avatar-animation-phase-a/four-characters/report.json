@@ -1,0 +1,100 @@
+{
+  "acceptedFoxBaseline": "af2b1f08",
+  "acceptedFoxMax": 0,
+  "characters": {
+    "star-fox": {
+      "checks": {
+        "neutralMax": 0,
+        "closedMouthMax": 0,
+        "invalidMax": 0,
+        "mouthOutsideMax": 0,
+        "clothesMax": 0,
+        "replayMax": 0,
+        "resetMax": 0
+      },
+      "minAlpha": 255,
+      "continuity": {
+        "jawOpen": 0,
+        "browDownLeft": 0,
+        "eyeBlinkLeft": 0,
+        "eyeLookInLeft": 0
+      },
+      "frownDelta": {
+        "max": 255,
+        "changed": 3023
+      }
+    },
+    "red-panda": {
+      "checks": {
+        "neutralMax": 0,
+        "closedMouthMax": 0,
+        "invalidMax": 0,
+        "mouthOutsideMax": 0,
+        "clothesMax": 0,
+        "replayMax": 0,
+        "resetMax": 0
+      },
+      "minAlpha": 255,
+      "continuity": {
+        "jawOpen": 0,
+        "browDownLeft": 0,
+        "eyeBlinkLeft": 0,
+        "eyeLookInLeft": 0
+      },
+      "frownDelta": {
+        "max": 250,
+        "changed": 3647
+      }
+    },
+    "white-rabbit": {
+      "checks": {
+        "neutralMax": 0,
+        "closedMouthMax": 0,
+        "invalidMax": 0,
+        "mouthOutsideMax": 0,
+        "clothesMax": 0,
+        "replayMax": 0,
+        "resetMax": 0
+      },
+      "minAlpha": 255,
+      "continuity": {
+        "jawOpen": 0,
+        "browDownLeft": 0,
+        "eyeBlinkLeft": 0,
+        "eyeLookInLeft": 0
+      },
+      "frownDelta": {
+        "max": 242,
+        "changed": 2699
+      }
+    },
+    "moon-cat": {
+      "checks": {
+        "neutralMax": 0,
+        "closedMouthMax": 0,
+        "invalidMax": 0,
+        "mouthOutsideMax": 0,
+        "clothesMax": 0,
+        "replayMax": 0,
+        "resetMax": 0
+      },
+      "minAlpha": 255,
+      "continuity": {
+        "jawOpen": 0,
+        "browDownLeft": 0,
+        "eyeBlinkLeft": 0,
+        "eyeLookInLeft": 0
+      },
+      "frownDelta": {
+        "max": 244,
+        "changed": 3185
+      }
+    }
+  },
+  "animation": {
+    "frames": 48,
+    "frameDelayMs": 130,
+    "durationMs": 6240
+  },
+  "limits": "Actual product painters using deterministic synthetic controls; no camera/browser/TV acceptance. Original instructor/learner package selection remains a separate integration."
+}

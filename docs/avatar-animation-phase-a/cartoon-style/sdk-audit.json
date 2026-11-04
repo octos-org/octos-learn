@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-03",
+  "kind": "static-public-api-review-only",
+  "sdk_executed": false,
+  "camera_started": false,
+  "project_dependencies_changed": false,
+  "package": {
+    "name": "@snap/camera-kit",
+    "version": "1.22.0",
+    "registry_metadata": "https://registry.npmjs.org/@snap%2fcamera-kit/latest",
+    "tarball": "https://registry.npmjs.org/@snap/camera-kit/-/camera-kit-1.22.0.tgz",
+    "bytes": 1099013,
+    "sha256": "a9a4adb514e85e9b120c35e9f67572e3852b58c17896a9790fc60b8fa2eda509",
+    "npm_sha512_integrity_verified": true,
+    "license": "SEE LICENSE IN LICENSE.md"
+  },
+  "checks": {
+    "media_stream_source_exported": true,
+    "video_source_exported": true,
+    "image_source_exported": true,
+    "live_and_capture_canvases": true,
+    "apply_lens_boolean_result": true,
+    "execution_error_auto_removes_lens": true,
+    "remove_lens_documented_raw_passthrough": true,
+    "video_tracking_data_is_opaque_arraybuffer": true,
+    "lens_launch_params_available": true,
+    "fps_limit_available": true,
+    "session_destroy_available": true,
+    "fps_and_processing_metrics_available": true
+  },
+  "declaration_sha256": {
+    "index.d.ts": "4d613b51affbefa0bbdea98c422ba9e3a74faa2daa6035ffdaf8cd50a592bc08",
+    "session/CameraKitSession.d.ts": "53ba0c25997364f9ba4f4eb556859a5dd27cf4ea2e64b6d76e2f44c10d0784c8",
+    "media-sources/VideoSource.d.ts": "dc3c65a6caa9d8a7085fa348425efd1c05c85eefe25cf99d1244f2b293e97d46",
+    "lens/LensLaunchData.d.ts": "ea66cc1bd38abae7fa2a097a66afb389164b3de6730ccdb358a6d2fc7ca7d30c",
+    "session/LensPerformanceMeasurement.d.ts": "326b54647faf6918aae486a3ccb0cc2e32d26421adccc1f72e610983fbfd5cec",
+    "configuration.d.ts": "fb28da7e2d45f50b51fd908e148f250137129ef01b3231ffb918864790beec26"
+  },
+  "not_proven": [
+    "Cartoon 3D Style lens entitlement",
+    "Face Generator output compatibility with Camera Kit Web",
+    "runtime visual quality",
+    "end-to-end latency",
+    "zero real-person output frames",
+    "continuous FaceFrame injection into neural face effect",
+    "final TTS lipsync",
+    "offline first launch",
+    "Android touchscreen runtime"
+  ],
+  "dct_net_model_metadata": {
+    "url": "https://modelscope.cn/api/v1/models/iic/cv_unet_person-image-cartoon-3d_compound-models",
+    "name": "cv_unet_person-image-cartoon-3d_compound-models",
+    "frameworks": [
+      "TensorFlow"
+    ],
+    "license": "Apache License 2.0",
+    "storage_size_bytes": 182571870,
+    "revision": "master",
+    "weights_downloaded": false,
+    "dependencies_license_review_complete": false
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "materials": [
+    {
+      "path": "materials/clean-aligned.png",
+      "sha256": "5f68b52183c4542199c226798e3eb08d79a9df0a2e15339a75fd740a0e83d99c",
+      "bytes": 476320
+    },
+    {
+      "path": "materials/expression-aligned.png",
+      "sha256": "42839ba92a0b97e4f807b106e2f9314956d0eadc552e0615c11394d2cb4f86c9",
+      "bytes": 476486
+    },
+    {
+      "path": "materials/eyeL-expression.png",
+      "sha256": "f0cfe259912f726cac867e110022e441a457299456be4d9387648bfba72a6cc9",
+      "bytes": 4840
+    },
+    {
+      "path": "materials/eyeL-open.png",
+      "sha256": "40b63e1e8534fa22c60d447a5a7cdcde43dcbecefd5def84af2afa282c3cb404",
+      "bytes": 24223
+    },
+    {
+      "path": "materials/eyeR-expression.png",
+      "sha256": "93f1da3d5738a5ef5a139d43f62bda7df3c83d4efec5655a319a3ad56e7522c8",
+      "bytes": 4969
+    },
+    {
+      "path": "materials/eyeR-open.png",
+      "sha256": "ab974691b12e7f9ca002d10fa7b10f3aa22edc5dae30342c67953bb60267e41a",
+      "bytes": 22938
+    },
+    {
+      "path": "materials/face.png",
+      "sha256": "56724b21a7bd16e1ba0211e01e717682f4e83cd62d5ab4149ef60cf069e48d2a",
+      "bytes": 446601
+    },
+    {
+      "path": "materials/mouth-expression.png",
+      "sha256": "f3ad9601e5c65bdf8c29467052d32e00967d4b020af7fab881d1705167107e9e",
+      "bytes": 3791
+    },
+    {
+      "path": "materials/mouth-open.png",
+      "sha256": "54ba03ca4c62a776fc499ef11deab8ad7c5b9996a12a158068f49578fd5b5c8b",
+      "bytes": 13186
+    },
+    {
+      "path": "materials/source.png",
+      "sha256": "7f57b7516b07d1302dbfca14ba22fdb70cdad11de2739e9b00dba1ba7122f81b",
+      "bytes": 457984
+    }
+  ],
+  "reproduction": "All alpha and visible RGBA pixels match the authoring script output. Transparent RGB is zeroed only for compact files."
+}

@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-02",
+  "tool": "built-in image_gen",
+  "reference": "public/teach-avatars/star-fox/concept-thinking.png",
+  "purpose": "New upright front-facing artwork in the established painted style, split into independent animation parts; not reuse of the tilted thinking pose.",
+  "generatedSources": {
+    "parts": "exec-c2653191-de43-4f56-8a42-246a97ae07e1.png",
+    "hands": "exec-fb2f591e-5b61-4a18-b6b8-933261dfba06.png",
+    "headExpression": "exec-dba5aef6-f008-4f55-8338-13577e1893e1.png",
+    "headClean": "exec-74565c49-be46-4041-ab25-4ac89e6fa898.png"
+  },
+  "extraction": {
+    "partsSize": [
+      1536,
+      1024
+    ],
+    "head": [
+      170,
+      10,
+      500,
+      475
+    ],
+    "torso": [
+      960,
+      15,
+      310,
+      475
+    ],
+    "leftArm": [
+      300,
+      525,
+      190,
+      495
+    ],
+    "rightArm": [
+      1045,
+      525,
+      190,
+      495
+    ],
+    "handsSize": [
+      2172,
+      724
+    ],
+    "handColumns": [
+      0,
+      724,
+      1448
+    ],
+    "headEdits": {
+      "generatedSize": [
+        1287,
+        1222
+      ],
+      "normalizedSize": [
+        500,
+        475
+      ]
+    }
+  },
+  "prompts": {
+    "bodyRigAtlasPrompt": "Use case: stylized-concept.\nAsset type: production CUTOUT ANIMATION LAYER SHEET, using the attached original star fox only as character/style reference.\nWe need the SAME fine painterly/anime illustration quality, detailed orange fur strands, rich amber eyes, navy robe with delicate gold constellation embroidery, ivory Chinese collar shirt, gold and silver star medallion. Do NOT simplify into a flat cartoon, toy, 3D render, emoji or a different character.\nCreate FOUR SEPARATE transparent components in a precise 2x2 grid, with large transparent gutters, no overlapping between cells and no labels:\nTOP LEFT: the fox's complete HEAD, ears, hair and a short cream neck, absolutely FRONT-FACING, LEVEL, symmetric upright neutral pose. Both eyes open, relaxed mouth. No head tilt, no hand, no shoulder or body. Keep beautiful detailed amber eyes and fur; simple gentle closed mouth.\nTOP RIGHT: the character's FRONT-FACING UPPER TORSO ONLY from high collar down through the waist, with ivory shirt, navy constellation-embroidered robe panels, star medallion and belt. NO HEAD and NO ARMS, NO HANDS. Full collar and garment behind shoulders, fill in covered cloth so the torso can stand alone under moving arms.\nBOTTOM LEFT: ONE detached COMPLETE ROBED ARM for the viewer's left side, viewed from the front, shoulder at top, elbow midway, cuff and wrist at bottom. Natural down-hanging pose, almost straight. Navy constellation-embroidered full sleeve, ivory cuff; end at a small cream fur wrist stump, NO HAND attached. Give the sleeve a full round overlapping shoulder cap so it rotates cleanly. Its lighting and texture match the torso.\nBOTTOM RIGHT: the corresponding detached complete sleeve ARM for the viewer's right side, mirrored matching counterpart. Shoulder at top, elbow midway, cuff and wrist at bottom; no hand.\nEvery component fully inside its own equal quadrant, padded transparent margins. True transparent background, not a checkerboard painting. No props, NO WAND, no hand at chin. This is a rig-ready parts layout, not a poster or assembled character. Each arm must be independent of the torso. Keep all original costume richness.",
+    "bodyRigAtlasCleanPrompt": "Use case: background-extraction.\nEdit target: the attached FOUR-PART star fox animation layer sheet. Keep the precise position, size, colors, painterly detail and design of the four parts unchanged.\nREMOVE ALL BACKGROUND PIXELS including EVERY brown glow, grey gradient, dark field and ambient haze. The gaps and outside areas must be genuine alpha transparency, not black, grey, white, checkerboard or shadows. Sharp clean painted silhouette edges. Do not damage fine fur tips.\nIn the TOP RIGHT quadrant only, remove the two long arms/sleeves that are hanging attached to the torso; keep just the central torso with collar, navy front panels, star badge, shirt and belt. Restore garment underneath where arms overlapped so the body is a complete independent sleeveless torso. The detached arm components in the two bottom quadrants must remain unchanged.\nTop-left head is level and front-facing, preserve it exactly. No hands, props, text or labels. Exact same image dimensions and quadrant locations.",
+    "bodyRigHandPrompt": "Use case: stylized-concept.\nAsset type: transparent HAND SPRITE ATLAS for the exact star fox character in the reference. Preserve rich anime/painterly original detail, golden orange fox fur, soft cream fur at the wrist, fine warm shading and dark brown tiny nails. Not flat cartoon or 3D.\nOne image with THREE equal columns, each with ONE detached anthropomorphic fox hand/paw, five believable fingers, wrist at the BOTTOM and fingers pointing UP, viewed from the PALM SIDE at the SAME scale and angle, same wrist-center anchor.\nLEFT column: relaxed open palm, five gently spread digits, suitable for a wave.\nCENTER column: pointing hand, index finger extended upward, other three fingers folded naturally with thumb resting over them.\nRIGHT column: gently closed fist, thumb correctly resting outside curled fingers.\nThe hands are for the viewer's left arm, with thumb toward the center/right; we will mirror the sprites for the other side. Short cream-fur wrist stump, NO arm, sleeve or object. Full hand silhouettes inside each column with generous transparent padding and consistent wrist height. Truly transparent background: no gradient, glow, background color, shadow, checkerboard, letters, captions or grid.",
+    "puppetHeadExpressionPrompt": "Use case: precise-object-edit.\nEdit the attached upright FRONT-FACING fox HEAD animation sprite. Keep its exact 500x475 canvas, head geometry, LEVEL upright orientation, eye and mouth positions, hair, ears, neck, transparency, painterly detail and colors unchanged.\nChange ONLY both eyes to gently CLOSED eyelids in the same rich painted/anime style, and the small mouth to a modest open mid-speech mouth with dark interior and subtle tongue. No changes to eyebrows or outside these small facial regions. Preserve perfect alignment for overlaying the neutral sprite. No simplification, head tilt, hands, body, new backdrop or text. True transparency.",
+    "puppetHeadCleanPrompt": "Use case: precise-object-edit.\nEdit the attached upright FRONT-FACING fox HEAD animation sprite. Preserve exactly its 500x475 canvas, head shape, LEVEL orientation, hair strands, ears, nose, neck, rich painterly rendering, texture, colors and transparency.\nRemove ONLY the eyes/eyelashes, eyebrows, and small mouth line, filling those regions seamlessly with matching cream fur shading. Keep nose and every other feature unchanged. This is a clean underpainting for replacing the ORIGINAL painted facial features; do not draw sockets, closed eyelids, replacement facial features or blur rectangles. No tilted head, hands, body, text or background. Same alignment and scale, true transparency."
+  },
+  "files": [
+    {
+      "file": "hand-fist.png",
+      "bytes": 284607,
+      "sha256": "a8378608c1c97cee6853c71253806c54a7357adbc7596f1636d3d1daddc9d44b"
+    },
+    {
+      "file": "hand-open.png",
+      "bytes": 407102,
+      "sha256": "e2163b4720a70b274e4e6aba455b9cfa36c182ef432d2d304f7d4ef20c582513"
+    },
+    {
+      "file": "hand-point.png",
+      "bytes": 311886,
+      "sha256": "374485755188e59d271042d16f73b544ece638d97efd03b561501dab4c3a6526"
+    },
+    {
+      "file": "hands-source.png",
+      "bytes": 1044276,
+      "sha256": "cc033d4fd491991bf24237dfcceeb11aa4bfc23e36451e57b1fc1fc39383b1d1"
+    },
+    {
+      "file": "head-clean.png",
+      "bytes": 336641,
+      "sha256": "ff1bd2ac3b90fb223494c6540176e5ed240c0238b99cd8b19b5362399e732ed5"
+    },
+    {
+      "file": "head-expression.png",
+      "bytes": 334377,
+      "sha256": "33e9d0edaddb81840d0e1cc05cdf5d17ade125bb0fcca44ee0bfec328b12b259"
+    },
+    {
+      "file": "head.png",
+      "bytes": 376866,
+      "sha256": "875399126bc3d81c4dd61d3b9b48070f45bdaad955543b18ff97b4ce74c9cb80"
+    },
+    {
+      "file": "leftArm.png",
+      "bytes": 137030,
+      "sha256": "14b8028135a1acde8d755ad21a3eecaacaeece2c88620983c3d22fcca2dec38d"
+    },
+    {
+      "file": "parts-source.png",
+      "bytes": 1815576,
+      "sha256": "59c2a695d9234f6de97cfacf8693c0c56c2a67de2136db88e9a73a059fab7c94"
+    },
+    {
+      "file": "rightArm.png",
+      "bytes": 136130,
+      "sha256": "432f7fd46b5a3916f63da5376fdafac6de3dccb47a866ea4a7a3e52f47edec8a"
+    },
+    {
+      "file": "torso.png",
+      "bytes": 227979,
+      "sha256": "3c14be62624df81fb2368d08213a86029e08e36cf2825e8e0ac63f02c06df853"
+    }
+  ]
+}

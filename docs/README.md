@@ -62,6 +62,60 @@
 
 ## 专题计划
 
+- [录课摄像头动作接入课程](LEARNER_AVATAR_CAMERA_PERFORMANCE.md)：录课时可选摄像头带动形象；表情/转头按最终配音重新对齐进课包，播放时与配音嘴型合成；隐私与校验边界。
+- [耳发随头动与张嘴线条](LEARNER_AVATAR_HEAD_FOLLOW_MOUTH.md)：当前版本；耳朵滞后跟随、转头侧耳朵侧转、头发惯性，张嘴改为光滑抗锯齿下唇。
+- [耳廓主动转向：四角色修正](LEARNER_AVATAR_EAR_ORIENTATION.md)：当前耳动实现；独立转向/保持/回正、小角度耳平面投影与单独发梢惯性，附近景与四角色实际动画、60 项测试和素材边界。
+
+- [动物耳部运动：重审当前随动](LEARNER_AVATAR_ANIMAL_EAR_RESEARCH.md)：用户否定旧耳动自然度后的机构资料/论文核查；区分主动耳廓转向与被动发梢随动，列明小熊猫/浣熊身份和证据缺口；后续实现见耳廓主动转向。
+
+- [四角色耳发随动与静止小动作](LEARNER_AVATAR_SECONDARY_MOTION.md)：历史弹簧/正弦版本，用户已否定耳动自然度；保留实现与检查记录，当前以耳廓主动转向为准。
+
+- [四款学生虚拟形象：同页互动预览](LEARNER_AVATAR_FOUR_CHARACTERS.md)：星狐、小熊猫、白兔、女性月猫，独立绑定与同页切换，附真实绘制器输出和原星狐零差异检查。
+- [给手势白板研究 agent 的 prompt](LEARNER_GESTURE_WHITEBOARD_RESEARCH_PROMPT.md)：MediaPipe Hand Landmarker、本地白板笔画映射与独立分支协作范围。
+
+- [星狐完整耳朵、随动与眉眼表情](LEARNER_AVATAR_EARS_EXPRESSIONS.md)：当前星狐工作入口；补绘完整耳朵、耳尖/发梢随动、皱眉覆盖修复与眉眼联动、口腔采样改善，附实际程序动画和像素验证。
+
+- [双线推进：星狐优化与神经卡通化实验](LEARNER_AVATAR_TWO_TRACK_PROGRESS.md)：最新工作入口。星狐新增视线、笑眼、眉毛/嘴角独立变化；DCT-Net 真实本地输出、ONNX 转换与 WASM 计算验证，附对照动画、数值检查和实际性能边界。
+
+- [Cartoon 3D Style 深入可行性](LEARNER_AVATAR_CARTOON_STYLE_FEASIBILITY.md)：用户已确认视觉目标；SDK 免费与内容授权分开核查，官方发布包 12 项静态接口检查、Face Generator 网页兼容性缺口、自托管模型元数据、匿名录制/最终配音/安卓落地顺序。尚未运行新模型。
+
+- [截图特效再研究：实时神经卡通化](LEARNER_AVATAR_NEURAL_CARTOON_RESEARCH.md)：用户否定现成角色后，按截图跨平台查找；记录 Google Lens 实际提交与结果读取限制、Snapchat 官方机器学习卡通化线索，以及自有画风、匿名与课程回放的限制。
+
+- [现成虚拟角色初筛](LEARNER_AVATAR_CHARACTER_SHORTLIST.md)：三组真实角色图、作者动作视频来源、成本与网页分发授权状态；尚未购买或接入，供先选外观。
+
+- [虚拟讲师路线重选：现成完整角色优先](LEARNER_AVATAR_DOUYIN_REASSESSMENT.md)：用户否定 DeepAR 外观与费用后，优先调研完整丰富表情 VRM + 开源渲染，专业 Live2D 备选；保留厂商调研和纯角色输出、最终配音回放、课程包及电视验证门槛。新候选尚未集成。
+
+- [二维星狐嘴型与头发/耳朵边缘修正](LEARNER_AVATAR_RESPONSE_FIX.md)：扩大相机张嘴响应与可见行程，撤销头部顶部/两侧的固定约束，附同输入前后对比与既有识别动作回放；保留源图裁切和缺失侧脸限制。
+
+- [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：当前接手入口；四角色/最新耳廓转向、交接提交范围、代码/素材/验证与复现、用户认可边界，以及 M6 目录/动态播放/v2 保存缺口。
+
+- [耳发与嘴巴局部绑定研究](LEARNER_AVATAR_LOCAL_RIG_RESEARCH.md)：核查 PR #119 后的整图网格限制、Live2D/Spine 制作参照与分阶段方案。
+- [星狐单耳与侧发 v0.1 记录](LEARNER_AVATAR_LOCAL_RIG_PROGRESS.md)：独立分支 `codex/avatar-local-rig` 的初期小样；50 项测试未覆盖实际耳根接合和相邻发尖误选，用户已否定视觉效果，最新修正见下一项。
+- [局部绑定用户反馈与可见接缝修正](LEARNER_AVATAR_LOCAL_RIG_FEEDBACK.md)：v0.1 与 v0.2 均被指出耳部割裂；当前改为沿真实斜向接缝保留连接带，87 个模拟状态无原裂口，52 项相关测试通过，未获整体自然度认可。
+- [星狐完整样板持续执行清单](LEARNER_AVATAR_STAR_FOX_TODO.md)：双耳、主要发束、自然动作、高清嘴部及验证的完整工作门槛；机器可读状态与完成检查防止把局部小样当成全部完成。
+- [星狐完整样板当前交付](LEARNER_AVATAR_STAR_FOX_2D_SAMPLE.md)：双耳独立绑定、三组主要发束、偶发自然动作、高清口腔与独立口型；素材来源、程序检查、预览与未完成的真人/设备验收边界。
+- [星狐单耳绘制姿态试验](LEARNER_AVATAR_EAR_TURN_TRIAL.md)：12 张朝向绘图；v0.1 被指出脱节后，v0.2 移除固定白毛补片并精分头发前景，保留缺陷反例及慢转/纹理一致性限制。
+- [当前耳部轻微惯性随动](LEARNER_AVATAR_EAR_INERTIA.md)：按用户新要求取消主动/待机转耳，四角色仅在转头后轻微滞后、回弹、归位；原耳纹理和当前验收入口。
+- [角色差异与眉嘴表情增强](LEARNER_AVATAR_EXPRESSIONS.md)：兔耳更柔软、幅度更大，四角色各自惯性；可见眉层、独立眉形及嘴唇细节，同步接入捕捉/手动/录制回放。
+
+- [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
+- [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。
+- [正式星狐模型交付规范](LEARNER_AVATAR_MODEL_SPEC.md)：可交给建模/绑定制作人员的通道、资产、自动检查和组合表情验收要求。
+- [星狐三维小样 v0.1](LEARNER_AVATAR_STAR_FOX_SAMPLE.md)：本项目直接制作的可编辑模型、21 通道表情、真实 GLB 加载、定格检查与实际质量边界。
+- [学生讲师二维方向](LEARNER_AVATAR_2D_DIRECTION.md)：用户否定三维小样后的新路线；二维绘本角色、图层嘴眼动画、教学表现与分阶段验收，尚未替换运行渲染器。
+- [二维星狐可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)：插画与独立程序五官、动作/中文配音预览、实际动图导出，以及浏览器验收限制；录课入口已指向新小样。
+- [二维星狐完整互动](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准/录制/回放、连续滑杆与试听接入二维舞台；主入口已改为互动试验室，附聊天内直接拖动版本。
+- [二维星狐正面姿态修正](LEARNER_AVATAR_UPRIGHT_POSE.md)：当前 `painted-v0.2` 完整正面立绘、眼口眉重新绑定；说明 MediaPipe → 参数 → Canvas 变形的实际实现，用户已取消继续浏览器验收。
+- [原画风二维星狐互动版本](LEARNER_AVATAR_PAINTED_INTERACTIVE.md)：上一版整合记录；连续双眼、开合/圆唇/微笑、抬眉、有限头部变形接入原有控制和录制回放，附实际浏览器截图、动画、像素检查与未验证边界。
+- [真实模型输入验证与眨眼修正](LEARNER_AVATAR_REAL_INPUT_VALIDATION.md)：五段本地公开视频的 966 次实际模型推理、真实参数驱动动画、快速眨眼修复、失跟恢复与回放检查；明确原生 Python 与网页 Worker 的差别及浏览器工具阻塞。
+- [单张星狐 LivePortrait 实测](LEARNER_AVATAR_SINGLE_IMAGE_VALIDATION.md)：真实运行人像版/动物版与官方动作对照，附离线短片、逐帧报告和复现脚本；当前画面质量与本机速度未通过，不接入产品。
+- [同原画面部素材与绑定验证](LEARNER_AVATAR_FACE_RIG_VALIDATION.md)：保留原画细节的分层实测；已修正中性跳变并验证双眼独立控制，附真实浏览器截图、慢速动画、可操作页与摄像头验收边界。
+- [单图与直播式二维面部动画调研](LEARNER_AVATAR_SINGLE_IMAGE_RESEARCH.md)：最新范围收敛为面部，核查 VTube Studio/Live2D、单图生成式与自动分层绑定；说明真实可用性、许可和未实测边界。
+- [正面二维角色与身体跟随](LEARNER_AVATAR_BODY_CAPTURE.md)：上一轮实现记录，用户已否定画面质量、手臂暂缓；保留原画细腻画风、重新制作头正的独立部件，加入双臂/手腕/三类手势捕捉与排练，身体动作录制回放，附验证与实际设备限制。
+- [原始插画表情驱动](LEARNER_AVATAR_ORIGINAL_ART.md)：历史阶段；按用户原图保留毛发、琥珀眼与服装细节；局部绘画素材与纹理形变驱动表情，自然状态实际像素与源图一致。
+- [正式星狐制作路线调研](LEARNER_AVATAR_PRODUCTION_RESEARCH.md)：人工制作、AI 辅助与现成资产比较；狐头小样、费用假设、分阶段验收和可直接使用的询价需求。
+- [配音与嘴型排练](LEARNER_AVATAR_AUDIO_SYNC.md)：本机音频预览、可选 v2 嘴型课包、完整白板同步播放器，以及高质量发音与正式角色待办。
+
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
 - [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
@@ -74,6 +128,7 @@
 - [学生当老师模式计划](LEARNER_TEACHING_MODE_PLAN.md)：孩子录课、用虚拟形象和合成声音发布的方案（面向美国 K–12）；分阶段、录制流程、互动组件、与 OLL 的对应和待决事项。样例与发现见 OLL 仓库 `docs/LEARNER-TAUGHT-V1-FINDINGS.md`。
 - [学生当老师模式实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)：从测试修复、OLL 合同扩展、录课工作室、编译器、小章鱼与检查、声音与隐私、我的课程，到账号同意、班级分享和公开社区的里程碑、验收标准与待决事项。
 - [学生当老师模式交接](LEARNER_TEACHING_MODE_HANDOFF.md)：当前进展、仓库/分支/PR 与合并顺序、已决事项、代码地图、本地运行与实测脚本、已知问题和剩余工作；接手时先读这一篇。
+- [美国英语语音：Azure AI Speech](EN_US_SPEECH_AZURE.md)：P6 提案实现；为什么选 Azure、ASR / TTS 接入方式、设置页供应商切换、美式英语与儿童音色目录、电视暂不支持等限制。
 - [三位老师定稿与素材更新](TEACHER_ART_REFRESH.md)：2026-10-30 三张用户定稿、人物卡/胸像/横版素材、程序接入及创建 PR 前的本地验收。
 - [三位老师 Q 版表情素材](TEACHER_CHIBI_PACK.md)：每位八张、共 24 张透明表情；独立素材、提示词与清单，尚未接入产品界面。
 - [学习记录放在哪里](LEARNING_RECORDS_PLACEMENT.md)：学习记录支撑星图和成就；“继续学习”和周报进大厅，学习经过在 `/records` 并从星辰直达，删除重复的学习地图标签。

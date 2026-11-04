@@ -1,0 +1,127 @@
+{
+  "characters": {
+    "star-fox": {
+      "leftLookHoldMs": 1970,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 224,
+        "changed": 15807
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        2.563902256615955,
+        0.30411198538157336
+      ]
+    },
+    "red-panda": {
+      "leftLookHoldMs": 2675,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 200,
+        "changed": 16046
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        0.9258790339348831,
+        1.6937846855732612
+      ]
+    },
+    "white-rabbit": {
+      "leftLookHoldMs": 4500,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 209,
+        "changed": 22879
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        3.9746926064486976,
+        0.18664489057727482
+      ]
+    },
+    "moon-cat": {
+      "leftLookHoldMs": 2390,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 154,
+        "changed": 14138
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        2.450467937691792,
+        0.2285235472011504
+      ]
+    }
+  },
+  "spring": {
+    "release": {
+      "leftEar": 0.10698991363357936,
+      "rightEar": -0.10698991363357936,
+      "hair": -7.850805660523873,
+      "forelock": -4.384216148084759
+    },
+    "settled": {
+      "leftEar": 1.0114500732051184e-12,
+      "rightEar": -1.0114500732051184e-12,
+      "hair": -0.0000016066017480968159,
+      "forelock": -8.971931840021169e-7
+    }
+  },
+  "model": "Monotone active ear look / hold / return, small-angle ear-plane foreshortening, passive hair spring only",
+  "media": {
+    "idle": {
+      "frames": 120,
+      "durationMs": 12000
+    },
+    "following": {
+      "frames": 70,
+      "durationMs": 7000
+    }
+  },
+  "source": "Actual current Canvas product painters with synthetic neutral and head motion inputs. Facial expressions held fixed; no webcam.",
+  "limits": "Native pixel checks/media, no browser/TV performance claim. No reconstructed rear-ear surface or claim of measured animal kinematics. Hair spring history is not serialized; seeks reset it. Idle motion is decorative and not recorded into facial channels."
+}

@@ -5,12 +5,12 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { normalizeAuthoringLesson } from "octos-lesson-language";
+import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
-import { availableService, type LessonVoices } from "@/byok/providers";
+import { availableService, speechResource, type LessonVoices } from "@/byok/providers";
 import { getService, prepareClientServices } from "@/byok/services";
 
 import { AcademyHeader } from "../academy/academy-header";
@@ -22,18 +22,40 @@ import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { compileRecording } from "./compile-recording";
 import { syncLessonDrafts } from "./draft-sync";
 import { listLessons, saveLessonPackage } from "./learner-lessons-api";
-import { LEARNER_PACKAGE_EXTENSION, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
+import { LEARNER_PACKAGE_EXTENSION, lessonNarration, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage, writeStoredLearnerPackage, type StoredLearnerPackage } from "./learner-package-store";
 import { cardChecks, lessonReady } from "./lesson-check";
-import { makeLearnerPackage } from "./make-learner-package";
+import { makeLearnerPackage, type CardPerformances } from "./make-learner-package";
 import { findPersonalDetails } from "./privacy";
 import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
-import { recordingComplete, setPresenter, type Presenter } from "./recording";
+import { keptTake, recordingComplete, setPresenter, type Presenter } from "./recording";
+import { readTakePerformance } from "./take-performance-store";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
-import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterVoices, type PresenterAvatar } from "./presenters";
+import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
+import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
+
+const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
+
+/**
+ * The stored camera performance of each camera take, by the card's narration
+ * beat. A take whose movement is missing on this device (for example a draft
+ * recorded on another device) is presented with mouth motion only.
+ */
+async function cardPerformances(profileId: string, recordingId: string, takes: Array<{ cardKey: string; take: number; speechSpanMs?: [number, number] }>,
+  events: CanonicalEvent[]): Promise<CardPerformances> {
+  const beats = lessonNarration(events);
+  const found: CardPerformances = {};
+  for (const take of takes) {
+    const beat = beats.find((line) => line.beatId.endsWith(`:beat:${take.cardKey}`));
+    if (!beat) continue;
+    const track = await readTakePerformance({ profileId, recordingId, cardKey: take.cardKey, take: take.take }).catch(() => null);
+    if (track) found[beat.beatId] = { track, ...(take.speechSpanMs ? { speechSpanMs: take.speechSpanMs } : {}) };
+  }
+  return found;
+}
 
 /** A short, stable fingerprint of the lesson, so a changed lesson starts again from the top. */
 function fingerprint(text: string): string {
@@ -56,8 +78,15 @@ export function TeachWatchPage() {
   const { id } = useParams();
   const profileId = getSelectedProfileId() ?? "local";
   const [recording, setRecording] = useState(() => loadRecordingDrafts(localStorage, profileId).find((draft) => draft.id === id));
+  const makeWork = useRef<AbortController | null>(null);
+  const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
+  const [makeFailed, setMakeFailed] = useState<string | null>(null);
+  const [showAvatar, setShowAvatar] = useState(() => recording?.presenter?.mouthMotion === "basic");
+  const [mediaClock, setMediaClock] = useState<{ beatId: string; clock: AudioPlaybackClock; packageHash: string } | null>(null);
   const choosePresenter = (presenter: Presenter) => {
     if (!recording) return;
+    if (presenter.mouthMotion !== undefined) setShowAvatar(presenter.mouthMotion === "basic");
+    makeWork.current?.abort(); makeWork.current = null; setMaking(null); setMakeFailed(null);
     const next = setPresenter(recording, presenter, new Date().toISOString());
     saveRecordingDraft(localStorage, profileId, next);
     setRecording(next);
@@ -90,23 +119,32 @@ export function TeachWatchPage() {
     void prepareClientServices().catch(() => undefined).then(() => {
       if (!active) return;
       setAudio(availableService("tts") ? "on" : "unavailable");
-      setResource(getService("tts")?.params.resource_id);
+      setResource(speechResource(getService("tts")));
     });
     return () => { active = false; };
   }, []);
-  // The chosen voice speaks when the account's speech resource offers it; otherwise the account's own voice does.
+  // A chosen voice must still be offered; using the account voice is an explicit choice.
   const voiceChoices = presenterVoices(resource);
   const chosenVoice = voiceChoices.find((voice) => voice.id === recording?.presenter?.voice);
   const wantedVoice = recording?.presenter?.voice;
+  const voiceAvailable = !wantedVoice || Boolean(chosenVoice);
   const voices = useMemo<LessonVoices | null>(() => {
     const offered = presenterVoices(resource).some((voice) => voice.id === wantedVoice);
     return offered && resource && wantedVoice ? { [resource.trim()]: { id: wantedVoice } } : null;
   }, [wantedVoice, resource]);
   const avatar = presenterAvatar(recording?.presenter?.avatar);
+  const includeLipSync = recording?.presenter?.mouthMotion === "basic";
+  // Cards whose kept take was recorded with the camera on (their movement is on this device).
+  const cameraTakes = useMemo(() => recording?.cards.flatMap((card) => {
+    const kept = keptTake(card);
+    return kept?.camera ? [{ cardKey: card.key, take: kept.take, speechSpanMs: kept.speechSpanMs }] : [];
+  }) ?? [], [recording]);
+  const includePerformance = includeLipSync && recording?.presenter?.cameraMotion === "on" && cameraTakes.length > 0;
 
   // The lesson's package, made on this device: once it matches the lesson,
   // the lesson plays from it with no speech service and no model.
-  const lessonPrint = fingerprint(lesson?.source ?? "");
+  const lessonPrint = fingerprint((lesson?.source ?? "") + (includeLipSync ? "\u0000avatar-mouth-v1" : "")
+    + (includePerformance ? `\u0000avatar-performance-v1:${cameraTakes.map((take) => `${take.cardKey}#${take.take}`).join(",")}` : ""));
   const [pack, setPack] = useState<PackState>({ status: "loading" });
   useEffect(() => {
     if (!recording || !lesson) return;
@@ -119,11 +157,16 @@ export function TeachWatchPage() {
     return () => { active = false; };
   }, [recording, lesson, lessonPrint]);
   const packaged = pack.status === "ready" ? pack.loaded : undefined;
+  const onMediaClock = useCallback((beatId: string, clock: AudioPlaybackClock | null) => {
+    setMediaClock((previous) => clock ? { beatId, clock, packageHash: packaged?.manifest.contentSha256 ?? "" } : previous?.beatId === beatId ? null : previous);
+  }, [packaged]);
   const checks = recording && lesson ? cardChecks(recording, lesson.compiled, recording.review) : [];
   const checked = Boolean(recording && lessonReady(checks, recording));
   const privateTitles = recording ? [recording.topic.text, ...recording.goals, ...recording.cards.map((card) => card.title)].flatMap((text) => findPersonalDetails(text)) : [];
-  const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
-  const [makeFailed, setMakeFailed] = useState<string | null>(null);
+  useEffect(() => {
+    const cancel = () => { makeWork.current?.abort(); makeWork.current = null; };
+    return cancel;
+  }, [id, profileId]);
   const [saved, setSaved] = useState<Saved>({ status: "checking" });
   const recordingId = recording?.id;
   useEffect(() => {
@@ -137,30 +180,38 @@ export function TeachWatchPage() {
   }, [recordingId]);
   // Saving makes the package when the lesson has none that matches, then keeps it in "My lessons".
   const saveLesson = async () => {
-    if (!recording || !lesson) return;
+    if (!recording || !lesson || (pack.status !== "ready" && !voiceAvailable)) return;
     setMakeFailed(null);
     setMaking({ done: 0, total: 0 });
+    makeWork.current?.abort(); const controller = new AbortController(); makeWork.current = controller;
     try {
       let stored = pack.status === "ready" ? pack.stored : undefined;
       if (!stored) {
+        const performances = includePerformance ? await cardPerformances(profileId, recording.id, cameraTakes, lesson.events) : undefined;
+        if (controller.signal.aborted || makeWork.current !== controller) return;
         const { archive, manifest } = await makeLearnerPackage({
           lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
-          voices, signal: new AbortController().signal, onProgress: (done, total) => setMaking({ done, total }),
+          voices, includeLipSync, ...(performances ? { performances } : {}), signal: controller.signal, onProgress: (done, total) => { if (makeWork.current === controller) setMaking({ done, total }); },
         });
+        if (controller.signal.aborted || makeWork.current !== controller) return;
         stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
         await writeStoredLearnerPackage(stored);
-        setPack({ status: "ready", stored, loaded: await readLearnerPackage(stored.archive) });
+        const loaded = await readLearnerPackage(stored.archive);
+        if (controller.signal.aborted || makeWork.current !== controller) return;
+        setPack({ status: "ready", stored, loaded });
       }
       await syncLessonDrafts(localStorage, profileId);
+      if (controller.signal.aborted || makeWork.current !== controller) return;
       const lessonSaved = await saveLessonPackage(recording.id, stored.archive);
+      if (controller.signal.aborted || makeWork.current !== controller) return;
       setSaved({ status: "known", contentSha256: lessonSaved.saved?.content_sha256 ?? null });
       // A first lesson can earn an award; it plays when the lesson is not playing.
       const token = getToken();
       if (token) void openHistoryApi(token).then((api) => api.achievements()).catch(() => undefined);
     } catch (error) {
-      setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
+      if (!controller.signal.aborted && makeWork.current === controller) setMakeFailed(error instanceof Error && error.message ? error.message : tr("这次没能做好，请再试一次。"));
     } finally {
-      setMaking(null);
+      if (makeWork.current === controller) { makeWork.current = null; setMaking(null); }
     }
   };
   const download = () => {
@@ -173,7 +224,7 @@ export function TeachWatchPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
   const resolvePackagedAudio = useCallback((beatId: string, text: string) => packaged?.narration(beatId, text) ?? null, [packaged]);
-  const narrated = (Boolean(packaged) || audio === "on") && sound;
+  const narrated = (Boolean(packaged) || (audio === "on" && voiceAvailable)) && sound;
 
   const runtime = useOllLessonRuntime({
     source: lesson && audio !== "checking" && pack.status !== "loading" ? packaged?.source ?? lesson.source : null,
@@ -187,6 +238,12 @@ export function TeachWatchPage() {
   const onComplete = useCallback((beatId: string) => runtimeRef.current?.completeNarration(beatId), []);
   const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
   const speaking = Boolean(runtime?.playing && runtime.activeSpeech.trim());
+  const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
+  const mouthTrack = useMemo(() => packaged && narrationBeatId
+    ? packaged.mouthTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
+  const performanceTrack = useMemo(() => packaged && narrationBeatId
+    ? packaged.performanceTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
+  const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length);
   const playing = Boolean(runtime?.playing);
   useEffect(() => {
     holdAwards("teach-watch", playing);
@@ -206,6 +263,7 @@ export function TeachWatchPage() {
     onPlaybackStart: onStart,
     onPlaybackComplete: onComplete,
     onPlaybackEnd: onEnd,
+    ...(hasMouthTracks ? { onMediaClock } : {}),
   });
 
   if (!recording) {
@@ -242,6 +300,7 @@ export function TeachWatchPage() {
               </fieldset>
               <fieldset>
                 <legend className="teach-group-label">{tr("声音")}</legend>
+                <button type="button" className="teach-secondary" aria-pressed={!wantedVoice} onClick={() => choosePresenter({ voice: "" })}>{tr("使用设置中的声音")}</button>
                 {voiceChoices.length ? (
                   <div className="teach-presenter-voices">
                     {voiceChoices.map((voice) => (
@@ -258,15 +317,21 @@ export function TeachWatchPage() {
               <button type="button" className="teach-primary" onClick={() => setChoosing(false)}>{tr("好了")}</button>
             </section>
           )}
-          <section className="teach-watch-stage" aria-label={tr("你的课")}>
-            <LearningWhiteboard runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
-          </section>
+          <div className="teach-watch-layout">
+            <section className="teach-watch-stage" aria-label={tr("你的课")}>
+              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
+            </section>
+            {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
+              characterId={presenterOfReference(packaged?.manifest.author.avatar_ref).id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
+              playing={speaking && narrated} preparing={narration.preparing}
+            /></Suspense>}
+          </div>
           <div className="teach-watch-bar">
             <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
               <AvatarPicture avatar={avatar} size={44} />
             </button>
             <button type="button" className="teach-primary" disabled={!runtime || audio === "checking"}
-              onClick={() => (runtime?.completed ? runtime.restart() : runtime?.playing ? runtime.pause() : runtime?.play())}>
+              onClick={() => { if (narrated) unlockAudio(); if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play(); }}>
               {runtime?.playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               {runtime?.completed ? tr("再看一遍") : runtime?.playing ? tr("暂停播放") : tr("播放我的课")}
             </button>
@@ -281,6 +346,14 @@ export function TeachWatchPage() {
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
           <section className="teach-package" aria-label={tr("保存这节课")}>
+            {hasMouthTracks && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
+            <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
+            {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
+            {cameraTakes.length > 0 && <label className="teach-place"><input type="checkbox" checked={includePerformance} disabled={Boolean(making) || !includeLipSync}
+              onChange={(event) => choosePresenter({ cameraMotion: event.target.checked ? "on" : "off" })} /><span>{tr("带上我录课时的表情和转头")}</span></label>}
+            {cameraTakes.length > 0 && <p className="academy-muted">{includeLipSync
+              ? tr("{{v0}} 张卡片录了摄像头动作。课里只放表情和头部动作的数字，按配音重新对齐；不会放你的画面或声音。", { v0: cameraTakes.length })
+              : tr("要带上表情和转头，请先勾选保存基础嘴型。")}</p>}
             {making ? (
               <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…")}</p>
             ) : pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256 ? (
@@ -296,7 +369,7 @@ export function TeachWatchPage() {
                     : pack.status === "ready" ? tr("声音已经做好了，保存到“我的课”就完成了。")
                       : audio !== "on" ? tr("保存这节课需要连接语音合成，用来给每张卡片做声音。")
                         : pack.status === "outdated" ? tr("课改过了，保存时会重新做一遍声音。") : tr("会用你选的声音把每张卡片讲一遍，再保存到“我的课”，以后不联网也能播放。")}</p>
-                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || (pack.status !== "ready" && audio !== "on")} onClick={() => void saveLesson()}>
+                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || (pack.status !== "ready" && (audio !== "on" || !voiceAvailable))} onClick={() => void saveLesson()}>
                   <PackageCheck size={16} aria-hidden="true" />{tr("保存到我的课")}
                 </button>
                 {pack.status === "ready" && <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>}
@@ -305,6 +378,7 @@ export function TeachWatchPage() {
             {makeFailed && <p role="alert">{makeFailed}</p>}
           </section>
           {audio === "unavailable" && !packaged && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
+          {!packaged && audio !== "checking" && !voiceAvailable && <p role="status" className="teach-notice">{tr("之前选择的声音在当前语音服务中不可用。请重新选择声音，或明确选择“使用设置中的声音”。")}</p>}
           {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}
         </>
       )}
@@ -312,11 +386,13 @@ export function TeachWatchPage() {
   );
 }
 
-/** An avatar's artwork, or a placeholder with its initial until the artwork is added. */
+/** An avatar's portrait, cropped to the face, or a placeholder with its initial if it cannot load. */
 export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
-  const [missing, setMissing] = useState(false);
-  if (missing) {
+  const [missing, setMissing] = useState<string | null>(null);
+  if (missing === avatar.id) {
     return <span className="teach-avatar-placeholder" aria-hidden="true" style={{ width: size, height: size, background: avatar.color }}>{avatar.name().slice(0, 1)}</span>;
   }
-  return <img className="teach-avatar" src={avatarArtUrl(avatar.id)} alt="" width={size} height={size} onError={() => setMissing(true)} />;
+  return <span className="teach-avatar" style={{ width: size, height: size, background: avatar.color }}>
+    <img src={avatarArtUrl(avatar)} alt="" width={size} height={size} onError={() => setMissing(avatar.id)} />
+  </span>;
 }

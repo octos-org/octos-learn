@@ -4,4 +4,5 @@ import "./copy-course-pack-assets.mjs";
 
 import "./prepare-embedded-course-assets.mjs";
 
+import "./prepare-avatar-assets.mjs";
 import "./prepare-handwriting-assets.mjs";

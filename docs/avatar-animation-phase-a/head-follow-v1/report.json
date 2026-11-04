@@ -1,0 +1,133 @@
+{
+  "characters": {
+    "star-fox": {
+      "leftLookHoldMs": 1970,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 223,
+        "changed": 17708
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 41.5373327370718,
+      "headTurnTipTravelNativePx": [
+        2.402362889646198,
+        18.1898623300848
+      ]
+    },
+    "red-panda": {
+      "leftLookHoldMs": 2675,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 199,
+        "changed": 19213
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 41.5373327370718,
+      "headTurnTipTravelNativePx": [
+        1.2454992264355396,
+        15.266435155149122
+      ]
+    },
+    "white-rabbit": {
+      "leftLookHoldMs": 4500,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 210,
+        "changed": 30767
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 41.5373327370718,
+      "headTurnTipTravelNativePx": [
+        3.214079752502229,
+        23.93671222114611
+      ]
+    },
+    "moon-cat": {
+      "leftLookHoldMs": 2390,
+      "holdMax": 0,
+      "idleChange": {
+        "max": 162,
+        "changed": 16856
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 41.5373327370718,
+      "headTurnTipTravelNativePx": [
+        2.4551209450057714,
+        16.132199898051542
+      ]
+    }
+  },
+  "spring": {
+    "release": {
+      "leftEar": -0.17118386181372694,
+      "rightEar": 0.17118386181372694,
+      "leftTilt": 0.2,
+      "rightTilt": 0.2,
+      "hair": 13.799837432215526,
+      "forelock": 9,
+      "hairLift": 0
+    },
+    "settled": {
+      "leftEar": -1.6183201171281886e-12,
+      "rightEar": 1.6183201171281886e-12,
+      "leftTilt": 0.000008173180698348452,
+      "rightTilt": 0.000008173180698348452,
+      "hair": -0.0023931637568429527,
+      "forelock": 0.0003630220379192861,
+      "hairLift": 0
+    }
+  },
+  "model": "Ear look / hold / return with ear-plane foreshortening and outward splay; ears trail head turns through a first-order lag (no overshoot); hair is a damped world-space spring pulled by the head",
+  "media": {
+    "idle": {
+      "frames": 120,
+      "durationMs": 12000
+    },
+    "following": {
+      "frames": 70,
+      "durationMs": 7000
+    }
+  },
+  "source": "Actual current Canvas product painters with synthetic neutral and head motion inputs. Facial expressions held fixed; no webcam.",
+  "limits": "Native pixel checks/media, no browser/TV performance claim. No reconstructed rear-ear surface or claim of measured animal kinematics. Hair spring history is not serialized; seeks reset it. Idle motion is decorative and not recorded into facial channels."
+}

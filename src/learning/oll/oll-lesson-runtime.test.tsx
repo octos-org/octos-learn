@@ -1179,6 +1179,15 @@ function AcceleratedStartupRuntimeProbe() {
 }
 
 describe("OLL lesson Runtime integration", () => {
+  it("uses compact insets only for an embedded lesson board and keeps workspace toolbar space", async () => {
+    const insets = vi.spyOn(InfiniteBoardView.prototype, "setViewportInsets");
+    await renderLearning(<><OllLessonBoard embedded runtime={null} /><OllLessonBoard runtime={null} /></>);
+    await waitFor(() => {
+      expect(insets).toHaveBeenCalledWith(expect.objectContaining({ top: 12, bottom: 12, focusMargin: 24 }));
+      expect(insets).toHaveBeenCalledWith(expect.objectContaining({ top: 78, bottom: 180 }));
+    });
+    await act(async () => undefined);
+  });
   it("keeps the loading camera until the new course owns a rendered card", () => {
     const board = {
       nodes: {

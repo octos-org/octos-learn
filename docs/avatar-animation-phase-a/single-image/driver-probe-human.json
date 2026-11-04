@@ -1,0 +1,49 @@
+{
+  "mode": "human",
+  "inputs": {
+    "original-face": [
+      {
+        "label": "neutral",
+        "seconds": 3.7766720000000005
+      },
+      {
+        "label": "wink-template",
+        "seconds": 4.2972741249999995
+      },
+      {
+        "label": "mouth-template",
+        "seconds": 4.113419792
+      },
+      {
+        "label": "manual-wink",
+        "seconds": 3.8693755829999983
+      },
+      {
+        "label": "both-lids",
+        "seconds": 3.9758992079999977
+      }
+    ],
+    "human-control": [
+      {
+        "label": "neutral",
+        "seconds": 3.978799249999998
+      },
+      {
+        "label": "wink-template",
+        "seconds": 3.831117041999999
+      },
+      {
+        "label": "mouth-template",
+        "seconds": 3.9363669580000007
+      },
+      {
+        "label": "manual-wink",
+        "seconds": 4.112272000000004
+      },
+      {
+        "label": "both-lids",
+        "seconds": 4.0351309169999965
+      }
+    ]
+  }
+}

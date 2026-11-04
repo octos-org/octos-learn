@@ -1,0 +1,38 @@
+.fox-preview-page { min-height: 100dvh; background: #f7f3e9; color: #453c35; padding: 28px clamp(20px, 5vw, 80px) 36px; font-family: inherit; }
+.fox-preview-page > header { display: flex; justify-content: space-between; gap: 16px; align-items: center; max-width: 1180px; margin: 0 auto; }
+.fox-preview-page a { color: #6f6a60; text-decoration: none; font-size: 13px; }
+.fox-preview-page > header > span { font-size: 11px; letter-spacing: 1.4px; color: #8a7d6a; }
+.fox-preview-title { max-width: 1180px; margin: 32px auto 26px; }
+.fox-preview-title > p { color: #a3773b; font-size: 12px; letter-spacing: 2px; margin: 0 0 9px; }
+.fox-preview-title h1 { font-family: "Songti SC", "Noto Serif SC", serif; font-size: clamp(25px, 3vw, 37px); font-weight: 600; margin: 0 0 10px; letter-spacing: .5px; }
+.fox-preview-title > span { font-size: 14px; color: #8a7d6a; }
+.fox-preview-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+.fox-preview-portrait { position: relative; height: clamp(430px, 65vh, 610px); border-radius: 28px; border: 1px solid #e3d8c1; background: radial-gradient(ellipse at 45% 38%, #fffaf0, #ede3cf); box-shadow: 0 14px 40px #5c45250a; overflow: hidden; }
+.fox-preview-badge { position: absolute; left: 22px; top: 20px; font-size: 12px; color: #9a773f; letter-spacing: 1px; z-index: 1; }
+.fox-preview-drawing { position: absolute; inset: 24px 6px 42px; }
+.fox-preview-portrait-foot { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; align-items: center; height: 43px; font-size: 12px; color: #86765b; background: #fff9eaa6; border-top: 1px solid #e4d8be; }
+.fox-preview-portrait-foot > span { width: 6px; height: 6px; border-radius: 50%; background: #c5b797; }
+.fox-preview-portrait-foot > span.is-active { background: #719376; box-shadow: 0 0 0 4px #71937616; }
+.fox-preview-controls { min-width: 0; }
+.fox-preview-lesson { background: #fffdf6; padding: clamp(20px, 3vw, 34px); border: 1px solid #e9dfcd; border-radius: 22px; }
+.fox-preview-card-label { font-size: 11px; color: #9e8762; letter-spacing: 1px; }
+.fox-preview-lesson h2 { font-size: 18px; line-height: 1.6; margin: 14px 0; font-weight: 500; }
+.fox-preview-equation { display: flex; gap: 18px; align-items: center; justify-content: center; margin: 22px 0; color: #3e5279; font-family: Georgia, serif; }
+.fox-preview-equation > span { font-size: 57px; }
+.fox-preview-equation > b { font-size: 24px; font-weight: 400; color: #b2a58b; }
+.fox-preview-fractions { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; max-width: 300px; margin: 18px auto 22px; }
+.fox-preview-fractions i { height: 34px; border: 1px solid #d0b783; background: #edc77e; border-radius: 4px; }
+.fox-preview-fractions i:last-child { background: #faf6ea; border-style: dashed; }
+.fox-preview-lesson > p { font-size: 14px; line-height: 1.8; color: #776b58; margin-bottom: 8px; }
+.fox-preview-lesson > small { font-size: 11px; color: #a0937c; }
+.fox-preview-pose { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 18px; }
+.fox-preview-page button { font: inherit; font-size: 13px; padding: 10px 16px; border-radius: 99px; border: 1px solid #ded2bb; background: #fffaf0; color: #786a55; cursor: pointer; }
+.fox-preview-page button:hover { border-color: #ad956c; }
+.fox-preview-page button[aria-pressed="true"] { background: #ece4cf; border-color: #c5b283; color: #6c5535; }
+.fox-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.fox-preview-page button.fox-preview-primary { color: #fff8e8; background: #34496c; border-color: #34496c; }
+.fox-preview-page button:disabled { cursor: default; opacity: .5; }
+.fox-preview-controls > audio { width: 100%; height: 34px; margin: 16px 0 0; }
+.fox-preview-note { font-size: 11px; line-height: 1.8; color: #a0927b; margin: 12px 0; }
+.fox-preview-lab-link { display: inline-block; margin-top: 4px; }
+@media(max-width:760px) { .fox-preview-grid { grid-template-columns: 1fr; gap: 24px; } .fox-preview-portrait { height: 440px; } .fox-preview-title { margin-top: 24px; } .fox-preview-page > header > span { font-size: 9px; letter-spacing: .3px; } }

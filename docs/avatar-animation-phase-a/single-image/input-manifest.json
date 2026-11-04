@@ -1,0 +1,40 @@
+{
+  "original_source": "public/teach-avatars/star-fox/concept-idle.png",
+  "original_eye_centers": [
+    [
+      594,
+      455
+    ],
+    [
+      784,
+      520
+    ]
+  ],
+  "eye_line_alignment_degrees": 18.88608736970929,
+  "original_face_crop_size": 640,
+  "original_wide_crop_size": 950,
+  "upright_source": "public/teach-avatars/star-fox/puppet-v0.1/head.png",
+  "upright_crop": [
+    95,
+    125,
+    435,
+    465
+  ],
+  "background_rgb": [
+    245,
+    241,
+    231
+  ],
+  "output_size": [
+    512,
+    512
+  ],
+  "original_source_sha256": "dcb27cb00e5f1c5103d0fcad35cf7a726bd699e71c23170f681d5810da18a309",
+  "face_crop_bounds": [
+    369,
+    212,
+    1009,
+    852
+  ],
+  "prepared_source_sha256": "233d97cf7ad6970ce49bf8d3a7e1057cd3e4d97d65679e3ecdd67161def5a796"
+}

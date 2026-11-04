@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-04",
+  "branch": "codex/avatar-local-rig",
+  "baseline": "dc3ac1b6",
+  "fullUnit": {
+    "files": 207,
+    "tests": 1730,
+    "passed": true
+  },
+  "finalUi": {
+    "files": 3,
+    "tests": 25,
+    "passed": true,
+    "subsetOfFullRun": true
+  },
+  "buildPassed": true,
+  "lintPassed": true,
+  "i18n": {
+    "uiFiles": 84,
+    "messagePairs": 2878,
+    "passed": true
+  },
+  "preview": {
+    "pageHttp": 200,
+    "runtimeImages": 11,
+    "allImageHttp": 200,
+    "browserCameraAcceptance": false
+  },
+  "media": {
+    "path": "scratch/star-fox-sample/sample.gif",
+    "width": 512,
+    "height": 560,
+    "frames": 180,
+    "durationMs": 18000,
+    "bytes": 12336219,
+    "syntheticInputs": true
+  },
+  "inputSha256": {
+    "src/learning/avatar/painted-local-rig.ts": "07186e9ea45483050b41324c161947b776c7694797ff54ba10755295acf669ab",
+    "src/learning/avatar/star-fox-parts.ts": "585726d827ef8a7667da4e82f9b1040d7c30d7a2beb9037237763c9d1db84815",
+    "src/learning/avatar/painted-fox.ts": "208e451de6073ff8fe967fd9667d1cf08ccd6509e336007aa9255243ccdccac6",
+    "src/learning/avatar/painted-secondary-motion.ts": "1aeeccfc12a870574c633f80be8c90df8d6b57c1460e5c12a998609af01b514f",
+    "src/learning/avatar/avatar-lab-page.tsx": "e87b82c2db730bd7678c2e80a3e6331ebfa7dbd24208b3486cb9463a52d516c6",
+    "src/learning/avatar/illustrated-avatar-stage.tsx": "e100646850665e7c0f857f8312b50996ce6619205b9535d2ed2b42dacd03dd24",
+    "src/learning/avatar/avatar-audio-preview.tsx": "9b482a56dd49c3de894e1e6e06e16a10511c935bc57079ad201150fd0e146429",
+    "src/learning/avatar/face-frame.ts": "51d08f786a5891459801ef9937a1a58537c75ff98a370c5ded3a908bb2e1ca87",
+    "public/teach-avatars/star-fox/local-rig-v0.3/base.png": "010127ee792dbb6ea9d3772d35a859b27b7d39a9bb5b7ba80a56e2c758e6b004",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-front.png": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-back.png": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40",
+    "public/teach-avatars/star-fox/local-rig-v0.3/hair.png": "b29c67127b33b5ac7321982b1452c879e0c0a9b44c1c64eaafc2ee8155405eec",
+    "public/teach-avatars/star-fox/local-rig-v0.3/foreground.png": "47c7532532d495196fe0c555d8a05cbf412c6b3563ac8f5085d0ea511e7ada49",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-front.png": "e12768aaf85b3675863fa7a86f8b1ebab4f3e55739a31153903e7b0f5137c594",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-back.png": "72ad9373c92bc093658fa91885cb4be2b30653adf33f9f31cbb787c6b1d6c022",
+    "public/teach-avatars/star-fox/local-rig-v0.3/leftHair.png": "13fd66b2b2ce9be869f4944befdeea21a29c29bf9314fed7dfb2e409c7d72b9d",
+    "public/teach-avatars/star-fox/local-rig-v0.3/forelock.png": "43867ca84b87c968e74804d93680e6ce238e3512703536258014b8bbce5dc809",
+    "public/teach-avatars/star-fox/local-rig-v0.3/restore.png": "13ffbede88fc3790414af511a9c2023df9858b12df73a645107af8f7e9037cee",
+    "public/teach-avatars/star-fox/local-rig-v0.3/oral.png": "329fc9cde13bd42e243e7d454e67f740e72a75e38de178990e3788c5b716dcff"
+  },
+  "refinement": "v0.2 fixed-ear-fur correction; baseline painter rechecked on current source. See LEARNER_AVATAR_EAR_TURN_TRIAL.md for current scope."
+}

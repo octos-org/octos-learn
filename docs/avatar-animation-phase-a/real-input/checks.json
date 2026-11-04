@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-03",
+  "baseCommit": "2231226d",
+  "unitTests": {
+    "files": 194,
+    "tests": 1665,
+    "result": "passed"
+  },
+  "typescript": "passed",
+  "changedModulesEslint": "passed",
+  "i18n": {
+    "uiFiles": 82,
+    "pairs": 2763,
+    "result": "passed"
+  },
+  "normalProductionBuild": "passed with existing warnings",
+  "workerPage": "syntax transformed; not executed in browser",
+  "browserToolError": "Local browser use is disabled in Work settings",
+  "userSettingChangeClaim": "No setting change established; user says they did not change settings. Error cause unconfirmed. No permission or setting was changed by agent.",
+  "notVerified": [
+    "Browser classic Worker full inference on nonempty input",
+    "Actual user camera",
+    "Android/iPhone performance",
+    "User art-quality acceptance"
+  ]
+}

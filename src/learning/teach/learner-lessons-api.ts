@@ -54,10 +54,15 @@ async function request(path: string, init: RequestInit = {}, timeout = 15_000): 
   }
   if (!response.ok && response.status !== 409) {
     const detail = await response.json().catch(() => null) as { error?: string } | null;
-    throw new LessonsUnavailable(response.status === 422 ? tr("课程包没有通过检查：{{v0}}", { v0: detail?.error ?? "" }) : tr("现在连不上“我的课”，课还保存在这台设备上。"), response.status);
+    throw new LessonsUnavailable(response.status === 422 ? tr("课程包没有通过检查：{{v0}}", { v0: detail?.error ?? "" })
+      : response.status === 413 ? tooLarge() : tr("现在连不上“我的课”，课还保存在这台设备上。"), response.status);
   }
   return response;
 }
+
+/** The largest package "My lessons" keeps (PACKAGE_MAX_BYTES in services/learner-lessons/package-check.mjs). */
+export const ACCOUNT_PACKAGE_MAX_BYTES = 32 * 1024 * 1024;
+const tooLarge = () => tr("这节课的课程包超过 32 MB，不能存到“我的课”。课还保存在这台设备上，也可以下载课程包；把很长的卡片分成几张后再试。");
 
 const json = (body: unknown): RequestInit => ({ headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
@@ -77,6 +82,7 @@ export async function putLessonDraft(recording: LearnerRecording, ink: Record<st
 
 /** Saves the lesson: its checked package becomes the version in "My lessons". */
 export async function saveLessonPackage(id: string, archive: ArrayBuffer): Promise<SavedLessonSummary> {
+  if (archive.byteLength > ACCOUNT_PACKAGE_MAX_BYTES) throw new LessonsUnavailable(tooLarge(), 413);
   const response = await request(`/${encodeURIComponent(id)}/package`, { method: "PUT", headers: { "Content-Type": "application/zip" }, body: archive }, 120_000);
   return ((await response.json()) as { lesson: SavedLessonSummary }).lesson;
 }

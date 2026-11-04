@@ -46,7 +46,22 @@ it("lets the learner choose the avatar and voice that present the lesson, kept w
   renderWatch("rec-2");
   fireEvent.click(screen.getByRole("button", { name: "Change the avatar or voice" }));
   const chooser = within(await screen.findByRole("region", { name: "Who presents your lesson" }));
-  fireEvent.click(chooser.getByRole("button", { name: "Avatar 3" }));
+  fireEvent.click(chooser.getByRole("button", { name: "Moon Cat" }));
   fireEvent.click(await chooser.findByRole("radio", { name: "Boy next door" }));
-  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toEqual({ avatar: "avatar-3", voice: "zh_male_linjiananhai_uranus_bigtts" });
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toEqual({ avatar: "moon-cat", voice: "zh_male_linjiananhai_uranus_bigtts" });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Save basic mouth motion (preview)" }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter?.mouthMotion).toBe("basic");
+});
+
+it("does not silently replace an unavailable chosen voice and offers an explicit account-voice choice", async () => {
+  services.resource = "unknown-resource";
+  const now = "2026-11-02T12:00:00.000Z";
+  let recording = planCards(createRecording({ id: "voice-unavailable", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "One" }]);
+  recording = finishTake(appendEvent(startTake(recording, "card-1", now), "card-1", { t: 0, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now), "card-1", now, { durationMs: 1000, asrText: "A grid." });
+  recording.presenter = { voice: "unavailable-old-voice" }; saveRecordingDraft(localStorage, "learner-1", recording);
+  renderWatch(recording.id);
+  expect(await screen.findByText("The previously selected voice is unavailable with your current speech service. Choose another voice, or explicitly select “Use the voice from settings”.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Change the avatar or voice" }));
+  fireEvent.click(screen.getByRole("button", { name: "Use the voice from settings" }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter?.voice).toBe("");
 });

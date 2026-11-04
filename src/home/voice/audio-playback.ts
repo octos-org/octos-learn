@@ -23,6 +23,15 @@ let currentMediaOnEnded: (() => void) | null = null;
 // and permanently silences every later reply.
 let currentOnEnded: (() => void) | null = null;
 
+/** Read-only media time; null after this particular clip ends, stops or is replaced. */
+export interface AudioPlaybackClock {
+  read(): { positionMs: number; durationMs: number } | null;
+}
+function publishClock(callback: ((clock: AudioPlaybackClock) => void) | undefined, clock: AudioPlaybackClock): void {
+  // A view observer must never fail otherwise valid audio playback.
+  try { callback?.(clock); } catch { /* Audio owns its lifecycle independently. */ }
+}
+
 function shouldUseAndroidMediaPipeline(): boolean {
   return document.documentElement.dataset.runtimePlatform === "android";
 }
@@ -50,6 +59,7 @@ async function playWithAndroidMediaPipeline(
   blob: Blob,
   onEnded: () => void,
   signal?: AbortSignal,
+  onClock?: (clock: AudioPlaybackClock) => void,
 ): Promise<boolean> {
   if (signal?.aborted) return false;
   stopAudio();
@@ -84,6 +94,10 @@ async function playWithAndroidMediaPipeline(
     if (currentMedia === media) releaseCurrentMedia(false);
     return false;
   }
+  if (onClock) publishClock(onClock, { read: () => {
+    if (currentMedia !== media || signal?.aborted || !Number.isFinite(media.duration) || media.duration <= 0 || !Number.isFinite(media.currentTime)) return null;
+    return { positionMs: Math.max(0, Math.min(media.duration, media.currentTime)) * 1000, durationMs: media.duration * 1000 };
+  } });
   return true;
 }
 
@@ -174,10 +188,11 @@ export async function playAudioBlob(
   blob: Blob,
   onEnded: () => void,
   signal?: AbortSignal,
+  onClock?: (clock: AudioPlaybackClock) => void,
 ): Promise<boolean> {
   if (signal?.aborted) return false;
   if (shouldUseAndroidMediaPipeline()) {
-    return playWithAndroidMediaPipeline(blob, onEnded, signal);
+    return playWithAndroidMediaPipeline(blob, onEnded, signal, onClock);
   }
   const c = getCtx();
   if (!c) return false;
@@ -207,6 +222,11 @@ export async function playAudioBlob(
   };
   current = src;
   currentOnEnded = onEnded;
+  const startedAt = c.currentTime;
   src.start();
+  if (onClock) publishClock(onClock, { read: () => {
+    if (current !== src || signal?.aborted || c.state === "closed" || !Number.isFinite(audioBuf.duration) || !Number.isFinite(c.currentTime)) return null;
+    return { positionMs: Math.max(0, Math.min(audioBuf.duration, c.currentTime - startedAt)) * 1000, durationMs: audioBuf.duration * 1000 };
+  } });
   return true;
 }

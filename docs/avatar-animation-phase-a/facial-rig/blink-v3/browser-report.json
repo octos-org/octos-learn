@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-02",
+  "url": "https://127.0.0.1:5173/docs/avatar-animation-phase-a/facial-rig/eyes.html",
+  "realChromeChecks": [
+    "Page loaded painted avatar",
+    "Close both eyes: both sliders 1",
+    "Independent left slider Home/PageUp: 0.1 while right remained 1",
+    "Both sliders at 0.5 using keyboard",
+    "Play changes button to Pause, then pause and reset to zero",
+    "SelfTestFaceModel blank-frame worker inference: visible success status"
+  ],
+  "screenshots": [
+    "browser-half.jpg",
+    "browser-closed.jpg"
+  ],
+  "cameraOpenedByAgent": false,
+  "microphoneOpenedByAgent": false,
+  "notVerified": [
+    "Real human face tracking",
+    "Camera permissions rejected",
+    "Android/iPhone capture performance",
+    "Full face/head animation"
+  ],
+  "consoleErrorsOrWarningsAtFinalCheck": [],
+  "tabKeptOpenAsDeliverable": true,
+  "laterScreenshotCropAttempt": "DOM geometry read timed out; full half/closed screenshots had already been saved and are the retained browser evidence."
+}

@@ -1,0 +1,41 @@
+{
+  "version": "painted-v0.3",
+  "date": "2026-11-03",
+  "size": [
+    704,
+    704
+  ],
+  "purpose": "Complete the previously cropped ears and hair, retaining the fitted painted-v0.2 face exactly.",
+  "tool": "Built-in image_gen image edit; native Canvas authoring prep, no generation calls in the runtime.",
+  "reference": "../painted-v0.2/source.png",
+  "guide": {
+    "size": [
+      704,
+      704
+    ],
+    "originalSize": [
+      512,
+      512
+    ],
+    "placement": [
+      96,
+      192
+    ]
+  },
+  "generatedSource": "exec-fbb2c9b1-ec68-457e-b7b1-f9ce3c0d4345.png",
+  "prompt": "Use case: precise-object-edit / outpainting. This is an animation production texture, a 704x704 square guide canvas. The EXISTING 512x512 detailed anime orange fox portrait sits at x=96,y=192 extending down to y=704. COMPLETE THE TWO CROPPED FOX EARS and top hair into the blank area ABOVE y=192. Both upright triangular ear tips must be fully visible, around y=65 to 110, with 50+ pixels breathing room above the tips. Continue the orange outer fur, dark brown ear outline and cream white/pale pink inner fluff seamlessly upward from the ears cut by the straight horizontal boundary y=192. Fill any missing side hair only if needed outside the portrait. STRICT preserve the existing portrait's scale, placement, upright pose, exact face, eyes, bangs, nose, mouth, clothing, brushwork and warm cream paper background. Do NOT move, scale, zoom or redraw the face or robe. The canvas size and the character's placement must remain exactly the same as the guide. This is ONLY extending the missing upper ears/hair, not redesigning the avatar. Keep ear tips upright and natural, moderate size fitting the character (not enormous). The existing face center is approximately (356,430), nose (357,440), closed mouth (356,466), eyes (294,401) and (422,401). Do not add hands, neck motion, different expression, words, background scenery, panels, frames or watermarks. Return ONE coherent finely painted image with a uniform warm off-white background and FULL ears, matching the guide canvas square composition.",
+  "preparation": "scripts/prepare-painted-fox-extension.mjs: resize generated outpainting to 704 square, restore original 512 portrait at (96,192), feather only 22px at old top and 12px at old sides. Original facial pixels are copied exactly. Retains a single coherent portrait.",
+  "rendering": "Original face textures retain 512-space rig coordinates; copy only the updated facial ROI into the extended portrait. One full-image mesh follows the head; small bounded pose-driven ear and outer-hair bends. Neck blends back to the fixed body. No separately composited visible limbs.",
+  "limits": [
+    "2D following, no reconstructed side view",
+    "Ear/hair follow is pose driven, not a physical spring simulation",
+    "Small original oral texture retained; bicubic interpolation cannot add missing detail",
+    "No browser/camera/TV acceptance in this round"
+  ],
+  "materials": {
+    "portrait-extended.png": {
+      "sha256": "147d813b6c1a84895435d59300d20ca1ccd09b797197db54917e3f86244e9372",
+      "bytes": 683771
+    }
+  }
+}

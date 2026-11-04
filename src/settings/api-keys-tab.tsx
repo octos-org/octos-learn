@@ -19,7 +19,7 @@ import {
   type Profile,
 } from "./settings-api";
 import { LLM_PROVIDERS } from "./llm-providers";
-import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsService } from "@/byok/service-config";
+import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, SPEECH_PROVIDERS, isSpeechProvider, savedProvider, serviceParams, supportsService } from "@/byok/service-config";
 import { saveClientService, type Capability } from "@/byok/services";
 import { useServiceMetadata } from "@/byok/use-service-metadata";
 const STORED_KEY = "••••••••";
@@ -238,7 +238,8 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
         const current = services.metadata[capability];
         const key = (serviceValues[capability] ?? "").trim();
         const next = await saveClientService(capability, {
-          provider: SERVICE_DEFINITIONS[capability].provider,
+          // Keys belong to the provider chosen in Voice; switching providers happens there.
+          provider: savedProvider(capability, current),
           enabled: !!key,
           params: serviceParams(capability, current), key,
         }, current?.revision);
@@ -303,14 +304,17 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
               : <div className="space-y-3">{SERVICE_CAPABILITIES.map(capability => {
                 const definition = SERVICE_DEFINITIONS[capability];
                 const current = services.metadata[capability];
+                const provider = savedProvider(capability, current);
+                const speech = capability !== "admission" && isSpeechProvider(provider) ? SPEECH_PROVIDERS[provider] : undefined;
                 return <div key={capability}>
-                  <KeyFieldRow field={{ key: definition.keyLabel, name: capability === "admission" ? definition.providerName : `${definition.providerName} · ${capability === "tts" ? "TTS" : "ASR"}`, description: definition.description }}
+                  <KeyFieldRow field={{ key: provider === "azure" ? tr("Azure Speech key") : definition.keyLabel, name: capability === "admission" ? definition.providerName : `${speech?.name ?? definition.providerName} · ${capability === "tts" ? "TTS" : "ASR"}`, description: definition.description }}
                     value={serviceValues[capability] ?? originalKey(capability)} disabled={saving} showIdentifier={false}
                     onChange={value => { setServiceValues(previous => ({ ...previous, [capability]: value })); setSaved(false); setError(null); }} />
-                  {capability !== "admission" && <p className="mt-2 px-1 text-xs leading-5 text-muted">{tr("Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.")}</p>}
+                  {provider === "azure" && <p className="mt-2 px-1 text-xs leading-5 text-muted">{tr("Use Key 1 or Key 2 of your Azure AI Speech resource, and the region it was created in. Azure works on the web; the TV app supports Volcano only for now.")} {tr("Choose the provider in the Voice tab.")}</p>}
+                  {provider === "volcano" && <p className="mt-2 px-1 text-xs leading-5 text-muted">{tr("Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.")}</p>}
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted">
                     <span>{!supportsService(capability, current) ? tr("Replace the previous credential with a new Volcano API Key.") : current?.local_storage_error ? tr("The encrypted local key could not be read. Enter it again on this TV; your account key has not been removed.") : current?.local_credential === false ? tr("Account key saved. Enter it once on this TV to enable direct calls; keys are not downloaded from the server.") : current?.account_synced === false ? tr("Saved on this TV. Account sync failed; enter and save again to retry.") : tr("Save a key to connect automatically. Leave unchanged to keep. Clear and save to disconnect.")}</span>
-                    <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">{tr("Get API Key") + " "}<ExternalLink size={11} /></a>
+                    <a className="inline-flex items-center gap-1 text-accent hover:underline" href={speech?.consoleUrl ?? definition.consoleUrl} target="_blank" rel="noreferrer">{tr("Get API Key") + " "}<ExternalLink size={11} /></a>
                   </div>
                 </div>;
               })}</div>}
