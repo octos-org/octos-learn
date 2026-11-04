@@ -1,0 +1,74 @@
+{
+  "schema": "passive-ear-inertia/1",
+  "characters": [
+    {
+      "character": "star-fox",
+      "idleEarMax": 0,
+      "heldEarMax": 0
+    },
+    {
+      "character": "red-panda",
+      "idleEarMax": 0,
+      "heldEarMax": 0
+    },
+    {
+      "character": "white-rabbit",
+      "idleEarMax": 0,
+      "heldEarMax": 0
+    },
+    {
+      "character": "moon-cat",
+      "idleEarMax": 0,
+      "heldEarMax": 0
+    }
+  ],
+  "maxAngleRadians": 0.025,
+  "peakAngle": 0.017395311342184975,
+  "tipMax": 5.688876370429804,
+  "rootMax": 0,
+  "idleEarEvents": 0,
+  "rebound": true,
+  "settled": true,
+  "finalEarPose": {
+    "timeMs": 5000,
+    "yaw": 0,
+    "leftTilt": 0,
+    "rightTilt": 0
+  },
+  "inputSha256": {
+    "src/learning/avatar/ear-inertia.ts": "055ef03dfda31efe921a7d97a9b33fab105f435b2e921a93126bd4888ac0b454",
+    "src/learning/avatar/painted-local-rig.ts": "dc98e400cabcabd74dc2b1521bdc5aabf930da9ea16ec7b0ec6d4669b402dc34",
+    "src/learning/avatar/painted-fox.ts": "84dd4316a73dceda0c7860a67fb13d6514edd25c208e68e29dd58297a479087f",
+    "src/learning/avatar/painted-secondary-motion.ts": "e529f4e4ddc24e2c509fd2406ac3038a7ca8b966b236b8e4571ea75bd5bd01af",
+    "src/learning/avatar/painted-characters.ts": "36d6c05fd54c7d09e85ed0c340f5571e62300714f14f403bfe751adfb81e989b",
+    "src/learning/avatar/illustrated-avatar-stage.tsx": "8f187f21eab455ae1498daf5e493a9a2b2a775903efbaaf518f27b5274c81b44",
+    "src/learning/avatar/avatar-lab-page.tsx": "ef1e115b5e7d8925beca677696f3428168a43f2048a81da743a7a6da8567a317",
+    "scripts/avatar-ear-inertia-validate.ts": "14fee6c3f0805c9b773ae71af91e609f6e0a5219287d5b079a7e695d196f4481",
+    "public/teach-avatars/star-fox/local-rig-v0.3/base.png": "010127ee792dbb6ea9d3772d35a859b27b7d39a9bb5b7ba80a56e2c758e6b004",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-front.png": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-back.png": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40",
+    "public/teach-avatars/star-fox/local-rig-v0.3/hair.png": "b29c67127b33b5ac7321982b1452c879e0c0a9b44c1c64eaafc2ee8155405eec",
+    "public/teach-avatars/star-fox/local-rig-v0.3/foreground.png": "47c7532532d495196fe0c555d8a05cbf412c6b3563ac8f5085d0ea511e7ada49",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-front.png": "e12768aaf85b3675863fa7a86f8b1ebab4f3e55739a31153903e7b0f5137c594",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-back.png": "72ad9373c92bc093658fa91885cb4be2b30653adf33f9f31cbb787c6b1d6c022",
+    "public/teach-avatars/star-fox/local-rig-v0.3/leftHair.png": "13fd66b2b2ce9be869f4944befdeea21a29c29bf9314fed7dfb2e409c7d72b9d",
+    "public/teach-avatars/star-fox/local-rig-v0.3/forelock.png": "43867ca84b87c968e74804d93680e6ce238e3512703536258014b8bbce5dc809",
+    "public/teach-avatars/star-fox/local-rig-v0.3/restore.png": "13ffbede88fc3790414af511a9c2023df9858b12df73a645107af8f7e9037cee",
+    "public/teach-avatars/star-fox/local-rig-v0.3/oral.png": "329fc9cde13bd42e243e7d454e67f740e72a75e38de178990e3788c5b716dcff",
+    "public/teach-avatars/star-fox/painted-v0.2/source.png": "1b44f4f12eb8eb2cdb743f725c19c086c7a703a9071f49fdb22a7b62cdca9539",
+    "public/teach-avatars/star-fox/painted-v0.2/clean.png": "badbed50a708cdaa8ce340f230ca8c55b1216684d53797c619e41cc46be2777d",
+    "public/teach-avatars/star-fox/painted-v0.2/mouth.png": "f3ad9601e5c65bdf8c29467052d32e00967d4b020af7fab881d1705167107e9e",
+    "public/teach-avatars/star-fox/painted-v0.2/brows-clean.png": "badbed50a708cdaa8ce340f230ca8c55b1216684d53797c619e41cc46be2777d",
+    "public/teach-avatars/star-fox/painted-v0.3/portrait-extended.png": "147d813b6c1a84895435d59300d20ca1ccd09b797197db54917e3f86244e9372",
+    "public/teach-avatars/red-panda/painted-v0.1/source.png": "92889ace2e349115f412ee34eb8c0e76f938479cdf5e896335a88222bd683a62",
+    "public/teach-avatars/red-panda/painted-v0.1/clean.png": "acac924bfaa5d3843fb8bbbd3ba32435d436c74707d54470922b1c4d891c8f7b",
+    "public/teach-avatars/red-panda/painted-v0.1/portrait.png": "feb7375f80d488d3614cb92f807020a2ec16a36cb77d07a8a9b596d41d07ae3d",
+    "public/teach-avatars/white-rabbit/painted-v0.1/source.png": "8fdbb546bd1a8f5277724c6cfd7e720e965a0f44e101d9bb9e9d962a9d7160f2",
+    "public/teach-avatars/white-rabbit/painted-v0.1/clean.png": "ef5707f54aea752bc5618fa24096776ad4dbd16926711d923a367cf4342399e3",
+    "public/teach-avatars/white-rabbit/painted-v0.1/portrait.png": "08cdd8aac86a0bb71f32c4d5955e22684dd98e8662fb3f63c22c62d5f44c23d2",
+    "public/teach-avatars/moon-cat/painted-v0.1/source.png": "8af8df47a9304c431f72cc6128548c319d4c6dfe573f55e2a09348052f7c8efb",
+    "public/teach-avatars/moon-cat/painted-v0.1/clean.png": "7ba164b716933b66b5ee339da8ef2f854ff754bf4a8f370cda7125b42ad23da4",
+    "public/teach-avatars/moon-cat/painted-v0.1/portrait.png": "e1c5346a14a4766bf284fa1396e99328eb8d57e4e8d724cd0cb4555ecd88bfaf"
+  },
+  "scope": "Actual product renderer, original ear texture, no active turns. Synthetic input; no real browser/camera/device acceptance."
+}

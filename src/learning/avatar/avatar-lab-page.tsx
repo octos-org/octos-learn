@@ -36,8 +36,6 @@ export default function AvatarLabPage() {
   const [characterId,setCharacterId]=useState<PaintedCharacterId>('star-fox');
   const [naturalMotion,setNaturalMotion]=useState(true);
   const [localRig,setLocalRig]=useState(true);
-  const [earTurn,setEarTurn]=useState(true);
-  const [earDemo,setEarDemo]=useState(false);
   const [localPose,setLocalPose]=useState<LocalRigPose|undefined>();
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
@@ -92,7 +90,6 @@ export default function AvatarLabPage() {
     const stopForVisibility = () => {
       if (document.hidden) {
         invalidateImport();
-        setEarDemo(false);
         owner.stop(); modelCheckAbort.current?.abort(); setModelCheck("idle");
         setMode("idle"); setReplayPlaying(false); finishRecording();
       }
@@ -141,7 +138,7 @@ export default function AvatarLabPage() {
   }, [replayPlaying, track]);
 
   const stop = useCallback(() => {
-    setEarDemo(false);
+
     setLocalPose(undefined);
     sourceRevision.current++;
     modelCheckAbort.current?.abort(); modelCheckAbort.current = null; setModelCheck("idle");
@@ -156,7 +153,7 @@ export default function AvatarLabPage() {
     void capture.current?.start();
   };
   const replay = () => {
-    setEarDemo(false);setLocalPose(undefined);
+    setLocalPose(undefined);
     sourceRevision.current++;
     capture.current?.stop(); finishRecording(); smoother.current.reset();
     const offset = replayTime >= (track?.durationMs ?? 0) ? 0 : replayTime;
@@ -176,7 +173,7 @@ export default function AvatarLabPage() {
     const link = document.createElement("a"); link.href = url; link.download = filename; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const status = earDemo ? tr("左耳转向对照，未使用摄像头") : (mode === "manual") ? tr("正在手动调整，未使用摄像头") : mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放动作片段") : mode !== "camera" ? tr("准备好了")
+  const status = (mode === "manual") ? tr("正在手动调整，未使用摄像头") : mode === "demo" ? tr("演示动作，未使用摄像头") : mode === "replay" ? tr("回放动作片段") : mode !== "camera" ? tr("准备好了")
     : captureState === "starting" ? tr("正在连接摄像头…") : captureState === "loading" ? tr("正在本机加载表情模型…")
       : captureState === "tracking" ? tr("正在跟随你的表情") : tr("请面对摄像头，让整张脸进入画面");
   const canRecord = mode === "manual" || mode === "demo" || (mode === "camera" && (captureState === "tracking" || captureState === "lost"));
@@ -189,7 +186,7 @@ export default function AvatarLabPage() {
         <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维虚拟形象互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
         <p className="avatar-lab-intro">{tr("选择你的小讲师，跟随表情和轻微头动。摄像头、手动调节和动作回放使用同一套控制。手臂暂不启用。")}</p>
         <div className="avatar-lab-characters" role="group" aria-label={tr("选择虚拟形象")}>
-          {PAINTED_CHARACTERS.map(character=><button key={character.id} type="button" aria-pressed={characterId===character.id} disabled={recording} onClick={()=>{setCharacterId(character.id);setEarDemo(false);setError(previous=>previous==='graphics'?null:previous);setMetrics(null);}}>
+          {PAINTED_CHARACTERS.map(character=><button key={character.id} type="button" aria-pressed={characterId===character.id} disabled={recording} onClick={()=>{setCharacterId(character.id);setError(previous=>previous==='graphics'?null:previous);setMetrics(null);}}>
             <img src={`${import.meta.env.BASE_URL}${character.assets.extended}`} alt="" /><span>{character.name()}</span>
           </button>)}
         </div>
@@ -216,25 +213,22 @@ export default function AvatarLabPage() {
         </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <IllustratedAvatarStage key={characterId} characterId={characterId} localRig={localRig&&characterId==='star-fox'} earTurn={earTurn&&localRig&&characterId==='star-fox'} earDemo={earDemo&&localRig&&characterId==='star-fox'} localPose={localPose} idleMotion={naturalMotion&&mode!=='replay'&&!localPose&&!earDemo} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <IllustratedAvatarStage key={characterId} characterId={characterId} localRig={localRig&&characterId==='star-fox'} localPose={localPose} idleMotion={naturalMotion&&mode!=='replay'&&!localPose} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
             <span className="avatar-lab-stage-label">{paintedCharacter(characterId).name()}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录动作片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
           <section className="avatar-lab-controls" aria-label={tr("头像控制")}>
             {characterId==='star-fox'&&<fieldset className="avatar-lab-local-rig">
-              <legend>{tr('星狐耳发对照')}</legend>
-              <label><input type="checkbox" checked={localRig} disabled={recording} onChange={e=>{setLocalRig(e.target.checked);setLocalPose(undefined);setEarDemo(false);}} />{tr('使用新版双耳与发束')}</label>
+              <legend>{tr('星狐效果调节')}</legend>
+              <label><input type="checkbox" checked={localRig} disabled={recording} onChange={e=>{setLocalRig(e.target.checked);setLocalPose(undefined);}} />{tr('使用新版发束与嘴型')}</label>
               {localRig&&<>
-                <label><input type="checkbox" checked={earTurn} disabled={recording} onChange={e=>setEarTurn(e.target.checked)} />{tr('左耳使用绘制姿态动画（试验）')}</label>
-                <button type="button" className="teach-secondary" aria-pressed={earDemo} disabled={recording} onClick={()=>{if(earDemo)setEarDemo(false);else{stop();setLocalPose({ear:0,hair:0});setEarDemo(true);}}}>{earDemo?tr('停止左耳转向对照'):tr('播放左耳转向对照')}</button>
-                <small>{tr('左耳试验：转动时切换不同朝向的绘图；取消勾选可对照原来的变形效果。右耳保持原版。')}</small>
-                {([{key:'ear',label:tr('左耳转向'),min:-.4},{key:'rightEar',label:tr('右耳转向'),min:-.4},{key:'hair',label:tr('右侧发束'),min:-1},{key:'leftHair',label:tr('左侧发束'),min:-1},{key:'forelock',label:tr('刘海轻摆'),min:-1}] as const).map(control=><label key={control.key}>{control.label}<input aria-label={control.label} type="range" min={control.key==='ear'&&earTurn?0:control.min} max="1" step=".01" value={localPose?.[control.key]??0} disabled={recording} onChange={e=>{const value=Number(e.target.value);setEarDemo(false);setLocalPose(p=>({ear:0,hair:0,...p,[control.key]:value}));}} /></label>)}
-                <button type="button" className="teach-secondary" onClick={()=>{setEarDemo(false);setLocalPose(undefined);}}>{tr('回到自动跟随')}</button>
-                <small>{tr('双耳独立转动，刘海和两侧发束随动；取消勾选可查看旧版。')}</small>
+                {([{key:'hair',label:tr('右侧发束'),min:-1},{key:'leftHair',label:tr('左侧发束'),min:-1},{key:'forelock',label:tr('刘海轻摆'),min:-1}] as const).map(control=><label key={control.key}>{control.label}<input aria-label={control.label} type="range" min={control.min} max="1" step=".01" value={localPose?.[control.key]??0} disabled={recording} onChange={e=>{const value=Number(e.target.value);setLocalPose(p=>({ear:0,hair:0,...p,[control.key]:value}));}} /></label>)}
+                <button type="button" className="teach-secondary" onClick={()=>{setLocalPose(undefined);}}>{tr('回到自动跟随')}</button>
+                <small>{tr('耳朵只在转头后轻微随动，静止时保持安静。')}</small>
               </>}
             </fieldset>}
-            <label className="avatar-lab-natural-motion"><input type="checkbox" checked={naturalMotion} onChange={event=>setNaturalMotion(event.target.checked)} />{tr('耳朵与毛发自然小动作')}</label>
+            <label className="avatar-lab-natural-motion"><input type="checkbox" checked={naturalMotion} onChange={event=>setNaturalMotion(event.target.checked)} />{tr('毛发自然小动作')}</label>
             <div className="avatar-lab-actions">
               <button type="button" className="teach-primary" disabled={mode === "camera" || modelCheck === "running"} onClick={startCamera}><Camera size={17} />{tr("开启摄像头跟随")}</button>
               <button type="button" className="teach-secondary" onClick={demo}><Play size={17} />{tr("播放演示动作")}</button>
@@ -276,7 +270,7 @@ export default function AvatarLabPage() {
         <section className="avatar-lab-track" aria-label={tr("动作片段")}>
           <div className="avatar-lab-actions">
             <button type="button" className="teach-secondary" disabled={!canRecord} onClick={() => {
-              if (recording) finishRecording(); else { setEarDemo(false); setLocalPose(undefined); sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
+              if (recording) finishRecording(); else {  setLocalPose(undefined); sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
             }}>{recording ? tr("结束动作片段") : tr("录一段动作")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => replayPlaying ? pauseReplay() : replay()}>{replayPlaying ? <Pause size={17} /> : <Play size={17} />}{replayPlaying ? tr("暂停片段") : tr("回放片段")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => track && download(track, "avatar-performance.json")}><Download size={17} />{tr("导出动作片段")}</button>

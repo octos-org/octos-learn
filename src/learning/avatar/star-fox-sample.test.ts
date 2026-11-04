@@ -19,10 +19,10 @@ it('keeps the roots and authored bone lengths of every major hair group',()=>{
     if(value===0)for(let i=0;i<3;i++)expect(p[i]).toEqual(spec.chain[i]);
   }
 });
-it('gives idle ears separate quiet events with changing timing across cycles',()=>{
+it('leaves idle ears still while preserving the existing occasional hair schedule',()=>{
   const poses=Array.from({length:880},(_,i)=>starFoxNaturalPose(i*100));
-  expect(poses.filter(p=>p.ear>.001).length).toBeGreaterThan(10);
-  expect(poses.filter(p=>(p.rightEar??0)>.001).length).toBeGreaterThan(10);
+  expect(poses.every(p=>p.ear===0&&p.rightEar===0)).toBe(true);
+  expect(poses.some(p=>p.hair!==0)).toBe(true);
   expect(poses.filter(p=>p.ear>.001&&(p.rightEar??0)>.001)).toHaveLength(0);
   expect(poses.filter(p=>p.ear===0&&p.rightEar===0).length).toBeGreaterThan(poses.length*.7);
   expect(Array.from({length:220},(_,i)=>starFoxNaturalPose(i*100))).not.toEqual(Array.from({length:220},(_,i)=>starFoxNaturalPose(22000+i*100)));

@@ -7,18 +7,17 @@ import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
 import { LOCAL_RIG_ASSETS, type LocalRigImages, type LocalRigPose } from './painted-local-rig';
-import {EAR_TURN_ASSET,EAR_TURN_FOREGROUND_ASSET} from './painted-ear-turn';
 
-export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, localRig=false, localPose, earTurn=false,earDemo=false,className = "", fpsLimit = 30, onMetrics, onError }: {
-  localRig?:boolean; localPose?:LocalRigPose;earTurn?:boolean;earDemo?:boolean;
+export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, localRig=false, localPose, className = "", fpsLimit = 30, onMetrics, onError }: {
+  localRig?:boolean; localPose?:LocalRigPose;
   characterId?:PaintedCharacterId;
   frame: (now: number) => FaceFrame; active: boolean; idleMotion?: boolean; className?: string; fpsLimit?: 30 | 60; onMetrics?: (metrics: AvatarRenderMetrics) => void; onError?: () => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null), wake = useRef<(() => void) | null>(null);
-  const callbacks = useRef({ frame, active, idleMotion, localPose,earDemo, fpsLimit, onMetrics, onError });
+  const callbacks = useRef({ frame, active, idleMotion, localPose, fpsLimit, onMetrics, onError });
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const character=paintedCharacter(characterId);
-  useEffect(() => { callbacks.current = { frame, active, idleMotion, localPose,earDemo, fpsLimit, onMetrics, onError }; wake.current?.(); }, [frame, active, idleMotion, localPose,earDemo, fpsLimit, onMetrics, onError]);
+  useEffect(() => { callbacks.current = { frame, active, idleMotion, localPose, fpsLimit, onMetrics, onError }; wake.current?.(); }, [frame, active, idleMotion, localPose, fpsLimit, onMetrics, onError]);
   useEffect(() => {
     const element = canvas.current; if (!element) return;
     const ctx = element.getContext("2d");
@@ -27,7 +26,6 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     const samples: number[] = [];
     const localEnabled=localRig&&character.id==='star-fox';
     const paths:Record<string,string>={...character.assets,...(localEnabled?Object.fromEntries(Object.entries(LOCAL_RIG_ASSETS).map(([key,path])=>[`local_${key}`,path])):{})};
-    if(localEnabled&&earTurn){paths.local_earTurn=EAR_TURN_ASSET;paths.local_earTurnForeground=EAR_TURN_FOREGROUND_ASSET;}
     const images = Object.entries(paths).map(([key, path]) => ({ key, path, image: new Image() }));
     let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };
@@ -35,7 +33,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     let naturalAt:number|undefined, settling = false;
     const render = (now: number) => {
       handle = 0; if (disposed || !ready || document.hidden) return;
-      const animating=callbacks.current.active||callbacks.current.idleMotion||callbacks.current.earDemo;
+      const animating=callbacks.current.active||callbacks.current.idleMotion;
       if (animating) idleAt = 0;
       else if (!idleAt) idleAt = now;
       const interval = 1000 / callbacks.current.fpsLimit;
@@ -44,7 +42,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
         if (element.width !== Math.round(w * ratio) || element.height !== Math.round(h * ratio)) { element.width = Math.round(w * ratio); element.height = Math.round(h * ratio); }
         const input = callbacks.current.frame(now), start = performance.now();
         naturalAt=callbacks.current.idleMotion?(naturalAt??now):undefined;
-        try { settling = painter!.draw(ctx, element.width, element.height, input, { timeMs: naturalAt===undefined?now:now-naturalAt, idleMotion: callbacks.current.idleMotion,localPose:callbacks.current.localPose,earDemo:callbacks.current.earDemo }).settling; }
+        try { settling = painter!.draw(ctx, element.width, element.height, input, { timeMs: naturalAt===undefined?now:now-naturalAt, idleMotion: callbacks.current.idleMotion,localPose:callbacks.current.localPose }).settling; }
         catch { fail(); return; }
         samples.push(performance.now() - start); count++; last = now - ((now - last) % interval);
         if (now - lastReport >= 1000) {
@@ -77,7 +75,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(handle); handle = 0; } else request(); };
     document.addEventListener("visibilitychange", visibility);
     return () => { disposed = true; clearTimeout(timeout); wake.current = null; cancelAnimationFrame(handle); observer.disconnect(); painter = null; for (const { image } of images) { image.onload = null; image.onerror = null; image.removeAttribute("src"); } document.removeEventListener("visibilitychange", visibility); };
-  }, [character,localRig,earTurn]);
+  }, [character,localRig]);
   return <div className={`illustrated-avatar ${className}`}><canvas ref={canvas} role="img" aria-label={tr("{{v0}}动画",{v0:character.name()})} />
     {state !== "ready" && <span role="status">{state === "failed" ? tr("二维角色未能载入，请刷新重试。") : tr("正在载入角色…")}</span>}</div>;
 }

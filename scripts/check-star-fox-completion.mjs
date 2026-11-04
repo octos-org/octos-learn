@@ -1,6 +1,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import {createHash} from 'node:crypto';
+// The user replaced active ear turns with passive follow-through. Use the new
+// acceptance record once present; the old turn experiments remain historical.
+if(existsSync('docs/avatar-animation-phase-a/ear-inertia/report.json')){
+ await import('./check-avatar-ear-inertia.mjs');process.exit(0);
+}
 const path='docs/avatar-animation-phase-a/star-fox-sample/task-status.json';
 const state=JSON.parse(readFileSync(path,'utf8'));
 const required=['baseline','both_ears','main_hair_locks','natural_motion','mouth_material_and_shapes','validation_and_preview'];

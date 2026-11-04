@@ -3,7 +3,7 @@ import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
 import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,HEAD_SHIFT,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
 import { createLocalRigPainter, starFoxFollowingPose,starFoxNaturalPose,type LocalRigImages, type LocalRigPose } from './painted-local-rig';
-import {earTurnDemoValue} from './painted-ear-turn';
+import {createEarInertia} from './ear-inertia';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -238,7 +238,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     });
   }
   const {size,x:padX,y:padY}=PAINTED_FOX_VIEW;
-  const secondaryMotion=createPaintedSecondaryMotion(),motionProfile=rig.motion??FOX_MOTION;
+  const secondaryMotion=createPaintedSecondaryMotion(),earInertia=createEarInertia(),motionProfile=rig.motion??FOX_MOTION;
   const portrait=surface(size,size),portraitCtx=portrait.context;
   portraitCtx.drawImage(images.extended,0,0,size,size);
   const portraitSource=portraitCtx.getImageData(0,0,size,size);
@@ -274,7 +274,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     deformed.context.putImageData(headOutput,0,0);return deformed.canvas;
   }
   return {
-    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean;localPose?:LocalRigPose;earDemo?:boolean}={}):{settling:boolean} {
+    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean;localPose?:LocalRigPose}={}):{settling:boolean} {
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
@@ -296,11 +296,14 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
         const idle=paintedIdlePose(options.timeMs??0,motionProfile);
         for(const key of Object.keys(secondary)as Array<keyof PaintedSecondaryPose>)secondary[key]+=idle[key];
       }
+      // All four characters keep their resting ear orientation. Only head
+      // movement drives a small, transient in-plane lag and return.
+      secondary.leftEar=0;secondary.rightEar=0;
+      Object.assign(secondary,earInertia.sample(pitch,yaw,roll,options.timeMs));
       if(localPainter){
         const pose=starFoxFollowingPose(secondary);
         if(options.idleMotion){const idle=starFoxNaturalPose(options.timeMs??0);for(const key of Object.keys(idle)as Array<keyof LocalRigPose>)pose[key]=(pose[key]??0)+(idle[key]??0);}
-        const displayed=options.localPose??pose;
-        localPainter.draw(portraitCtx,options.earDemo?{...displayed,ear:earTurnDemoValue(options.timeMs??0)}:displayed);
+        localPainter.draw(portraitCtx,options.localPose??pose);
         // Treat expression residuals as the top facial layer. A moving bang
         // must not restore the original brow pixels over a raised/lowered brow.
         const facial=portraitCtx.getImageData(padX+128,padY+128,272,210),posed=ctx.getImageData(128,128,272,210);
@@ -316,7 +319,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,size,size);}
       target.drawImage(moving?deformHead(pitch,yaw,roll,secondary):portrait.canvas,0,0);
       target.restore();
-      return { settling: secondaryMotion.settling() };
+      return { settling: secondaryMotion.settling()||earInertia.settling() };
     },
   };
 }

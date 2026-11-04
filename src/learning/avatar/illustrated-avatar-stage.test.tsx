@@ -49,17 +49,10 @@ it('loads local layers only for the explicitly enabled fox and releases them on 
   expect(images.slice(21).some(i=>i.src.includes('local-rig-v0.3'))).toBe(false);
 });
 
-it('loads the drawn-ear atlas only in the enabled fox trial and releases it on comparison',()=>{
-  const page=render(<IllustratedAvatarStage frame={neutralFrame} active={false} localRig earTurn earDemo />);
-  expect(images).toHaveLength(18);expect(images.some(i=>i.src.includes('ear-turn-v0.2/poses.png'))).toBe(true);expect(images.some(i=>i.src.includes('ear-turn-v0.2/foreground.png'))).toBe(true);
-  const original=[...images];act(()=>original.forEach(i=>i.onload!()));advance(100);advance(300);
-  expect(raf.size).toBe(1);
-  page.rerender(<IllustratedAvatarStage frame={neutralFrame} active={false} localRig earTurn={false} earDemo={false} />);
-  expect(original.every(i=>i.onload===null&&i.src==='')).toBe(true);
-  expect(images.slice(18)).toHaveLength(16);expect(images.slice(18).some(i=>i.src.includes('ear-turn-v0.2'))).toBe(false);
-  act(()=>images.slice(18).forEach(i=>i.onload!()));advance(400);advance(600);expect(raf.size).toBe(0);
-  page.rerender(<IllustratedAvatarStage characterId="moon-cat" frame={neutralFrame} active={false} localRig earTurn />);
-  expect(images.slice(34)).toHaveLength(5);expect(images.slice(34).some(i=>i.src.includes('ear-turn-v0.2'))).toBe(false);
+it('never loads the rejected ear-turn atlas in the enhanced fox preview',()=>{
+  render(<IllustratedAvatarStage frame={neutralFrame} active localRig />);
+  expect(images).toHaveLength(16);
+  expect(images.some(i=>i.src.includes('ear-turn-'))).toBe(false);
 });
 
 it("stops scheduling when inactive and redraws a changed paused pose", () => {
@@ -110,12 +103,4 @@ it("reports a drawing failure once and stops scheduling instead of leaving a sta
   act(()=>images.forEach(image=>image.onload!()));painterMock.fail=true;advance(100);
   expect(error).toHaveBeenCalledOnce();expect(screen.getByRole("status").textContent).toContain("未能载入");expect(raf.size).toBe(0);
   advance(200);expect(error).toHaveBeenCalledOnce();
-});
-
-it('rejects a failed hair-only foreground rather than drawing the ear with the stale white root patch',()=>{
-  const error=vi.fn();render(<IllustratedAvatarStage frame={neutralFrame} active localRig earTurn onError={error} />);
-  const hair=images.find(i=>i.src.includes('ear-turn-v0.2/foreground.png'))!;
-  act(()=>{for(const image of images)if(image!==hair)image.onload!();hair.onerror!();});
-  advance(100);expect(error).toHaveBeenCalledOnce();expect(clear).not.toHaveBeenCalled();
-  expect(screen.getByRole('status').textContent).toContain('未能载入');
 });

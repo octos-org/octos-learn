@@ -27,19 +27,19 @@ const open = () => render(<MemoryRouter><AvatarLabPage /></MemoryRouter>);
 
 it('enables natural motion on entry without a camera and freezes it for pose inspection',()=>{
   open();expect(stageMock.idleMotion).toBe(true);expect(captureMock.starts).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(false);
-  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(true);
+  fireEvent.click(screen.getByRole('checkbox',{name:'毛发自然小动作'}));expect(stageMock.idleMotion).toBe(false);
+  fireEvent.click(screen.getByRole('checkbox',{name:'毛发自然小动作'}));expect(stageMock.idleMotion).toBe(true);
   fireEvent.click(screen.getByRole('button',{name:'皱眉',exact:true}));expect(stageMock.idleMotion).toBe(false);
 });
 
 it('inspects the local ear and lock without a camera and can return to automatic following',()=>{
   open();
-  expect((screen.getByRole('checkbox',{name:'使用新版双耳与发束'}) as HTMLInputElement).checked).toBe(true);
-  fireEvent.change(screen.getByRole('slider',{name:'左耳转向'}),{target:{value:'.8'}});
+  expect((screen.getByRole('checkbox',{name:'使用新版发束与嘴型'}) as HTMLInputElement).checked).toBe(true);
+  fireEvent.change(screen.getByRole('slider',{name:'右侧发束'}),{target:{value:'.8'}});
   expect(stageMock.idleMotion).toBe(false);expect(captureMock.starts).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button',{name:'回到自动跟随'}));expect(stageMock.idleMotion).toBe(true);
-  fireEvent.click(screen.getByRole('checkbox',{name:'使用新版双耳与发束'}));
-  expect(screen.queryByRole('slider',{name:'左耳转向'})).toBeNull();
+  fireEvent.click(screen.getByRole('checkbox',{name:'使用新版发束与嘴型'}));
+  expect(screen.queryByRole('slider',{name:'右侧发束'})).toBeNull();
 });
 
 it('switches the fitted character without restarting capture or losing the current expression',()=>{
@@ -114,10 +114,7 @@ it("routes captured expressions into the 2D stage and records them for replay", 
   stageMock.frame!(1066); stageMock.frame!(1100);
   vi.mocked(performance.now).mockReturnValue(1133);
   fireEvent.click(screen.getByRole("button", { name: "结束动作片段", exact: true }));
-  fireEvent.click(screen.getByRole('button',{name:'播放左耳转向对照'}));
-  expect(stageMock.earDemo).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
-  expect(stageMock.earDemo).toBe(false);
   expect(stageMock.frame!(1133).source).toBe("mediapipe");
   expect(stageMock.frame!(1133).channels.eyeBlinkLeft).toBeGreaterThan(.5);
   page.unmount();
@@ -183,13 +180,11 @@ it("keeps a manual recording running across slider changes and replays the chang
   expect(stageMock.frame!(1500).channels.mouthPucker).toBe(.6);
 });
 
-it('compares drawn ear poses on the same demo without opening capture and cancels it for manual inspection',()=>{
-  open();expect(stageMock.earTurn).toBe(true);
-  fireEvent.click(screen.getByRole('button',{name:'播放左耳转向对照'}));
-  expect(stageMock.earDemo).toBe(true);expect(stageMock.idleMotion).toBe(false);expect(captureMock.starts).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('checkbox',{name:'左耳使用绘制姿态动画（试验）'}));
-  expect(stageMock.earTurn).toBe(false);expect(stageMock.earDemo).toBe(true);
-  fireEvent.change(screen.getByRole('slider',{name:'左耳转向'}),{target:{value:'.8'}});
-  expect(stageMock.earDemo).toBe(false);
-  fireEvent.click(screen.getByRole('button',{name:'回到自动跟随'}));expect(stageMock.idleMotion).toBe(true);
+it('removes ear turning and keeps only hair controls without starting capture',()=>{
+  open();expect(stageMock.earTurn).toBe(false);expect(stageMock.earDemo).toBe(false);
+  expect(screen.queryByRole('button',{name:'播放左耳转向对照'})).toBeNull();
+  expect(screen.queryByRole('checkbox',{name:'左耳使用绘制姿态动画（试验）'})).toBeNull();
+  expect(screen.queryByRole('slider',{name:'左耳转向'})).toBeNull();
+  expect(screen.queryByRole('slider',{name:'右耳转向'})).toBeNull();
+  expect(captureMock.starts).not.toHaveBeenCalled();
 });

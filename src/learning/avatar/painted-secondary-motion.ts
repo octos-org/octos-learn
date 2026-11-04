@@ -139,13 +139,17 @@ export function paintedEarTransform(point:Point,root:Point,angle:number,tilt:num
 }
 
 export function paintedSecondaryPoint([x,y]:Point,pose:PaintedSecondaryPose,profile:PaintedMotionProfile=FOX_MOTION):Point {
-  let dx=0,dy=0;
+  let dx=0,dy=0,earHairExclusion=0;
   for(const[index,ear]of profile.ears.entries()){
     const vx=ear.tip[0]-ear.root[0],vy=ear.tip[1]-ear.root[1],length=Math.hypot(vx,vy);
     const px=x-ear.root[0],py=y-ear.root[1];
     const along=(px*vx+py*vy)/(length*length),across=Math.abs(px*vy-py*vx)/length;
     const side: -1|1=ear.root[0]<256?-1:1;
     const half=side===-1?1-smooth((x-205)/45):smooth((x-267)/45);
+    // Hair motion must not drag the pinna or its mesh neighbours. Padding is
+    // wider than one head-mesh cell, so interpolation cannot leak idle hair
+    // drift back into an otherwise stationary ear (panda/cat in particular).
+    earHairExclusion=Math.max(earHairExclusion,smooth((along+.15)/.2)*(1-smooth((along-1.5)/.5))*(1-smooth((across/ear.width-1)/.5))*half);
     // Most of the visible pinna receives one transform. Feather only its
     // attachment and the surrounding paper, rather than bending every row.
     const weight=smooth(along/.23)*(1-smooth((along-1.2)/1.1))*(1-smooth((across/ear.width-.6)/.6))*half*(1-smooth((y-130)/30));
@@ -159,7 +163,7 @@ export function paintedSecondaryPoint([x,y]:Point,pose:PaintedSecondaryPose,prof
   const forelock=(1-smooth(Math.abs(x-256)/150))*smooth((y+90)/70)*(1-smooth((y-100)/45));
   // Hair ends move most; the roots at the scalp stay with the head.
   const ends=smooth((y-20)/160);
-  dx+=(sideHair*pose.hair*(.35+.65*ends)+forelock*pose.forelock)*profile.hairGain;
-  dy+=(sideHair*(pose.hair*.15+pose.hairLift*ends)+forelock*pose.hairLift*.5)*profile.hairGain;
+  dx+=(sideHair*pose.hair*(.35+.65*ends)+forelock*pose.forelock)*profile.hairGain*(1-earHairExclusion);
+  dy+=(sideHair*(pose.hair*.15+pose.hairLift*ends)+forelock*pose.hairLift*.5)*profile.hairGain*(1-earHairExclusion);
   return [x+dx,y+dy];
 }

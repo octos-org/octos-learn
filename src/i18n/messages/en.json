@@ -2876,5 +2876,9 @@
   "停止左耳转向对照": "Stop left-ear comparison",
   "播放左耳转向对照": "Play left-ear comparison",
   "左耳试验：转动时切换不同朝向的绘图；取消勾选可对照原来的变形效果。右耳保持原版。": "Left-ear trial: play drawings of different orientations. Uncheck to compare the previous deformation. The right ear uses the previous version.",
-  "左耳转向对照，未使用摄像头": "Left-ear comparison, camera off"
+  "左耳转向对照，未使用摄像头": "Left-ear comparison, camera off",
+  "星狐效果调节": "Star Fox adjustments",
+  "使用新版发束与嘴型": "Use enhanced hair and mouth",
+  "耳朵只在转头后轻微随动，静止时保持安静。": "Ears trail head turns gently and stay still when you rest.",
+  "毛发自然小动作": "Occasional hair motion"
 }
