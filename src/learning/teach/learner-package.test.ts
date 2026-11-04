@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { compileRecording } from "./compile-recording";
 import { buildLearnerPackage, lessonNarration, readLearnerPackage, LearnerPackageError, sha256, LEARNER_PACKAGE_SCHEMA, LEARNER_MOUTH_PACKAGE_SCHEMA, type NarrationClip, type LearnerPackageManifest } from "./learner-package";
-import { LIP_SYNC_SCHEMA } from "../avatar/lip-sync";
+import { LIP_SYNC_SCHEMA, MOUTH_CHANNELS } from "../avatar/lip-sync";
+import { checkLearnerPackage, MOUTH_CHANNELS as SERVICE_MOUTH_CHANNELS } from "../../../services/learner-lessons/package-check.mjs";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake } from "./recording";
 import { learnerAuthor, learnerReference } from "./studio-helpers";
 
@@ -160,5 +161,24 @@ describe("learner lesson package", () => {
     await expect(buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration: narration.slice(1) })).rejects.toThrow("missing or out of date");
     await expect(buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration: narration.map((clip) => ({ ...clip, text: "Old words." })) })).rejects.toThrow("missing or out of date");
     await expect(buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots: {}, narration })).rejects.toThrow("missing on this device");
+  });
+
+  // The account service (services/learner-lessons) checks packages on its own; it must keep
+  // accepting exactly what this builder writes, with and without mouth motion.
+  it("is accepted by the account service as v1 and as v2 with mouth motion", async () => {
+    expect([...SERVICE_MOUTH_CHANNELS]).toEqual([...MOUTH_CHANNELS]);
+    const { events, snapshots, narration } = await lessonEvents();
+    const plain = await buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration });
+    expect(checkLearnerPackage(Buffer.from(plain.archive), "rec-1")).toMatchObject({ cards: 2, author: plain.manifest.author, content_sha256: plain.manifest.contentSha256 });
+    const input = await withMouth(); input.narration[1]!.mediaType = "audio/mp4";
+    const animated = await buildLearnerPackage(input);
+    expect(animated.manifest.schema).toBe(LEARNER_MOUTH_PACKAGE_SCHEMA);
+    expect(checkLearnerPackage(Buffer.from(animated.archive), "rec-1").content_sha256).toBe(animated.manifest.contentSha256);
+    const changed = await editedPackage((files, manifest) => {
+      files[manifest.lesson] = new TextEncoder().encode(new TextDecoder().decode(files[manifest.lesson]!).replace("Here is a grid.", "Here are changed words."));
+    });
+    expect(() => checkLearnerPackage(Buffer.from(changed), "rec-1")).toThrow("narration does not match its lesson");
+    const swapped = await editedPackage((files) => { files["narration/1.mp3"] = new Uint8Array([1, 2, 3]); });
+    expect(() => checkLearnerPackage(Buffer.from(swapped), "rec-1")).toThrow("mouth track does not match its narration");
   });
 });

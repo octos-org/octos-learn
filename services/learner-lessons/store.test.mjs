@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { HistoryStore } from "../learning-history/store.mjs";
 import { LearnerLessonStore, LessonError, TRANSITIONS } from "./store.mjs";
 import { checkLearnerPackage, LearnerPackageError } from "./package-check.mjs";
-import { makePackage } from "./test-package.mjs";
+import { makePackage, mouthTrack } from "./test-package.mjs";
 
 const recording = (id = "rec-one", topic = { text: "Slope", type: "on_map_lit", starTopicId: "mt_slope" }) =>
   ({ schema: "octos.learner-recording.v1", id, topic, goals: ["Read slope"], cards: [], createdAt: "x", updatedAt: "x" });
@@ -23,6 +23,51 @@ test("a package is kept only when every file matches its manifest", () => {
   refuse(makePackage({ tamper: manifest => { manifest.contentSha256 = "0".repeat(64); } }), /content hash/);
   refuse(makePackage({ tamper: manifest => { manifest.author.real_name = "Jordan"; } }), /author/);
   refuse(Buffer.from("not a zip"), /Not a lesson package/);
+  refuse(makePackage({ tamper: manifest => { manifest.learnerPhoto = "x"; } }), /unknown fields/);
+  refuse(makePackage({ tamper: manifest => { manifest.author.avatar_ref = "avatar:other"; } }), /author does not match/);
+  refuse(makePackage({ tamper: manifest => { manifest.narration[0].textSha256 = "0".repeat(64); } }), /narration does not match/);
+  refuse(makePackage({ tamper: manifest => { manifest.narration = []; } }), /refers to its files wrongly/);
+  // A v1 package cannot carry mouth files, and mouth fields do not make a v1 package v2.
+  refuse(makePackage({ mouth: true, tamper: manifest => { manifest.schema = "octos.learner-lesson-package.v1"; } }), /Unknown lesson package schema/);
+  refuse(makePackage({ tamper: (manifest, entries, { sha }) => {
+    entries["mouth/1.json"] = Buffer.from("{}");
+    manifest.files.push({ path: "mouth/1.json", sha256: sha(entries["mouth/1.json"]), bytes: 2, mediaType: "application/json", role: "lip-sync" });
+    return "rehash";
+  } }), /may not hold/);
+});
+
+test("a v2 package keeps final-audio mouth motion only when it matches its narration", () => {
+  assert.equal(checkLearnerPackage(makePackage({ mouth: true }), "rec-one").cards, 2);
+  const refuse = (options, pattern) => assert.throws(() => checkLearnerPackage(makePackage({ mouth: true, ...options }), "rec-one"),
+    error => error instanceof LearnerPackageError && pattern.test(error.message));
+  const track = changes => ({ ...mouthTrack(Buffer.from("ID3 fake mp3")), ...changes });
+  refuse({ tamper: manifest => { delete manifest.requiredCapabilities; } }, /Invalid mouth motion/);
+  refuse({ tamper: manifest => { manifest.requiredCapabilities = ["avatar-lip-sync-v1", "avatar-camera-v1"]; } }, /Invalid mouth motion/);
+  refuse({ tamper: manifest => { manifest.lipSync = []; } }, /Invalid mouth motion/);
+  refuse({ tamper: manifest => { manifest.lipSync[0].beatId = "b2"; } }, /Invalid mouth motion/);
+  refuse({ tamper: manifest => { manifest.lipSync[0].textSha256 = "1".repeat(64); } }, /does not match its narration/);
+  refuse({ tamper: manifest => { manifest.lipSync[0].audioSha256 = "1".repeat(64); } }, /does not match its narration/);
+  refuse({ tamper: manifest => { manifest.lipSync[0].file = "narration/1.mp3"; } }, /refers to its files wrongly/);
+  // The track inside the file is checked too, not only its hash.
+  refuse({ mouthTrack: track({ audioSha256: "2".repeat(64) }) }, /does not match its narration/);
+  refuse({ mouthTrack: track({ durationMs: 2_000, keys: [{ timeMs: 0, channels: {} }, { timeMs: 2_000, channels: {} }] }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ keys: [{ timeMs: 0, channels: {} }, { timeMs: 900, channels: { eyeBlinkLeft: 1 } }] }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ keys: [{ timeMs: 0, channels: {} }, { timeMs: 900, channels: { jawOpen: 1.5 } }] }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ keys: [{ timeMs: 0, channels: {} }, { timeMs: 0, channels: {} }, { timeMs: 900, channels: {} }] }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ keys: [{ timeMs: 10, channels: {} }, { timeMs: 900, channels: {} }] }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ method: "camera-v1" }) }, /invalid mouth track/);
+  refuse({ mouthTrack: track({ head: [0, 0, 0] }) }, /invalid mouth track/);
+});
+
+test("narration may be any audio type the app writes, with a matching name", () => {
+  const as = (path, mediaType) => makePackage({ tamper: (manifest, entries) => {
+    entries[path] = entries["narration/1.mp3"]; delete entries["narration/1.mp3"];
+    Object.assign(manifest.files[1], { path, mediaType }); manifest.narration[0].file = path;
+    return "rehash";
+  } });
+  assert.equal(checkLearnerPackage(as("narration/1.m4a", "audio/mp4"), "rec-one").cards, 2);
+  assert.equal(checkLearnerPackage(as("narration/1.wav", "audio/wav"), "rec-one").cards, 2);
+  assert.throws(() => checkLearnerPackage(as("narration/1.wav", "audio/mpeg"), "rec-one"), /may not hold/);
 });
 
 test("drafts save with revisions and refuse a stale device", () => {

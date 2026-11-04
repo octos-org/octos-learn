@@ -57,3 +57,17 @@ test("a learner's lesson is saved, played back, exported and deleted only by its
     assert.equal((await call("/api/learn/lessons/rec-one/package")).status, 404);
   });
 });
+
+test("a lesson saved with final-audio mouth motion downloads byte for byte", async () => {
+  await withServer(async call => {
+    assert.equal((await call("/api/learn/lessons/rec-one/draft", json("PUT", { base_revision: null, recording, ink: {} }))).status, 200);
+    const archive = makePackage({ mouth: true });
+    const saved = await call("/api/learn/lessons/rec-one/package", { method: "PUT", headers: { "content-type": "application/zip" }, body: archive });
+    assert.equal(saved.status, 200);
+    assert.deepEqual(Buffer.from(await (await call("/api/learn/lessons/rec-one/package")).arrayBuffer()), archive);
+    const forged = makePackage({ mouth: true, tamper: manifest => { manifest.lipSync[0].audioSha256 = "1".repeat(64); } });
+    const refused = await call("/api/learn/lessons/rec-one/package", { method: "PUT", headers: { "content-type": "application/zip" }, body: forged });
+    assert.equal(refused.status, 422);
+    assert.match((await refused.json()).error, /mouth track does not match/);
+  });
+});
