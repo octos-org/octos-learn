@@ -7,6 +7,8 @@ export const EXPRESSION_SAMPLES = [
   { id: "blink", name: () => tr("左右眨眼") },
   { id: "smile", name: () => tr("微笑着讲述") },
   { id: "pucker", name: () => tr("圆唇与放松") },
+  { id: "lips", name: () => tr("嘴唇细节") },
+  { id: "brows", name: () => tr("眉毛与神态") },
   { id: "head", name: () => tr("转头与点头") },
   { id: "loss", name: () => tr("遮挡与恢复") },
 ] as const;
@@ -30,6 +32,16 @@ export function expressionSample(id: ExpressionSampleId): AvatarTrack {
       channels.browInnerUp = .3 * pulse(.2, 3.8);
     }
     if (id === "pucker") { channels.mouthPucker = .9 * pulse(.3, 1.8); channels.mouthFunnel = .8 * pulse(2.2, 3.7); channels.jawOpen = .2 * pulse(2.2, 3.7); }
+    if(id==='lips'){
+      channels.mouthPressLeft=channels.mouthPressRight=pulse(.2,1.1);
+      channels.mouthPucker=pulse(1,1.9);channels.mouthFunnel=pulse(1.8,2.7);
+      channels.mouthSmileLeft=.9*pulse(2.6,3.8);channels.mouthLowerDownRight=.5*pulse(2.6,3.8);
+    }
+    if(id==='brows'){
+      channels.browDownLeft=channels.browDownRight=.9*pulse(.2,1.1);
+      channels.browOuterUpLeft=pulse(1,2);channels.browOuterUpRight=pulse(1.9,2.9);
+      channels.browInnerUp=pulse(2.8,3.9);
+    }
     if (id === "head") { rotation[1] = .55 * (pulse(.2, 1.2) - pulse(1.3, 2.3)); rotation[0] = .3 * pulse(2.5, 3.8); }
     if (id === "loss") { channels.jawOpen = .7; channels.browInnerUp = .5; rotation[1] = .3; }
     const tracked = id !== "loss" || t < 1.2 || t >= 2.6;

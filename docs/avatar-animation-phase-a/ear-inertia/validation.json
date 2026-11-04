@@ -4,8 +4,8 @@
   "implementationComplete": true,
   "visualAcceptance": false,
   "fullUnit": {
-    "files": 208,
-    "tests": 1734,
+    "files": 209,
+    "tests": 1743,
     "passed": true
   },
   "buildPassed": true,
@@ -13,7 +13,7 @@
   "i18nPassed": true,
   "i18n": {
     "uiFiles": 84,
-    "messagePairs": 2882
+    "messagePairs": 2911
   },
   "preview": {
     "pageHttp": 200,
@@ -30,14 +30,15 @@
     "syntheticInputs": true
   },
   "inputSha256": {
-    "src/learning/avatar/ear-inertia.ts": "055ef03dfda31efe921a7d97a9b33fab105f435b2e921a93126bd4888ac0b454",
+    "src/learning/avatar/ear-inertia.ts": "c47257037d0e76c9c4f989f946e6f1be18cdcc7bc322872bc03aa2f8f5ac1c53",
     "src/learning/avatar/painted-local-rig.ts": "dc98e400cabcabd74dc2b1521bdc5aabf930da9ea16ec7b0ec6d4669b402dc34",
-    "src/learning/avatar/painted-fox.ts": "84dd4316a73dceda0c7860a67fb13d6514edd25c208e68e29dd58297a479087f",
+    "src/learning/avatar/painted-fox.ts": "816a360b2221ed3674fef7ba71e2c7be6f5916c69b92975169c9572e6adec233",
+    "src/learning/avatar/painted-expressions.ts": "913eaba7ac8df29eae74e2670cbcaedbf2208613d1dc97b7dd8430e3ede136af",
     "src/learning/avatar/painted-secondary-motion.ts": "e529f4e4ddc24e2c509fd2406ac3038a7ca8b966b236b8e4571ea75bd5bd01af",
-    "src/learning/avatar/painted-characters.ts": "36d6c05fd54c7d09e85ed0c340f5571e62300714f14f403bfe751adfb81e989b",
+    "src/learning/avatar/painted-characters.ts": "645149ed702aee41b838dd96c8ef42a0d2fda4bd1ffc934ef691408729ed9933",
     "src/learning/avatar/illustrated-avatar-stage.tsx": "8f187f21eab455ae1498daf5e493a9a2b2a775903efbaaf518f27b5274c81b44",
-    "src/learning/avatar/avatar-lab-page.tsx": "ef1e115b5e7d8925beca677696f3428168a43f2048a81da743a7a6da8567a317",
-    "scripts/avatar-ear-inertia-validate.ts": "14fee6c3f0805c9b773ae71af91e609f6e0a5219287d5b079a7e695d196f4481",
+    "src/learning/avatar/avatar-lab-page.tsx": "cd72cfc49f73ce06b8b89051422e2545eb4c3b70753a2cba8339f063c07ae149",
+    "scripts/avatar-ear-inertia-validate.ts": "c03f21a0fa46331e2249f1ab64052c84f2cefefcd7ee60c4422e2ceebac00612",
     "public/teach-avatars/star-fox/local-rig-v0.3/base.png": "010127ee792dbb6ea9d3772d35a859b27b7d39a9bb5b7ba80a56e2c758e6b004",
     "public/teach-avatars/star-fox/local-rig-v0.3/ear-front.png": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4",
     "public/teach-avatars/star-fox/local-rig-v0.3/ear-back.png": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40",
@@ -63,5 +64,6 @@
     "public/teach-avatars/moon-cat/painted-v0.1/source.png": "8af8df47a9304c431f72cc6128548c319d4c6dfe573f55e2a09348052f7c8efb",
     "public/teach-avatars/moon-cat/painted-v0.1/clean.png": "7ba164b716933b66b5ee339da8ef2f854ff754bf4a8f370cda7125b42ad23da4",
     "public/teach-avatars/moon-cat/painted-v0.1/portrait.png": "e1c5346a14a4766bf284fa1396e99328eb8d57e4e8d724cd0cb4555ecd88bfaf"
-  }
+  },
+  "refinement": "Per-character profiles and visible facial features. See LEARNER_AVATAR_EXPRESSIONS.md. Earlier GIF represents the fox-only baseline; current stills/report re-rendered."
 }

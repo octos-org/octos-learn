@@ -188,3 +188,23 @@ it('removes ear turning and keeps only hair controls without starting capture',(
   expect(screen.queryByRole('slider',{name:'右耳转向'})).toBeNull();
   expect(captureMock.starts).not.toHaveBeenCalled();
 });
+
+it('records detailed manual lips and asymmetric brows and retains them on replay',()=>{
+ vi.spyOn(performance,'now').mockReturnValue(1000);open();
+ fireEvent.change(screen.getByRole('slider',{name:'抿嘴程度'}),{target:{value:'.6'}});
+ fireEvent.change(screen.getByRole('slider',{name:'左眉挑起'}),{target:{value:'.8'}});
+ fireEvent.change(screen.getByRole('slider',{name:'下唇内收'}),{target:{value:'.4'}});
+ expect(stageMock.frame!(1000).channels).toMatchObject({mouthPressLeft:.6,mouthPressRight:.6,browOuterUpLeft:.8,browOuterUpRight:0,mouthRollLower:.4});
+ fireEvent.click(screen.getByRole('button',{name:'录一段动作',exact:true}));stageMock.frame!(1033);stageMock.frame!(1066);
+ vi.mocked(performance.now).mockReturnValue(1100);fireEvent.click(screen.getByRole('button',{name:'结束动作片段',exact:true}));
+ fireEvent.click(screen.getByRole('button',{name:'回放片段',exact:true}));
+ expect(stageMock.frame!(1100).channels).toMatchObject({mouthPressLeft:.6,browOuterUpLeft:.8,mouthRollLower:.4});
+ expect(captureMock.starts).not.toHaveBeenCalled();
+});
+
+it('routes camera microexpressions and independent brow presets through the existing channels',()=>{
+ open();fireEvent.click(screen.getByRole('button',{name:'左挑眉',exact:true}));expect(stageMock.frame!(0).channels).toEqual({browOuterUpLeft:.95});
+ fireEvent.click(screen.getByRole('button',{name:'开启摄像头跟随'}));
+ act(()=>{captureMock.callbacks!.onState('tracking');captureMock.callbacks!.onFrame({timeMs:1000,source:'mediapipe',tracked:true,rotation:[0,0,0],channels:{mouthPressLeft:.7,mouthRollLower:.8,browOuterUpRight:.6,browDownLeft:.4}},8,12);});
+ const frame=stageMock.frame!(1000);expect(frame.channels.mouthPressLeft).toBeGreaterThan(.5);expect(frame.channels.mouthPressRight??0).toBe(0);expect(frame.channels.browOuterUpRight).toBeGreaterThan(.4);expect(frame.channels.browDownRight??0).toBe(0);
+});

@@ -1,0 +1,556 @@
+{
+  "schema": "avatar-expressions/1",
+  "characters": [
+    {
+      "character": "star-fox",
+      "changes": {
+        "neutral": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        },
+        "frown-brows": {
+          "max": 255,
+          "count": 4735,
+          "total": 964147
+        },
+        "raised-brows": {
+          "max": 136,
+          "count": 1595,
+          "total": 197857
+        },
+        "left-brow": {
+          "max": 136,
+          "count": 718,
+          "total": 123294
+        },
+        "right-brow": {
+          "max": 102,
+          "count": 762,
+          "total": 75789
+        },
+        "worried": {
+          "max": 136,
+          "count": 1451,
+          "total": 201355
+        },
+        "open": {
+          "max": 242,
+          "count": 1721,
+          "total": 798354
+        },
+        "pressed": {
+          "max": 187,
+          "count": 414,
+          "total": 76148
+        },
+        "pucker": {
+          "max": 193,
+          "count": 325,
+          "total": 63836
+        },
+        "funnel": {
+          "max": 238,
+          "count": 509,
+          "total": 161780
+        },
+        "wide": {
+          "max": 241,
+          "count": 1027,
+          "total": 418108
+        },
+        "smile": {
+          "max": 194,
+          "count": 396,
+          "total": 73264
+        },
+        "frown-mouth": {
+          "max": 193,
+          "count": 342,
+          "total": 64191
+        },
+        "smirk-left": {
+          "max": 194,
+          "count": 311,
+          "total": 49489
+        },
+        "smirk-right": {
+          "max": 193,
+          "count": 307,
+          "total": 49211
+        },
+        "shift-left": {
+          "max": 241,
+          "count": 871,
+          "total": 342474
+        },
+        "shift-right": {
+          "max": 240,
+          "count": 869,
+          "total": 339718
+        },
+        "upper-up": {
+          "max": 233,
+          "count": 814,
+          "total": 322583
+        },
+        "lower-down": {
+          "max": 242,
+          "count": 870,
+          "total": 387404
+        },
+        "roll-upper": {
+          "max": 170,
+          "count": 278,
+          "total": 39198
+        },
+        "roll-lower": {
+          "max": 186,
+          "count": 412,
+          "total": 72066
+        },
+        "close-override": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        }
+      },
+      "protectedMax": 0,
+      "closeMax": 0,
+      "minAlpha": 255,
+      "oppositeBrowMax": 0,
+      "returnMax": 0,
+      "ear": {
+        "peak": 0.022705431969679342,
+        "maxAngle": 0.025,
+        "frequency": [
+          18,
+          17
+        ]
+      }
+    },
+    {
+      "character": "red-panda",
+      "changes": {
+        "neutral": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        },
+        "frown-brows": {
+          "max": 250,
+          "count": 4413,
+          "total": 907266
+        },
+        "raised-brows": {
+          "max": 163,
+          "count": 1390,
+          "total": 294124
+        },
+        "left-brow": {
+          "max": 159,
+          "count": 623,
+          "total": 154045
+        },
+        "right-brow": {
+          "max": 159,
+          "count": 662,
+          "total": 142397
+        },
+        "worried": {
+          "max": 163,
+          "count": 1304,
+          "total": 339168
+        },
+        "open": {
+          "max": 205,
+          "count": 1635,
+          "total": 401322
+        },
+        "pressed": {
+          "max": 215,
+          "count": 585,
+          "total": 110094
+        },
+        "pucker": {
+          "max": 220,
+          "count": 445,
+          "total": 86764
+        },
+        "funnel": {
+          "max": 220,
+          "count": 526,
+          "total": 111313
+        },
+        "wide": {
+          "max": 226,
+          "count": 1000,
+          "total": 223958
+        },
+        "smile": {
+          "max": 219,
+          "count": 524,
+          "total": 102757
+        },
+        "frown-mouth": {
+          "max": 220,
+          "count": 468,
+          "total": 92867
+        },
+        "smirk-left": {
+          "max": 218,
+          "count": 373,
+          "total": 62262
+        },
+        "smirk-right": {
+          "max": 220,
+          "count": 384,
+          "total": 63909
+        },
+        "shift-left": {
+          "max": 220,
+          "count": 860,
+          "total": 201605
+        },
+        "shift-right": {
+          "max": 222,
+          "count": 843,
+          "total": 199354
+        },
+        "upper-up": {
+          "max": 196,
+          "count": 833,
+          "total": 190912
+        },
+        "lower-down": {
+          "max": 201,
+          "count": 799,
+          "total": 181671
+        },
+        "roll-upper": {
+          "max": 203,
+          "count": 353,
+          "total": 49867
+        },
+        "roll-lower": {
+          "max": 216,
+          "count": 577,
+          "total": 98797
+        },
+        "close-override": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        }
+      },
+      "protectedMax": 0,
+      "closeMax": 0,
+      "minAlpha": 255,
+      "oppositeBrowMax": 0,
+      "returnMax": 0,
+      "ear": {
+        "peak": 0.016249866507629968,
+        "maxAngle": 0.018,
+        "frequency": [
+          22,
+          21
+        ]
+      }
+    },
+    {
+      "character": "white-rabbit",
+      "changes": {
+        "neutral": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        },
+        "frown-brows": {
+          "max": 242,
+          "count": 4787,
+          "total": 1007547
+        },
+        "raised-brows": {
+          "max": 139,
+          "count": 1436,
+          "total": 316503
+        },
+        "left-brow": {
+          "max": 139,
+          "count": 631,
+          "total": 148545
+        },
+        "right-brow": {
+          "max": 128,
+          "count": 717,
+          "total": 151456
+        },
+        "worried": {
+          "max": 139,
+          "count": 1321,
+          "total": 291365
+        },
+        "open": {
+          "max": 207,
+          "count": 1632,
+          "total": 420526
+        },
+        "pressed": {
+          "max": 195,
+          "count": 366,
+          "total": 66073
+        },
+        "pucker": {
+          "max": 202,
+          "count": 371,
+          "total": 68537
+        },
+        "funnel": {
+          "max": 203,
+          "count": 519,
+          "total": 101492
+        },
+        "wide": {
+          "max": 204,
+          "count": 1046,
+          "total": 247005
+        },
+        "smile": {
+          "max": 197,
+          "count": 406,
+          "total": 74144
+        },
+        "frown-mouth": {
+          "max": 199,
+          "count": 372,
+          "total": 66351
+        },
+        "smirk-left": {
+          "max": 195,
+          "count": 300,
+          "total": 47780
+        },
+        "smirk-right": {
+          "max": 190,
+          "count": 285,
+          "total": 48148
+        },
+        "shift-left": {
+          "max": 207,
+          "count": 904,
+          "total": 218189
+        },
+        "shift-right": {
+          "max": 203,
+          "count": 915,
+          "total": 225811
+        },
+        "upper-up": {
+          "max": 196,
+          "count": 864,
+          "total": 194921
+        },
+        "lower-down": {
+          "max": 209,
+          "count": 818,
+          "total": 207471
+        },
+        "roll-upper": {
+          "max": 181,
+          "count": 234,
+          "total": 39261
+        },
+        "roll-lower": {
+          "max": 198,
+          "count": 427,
+          "total": 73569
+        },
+        "close-override": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        }
+      },
+      "protectedMax": 0,
+      "closeMax": 0,
+      "minAlpha": 255,
+      "oppositeBrowMax": 0,
+      "returnMax": 0,
+      "ear": {
+        "peak": 0.05061752449144417,
+        "maxAngle": 0.07,
+        "frequency": [
+          11.5,
+          10.8
+        ]
+      }
+    },
+    {
+      "character": "moon-cat",
+      "changes": {
+        "neutral": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        },
+        "frown-brows": {
+          "max": 244,
+          "count": 4640,
+          "total": 983738
+        },
+        "raised-brows": {
+          "max": 138,
+          "count": 1557,
+          "total": 330608
+        },
+        "left-brow": {
+          "max": 133,
+          "count": 685,
+          "total": 144651
+        },
+        "right-brow": {
+          "max": 138,
+          "count": 764,
+          "total": 166583
+        },
+        "worried": {
+          "max": 138,
+          "count": 1416,
+          "total": 307545
+        },
+        "open": {
+          "max": 213,
+          "count": 1671,
+          "total": 445835
+        },
+        "pressed": {
+          "max": 169,
+          "count": 374,
+          "total": 56916
+        },
+        "pucker": {
+          "max": 169,
+          "count": 320,
+          "total": 52131
+        },
+        "funnel": {
+          "max": 195,
+          "count": 522,
+          "total": 103962
+        },
+        "wide": {
+          "max": 208,
+          "count": 1085,
+          "total": 264629
+        },
+        "smile": {
+          "max": 170,
+          "count": 365,
+          "total": 57511
+        },
+        "frown-mouth": {
+          "max": 169,
+          "count": 321,
+          "total": 51661
+        },
+        "smirk-left": {
+          "max": 171,
+          "count": 274,
+          "total": 37531
+        },
+        "smirk-right": {
+          "max": 169,
+          "count": 272,
+          "total": 37297
+        },
+        "shift-left": {
+          "max": 210,
+          "count": 925,
+          "total": 227984
+        },
+        "shift-right": {
+          "max": 211,
+          "count": 928,
+          "total": 232692
+        },
+        "upper-up": {
+          "max": 205,
+          "count": 847,
+          "total": 200887
+        },
+        "lower-down": {
+          "max": 213,
+          "count": 828,
+          "total": 227923
+        },
+        "roll-upper": {
+          "max": 165,
+          "count": 261,
+          "total": 28796
+        },
+        "roll-lower": {
+          "max": 169,
+          "count": 416,
+          "total": 62984
+        },
+        "close-override": {
+          "max": 0,
+          "count": 0,
+          "total": 0
+        }
+      },
+      "protectedMax": 0,
+      "closeMax": 0,
+      "minAlpha": 255,
+      "oppositeBrowMax": 0,
+      "returnMax": 0,
+      "ear": {
+        "peak": 0.026835724038430927,
+        "maxAngle": 0.032,
+        "frequency": [
+          20,
+          18.5
+        ]
+      }
+    }
+  ],
+  "inputSha256": {
+    "src/learning/avatar/painted-expressions.ts": "913eaba7ac8df29eae74e2670cbcaedbf2208613d1dc97b7dd8430e3ede136af",
+    "src/learning/avatar/painted-fox.ts": "816a360b2221ed3674fef7ba71e2c7be6f5916c69b92975169c9572e6adec233",
+    "src/learning/avatar/painted-characters.ts": "645149ed702aee41b838dd96c8ef42a0d2fda4bd1ffc934ef691408729ed9933",
+    "src/learning/avatar/painted-local-rig.ts": "dc98e400cabcabd74dc2b1521bdc5aabf930da9ea16ec7b0ec6d4669b402dc34",
+    "src/learning/avatar/painted-eyes.ts": "6a91ebfafa5aa8251646bd955e53c50e330ecf7fb4f3a5829c61196391e71d78",
+    "src/learning/avatar/ear-inertia.ts": "c47257037d0e76c9c4f989f946e6f1be18cdcc7bc322872bc03aa2f8f5ac1c53",
+    "src/learning/avatar/avatar-lab-page.tsx": "cd72cfc49f73ce06b8b89051422e2545eb4c3b70753a2cba8339f063c07ae149",
+    "src/learning/avatar/avatar-lab.css": "670b1b2e133a294c32dd5150f132b70e19ac70b696ac50e6c530ca4cea2acc13",
+    "src/learning/avatar/expression-samples.ts": "c1dcdb3da05264c05e3c5be997e3d9ec72b8f5b1c0c65b58bea1611c988128bc",
+    "src/learning/avatar/face-frame.ts": "51d08f786a5891459801ef9937a1a58537c75ff98a370c5ded3a908bb2e1ca87",
+    "scripts/avatar-expressions-validate.ts": "37ae83c433c6cb67a181f197544dfe83b430a051e51ea66fc02b3925913dabc1",
+    "public/teach-avatars/star-fox/local-rig-v0.3/base.png": "010127ee792dbb6ea9d3772d35a859b27b7d39a9bb5b7ba80a56e2c758e6b004",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-front.png": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4",
+    "public/teach-avatars/star-fox/local-rig-v0.3/ear-back.png": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40",
+    "public/teach-avatars/star-fox/local-rig-v0.3/hair.png": "b29c67127b33b5ac7321982b1452c879e0c0a9b44c1c64eaafc2ee8155405eec",
+    "public/teach-avatars/star-fox/local-rig-v0.3/foreground.png": "47c7532532d495196fe0c555d8a05cbf412c6b3563ac8f5085d0ea511e7ada49",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-front.png": "e12768aaf85b3675863fa7a86f8b1ebab4f3e55739a31153903e7b0f5137c594",
+    "public/teach-avatars/star-fox/local-rig-v0.3/right-ear-back.png": "72ad9373c92bc093658fa91885cb4be2b30653adf33f9f31cbb787c6b1d6c022",
+    "public/teach-avatars/star-fox/local-rig-v0.3/leftHair.png": "13fd66b2b2ce9be869f4944befdeea21a29c29bf9314fed7dfb2e409c7d72b9d",
+    "public/teach-avatars/star-fox/local-rig-v0.3/forelock.png": "43867ca84b87c968e74804d93680e6ce238e3512703536258014b8bbce5dc809",
+    "public/teach-avatars/star-fox/local-rig-v0.3/restore.png": "13ffbede88fc3790414af511a9c2023df9858b12df73a645107af8f7e9037cee",
+    "public/teach-avatars/star-fox/local-rig-v0.3/oral.png": "329fc9cde13bd42e243e7d454e67f740e72a75e38de178990e3788c5b716dcff",
+    "public/teach-avatars/star-fox/painted-v0.2/source.png": "1b44f4f12eb8eb2cdb743f725c19c086c7a703a9071f49fdb22a7b62cdca9539",
+    "public/teach-avatars/star-fox/painted-v0.2/clean.png": "badbed50a708cdaa8ce340f230ca8c55b1216684d53797c619e41cc46be2777d",
+    "public/teach-avatars/star-fox/painted-v0.2/mouth.png": "f3ad9601e5c65bdf8c29467052d32e00967d4b020af7fab881d1705167107e9e",
+    "public/teach-avatars/star-fox/painted-v0.2/brows-clean.png": "badbed50a708cdaa8ce340f230ca8c55b1216684d53797c619e41cc46be2777d",
+    "public/teach-avatars/star-fox/painted-v0.3/portrait-extended.png": "147d813b6c1a84895435d59300d20ca1ccd09b797197db54917e3f86244e9372",
+    "public/teach-avatars/red-panda/painted-v0.1/source.png": "92889ace2e349115f412ee34eb8c0e76f938479cdf5e896335a88222bd683a62",
+    "public/teach-avatars/red-panda/painted-v0.1/clean.png": "acac924bfaa5d3843fb8bbbd3ba32435d436c74707d54470922b1c4d891c8f7b",
+    "public/teach-avatars/red-panda/painted-v0.1/portrait.png": "feb7375f80d488d3614cb92f807020a2ec16a36cb77d07a8a9b596d41d07ae3d",
+    "public/teach-avatars/white-rabbit/painted-v0.1/source.png": "8fdbb546bd1a8f5277724c6cfd7e720e965a0f44e101d9bb9e9d962a9d7160f2",
+    "public/teach-avatars/white-rabbit/painted-v0.1/clean.png": "ef5707f54aea752bc5618fa24096776ad4dbd16926711d923a367cf4342399e3",
+    "public/teach-avatars/white-rabbit/painted-v0.1/portrait.png": "08cdd8aac86a0bb71f32c4d5955e22684dd98e8662fb3f63c22c62d5f44c23d2",
+    "public/teach-avatars/moon-cat/painted-v0.1/source.png": "8af8df47a9304c431f72cc6128548c319d4c6dfe573f55e2a09348052f7c8efb",
+    "public/teach-avatars/moon-cat/painted-v0.1/clean.png": "7ba164b716933b66b5ee339da8ef2f854ff754bf4a8f370cda7125b42ad23da4",
+    "public/teach-avatars/moon-cat/painted-v0.1/portrait.png": "e1c5346a14a4766bf284fa1396e99328eb8d57e4e8d724cd0cb4555ecd88bfaf"
+  },
+  "scope": "Actual renderer; synthetic channels. Deliberately visible neutral brow layer. No real browser/camera acceptance."
+}

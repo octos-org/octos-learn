@@ -13,3 +13,4 @@ const stage=readFileSync('src/learning/avatar/illustrated-avatar-stage.tsx','utf
 if(stage.includes('earTurn')||stage.includes('earDemo')||page.includes('左耳转向')||page.includes('播放左耳转向对照'))errors.push('Removed turn animation is still reachable in preview');
 if(errors.length){console.error(errors.join('\n'));process.exit(1);}
 console.log('Passive ear inertia complete: four stationary/held-pose checks, small follow-through, settling, current evidence. Visual/device acceptance remains separate.');
+if(existsSync('docs/avatar-animation-phase-a/expressions/report.json'))await import('./check-avatar-expressions.mjs');

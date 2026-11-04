@@ -94,6 +94,7 @@
 - [星狐完整样板当前交付](LEARNER_AVATAR_STAR_FOX_2D_SAMPLE.md)：双耳独立绑定、三组主要发束、偶发自然动作、高清口腔与独立口型；素材来源、程序检查、预览与未完成的真人/设备验收边界。
 - [星狐单耳绘制姿态试验](LEARNER_AVATAR_EAR_TURN_TRIAL.md)：12 张朝向绘图；v0.1 被指出脱节后，v0.2 移除固定白毛补片并精分头发前景，保留缺陷反例及慢转/纹理一致性限制。
 - [当前耳部轻微惯性随动](LEARNER_AVATAR_EAR_INERTIA.md)：按用户新要求取消主动/待机转耳，四角色仅在转头后轻微滞后、回弹、归位；原耳纹理和当前验收入口。
+- [角色差异与眉嘴表情增强](LEARNER_AVATAR_EXPRESSIONS.md)：兔耳更柔软、幅度更大，四角色各自惯性；可见眉层、独立眉形及嘴唇细节，同步接入捕捉/手动/录制回放。
 
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。

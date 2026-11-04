@@ -10,7 +10,7 @@ import {LOCAL_RIG_ASSETS,localEarSwayPoint,LOCAL_EAR_ATTACHMENT,type LocalRigIma
 import {STAR_FOX_RIGHT_EAR} from '../src/learning/avatar/star-fox-parts';
 import {neutralFrame} from '../src/learning/avatar/face-frame';
 import {FOX_MOTION} from '../src/learning/avatar/painted-secondary-motion';
-import {createEarInertia,MAX_EAR_SWAY} from '../src/learning/avatar/ear-inertia';
+import {createEarInertia,MAX_EAR_SWAY,FOX_EAR_INERTIA} from '../src/learning/avatar/ear-inertia';
 const[toolsDir,out='scratch/ear-inertia']=process.argv.slice(2);if(!toolsDir)throw Error('Expected native tools directory');
 const require=createRequire(`${resolve(toolsDir)}/package.json`),{createCanvas,loadImage}=require('@napi-rs/canvas'),{GIFEncoder,quantize,applyPalette}=require('gifenc');
 const surface=(w:number,h:number)=>{const canvas=createCanvas(w,h);return{canvas,context:canvas.getContext('2d') as CanvasRenderingContext2D};};
@@ -33,7 +33,9 @@ for(const[index,character]of PAINTED_CHARACTERS.entries()){
  const turnedPoints=points.map(([x,y])=>{const p=paintedHeadPoint([x-112,y-208],0,yaw,0);return[p[0]+112,p[1]+208];});
  for(let time=100;time<=30000;time+=100){painter.draw(ctx,736,736,{...neutralFrame(time),rotation:[0,-yaw,0]},{timeMs:time,idleMotion:true});heldEarMax=Math.max(heldEarMax,maxDiff(held,ctx.getImageData(0,0,736,736).data,turnedPoints));}
  const first=createCanvas(736,736),f=first.getContext('2d');painter.draw(f,736,736,neutralFrame(0));s.drawImage(first,index*320,30,320,320);s.fillText(character.id,index*320+8,23);
- records.push({character:character.id,idleEarMax,heldEarMax});
+ const inertia=character.rig?.earInertia??FOX_EAR_INERTIA,controller=createEarInertia(inertia);controller.sample(0,0,0,0);let peak=0;
+ for(let time=33;time<=3000;time+=33){const p=controller.sample(0,.4,0,time);peak=Math.max(peak,...Object.values(p).map(Math.abs));}
+ records.push({character:character.id,idleEarMax,heldEarMax,peak,maxAngle:inertia.maxAngle});
 }
 let tipMax=0,rootMax=0;
 for(const right of[false,true])for(let step=-25;step<=25;step++){
@@ -51,7 +53,7 @@ for(let i=0;i<=150;i++){
  if(!process.argv.includes('--stills-only')&&i<150){v.fillStyle='#f4f1e8';v.fillRect(0,0,512,560);v.drawImage(canvas,0,40,512,512);v.fillStyle='#26384b';v.font='18px sans-serif';v.fillText('Passive ear follow-through',12,27);const rgba=v.getImageData(0,0,512,560).data,palette=quantize(rgba,160);gif.writeFrame(applyPalette(rgba,palette),512,560,{palette,delay:1000/30,repeat:0});}
 }
 const idleStates=Array.from({length:600},(_,i)=>starFoxNaturalPose(i*100)),idleEarEvents=idleStates.filter(p=>p.ear!==0||p.rightEar!==0).length;
-const files=[...new Set(['src/learning/avatar/ear-inertia.ts','src/learning/avatar/painted-local-rig.ts','src/learning/avatar/painted-fox.ts','src/learning/avatar/painted-secondary-motion.ts','src/learning/avatar/painted-characters.ts','src/learning/avatar/illustrated-avatar-stage.tsx','src/learning/avatar/avatar-lab-page.tsx','scripts/avatar-ear-inertia-validate.ts',...Object.values(LOCAL_RIG_ASSETS).map(p=>'public/'+p),...PAINTED_CHARACTERS.flatMap(c=>Object.values(c.assets).map(p=>'public/'+p))])];
+const files=[...new Set(['src/learning/avatar/ear-inertia.ts','src/learning/avatar/painted-local-rig.ts','src/learning/avatar/painted-fox.ts','src/learning/avatar/painted-expressions.ts','src/learning/avatar/painted-secondary-motion.ts','src/learning/avatar/painted-characters.ts','src/learning/avatar/illustrated-avatar-stage.tsx','src/learning/avatar/avatar-lab-page.tsx','scripts/avatar-ear-inertia-validate.ts',...Object.values(LOCAL_RIG_ASSETS).map(p=>'public/'+p),...PAINTED_CHARACTERS.flatMap(c=>Object.values(c.assets).map(p=>'public/'+p))])];
 const inputSha256=Object.fromEntries(await Promise.all(files.map(async p=>[p,createHash('sha256').update(await readFile(p)).digest('hex')])));
 const report={schema:'passive-ear-inertia/1',characters:records,maxAngleRadians:MAX_EAR_SWAY,peakAngle,tipMax,rootMax,idleEarEvents,rebound,settled:!settling,finalEarPose:angles.at(-1),inputSha256,scope:'Actual product renderer, original ear texture, no active turns. Synthetic input; no real browser/camera/device acceptance.'};
 await mkdir(out,{recursive:true});await writeFile(`${out}/report.json`,JSON.stringify(report,null,2)+'\n');await writeFile(`${out}/poses.jpg`,sheets.toBuffer('image/jpeg',96));await writeFile(`${out}/angles.json`,JSON.stringify(angles)+'\n');

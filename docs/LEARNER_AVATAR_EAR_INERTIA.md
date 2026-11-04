@@ -1,5 +1,7 @@
 # 耳朵只保留转头后的轻微惯性随动
 
+> 后续增强：四角色已分别调参，兔耳幅度扩大、回稳放慢；下文 ±0.025rad、18/17 等数值现在仅描述星狐基线。当前角色参数表、眉嘴增强与检查记录见[角色差异与眉嘴表情](LEARNER_AVATAR_EXPRESSIONS.md)。取消主动转耳的要求继续有效。原 `sample.gif` 保留上轮星狐输出，当前眉嘴画面以新表情图及报告为准。
+
 更新：2026-11-04。当前用户要求：**去掉耳朵主动转动，只保留随转头的轻微甩动感**。本轮以 `70be4f16` 为回退点，分支 `codex/avatar-local-rig`，工作区 `/Users/yy/Documents/projects/OctosLearn/octos-learn-avatar-local-rig`。本地最新提交用 `git log -1` 查询。
 
 ## 当前行为

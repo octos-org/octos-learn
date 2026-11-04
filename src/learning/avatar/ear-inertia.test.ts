@@ -1,12 +1,16 @@
 import {expect,it} from 'vitest';
-import {createEarInertia,MAX_EAR_SWAY} from './ear-inertia';
+import {createEarInertia,MAX_EAR_SWAY,FOX_EAR_INERTIA,RABBIT_EAR_INERTIA,PANDA_EAR_INERTIA,CAT_EAR_INERTIA} from './ear-inertia';
 import {localEarSwayPoint,LOCAL_EAR_ATTACHMENT} from './painted-local-rig';
 import {STAR_FOX_RIGHT_EAR} from './star-fox-parts';
 import {PAINTED_CHARACTERS} from './painted-characters';
 import {FOX_MOTION,paintedSecondaryPoint,restingPose} from './painted-secondary-motion';
 
 it('has no autonomous motion at rest or at a held turned-head pose',()=>{
-  for(const yaw of[0,.4,-.4]){const motion=createEarInertia();for(let t=0;t<=30000;t+=100){expect(motion.sample(0,yaw,0,t)).toEqual({leftTilt:0,rightTilt:0});expect(motion.settling()).toBe(false);}}
+  for(const profile of[FOX_EAR_INERTIA,RABBIT_EAR_INERTIA,PANDA_EAR_INERTIA,CAT_EAR_INERTIA])for(const yaw of[0,.4,-.4]){const motion=createEarInertia(profile);for(let t=0;t<=30000;t+=100){expect(motion.sample(0,yaw,0,t)).toEqual({leftTilt:0,rightTilt:0});expect(motion.settling()).toBe(false);}}
+});
+it('lets rabbit ears trail further than fox ears while short panda ears stay restrained',()=>{
+ const peaks=[FOX_EAR_INERTIA,RABBIT_EAR_INERTIA,PANDA_EAR_INERTIA,CAT_EAR_INERTIA].map(profile=>{const m=createEarInertia(profile);m.sample(0,0,0,0);let peak=0;for(let t=33;t<=3000;t+=33){const p=m.sample(0,.4,0,t);peak=Math.max(peak,Math.abs(p.leftTilt));expect(Math.abs(p.leftTilt)).toBeLessThanOrEqual(profile.maxAngle);}expect(m.settling()).toBe(false);return peak;});
+ expect(peaks[1]).toBeGreaterThan(peaks[0]*1.8);expect(peaks[2]).toBeLessThan(peaks[0]);
 });
 it('trails a rightward head turn, rebounds slightly and settles without holding a turn',()=>{
   const motion=createEarInertia();motion.sample(0,0,0,0);
