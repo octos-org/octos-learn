@@ -1,0 +1,22 @@
+[
+  {
+    "ear": 0,
+    "exposedPaper": 0,
+    "seamMaxDifference": 0
+  },
+  {
+    "ear": 0.4,
+    "exposedPaper": 3,
+    "seamMaxDifference": 200
+  },
+  {
+    "ear": 0.7,
+    "exposedPaper": 71,
+    "seamMaxDifference": 209
+  },
+  {
+    "ear": 1,
+    "exposedPaper": 101,
+    "seamMaxDifference": 209
+  }
+]

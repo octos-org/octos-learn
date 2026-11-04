@@ -1,0 +1,22 @@
+{
+  "neutral": {
+    "max": 1,
+    "mean": 0.000052459969008264464,
+    "changed": 0
+  },
+  "faceNeutral": {
+    "max": 0,
+    "mean": 0,
+    "changed": 0
+  },
+  "minimumAlpha": 255,
+  "maximumFace": 0,
+  "maximumBody": 0,
+  "maximumEarRoot": 0,
+  "maximumHairRoot": 0,
+  "maximumBoneError": 2.0605739337042905e-13,
+  "minimumHairTriangle": 54.10713070596165,
+  "originalHairTriangle": 88,
+  "maximumExpressionDifference": 0,
+  "scope": "One image-left ear and one image-right lock only; same product painter with native Canvas, synthetic inputs, not a browser/camera/device acceptance test."
+}

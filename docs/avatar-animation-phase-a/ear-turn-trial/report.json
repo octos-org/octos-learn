@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "frames": 12,
+  "checkedStates": 135,
+  "earColourChange": 179,
+  "exposedPaper": 0,
+  "bodyMax": 0,
+  "hairMaxDifference": 0,
+  "attachmentOverlapMin": 252,
+  "occluderOldEarAlphaMax": 0,
+  "fixedWhitePatchCount": 0,
+  "reportedWhitePatchCount": 9,
+  "failedControls": {
+    "reported": 3,
+    "oldForeground": 3,
+    "oldCollar": 1
+  },
+  "innerWhite": [
+    1909,
+    1531,
+    1066,
+    449,
+    343,
+    249
+  ],
+  "inputSha256": {
+    "src/learning/avatar/painted-ear-turn.ts": "73d981ec5ca49e7036c8af5201892037a1423c05ccb582c211cc0d09e981c752",
+    "src/learning/avatar/painted-local-rig.ts": "07186e9ea45483050b41324c161947b776c7694797ff54ba10755295acf669ab",
+    "src/learning/avatar/painted-fox.ts": "208e451de6073ff8fe967fd9667d1cf08ccd6509e336007aa9255243ccdccac6",
+    "src/learning/avatar/illustrated-avatar-stage.tsx": "e100646850665e7c0f857f8312b50996ce6619205b9535d2ed2b42dacd03dd24",
+    "src/learning/avatar/avatar-lab-page.tsx": "e87b82c2db730bd7678c2e80a3e6331ebfa7dbd24208b3486cb9463a52d516c6",
+    "scripts/prepare-ear-turn.ts": "59c138c48cabe90d6c038030e2a1152db447f5c898dba39133afd2c30875f7fa",
+    "scripts/avatar-ear-turn-validate.ts": "402101a34d65ffbb8d06f97c461d16e5f2ef375fc37244d3acec644f60acfe64",
+    "public/teach-avatars/star-fox/ear-turn-v0.2/poses.png": "6b1288f171ff1c882a585b3f487aaaeea681a747037631f33adc1c8d6db1da9c",
+    "public/teach-avatars/star-fox/ear-turn-v0.2/foreground.png": "14e514c896d60d121d8b0734b470f52cdf4068d9b1de5e4c21337d365d39a64d"
+  },
+  "scope": "Native product painter. Regression for the user-reported fixed white inner-ear patch; whole ear behind hair-only foreground. No browser/camera/device acceptance."
+}

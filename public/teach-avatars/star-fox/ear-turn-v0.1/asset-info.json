@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "method": "12 authored image poses; one selected sprite per render; no runtime nonlinear ear deformation or cross-fade",
+  "generator": "built-in image_gen",
+  "transparentBackground": true,
+  "generatedSource": "poses-generated.png",
+  "sourceDimensions": [
+    1448,
+    1086
+  ],
+  "sourceLayout": {
+    "columns": 4,
+    "rows": 3
+  },
+  "runtimeAtlas": "poses.png",
+  "references": [
+    "../painted-v0.3/portrait-extended.png",
+    "../local-rig-v0.3/ear-front.png"
+  ],
+  "preparation": "scripts/prepare-ear-turn.ts: uniform scale and base registration; remove alpha<=7/255 generation noise; composite stationary original ear attachment collar. No nonlinear image warp.",
+  "prompt": "Use case: precise-object-edit. Asset type: production 2D animation sprite atlas, 4 columns by 3 rows, 12 equal square cells, transparent background, no text, no grid lines. Input image 1 is the reference character and painting style; image 2 is the EDIT TARGET: the isolated ear on image-left, NOT an entire head. Draw ONLY this single orange fox ear repeated in 12 animation poses, in reading order. Preserve its sharp dark brown rim, fine golden orange painted fur and white/cream inner tufts and pink interior. This is a PAINTED TURNAROUND, not a stretched copy: the ear smoothly swivels from facing camera to facing outward/backward around its base as if listening beside/behind the fox. Cells 1-12 progress smoothly in equal steps, 0,5,10,15,20,25,30,35,40,45,50,55 degrees of outward swivel. First cell match reference front ear; last cell shows mostly orange BACK of the ear with only a tiny inner white rim. IMPORTANT: as it turns away, the inner pink opening gets progressively narrower and occluded, the far rim passes behind the near rim, orange backside is progressively revealed. Keep the same substantial pinna volume, no collapsed rubber narrowing, no floppy folding, no pointed tip bending. Ear base stays FIXED at the SAME location in every cell. Ear tip stays nearly same height throughout. All 12 ears same scale and coherent root alignment. Each cell contains entire ear with comfortable transparent padding around ALL sides, including beneath base; no hair, face, head, jewelry, labels or anatomy charts. Lower 15% of each ear is a rounded orange furry attachment stump matching reference. Painterly anime illustration with detailed smooth brush texture, matching the supplied character. This is not a diagram: ready-to-use high-quality painted animation art. Transparent pixels around every separated ear. Prefer a large 2048x1536 atlas. Do not add any decoration or background.",
+  "limitations": [
+    "Only the ear on image-left is authored for an outward turn. Negative values hold the neutral pose.",
+    "Twelve drawings can show stepping during slow turns; no claim of production-grade continuity or final user acceptance.",
+    "Generated fur details vary between poses; exact neutral portrait identity is not preserved in this experimental ear.",
+    "Right ear uses the previous mesh rig; hair-mask and idle-frequency feedback is deferred, not fixed by this atlas."
+  ],
+  "pngSha256": {
+    "poses-generated.png": "47bcfa2759b9bc7431054687f1dc80cb3228a5e1ae890648716f5a220917be31",
+    "poses.png": "2bea7c33aa7e2d2dc5665fa3b04cd65633212d0830df5dc13d54adf330d1ef99"
+  }
+}

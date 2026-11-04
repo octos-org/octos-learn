@@ -36,6 +36,25 @@ it("draws only after loading and releases pending frames when unmounted", () => 
   page.unmount(); expect(raf.size).toBe(0); expect(images[0]!.onload).toBeNull();
 });
 
+it('loads local layers only for the explicitly enabled fox and releases them on rollback',()=>{
+  const page=render(<IllustratedAvatarStage frame={neutralFrame} active localRig />);
+  expect(images).toHaveLength(16);
+  expect(images.filter(i=>i.src.includes('local-rig-v0.3'))).toHaveLength(11);
+  const local=[...images];act(()=>local.forEach(i=>i.onload!()));advance(100);
+  page.rerender(<IllustratedAvatarStage frame={neutralFrame} active localRig={false} />);
+  expect(local.every(i=>i.onload===null&&i.src==='')).toBe(true);
+  expect(images.slice(16)).toHaveLength(5);
+  page.rerender(<IllustratedAvatarStage frame={neutralFrame} active characterId="white-rabbit" localRig />);
+  expect(images.slice(21)).toHaveLength(5);
+  expect(images.slice(21).some(i=>i.src.includes('local-rig-v0.3'))).toBe(false);
+});
+
+it('never loads the rejected ear-turn atlas in the enhanced fox preview',()=>{
+  render(<IllustratedAvatarStage frame={neutralFrame} active localRig />);
+  expect(images).toHaveLength(16);
+  expect(images.some(i=>i.src.includes('ear-turn-'))).toBe(false);
+});
+
 it("stops scheduling when inactive and redraws a changed paused pose", () => {
   const page = render(<IllustratedAvatarStage frame={neutralFrame} active={false} />);
   act(() => images.forEach((image) => image.onload!())); advance(100); advance(200); expect(raf.size).toBe(0);

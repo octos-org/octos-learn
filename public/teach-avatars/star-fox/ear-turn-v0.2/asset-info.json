@@ -1,0 +1,23 @@
+{
+  "version": "0.2",
+  "method": "Whole-ear sprite selection behind a hair-only occluder. No fixed inner-ear collar, no runtime nonlinear ear deformation or cross-fade.",
+  "derivedFrom": "../ear-turn-v0.1/poses-generated.png",
+  "generationRecord": "../ear-turn-v0.1/asset-info.json",
+  "generator": "Original source: built-in image_gen. This correction: native authored paths and sprite registration; no new generation.",
+  "prompt": "Use case: precise-object-edit. Asset type: production 2D animation sprite atlas, 4 columns by 3 rows, 12 equal square cells, transparent background, no text, no grid lines. Input image 1 is the reference character and painting style; image 2 is the EDIT TARGET: the isolated ear on image-left, NOT an entire head. Draw ONLY this single orange fox ear repeated in 12 animation poses, in reading order. Preserve its sharp dark brown rim, fine golden orange painted fur and white/cream inner tufts and pink interior. This is a PAINTED TURNAROUND, not a stretched copy: the ear smoothly swivels from facing camera to facing outward/backward around its base as if listening beside/behind the fox. Cells 1-12 progress smoothly in equal steps, 0,5,10,15,20,25,30,35,40,45,50,55 degrees of outward swivel. First cell match reference front ear; last cell shows mostly orange BACK of the ear with only a tiny inner white rim. IMPORTANT: as it turns away, the inner pink opening gets progressively narrower and occluded, the far rim passes behind the near rim, orange backside is progressively revealed. Keep the same substantial pinna volume, no collapsed rubber narrowing, no floppy folding, no pointed tip bending. Ear base stays FIXED at the SAME location in every cell. Ear tip stays nearly same height throughout. All 12 ears same scale and coherent root alignment. Each cell contains entire ear with comfortable transparent padding around ALL sides, including beneath base; no hair, face, head, jewelry, labels or anatomy charts. Lower 15% of each ear is a rounded orange furry attachment stump matching reference. Painterly anime illustration with detailed smooth brush texture, matching the supplied character. This is not a diagram: ready-to-use high-quality painted animation art. Transparent pixels around every separated ear. Prefer a large 2048x1536 atlas. Do not add any decoration or background.",
+  "preparation": "scripts/prepare-ear-turn.ts; uniform registration preserved; remove the static collar and replace the old foreground with a traced hair-only occluder. No semantic recoloring or new generated art.",
+  "runtime": [
+    "poses.png",
+    "foreground.png"
+  ],
+  "pngSha256": {
+    "poses.png": "6b1288f171ff1c882a585b3f487aaaeea681a747037631f33adc1c8d6db1da9c",
+    "foreground.png": "14e514c896d60d121d8b0734b470f52cdf4068d9b1de5e4c21337d365d39a64d"
+  },
+  "limitations": [
+    "Twelve poses and generated fur details retain stepping and texture variation.",
+    "Only image-left ear is authored; right ear remains the previous renderer.",
+    "Neutral ear outline and rounded base are generated variants, not pixel-identical original art.",
+    "User/device acceptance remains outstanding."
+  ]
+}

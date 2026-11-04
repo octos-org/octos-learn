@@ -5,10 +5,10 @@ import type { CaptureCallbacks } from "./face-capture";
 import type { FaceFrame } from "./face-frame";
 
 const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbacks: null as CaptureCallbacks | null }));
-const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'',idleMotion:false }));
+const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'',idleMotion:false,earTurn:false,earDemo:false }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
-vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId,idleMotion=false }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string;idleMotion?:boolean }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox';stageMock.idleMotion=idleMotion; return <div />; } }));
+vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId,idleMotion=false,earTurn=false,earDemo=false }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string;idleMotion?:boolean;earTurn?:boolean;earDemo?:boolean }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox';stageMock.idleMotion=idleMotion;stageMock.earTurn=earTurn;stageMock.earDemo=earDemo; return <div />; } }));
 vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
@@ -27,9 +27,19 @@ const open = () => render(<MemoryRouter><AvatarLabPage /></MemoryRouter>);
 
 it('enables natural motion on entry without a camera and freezes it for pose inspection',()=>{
   open();expect(stageMock.idleMotion).toBe(true);expect(captureMock.starts).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(false);
-  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(true);
+  fireEvent.click(screen.getByRole('checkbox',{name:'毛发自然小动作'}));expect(stageMock.idleMotion).toBe(false);
+  fireEvent.click(screen.getByRole('checkbox',{name:'毛发自然小动作'}));expect(stageMock.idleMotion).toBe(true);
   fireEvent.click(screen.getByRole('button',{name:'皱眉',exact:true}));expect(stageMock.idleMotion).toBe(false);
+});
+
+it('inspects the local ear and lock without a camera and can return to automatic following',()=>{
+  open();
+  expect((screen.getByRole('checkbox',{name:'使用新版发束与嘴型'}) as HTMLInputElement).checked).toBe(true);
+  fireEvent.change(screen.getByRole('slider',{name:'右侧发束'}),{target:{value:'.8'}});
+  expect(stageMock.idleMotion).toBe(false);expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'回到自动跟随'}));expect(stageMock.idleMotion).toBe(true);
+  fireEvent.click(screen.getByRole('checkbox',{name:'使用新版发束与嘴型'}));
+  expect(screen.queryByRole('slider',{name:'右侧发束'})).toBeNull();
 });
 
 it('switches the fitted character without restarting capture or losing the current expression',()=>{
@@ -168,4 +178,33 @@ it("keeps a manual recording running across slider changes and replays the chang
   expect(stageMock.frame!(1300).channels.jawOpen).toBe(0);
   expect(stageMock.frame!(1400).channels.jawOpen).toBe(.8);
   expect(stageMock.frame!(1500).channels.mouthPucker).toBe(.6);
+});
+
+it('removes ear turning and keeps only hair controls without starting capture',()=>{
+  open();expect(stageMock.earTurn).toBe(false);expect(stageMock.earDemo).toBe(false);
+  expect(screen.queryByRole('button',{name:'播放左耳转向对照'})).toBeNull();
+  expect(screen.queryByRole('checkbox',{name:'左耳使用绘制姿态动画（试验）'})).toBeNull();
+  expect(screen.queryByRole('slider',{name:'左耳转向'})).toBeNull();
+  expect(screen.queryByRole('slider',{name:'右耳转向'})).toBeNull();
+  expect(captureMock.starts).not.toHaveBeenCalled();
+});
+
+it('records detailed manual lips and asymmetric brows and retains them on replay',()=>{
+ vi.spyOn(performance,'now').mockReturnValue(1000);open();
+ fireEvent.change(screen.getByRole('slider',{name:'抿嘴程度'}),{target:{value:'.6'}});
+ fireEvent.change(screen.getByRole('slider',{name:'左眉挑起'}),{target:{value:'.8'}});
+ fireEvent.change(screen.getByRole('slider',{name:'下唇内收'}),{target:{value:'.4'}});
+ expect(stageMock.frame!(1000).channels).toMatchObject({mouthPressLeft:.6,mouthPressRight:.6,browOuterUpLeft:.8,browOuterUpRight:0,mouthRollLower:.4});
+ fireEvent.click(screen.getByRole('button',{name:'录一段动作',exact:true}));stageMock.frame!(1033);stageMock.frame!(1066);
+ vi.mocked(performance.now).mockReturnValue(1100);fireEvent.click(screen.getByRole('button',{name:'结束动作片段',exact:true}));
+ fireEvent.click(screen.getByRole('button',{name:'回放片段',exact:true}));
+ expect(stageMock.frame!(1100).channels).toMatchObject({mouthPressLeft:.6,browOuterUpLeft:.8,mouthRollLower:.4});
+ expect(captureMock.starts).not.toHaveBeenCalled();
+});
+
+it('routes camera microexpressions and independent brow presets through the existing channels',()=>{
+ open();fireEvent.click(screen.getByRole('button',{name:'左挑眉',exact:true}));expect(stageMock.frame!(0).channels).toEqual({browOuterUpLeft:.95});
+ fireEvent.click(screen.getByRole('button',{name:'开启摄像头跟随'}));
+ act(()=>{captureMock.callbacks!.onState('tracking');captureMock.callbacks!.onFrame({timeMs:1000,source:'mediapipe',tracked:true,rotation:[0,0,0],channels:{mouthPressLeft:.7,mouthRollLower:.8,browOuterUpRight:.6,browDownLeft:.4}},8,12);});
+ const frame=stageMock.frame!(1000);expect(frame.channels.mouthPressLeft).toBeGreaterThan(.5);expect(frame.channels.mouthPressRight??0).toBe(0);expect(frame.channels.browOuterUpRight).toBeGreaterThan(.4);expect(frame.channels.browDownRight??0).toBe(0);
 });
