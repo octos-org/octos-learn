@@ -8,7 +8,7 @@ const saving = vi.hoisted(() => ({
   make: vi.fn(), sync: vi.fn(), upload: vi.fn(), write: vi.fn(), achievements: vi.fn(),
 }));
 vi.mock("@/api/client", () => ({ getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
-vi.mock("@/byok/providers", () => ({ availableService: () => true }));
+vi.mock("@/byok/providers", async (original) => ({ ...(await original<object>()), availableService: () => true }));
 vi.mock("@/byok/services", () => ({ prepareClientServices: async () => undefined, getService: () => undefined }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => null }));
 vi.mock("../history/history-api", () => ({ openHistoryApi: async () => ({ achievements: saving.achievements }) }));
