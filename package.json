@@ -7,13 +7,13 @@
   "scripts": {
     "copy-vad-assets": "node scripts/copy-vad-assets.mjs",
     "setup:https": "node scripts/setup-local-https.mjs",
-    "predev": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
+    "predev": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs && node scripts/prepare-handwriting-assets.mjs",
     "dev": "vite",
-    "predev:https": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
+    "predev:https": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs && node scripts/prepare-handwriting-assets.mjs",
     "dev:https": "vite --mode local-https --host 0.0.0.0",
-    "prebuild": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
+    "prebuild": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs && node scripts/prepare-handwriting-assets.mjs",
     "build": "tsc -b && vite build",
-    "prebuild:public": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
+    "prebuild:public": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs && node scripts/prepare-handwriting-assets.mjs",
     "build:public": "tsc -b && vite build --mode public",
     "prebuild:android": "node scripts/prepare-android-assets.mjs",
     "build:android": "tsc -b && vite build --mode android --outDir android/app/src/main/assets",
@@ -35,10 +35,13 @@
     "test:report": "playwright show-report",
     "oll:materialize": "vite-node scripts/materialize-oll-lesson.ts",
     "course-pack:verify-parity": "vite-node scripts/verify-course-pack-parity.ts",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "test:handwriting": "vitest run src/learning/handwriting",
+    "simulate:handwriting": "vite-node scripts/handwriting-trajectory-sim.ts"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",
+    "@mediapipe/tasks-vision": "0.10.32",
     "@ricky0123/vad-web": "^0.0.30",
     "@tailwindcss/typography": "^0.5.19",
     "agora-rtc-sdk-ng": "4.24.8",

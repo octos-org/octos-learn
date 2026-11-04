@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [隔空书写接入白板](HANDWRITING_BOARD_INTEGRATION_PLAN.md)：从最新 main 独立开发的 `/board` 试用入口、摄像头用途隔离、验证结果与待真人验收项；[手势实验页](HANDWRITING_CAMERA_LAB.md)保留动作说明与调参背景。
+
 - [中英文本地化实施与验收](I18N_IMPLEMENTATION.md)：语言切换、实时课程与旁白语言、三仓库提交、回归结果、真实中英文课程与语音播放验证。
 - [中英文课程验收结果](i18n/language-acceptance-results.json)：两门真实课程、4 次模型 / 2 次语音、费用预留、失败记录及待人工试听项。
 

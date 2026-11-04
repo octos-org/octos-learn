@@ -1,3 +1,4 @@
+import { cameraSource, type CameraLease } from "@/media/camera-source";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type CameraRotation = 0 | 90 | 180 | 270;
@@ -189,6 +190,9 @@ function loadCameraFrameSettings(): CameraFrameSettings {
  */
 export function useCameraFrame(): CameraFrame {
   const streamRef = useRef<MediaStream | null>(null);
+  const leaseRef = useRef<CameraLease | null>(null);
+  const generationRef = useRef(0);
+  const startingRef = useRef<Promise<boolean> | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [active, setActive] = useState(false);
   // Exposed so a preview <video> can bind the live stream.
@@ -212,17 +216,11 @@ export function useCameraFrame(): CameraFrame {
   }, []);
 
   const stop = useCallback(() => {
-    const current = streamRef.current;
+    generationRef.current += 1;
+    startingRef.current = null;
     streamRef.current = null;
-    if (current) {
-      for (const track of current.getTracks()) {
-        try {
-          track.stop();
-        } catch {
-          // already stopped
-        }
-      }
-    }
+    leaseRef.current?.release();
+    leaseRef.current = null;
     const video = videoRef.current;
     if (video) {
       try {
@@ -236,43 +234,47 @@ export function useCameraFrame(): CameraFrame {
     setActive(false);
   }, []);
 
-  const start = useCallback(async () => {
-    if (streamRef.current) return true;
+  useEffect(() => stop, [stop]);
+
+  const start = useCallback((): Promise<boolean> => {
+    if (streamRef.current) return Promise.resolve(true);
+    if (startingRef.current) return startingRef.current;
+    const generation = generationRef.current;
     setError(null);
-    try {
-      const md = navigator.mediaDevices;
-      if (!md?.getUserMedia) throw new Error("camera unavailable");
-      const stream = await md.getUserMedia({
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-        audio: false,
-      });
-      streamRef.current = stream;
-      const video = document.createElement("video");
-      video.muted = true;
-      video.playsInline = true;
-      video.srcObject = stream;
+    const starting = (async () => {
       try {
-        await video.play?.();
-      } catch {
-        // Autoplay may be deferred; frames can still be grabbed once data flows.
+        const lease = await cameraSource.acquire("teacher-frame");
+        if (generation !== generationRef.current) { lease.release(); return false; }
+        leaseRef.current = lease;
+        streamRef.current = lease.stream;
+        for (const track of lease.stream.getTracks()) track.addEventListener?.("ended", () => {
+          if (generation !== generationRef.current) return;
+          stop(); setError("camera unavailable");
+        }, { once: true });
+        const video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = lease.stream;
+        videoRef.current = video;
+        try { await video.play?.(); } catch { /* Frame capture can resume after autoplay. */ }
+        if (generation !== generationRef.current) return false;
+        setStream(lease.stream);
+        setActive(true);
+        return true;
+      } catch (cause) {
+        if (generation !== generationRef.current) return false;
+        leaseRef.current?.release(); leaseRef.current = null;
+        streamRef.current = null; videoRef.current = null;
+        setError(cause instanceof Error ? cause.message : "camera unavailable");
+        setActive(false); setStream(null);
+        return false;
+      } finally {
+        if (generation === generationRef.current) startingRef.current = null;
       }
-      videoRef.current = video;
-      setStream(stream);
-      setActive(true);
-      return true;
-    } catch (e) {
-      console.error("[camera] start failed", e);
-      setError(e instanceof Error ? e.message : "camera unavailable");
-      setActive(false);
-      streamRef.current = null;
-      videoRef.current = null;
-      setStream(null);
-      return false;
-    }
-  }, []);
+    })();
+    startingRef.current = starting;
+    return starting;
+  }, [stop]);
 
   const grabFrame = useCallback(async (): Promise<File | null> => {
     const video = videoRef.current;

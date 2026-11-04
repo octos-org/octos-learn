@@ -1,5 +1,6 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cameraSource } from "@/media/camera-source";
 import {
   computeCameraFrameGeometry,
   computeDownscaledSize,
@@ -99,6 +100,7 @@ describe("useCameraFrame", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -220,5 +222,45 @@ describe("useCameraFrame", () => {
     });
 
     expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases a late permission grant after the user already stopped", async () => {
+    const stop = vi.fn(); let grant!: (stream: unknown) => void;
+    getUserMedia.mockImplementationOnce(() => new Promise(resolve => { grant = resolve; }));
+    const { result } = renderHook(() => useCameraFrame());
+    let pending!: Promise<boolean>;
+    act(() => { pending = result.current.start(); });
+    act(() => result.current.stop());
+    await act(async () => { grant({ getTracks: () => [{ stop }] }); expect(await pending).toBe(false); });
+    expect(result.current.active).toBe(false); expect(result.current.stream).toBeNull(); expect(stop).toHaveBeenCalledOnce();
+  });
+
+  it("keeps local hand recognition separate from teacher sending and releases only its own lease", async () => {
+    const stop = vi.fn(), media = { getTracks: () => [{ stop }] };
+    getUserMedia.mockResolvedValue(media);
+    const local = await cameraSource.acquire("handwriting-local");
+    const { result } = renderHook(() => useCameraFrame());
+    expect(result.current.active).toBe(false); await expect(result.current.grabFrame()).resolves.toBeNull();
+    await act(async () => { await result.current.start(); });
+    expect(getUserMedia).toHaveBeenCalledOnce(); expect(result.current.active).toBe(true);
+    act(() => result.current.stop()); expect(stop).not.toHaveBeenCalled();
+    local.release(); expect(stop).toHaveBeenCalledOnce();
+  });
+
+  it("deduplicates simultaneous starts and releases the source on unmount", async () => {
+    const stop = vi.fn(); getUserMedia.mockResolvedValue({ getTracks: () => [{ stop }] });
+    const { result, unmount } = renderHook(() => useCameraFrame());
+    await act(async () => { await Promise.all([result.current.start(), result.current.start()]); });
+    expect(getUserMedia).toHaveBeenCalledOnce(); unmount(); expect(stop).toHaveBeenCalledOnce();
+  });
+  it("clears the sending state if the device ends the active video track", async () => {
+    const video = new EventTarget() as EventTarget & { stop: ReturnType<typeof vi.fn> };
+    video.stop = vi.fn();
+    getUserMedia.mockResolvedValue({ getTracks: () => [video] });
+    const { result } = renderHook(() => useCameraFrame());
+    await act(async () => { await result.current.start(); });
+    act(() => video.dispatchEvent(new Event("ended")));
+    expect(result.current.active).toBe(false); expect(result.current.stream).toBeNull();
+    await expect(result.current.grabFrame()).resolves.toBeNull();
   });
 });

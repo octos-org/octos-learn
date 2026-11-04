@@ -1,0 +1,286 @@
+.handwriting-lab-page {
+  height: 100dvh;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: #f4f7f5;
+  color: #20302c;
+}
+
+.handwriting-lab-header {
+  height: 72px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 24px;
+  border-bottom: 1px solid #dfe8e4;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.handwriting-lab-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.handwriting-lab-header strong {
+  font-size: 18px;
+}
+
+.handwriting-lab-header span,
+.handwriting-lab-header a {
+  color: #63736e;
+  font-size: 13px;
+}
+
+.handwriting-lab-header a {
+  text-decoration: none;
+}
+
+.handwriting-lab-body {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+}
+
+.handwriting-lab-panel {
+  width: 340px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-right: 1px solid #dfe8e4;
+  background: #fbfdfc;
+  overflow-y: auto;
+}
+
+.handwriting-camera-preview {
+  flex: none;
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #cfdcd7;
+  background: #17211f;
+}
+
+.handwriting-camera-preview video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.handwriting-hand-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+
+.handwriting-camera-preview > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #a9bbb5;
+  font-size: 13px;
+  background: #17211f;
+}
+
+.handwriting-camera-preview > .handwriting-preview-label {
+  inset: auto 0 0;
+  padding: 5px;
+  background: rgba(23, 33, 31, 0.8);
+  font-size: 11px;
+}
+
+.handwriting-live-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  right: 7px;
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(15, 32, 27, 0.88);
+  color: #89f5ce;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.handwriting-live-badge[data-down="true"] {
+  color: #ffae94;
+}
+
+.handwriting-mode-picker {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.handwriting-mode-picker select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #b9cec6;
+  border-radius: 9px;
+  padding: 6px;
+  background: white;
+  color: #173f36;
+  font: inherit;
+}
+
+.handwriting-gesture-guide {
+  padding: 10px;
+  border-radius: 9px;
+  background: #edf4f1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.handwriting-gesture-guide p {
+  margin: 0;
+}
+
+.handwriting-gesture-status dd {
+  color: #176b62;
+  font-weight: 600;
+}
+
+.handwriting-gesture-status[data-down="true"] dd {
+  color: #a33c25;
+}
+
+@media (max-width: 700px) {
+  .handwriting-lab-header { padding: 10px 14px; height: auto; min-height: 72px; gap: 10px; }
+  .handwriting-lab-header > div { min-width: 0; }
+  .handwriting-lab-header a { flex: none; }
+  .handwriting-lab-panel { width: 240px; padding: 12px; }
+}
+
+.handwriting-lab-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.handwriting-lab-actions.is-secondary {
+  grid-template-columns: 1fr 1fr;
+}
+
+.handwriting-clear-button {
+  grid-column: 1 / -1;
+}
+
+.handwriting-lab-actions button {
+  min-height: 38px;
+  border: 1px solid #b9cec6;
+  border-radius: 9px;
+  color: #173f36;
+  background: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.handwriting-lab-actions button:hover:not(:disabled) {
+  background: #edf7f3;
+}
+
+.handwriting-lab-actions button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.handwriting-lab-status {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: #edf4f1;
+}
+
+.handwriting-lab-status div {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 8px;
+}
+
+.handwriting-lab-status dt {
+  color: #657970;
+  font-size: 12px;
+}
+
+.handwriting-lab-status dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.handwriting-lab-note,
+.handwriting-lab-notice,
+.handwriting-lab-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.handwriting-lab-note {
+  color: #6a7c76;
+}
+
+.handwriting-lab-notice {
+  color: #176b62;
+}
+
+.handwriting-lab-error {
+  color: #a33c31;
+}
+
+.handwriting-board-frame {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  background: #f7faf8;
+}
+
+.handwriting-board {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.handwriting-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.handwriting-cursor > i {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 2px solid #176b62;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(23, 107, 98, 0.18);
+}
+
+.handwriting-cursor[data-down="true"] > i {
+  border-color: #c75445;
+  background: rgba(199, 84, 69, 0.22);
+  box-shadow: 0 0 0 5px rgba(199, 84, 69, 0.16);
+}
