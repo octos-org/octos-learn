@@ -9,7 +9,7 @@
 3. **最新耳动代码已实现，并随本交接一并提交**：独立转向 → 保持 → 回正，小角度耳廓平面投影；发梢单独保留有限惯性。上一轮耳部正弦甩动/弹簧回弹已被用户否定，不要恢复。细节见[当前耳动实现](LEARNER_AVATAR_EAR_ORIENTATION.md)。
 4. **用户认可过完整耳朵/眉眼修正后的星狐**，随后要求扩展角色；后来否定四款第一轮耳动自然度。最新耳廓转向版本已交付程序输出，**尚未收到用户对最新自然度的认可**。代码/像素测试通过不能代替这个判断。
 5. **本交接所在提交包含完整最新耳动**，位于 `18299841` 之后；接手时拉取 `origin/codex/avatar-capture-prototype` 并核对 `git log -1`，不要停留在四角色首次提交。用户已要求提交并推送，暂不开 PR、合入 main 或部署。
-6. **正式课程接入仍有缺口**：四角色选择在试验室；`presenters.ts` 目录、正式动态看课、M6 播放、带嘴型 v2 包服务端保存未因此完成。用户没有要求现在操作设备，不要把浏览器设置/开摄像头变成继续工作的前提。
+6. **正式课程接入（2026-11-03 第二轮）**：带嘴型 v2 包已能保存到“我的课”（服务端完整校验）；`presenters.ts` 目录已换成四角色；“看我的课”、下载课包播放、“我的课”播放页都用课程自己的二维角色并跟随包内最终配音嘴型。**仍未完成**：摄像头表演（眉眼/头动）与录课 Take 的绑定和按最终配音的时间重映射；正式播放中的耳发自然动作（等待用户认可，目前关闭）；浏览器/设备实测。用户没有要求现在操作设备，不要把浏览器设置/开摄像头变成继续工作的前提。
 
 ## 2. 用户目标、约束与已否定方向
 
@@ -28,6 +28,8 @@
 | 引用 | 实际状态 |
 |---|---|
 | 工作分支 | `codex/avatar-capture-prototype` |
+| `d89ebae1` | 四角色进入正式形象目录；看我的课/下载课包播放/我的课播放页改用二维角色与包内嘴型 |
+| `6aefa3a0` | “我的课”服务端接受并严格校验 v2 嘴型课包；超过 32 MiB 明确提示 |
 | 本交接所在提交 | `feat(avatar): refine animal ear orientation and handoff`，包含最新耳发源码、测试、脚本、媒体及交接；接手时核对远端分支实际 HEAD |
 | `18299841` | 四角色素材、独立面部绑定、同页切换，前一已推送检查点 |
 | `af2b1f08` | 完整耳朵、眉眼联动等星狐确认版与此前研究记录，已推送 |
@@ -56,9 +58,9 @@
 | `/teach/avatar-2d` / `/teach/avatar-lab` | 四角色主试验室，摄像头/手动表情/动作轨/白板/片段库/配音排练 |
 | `/teach/avatar-2d/example` | 旧示例页面，共享绘画舞台，默认星狐 |
 | `/teach/package` | 本地课程包查看/逐卡试听；不是 M6 账号播放页 |
-| `/teach/:id/watch` | 看我的课；动态可选小窗仍用旧三维舞台，待迁移 |
+| `/teach/:id/watch` | 看我的课；选形象（四角色）；课包有嘴型时可显示该角色的二维动态小窗 |
 | `/teach/lessons` | M6 账号课程/草稿 |
-| `/teach/lessons/:id/play` | M6 正式课程播放，仍是静态头像 |
+| `/teach/lessons/:id/play` | M6 正式课程播放；课包有嘴型时右侧显示课程角色并跟随配音，否则显示角色头像 |
 
 正常环境必须沿用 HTTPS `https://127.0.0.1:5173`、Octos `127.0.0.1:50080`、本人既有 `~/.octos` 账号/配置/技能。本次更新时实际监听进程为前端 Node PID `83679`、后端 Octos PID `88231`；这只是当时本机状态，新会话应重新检查，不能从文档断言进程仍活着。不要另开临时端口、账号、数据目录或只支持部分功能的人工验收环境。
 
@@ -136,16 +138,32 @@ pnpm dev:https --host 127.0.0.1 --port 5173 --strictPort
 
 `learner-package.ts`/`make-learner-package.ts` 支持普通 v1 和可选嘴型 v2。**原摄像头说话节奏和最终 TTS 不同**，不能直接照搬原嘴部动作；非嘴表情对卡片/最终音频的时间重映射仍需设计。
 
+### 正式目录与播放（2026-11-03 第二轮）
+
+- `presenters.ts`：`PRESENTER_AVATARS` 为 `star-fox`/`red-panda`/`white-rabbit`/`moon-cat`，ID 同时是二维舞台角色 ID 和课程 `avatar:` 引用；默认 `star-fox`。旧占位 `octo`、`avatar-2…6` 从未有画稿，旧课按默认角色显示（`presenterOfReference`）。头像缩略图直接用各角色完整立绘裁到脸部；`presenters.test.ts` 保证与 `painted-characters.ts` 的立绘一致且文件存在。`presenters.ts` 不导入绘制器，避免把画布代码带进录课页首包。
+- `lesson-avatar-preview.tsx`：改用 `IllustratedAvatarStage`，按课包 `author.avatar_ref` 画角色；嘴型仍只读包内最终音频轨，时钟只用当前卡片、当前课包的媒体时钟（`onMediaClock`），暂停/无时钟/别的卡片一律闭嘴。`mode="player"` 去掉作者向说明。**正式播放不开耳发自然动作**（`idleMotion` 未传），等用户认可耳动后再打开。
+- 三处使用：看我的课（`teach-watch-page.tsx`）、下载课包播放（`learner-package-viewer.tsx`）、我的课播放页（`teach-lesson-player-page.tsx`，课包含嘴型时用 `teach-watch-layout` 右侧显示，没有时保留静态头像）。旧三维 `AvatarStage` 只剩试验室历史用途。
+
+### “我的课”保存 v2（2026-11-03 第二轮）
+
+`services/learner-lessons/package-check.mjs` 与客户端读取规则一致：v1/v2 两种 schema；v2 必须且只能声明 `avatar-lip-sync-v1`，每张有配音的卡片一个 `mouth/<n>.json`；嘴型条目的音频哈希/文字哈希必须等于对应旁白；轨道本身逐项校验（schema、时长 ±50 ms 且 ≤60 s、方法、≤6001 个严格递增关键帧、首 0 尾等于时长、仅嘴/颌/舌通道且权重 [0,1]）。另外检查：每个文件按角色恰好被引用一次；旁白可为 mp3/wav/ogg/m4a 且扩展名与类型一致；清单不允许未知字段（防止夹带个人信息）；清单作者与课程内作者一致；清单旁白与课程内每张卡片的文字一致。服务端嘴型通道表 `MOUTH_CHANNELS` 与 `lip-sync.ts` 由测试保持一致。
+
+限额：账号保存上限仍是 32 MiB（nginx 33 MiB），客户端构建上限 100 MB 只用于本机/下载。超过 32 MiB 时客户端不上传，直接提示（服务端 413 也给同样提示，不再显示“连不上”）。
+
+回归：`learner-package.test.ts` 用客户端真实构建的 v1/v2 包与 `calibration-mouth-course.olesson` 验证服务端接受，并验证改文字/换音频后被拒；`store.test.mjs` 覆盖 v2 的各类篡改；`server.test.mjs` 覆盖 v2 经 HTTP 保存与逐字节下载、伪造嘴型 422。
+
 ## 7. 未完成事项与下一步
 
 ### 先评估当前耳动效果
+
+2026-11-03 第二轮接手时的观察：`ear-orientation-v2/idle-poses.jpg` 中“单耳转向/保持”与“自然”在正常尺寸下几乎看不出差别；近景 `fox-ear-detail.jpg` 也只有轻微变化。也就是说当前耳动不是“不自然”，而是“基本看不出来”。只在正面纹理上加大拉伸已被否定，要让转耳可读就需要对齐的侧/背耳分层素材（每角色每耳），这是需要用户决定的素材方向，本轮没有改耳动代码。
 
 先确认已取得本次交接提交，阅读当前实际动画与用户反馈，再调整自然度。不自动更换路线、重画所有角色或恢复旧弹簧。若仍需明显后转/压耳，应准备对齐的侧/背耳素材或受控局部结构，保持已认可脸部；不能只增大正面纹理拉伸。
 
 ### 正式产品接入缺口（本次再次只读确认）
 
-1. **P0：嘴型 v2 包无法直接保存到账号。** `services/learner-lessons/package-check.mjs` 仅认 v1、lesson/ink/narration 三类、mp3 旁白，限额 32MiB；客户端 v2 有 `requiredCapabilities:["avatar-lip-sync-v1"]`、`mouth/*.json`/lip-sync，且支持多音频类型、100MB。需要完整一致的路径/角色/MIME、引用、内容/音频/文本/时长/哈希验证和限额策略，不能只放宽 schema。补 v1/v2 正反例、篡改/错配/跨账号/超限回归。
-2. **P1：正式舞台与目录。** `lesson-avatar-preview.tsx` 仍导入旧 `AvatarStage`；`teach-lesson-player-page.tsx` 仍用静态 `AvatarPicture`。迁移到共享 2D 时保持 M6 无 Key/无额外合成、包内权威媒体时钟、暂停与失败降级。`presenters.ts` 的六个占位目录尚未映射到四角色，不能说已经接通作者 `avatar_ref`。
+1. ~~P0：嘴型 v2 包保存到账号~~ —— 已完成（`6aefa3a0`），见第 6 节。
+2. ~~P1：正式舞台与目录~~ —— 已完成（`d89ebae1`），见第 6 节。仅单元测试与构建验证，**未做浏览器实测**。
 3. **P1：正式表演数据。** 若用户要求录制最终耳动/头发/选角，先明确时间轴与课包格式；当前没有这些数据的正式保存/重建约定。
 4. **P2：设备。** iPhone/iPad、安卓触摸大屏、持续运行的功耗/热量/相机延迟未验收。30/60 是目标、20Hz 是提交调度，不是端到端实测值。不要无必要要求用户现在测试。
 
@@ -157,7 +175,9 @@ pnpm dev:https --host 127.0.0.1 --port 5173 --strictPort
 
 ## 8. 验证、媒体与复现
 
-**最新一轮：7 个文件、60 项相关测试通过**；TypeScript、`pnpm build`、修改文件 ESLint、84 UI 文件/2852 对中英消息、`git diff --check` 通过。不是最新全量仓库测试。构建有既有 CSS 属性/大包提示，本轮没有发布。提交前再次以 Node 22.23.3 运行上述 60 项，全部通过；默认 shell 的 Node 20.20.2 曾使配音测试出现跨环境 ArrayBuffer 的 crypto.digest 类型错误，切换到文档约定的 Node 22 后通过，未改动产品或测试来规避。
+**第二轮（接入）**：全量 vitest 201 文件 / 1696 项通过；`pnpm test:history` 107 项通过；`tsc -b`、`pnpm build`、改动文件 ESLint、i18n（2848 对）通过。均为自动化，未做浏览器、真人摄像头或设备验证。
+
+**上一轮（耳动）：7 个文件、60 项相关测试通过**；TypeScript、`pnpm build`、修改文件 ESLint、84 UI 文件/2852 对中英消息、`git diff --check` 通过。不是最新全量仓库测试。构建有既有 CSS 属性/大包提示，本轮没有发布。提交前再次以 Node 22.23.3 运行上述 60 项，全部通过；默认 shell 的 Node 20.20.2 曾使配音测试出现跨环境 ArrayBuffer 的 crypto.digest 类型错误，切换到文档约定的 Node 22 后通过，未改动产品或测试来规避。
 
 ```sh
 export PATH=/opt/homebrew/opt/node@22/bin:$PATH
