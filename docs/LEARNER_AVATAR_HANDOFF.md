@@ -210,7 +210,7 @@ node_modules/.bin/vite-node scripts/avatar-characters-validate.ts /private/tmp/o
 
 本轮构建/测试原始日志在临时目录，可能被清理；可交付的媒体/报告位于上述 docs。旧 `export-painted-fox.ts`、`avatar-expression-validate.ts`、`avatar-mouth-head-validate.ts` 的固定 512px 断言是历史入口；当前使用本节两个脚本，避免覆盖旧证据。
 
-**2026-11-03 媒体清理（合并前）**：`docs/avatar-animation-phase-a/` 中被取代的 GIF/MP4/预览 HTML/大图共 77 个文件（含 `public/` 中无引用的 `star-fox/painted-v0.1/`、`concept-idle.png`、`concept-explaining.png`），约 124 MB，已从分支删除；保留了脚本输入（`facial-rig/materials/*.png`、`single-image/source.png`、`real-input/recorded-track.json`）、测试夹具 `calibration-mouth-course.olesson`、全部 JSON/代码/报告，以及 `head-follow-v1` 和用户认可阶段 `ears-expressions-v2` 的静态图。文档里指向已删媒体的链接改为“原文件见提交 `30a3e3d5`”。验证脚本仍可把媒体重新生成到默认输出目录（建议输出到 scratch，不再提交大 GIF）。**合并到 main 请用 squash**，否则这些大文件仍会随分支历史进入 main。
+**2026-11-03 媒体清理（合并前）**：`docs/avatar-animation-phase-a/` 中被取代的 GIF/MP4/预览 HTML/大图共 77 个文件（含 `public/` 中无引用的 `star-fox/painted-v0.1/`、`concept-idle.png`、`concept-explaining.png`），约 124 MB，已从分支删除；保留了脚本输入（`facial-rig/materials/*.png`、`single-image/source.png`、`real-input/recorded-track.json`）、测试夹具 `calibration-mouth-course.olesson`、全部 JSON/代码/报告，以及 `head-follow-v1` 和用户认可阶段 `ears-expressions-v2` 的静态图。文档里指向已删媒体的链接改为“原文件见提交 `30a3e3d5`”。验证脚本仍可把媒体重新生成到默认输出目录（建议输出到 scratch，不再提交大 GIF）。PR：https://github.com/octos-org/octos-learn/pull/119（未合并）。**合并到 main 请用 squash**，否则这些大文件仍会随分支历史进入 main。
 
 仍在 `public/` 的旧渲染器素材（约 11 MB：`sculpt-v0.1` 三维模型、`puppet-v0.1`、`original-v0.1`、`illustrated-v0.1`、`concept-thinking.png`）只被不可达的旧代码（`avatar-stage.tsx`、`star-fox-asset.ts`、`puppet-fox.ts`、`original-fox.ts` 的素材部分）或示例页引用；删除它们需要改代码并触及 `painted-fox.ts`/`painted-eyes.ts` 的类型导入，与耳发迭代的 agent 可能冲突，留作后续单独清理。
 
