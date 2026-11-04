@@ -18,7 +18,7 @@ export const LOCAL_RIG_ASSETS = {
   restore:'teach-avatars/star-fox/local-rig-v0.3/restore.png',
   oral:'teach-avatars/star-fox/local-rig-v0.3/oral.png',
 } as const;
-export type LocalRigImages = Record<keyof typeof LOCAL_RIG_ASSETS, CanvasImageSource> & {earTurn?:CanvasImageSource};
+export type LocalRigImages = Record<keyof typeof LOCAL_RIG_ASSETS, CanvasImageSource> & {earTurn?:CanvasImageSource;earTurnForeground?:CanvasImageSource};
 export const LOCAL_EAR_ROOT: RigPoint = [180, 307];
 /** Visible attachment follows the diagonal front-hair boundary. A horizontal
  * band at the bottom misses its upper corner, where the reported crack was. */
@@ -161,7 +161,7 @@ export function createLocalRigPainter(images:LocalRigImages,surface:Surface){
   return {drawEar,drawRightEar,draw(target:CanvasRenderingContext2D,pose:LocalRigPose){
     target.drawImage(images.restore,0,0);
     if(images.earTurn)drawEarTurn(target,images.earTurn,pose.ear);else drawEar(target,pose.ear);
-    drawRightEar(target,pose.rightEar??0);target.drawImage(images.foreground,0,0);
+    drawRightEar(target,pose.rightEar??0);target.drawImage(images.earTurn&&images.earTurnForeground?images.earTurnForeground:images.foreground,0,0);
     for(const part of hairs){const value=clamp(pose[part.spec.id]??0);if(Math.abs(value)<1e-8)target.drawImage(part.image,0,0);else part.mesh(target,point=>starFoxHairPoint(point,value,part.spec));}
   }};
 }

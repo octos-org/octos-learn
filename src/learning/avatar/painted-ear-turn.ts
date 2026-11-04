@@ -1,6 +1,10 @@
-/** Authored image poses of one ear. Runtime never deforms an ear texture:
- * it selects one aligned drawing, with an anchored root already in the atlas. */
-export const EAR_TURN_ASSET='teach-avatars/star-fox/ear-turn-v0.1/poses.png';
+/** Whole-ear drawings behind a hair-only occluder. No fixed original-ear
+ * collar: that retained white inner fur when the pinna turned to its back. */
+export const EAR_TURN_ASSET='teach-avatars/star-fox/ear-turn-v0.2/poses.png';
+export const EAR_TURN_FOREGROUND_ASSET='teach-avatars/star-fox/ear-turn-v0.2/foreground.png';
+/** Trace the actual hair silhouette, not a diagonal through the inner ear.
+ * The small curl at y260 has a hooked return and must not include its gap. */
+export const EAR_TURN_HAIR_PATH='M340 145 L310 145 C280 157 260 179 242 193 C222 210 211 229 202 246 C196 257 184 266 174 260 C180 265 190 266 198 261 C188 279 179 295 175 312 C169 331 161 341 151 345 L340 345 Z';
 export const EAR_TURN={columns:4,frames:12,width:256,height:320,x:64,y:48} as const;
 export function earTurnFrame(value:number):number {
   const amount=Number.isFinite(value)?Math.max(0,Math.min(1,value)):0;

@@ -7,7 +7,7 @@ import { percentile } from "./performance-track";
 import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
 import { LOCAL_RIG_ASSETS, type LocalRigImages, type LocalRigPose } from './painted-local-rig';
-import {EAR_TURN_ASSET} from './painted-ear-turn';
+import {EAR_TURN_ASSET,EAR_TURN_FOREGROUND_ASSET} from './painted-ear-turn';
 
 export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, localRig=false, localPose, earTurn=false,earDemo=false,className = "", fpsLimit = 30, onMetrics, onError }: {
   localRig?:boolean; localPose?:LocalRigPose;earTurn?:boolean;earDemo?:boolean;
@@ -27,7 +27,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     const samples: number[] = [];
     const localEnabled=localRig&&character.id==='star-fox';
     const paths:Record<string,string>={...character.assets,...(localEnabled?Object.fromEntries(Object.entries(LOCAL_RIG_ASSETS).map(([key,path])=>[`local_${key}`,path])):{})};
-    if(localEnabled&&earTurn)paths.local_earTurn=EAR_TURN_ASSET;
+    if(localEnabled&&earTurn){paths.local_earTurn=EAR_TURN_ASSET;paths.local_earTurnForeground=EAR_TURN_FOREGROUND_ASSET;}
     const images = Object.entries(paths).map(([key, path]) => ({ key, path, image: new Image() }));
     let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };

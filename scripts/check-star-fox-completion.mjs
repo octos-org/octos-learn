@@ -29,7 +29,9 @@ if(existsSync(reportPath)){
 const trialPath='docs/avatar-animation-phase-a/ear-turn-trial/report.json';
 if(existsSync(trialPath)){
  const trial=JSON.parse(readFileSync(trialPath,'utf8'));
- if(trial.frames<12||trial.checkedStates<135||trial.rootMax>1||trial.exposedPaper!==0||trial.bodyMax!==0||trial.innerWhite.at(-1)>trial.innerWhite[0]*.65)errors.push('Drawn ear trial failed its image-pose constraints');
+ // Frozen ear RGB was a false guarantee: it preserved the user's white patch.
+ // Require the actual regression and negative controls instead of that metric.
+ if(trial.schemaVersion!==2||trial.frames<12||trial.checkedStates<135||trial.exposedPaper!==0||trial.bodyMax!==0||trial.hairMaxDifference>1||trial.attachmentOverlapMin<240||trial.occluderOldEarAlphaMax!==0||trial.fixedWhitePatchCount!==0||trial.reportedWhitePatchCount<3||!trial.failedControls||Object.values(trial.failedControls).some(n=>n===0)||trial.innerWhite.at(-1)>trial.innerWhite[0]*.65)errors.push('Drawn ear trial failed the reported fixed-fur regression');
  for(const[path,hash]of Object.entries(trial.inputSha256??{}))if(!existsSync(path)||createHash('sha256').update(readFileSync(path)).digest('hex')!==hash)errors.push(`Ear trial validation is stale: ${path}`);
  const recordPath='docs/avatar-animation-phase-a/ear-turn-trial/validation.json';
  if(!existsSync(recordPath))errors.push('Missing ear trial completion evidence');
