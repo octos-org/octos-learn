@@ -29,7 +29,9 @@ const continuity=Object.fromEntries(['jawOpen','browDownLeft','eyeBlinkLeft','ey
 const frownDelta=diff(render(frame({browDownLeft:1,browDownRight:1})),neutral,(_x,y)=>y>=175&&y<245);
 if(Object.values(checks).some(n=>n!==0)||minAlpha!==255||Object.values(continuity).some(n=>n>1)||frownDelta.changed<100)throw Error(JSON.stringify({id:character.id,checks,minAlpha,continuity,frownDelta}));
 reports[character.id]={checks,minAlpha,continuity,frownDelta};
-if(character.id==='star-fox'){const previous=accepted.createPaintedFoxPainter(images,surface);for(const p of[...poses,{value:frame({mouthPucker:.8,mouthSmileLeft:.6,browInnerUp:.7})}]){previous.draw(oldSurface.context,sz,sz,p.value);acceptedFoxMax=Math.max(acceptedFoxMax,diff(render(p.value),oldSurface.context.getImageData(0,0,sz,sz).data).max);}}
+// Head/ear following was intentionally changed after this baseline. Preserve
+// the approved still facial artwork, rather than asserting the old head motion.
+if(character.id==='star-fox'){const previous=accepted.createPaintedFoxPainter(images,surface);for(const p of[...poses.filter(p=>p.value.rotation.every(n=>n===0)),{value:frame({mouthPucker:.8,mouthSmileLeft:.6,browInnerUp:.7})}]){previous.draw(oldSurface.context,sz,sz,p.value);acceptedFoxMax=Math.max(acceptedFoxMax,diff(render(p.value),oldSurface.context.getImageData(0,0,sz,sz).data).max);}}
 for(const[j,p]of poses.entries()){render(p.value);g.fillStyle='#243649';g.fillText(character.name()+' · '+p.label,i*320+10,j*340+24);g.drawImage(canvas,i*320,j*340+30,310,310);}
 render(frame());await writeFile(`${output}/${character.id}-neutral.png`,canvas.toBuffer('image/png'));
 }
@@ -45,4 +47,4 @@ m.fillStyle='#f4f1ea';m.fillRect(0,0,960,270);m.font='16px AvatarChinese';
 for(const[j,painter]of painters.entries()){painter.draw(ctx,sz,sz,value);m.drawImage(canvas,j*240,30,240,240);m.fillStyle='#243649';m.fillText(PAINTED_CHARACTERS[j].name(),j*240+12,22);}
 const rgba=m.getImageData(0,0,960,270).data,palette=quantize(rgba,192);gif.writeFrame(applyPalette(rgba,palette),960,270,{palette,delay:130});}
 gif.finish();await writeFile(`${output}/preview.gif`,gif.bytes());
-const report={acceptedFoxBaseline:'af2b1f08',acceptedFoxMax,characters:reports,animation:{frames:48,frameDelayMs:130,durationMs:6240},limits:'Actual product painters using deterministic synthetic controls; no camera/browser/TV acceptance. Original instructor/learner package selection remains a separate integration.'};await writeFile(`${output}/report.json`,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
+const report={acceptedFoxBaseline:'af2b1f08',acceptedFoxStillMax:acceptedFoxMax,characters:reports,animation:{frames:48,frameDelayMs:130,durationMs:6240},limits:'Actual product painters using deterministic synthetic controls; no camera/browser/TV acceptance. The fox baseline comparison covers still expressions, not the intentionally revised head/ear motion. Original instructor/learner package selection remains a separate integration.'};await writeFile(`${output}/report.json`,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));

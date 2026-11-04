@@ -60,6 +60,12 @@
 
 ## 专题计划
 
+- [耳廓主动转向：四角色修正](LEARNER_AVATAR_EAR_ORIENTATION.md)：当前耳动实现；独立转向/保持/回正、小角度耳平面投影与单独发梢惯性，附近景与四角色实际动画、60 项测试和素材边界。
+
+- [动物耳部运动：重审当前随动](LEARNER_AVATAR_ANIMAL_EAR_RESEARCH.md)：用户否定旧耳动自然度后的机构资料/论文核查；区分主动耳廓转向与被动发梢随动，列明小熊猫/浣熊身份和证据缺口；后续实现见耳廓主动转向。
+
+- [四角色耳发随动与静止小动作](LEARNER_AVATAR_SECONDARY_MOTION.md)：历史弹簧/正弦版本，用户已否定耳动自然度；保留实现与检查记录，当前以耳廓主动转向为准。
+
 - [四款学生虚拟形象：同页互动预览](LEARNER_AVATAR_FOUR_CHARACTERS.md)：星狐、小熊猫、白兔、女性月猫，独立绑定与同页切换，附真实绘制器输出和原星狐零差异检查。
 - [给手势白板研究 agent 的 prompt](LEARNER_GESTURE_WHITEBOARD_RESEARCH_PROMPT.md)：MediaPipe Hand Landmarker、本地白板笔画映射与独立分支协作范围。
 
@@ -77,7 +83,7 @@
 
 - [二维星狐嘴型与头发/耳朵边缘修正](LEARNER_AVATAR_RESPONSE_FIX.md)：扩大相机张嘴响应与可见行程，撤销头部顶部/两侧的固定约束，附同输入前后对比与既有识别动作回放；保留源图裁切和缺失侧脸限制。
 
-- [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：头像分支已整合 M0–M6 main；当前正面 2D 画稿、完整代码/素材/验证地图、用户最新约束，以及 v2 课程包保存和正式播放接入的未完成事项。接手头像工作先读本文。
+- [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：当前接手入口；四角色/最新耳廓转向、交接提交范围、代码/素材/验证与复现、用户认可边界，以及 M6 目录/动态播放/v2 保存缺口。
 
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。

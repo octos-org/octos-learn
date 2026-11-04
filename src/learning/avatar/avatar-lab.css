@@ -5,6 +5,7 @@
 .avatar-lab-heading h1 { margin: 10px 0 0; font-size: 30px; font-weight: 600; }
 .avatar-lab-heading > span, .avatar-lab-stage-label { padding: 6px 12px; border-radius: 999px; color: #605230; background: #eee4ca; font-size: 12px; }
 .avatar-lab-intro { margin: 14px 0 22px; max-width: 760px; color: #53697c; line-height: 1.7; }
+.avatar-lab-natural-motion { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; }
 .avatar-lab-characters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; max-width: 620px; margin-bottom: 22px; }
 .avatar-lab-characters button { display: grid; justify-items: center; gap: 6px; padding: 8px; min-width: 0; border: 2px solid #d7dfe2; border-radius: 14px; background: #fffdf7; color: #24394b; cursor: pointer; }
 .avatar-lab-characters button[aria-pressed="true"] { border-color: #506e89; background: #eaf0f3; }

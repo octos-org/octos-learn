@@ -27,7 +27,7 @@ it("adds bounded ear and hair following while keeping facial geometry and clothi
     for(const point of face)expect(paintedMotionPoint(point,pitch,yaw,roll)).toEqual(paintedHeadPoint(point,pitch,yaw,roll));
     for(const point of [[35,-107],[475,-107],[10,180],[500,180]]as Array<[number,number]>){
       const rigid=paintedHeadPoint(point,pitch,yaw,roll),moved=paintedMotionPoint(point,pitch,yaw,roll);
-      expect(Math.hypot(moved[0]-rigid[0],moved[1]-rigid[1])).toBeLessThan(8);
+      expect(Math.hypot(moved[0]-rigid[0],moved[1]-rigid[1])).toBeLessThan(40);
       expect(moved).not.toEqual(rigid);
     }
     expect(paintedMotionPoint([256,420],pitch,yaw,roll)).toEqual([256,420]);

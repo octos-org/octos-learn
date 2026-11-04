@@ -33,6 +33,7 @@ export default function AvatarLabPage() {
   const [mode, setMode] = useState<"idle" | "demo" | "camera" | "replay" | "manual">("idle");
   const [manual, setManual] = useState(INITIAL_MANUAL);
   const [characterId,setCharacterId]=useState<PaintedCharacterId>('star-fox');
+  const [naturalMotion,setNaturalMotion]=useState(true);
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
   const [metrics, setMetrics] = useState<AvatarRenderMetrics | null>(null);
@@ -206,12 +207,13 @@ export default function AvatarLabPage() {
         </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <IllustratedAvatarStage key={characterId} characterId={characterId} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <IllustratedAvatarStage key={characterId} characterId={characterId} idleMotion={naturalMotion&&mode!=='replay'} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
             <span className="avatar-lab-stage-label">{paintedCharacter(characterId).name()}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录动作片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
           <section className="avatar-lab-controls" aria-label={tr("头像控制")}>
+            <label className="avatar-lab-natural-motion"><input type="checkbox" checked={naturalMotion} onChange={event=>setNaturalMotion(event.target.checked)} />{tr('耳朵与毛发自然小动作')}</label>
             <div className="avatar-lab-actions">
               <button type="button" className="teach-primary" disabled={mode === "camera" || modelCheck === "running"} onClick={startCamera}><Camera size={17} />{tr("开启摄像头跟随")}</button>
               <button type="button" className="teach-secondary" onClick={demo}><Play size={17} />{tr("播放演示动作")}</button>

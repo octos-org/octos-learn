@@ -1,0 +1,122 @@
+{
+  "characters": {
+    "star-fox": {
+      "peakLeftTwitchMs": 1850,
+      "idleChange": {
+        "max": 228,
+        "changed": 18508
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        20.578268568025177,
+        24.559063391334355
+      ]
+    },
+    "red-panda": {
+      "peakLeftTwitchMs": 150,
+      "idleChange": {
+        "max": 181,
+        "changed": 21482
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        22.190239775417204,
+        26.472001173500992
+      ]
+    },
+    "white-rabbit": {
+      "peakLeftTwitchMs": 6350,
+      "idleChange": {
+        "max": 190,
+        "changed": 23608
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        26.59358047851706,
+        29.98207806823766
+      ]
+    },
+    "moon-cat": {
+      "peakLeftTwitchMs": 1050,
+      "idleChange": {
+        "max": 146,
+        "changed": 16816
+      },
+      "faceChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "bodyChange": {
+        "max": 0,
+        "changed": 0
+      },
+      "disabledMax": 0,
+      "repeatMax": 0,
+      "minAlpha": 255,
+      "minimumTriangleArea": 79.24450714457726,
+      "headTurnTipTravelNativePx": [
+        19.96255088666272,
+        23.496016232225063
+      ]
+    }
+  },
+  "spring": {
+    "release": {
+      "leftEar": -0.11987901252769372,
+      "rightEar": -0.11987901252769372,
+      "hair": -16.474724607720045,
+      "forelock": -8.692185989349227
+    },
+    "settled": {
+      "leftEar": 6.0658681666943e-10,
+      "rightEar": 6.0658681666943e-10,
+      "hair": 0.00003391091482098607,
+      "forelock": 0.000017891648310458935
+    }
+  },
+  "media": {
+    "idle": {
+      "frames": 120,
+      "durationMs": 12000
+    },
+    "following": {
+      "frames": 70,
+      "durationMs": 7000
+    }
+  },
+  "source": "Actual current Canvas product painters with synthetic neutral and head motion inputs. Facial expressions held fixed; no webcam.",
+  "limits": "Native pixel checks/media, no browser/TV performance claim. Spring history is not serialized; seeks reset it. Idle motion is decorative and not recorded into facial channels."
+}

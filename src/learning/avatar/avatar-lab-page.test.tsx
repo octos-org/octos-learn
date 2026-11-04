@@ -5,10 +5,10 @@ import type { CaptureCallbacks } from "./face-capture";
 import type { FaceFrame } from "./face-frame";
 
 const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbacks: null as CaptureCallbacks | null }));
-const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'' }));
+const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'',idleMotion:false }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
-vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox'; return <div />; } }));
+vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId,idleMotion=false }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string;idleMotion?:boolean }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox';stageMock.idleMotion=idleMotion; return <div />; } }));
 vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
@@ -24,6 +24,13 @@ import AvatarLabPage from "./avatar-lab-page";
 beforeEach(() => { captureMock.starts.mockClear(); captureMock.stops.mockClear(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const open = () => render(<MemoryRouter><AvatarLabPage /></MemoryRouter>);
+
+it('enables natural motion on entry without a camera and freezes it for pose inspection',()=>{
+  open();expect(stageMock.idleMotion).toBe(true);expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(false);
+  fireEvent.click(screen.getByRole('checkbox',{name:'耳朵与毛发自然小动作'}));expect(stageMock.idleMotion).toBe(true);
+  fireEvent.click(screen.getByRole('button',{name:'皱眉',exact:true}));expect(stageMock.idleMotion).toBe(false);
+});
 
 it('switches the fitted character without restarting capture or losing the current expression',()=>{
   open();expect(stageMock.characterId).toBe('star-fox');

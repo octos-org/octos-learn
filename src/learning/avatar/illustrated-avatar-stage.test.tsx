@@ -44,6 +44,14 @@ it("stops scheduling when inactive and redraws a changed paused pose", () => {
   advance(300); expect(clear.mock.calls.length).toBeGreaterThan(previous);
 });
 
+it('continues natural ear and hair motion without active capture and stops it when disabled',()=>{
+  const page=render(<IllustratedAvatarStage frame={neutralFrame} active={false} idleMotion />);
+  act(()=>images.forEach(image=>image.onload!()));advance(100);advance(200);advance(300);
+  expect(raf.size).toBe(1);const calls=clear.mock.calls.length;advance(400);expect(clear.mock.calls.length).toBeGreaterThan(calls);
+  page.rerender(<IllustratedAvatarStage frame={neutralFrame} active={false} idleMotion={false} />);
+  advance(500);advance(600);expect(raf.size).toBe(0);
+});
+
 it('releases the old painter and ignores its late loading callbacks when switching characters',()=>{
   const page=render(<IllustratedAvatarStage frame={neutralFrame} active />);
   const oldImages=[...images],lateLoad=images[0].onload!;

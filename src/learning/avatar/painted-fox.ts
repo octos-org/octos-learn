@@ -1,6 +1,7 @@
 import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
+import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -9,6 +10,7 @@ export const PAINTED_FOX_VIEW = { size:704, x:96, y:192, frame:736 } as const;
 export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource>;
 type Point = [number, number];
 export interface PaintedFaceRig {
+  motion?:PaintedMotionProfile;
   eyes?:readonly[EyeProfile,EyeProfile];
   mouth?:{curve:Point[];rect:{x:number;y:number;w:number;h:number};center:number};
   brows?:Array<{rect:[number,number,number,number];points:Point[]}>;
@@ -51,18 +53,9 @@ export function paintedHeadPoint([x,y]: Point, pitch:number, yaw:number, roll:nu
   return [x+((Math.cos(angle)-1)*dx-Math.sin(angle)*dy+bounded(yaw,-.45,.45)*18)*weight,
     y+(Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+bounded(pitch,-.35,.35)*14)*weight];
 }
-/** Small local bends above the ear roots and at the outer hair tips. Facial
- * geometry stays rigid; this does not pin or stretch the portrait boundary.
- * Pose-driven offsets are deterministic when recordings are replayed or sought.
- */
-export function paintedMotionPoint([x,y]:Point,pitch:number,yaw:number,roll:number):Point {
-  const turn=bounded(yaw,-.45,.45)/.45,tilt=bounded(roll,-.1,.1)/.1;
-  const ear=smooth((70-y)/110)*smooth((Math.abs(x-256)-100)/65);
-  const rootX=x<256?96:420,dx=x-rootX,dy=y-35,angle=(turn*.024+tilt*.018)*ear;
-  const hair=smooth((Math.abs(x-256)-145)/80)*smooth((y+20)/90)*(1-smooth((y-275)/60));
-  const moved:Point=[x+(Math.cos(angle)-1)*dx-Math.sin(angle)*dy+hair*(turn*2.5+tilt*1.5),
-    y+Math.sin(angle)*dx+(Math.cos(angle)-1)*dy+hair*tilt*1.2];
-  return paintedHeadPoint(moved,pitch,yaw,roll);
+export function paintedMotionPoint(point:Point,pitch:number,yaw:number,roll:number,pose?:PaintedSecondaryPose,profile:PaintedMotionProfile=FOX_MOTION):Point {
+  const secondary=pose??createPaintedSecondaryMotion().sample(pitch,yaw,roll);
+  return paintedHeadPoint(paintedSecondaryPoint(point,secondary,profile),pitch,yaw,roll);
 }
 const mouthCurve: Point[] = [[224,272],[235,276],[247,277],[260,274],[272,277],[284,276],[296,272]];
 function curve(points: Point[], x: number) {
@@ -188,6 +181,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     });
   }
   const {size,x:padX,y:padY}=PAINTED_FOX_VIEW;
+  const secondaryMotion=createPaintedSecondaryMotion(),motionProfile=rig.motion??FOX_MOTION;
   const portrait=surface(size,size),portraitCtx=portrait.context;
   portraitCtx.drawImage(images.extended,0,0,size,size);
   const portraitSource=portraitCtx.getImageData(0,0,size,size);
@@ -200,12 +194,13 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   const headBackground=new Uint8ClampedArray(portraitSource.data);
   const paper=source.data.slice((350*512+10)*4,(350*512+10)*4+4);
   for(let i=0;i<(340+padY)*size*4;i+=4)headBackground.set(paper,i);
-  function deformHead(pitch:number,yaw:number,roll:number) {
+  function deformHead(pitch:number,yaw:number,roll:number,pose:PaintedSecondaryPose) {
     const input=portraitCtx.getImageData(0,0,size,size).data,out=headOutput.data;out.set(headBackground);
-    const points=vertices.map(([x,y])=>{const p=paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll);return[p[0]+padX,p[1]+padY]as Point;});
+    const points=vertices.map(([x,y])=>{const p=paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll,pose,motionProfile);return[p[0]+padX,p[1]+padY]as Point;});
     for(const [ia,ib,ic]of triangles) {
       const a=vertices[ia],b=vertices[ib],c=vertices[ic],p=points[ia],q=points[ib],r=points[ic];
-      if(a[0]===p[0]&&a[1]===p[1]&&b[0]===q[0]&&b[1]===q[1]&&c[0]===r[0]&&c[1]===r[1])continue;
+      // Idle twitches leave most of the head stationary. Those triangles still
+      // restore the face onto the cleared backdrop; skipping them erases it.
       const det=(q[0]-p[0])*(r[1]-p[1])-(r[0]-p[0])*(q[1]-p[1]);
       if(det<=0)throw new Error('painted_head_fold');
       const minX=Math.max(0,Math.floor(Math.min(p[0],q[0],r[0]))),maxX=Math.min(size-1,Math.ceil(Math.max(p[0],q[0],r[0])));
@@ -225,7 +220,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean}={}) {
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
-      const auto=options.idleMotion&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
+      const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
       const eyeState=paintedEyeControls(frame),round=Math.max(c('mouthPucker'),c('mouthFunnel'));
       const open=Math.max(paintedJawAmount(c('jawOpen'),frame.source),round*.85)*(1-c('mouthClose'));
       ctx.clearRect(0,0,512,512);ctx.drawImage(images.base,0,0,512,512);
@@ -238,10 +233,16 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       // inside the outpainted portrait, so this patch has no visible boundary.
       portraitCtx.drawImage(texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
       const pitch=bounded(frame.rotation[0],-.35,.35),yaw=bounded(-frame.rotation[1],-.45,.45),roll=bounded(-frame.rotation[2],-.10,.10);
+      const secondary=secondaryMotion.sample(pitch,yaw,roll,options.timeMs===undefined?undefined:frame.timeMs);
+      if(options.idleMotion){
+        const idle=paintedIdlePose(options.timeMs??0,motionProfile);
+        for(const key of Object.keys(secondary)as Array<keyof PaintedSecondaryPose>)secondary[key]+=idle[key];
+      }
+      const moving=pitch!==0||yaw!==0||roll!==0||Object.values(secondary).some(n=>Math.abs(n)>.00001);
       target.clearRect(0,0,width,height);const scale=Math.min(width/PAINTED_FOX_VIEW.frame,height/PAINTED_FOX_VIEW.frame),ox=(width-size*scale)/2,oy=(height-size*scale)/2;
       target.save();target.translate(ox,oy);target.scale(scale,scale);
       if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,size,size);}
-      target.drawImage(pitch===0&&yaw===0&&roll===0?portrait.canvas:deformHead(pitch,yaw,roll),0,0);
+      target.drawImage(moving?deformHead(pitch,yaw,roll,secondary):portrait.canvas,0,0);
       target.restore();
     },
   };
