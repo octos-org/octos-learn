@@ -2464,7 +2464,6 @@
   "在小屏幕笔记本上": "On a small laptop",
   "在大屏幕上": "On a big screen",
   "{{v0}}：{{v1}}。": "{{v0}}: {{v1}}.",
-  "在白板上点一张卡片、它的一部分或你写的字。": "Tap a card, a part of it, or your writing on the board.",
   "整理": "Neat",
   "← 我的课": "← My lessons",
   "正在录第 {{v0}} 张 · {{v1}}": "Recording card {{v0}} · {{v1}}",
@@ -3026,5 +3025,9 @@
   "关闭隔空书写": "Turn off air writing",
   "仅在本机识别，不会因开启手势而给老师发送画面。": "Recognition runs locally. Enabling air writing does not send camera images to the teacher.",
   "继续隔空书写": "Resume air writing",
-  "暂停隔空书写": "Pause air writing"
+  "暂停隔空书写": "Pause air writing",
+  "撤销": "Undo",
+  "撤销（⌘/Ctrl+Z）": "Undo (⌘/Ctrl+Z)",
+  "激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。": "Laser pointer: tap a card, a part of it, or your writing. A red dot flashes for a moment, like pointing and saying “look here.”",
+  "荧光笔：点一下卡片、它的一部分或你写的字，它会一直标黄，提醒大家这是重点。": "Highlighter: tap a card, a part of it, or your writing. It stays highlighted in yellow, so everyone knows it matters."
 }

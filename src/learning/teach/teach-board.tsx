@@ -45,10 +45,23 @@ export interface TeachBoardHandle {
   selectAllInk(): void;
   /** The selected strokes as an image, without changing them; null when nothing is selected. */
   selectedInk(): Promise<{ svg: string; width: number; height: number } | null>;
-  /** Freezes the selected strokes on their own and removes them from the live ink; null when nothing is selected. */
-  cutSelectedInk(): Promise<FrozenInk | null>;
+  /**
+   * Freezes the selected strokes on their own and removes them from the live
+   * ink; null when nothing is selected. `undoSteps` is how many ink undos put
+   * the strokes back.
+   */
+  cutSelectedInk(): Promise<(FrozenInk & { undoSteps: number }) | null>;
+  /** Hears each change the learner makes to the live ink (a stroke drawn, erased or moved); not the board's own changes. */
+  onInkEdit(listener: (steps: number) => void): () => void;
+  /** Takes back the last `steps` changes to the live ink. */
+  undoInk(steps?: number): Promise<void>;
   /** Shows the pointer on what the learner tapped, or at a board point; briefly, or until replaced when `hold` is set; null hides it. */
   showPointer(target: BoardTarget | { at: { x: number; y: number } } | null, options?: { hold?: boolean }): void;
+  /**
+   * Highlighter marks on the take's live writing, in board units. Writing that
+   * is frozen into the lesson shows its highlight from the lesson itself.
+   */
+  markInk(boxes: BoardBox[]): void;
   /** Whether a live stroke still covers a board point (it may have been erased or made neat). */
   hasStrokeAt(point: { x: number; y: number }): boolean;
 }
@@ -56,6 +69,8 @@ export interface TeachBoardHandle {
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
 /** How long the pointer stays where the learner tapped with the laser. */
 const POINTER_MS = 1_600;
+/** How far, in board units, a highlighter mark reaches past the writing it marks. */
+const MARK_PAD = 6;
 /** How close, in board units, a tap must be to a stroke of writing to point at it. */
 const STROKE_TOLERANCE = 10;
 
@@ -130,6 +145,20 @@ type InkModule = typeof import("octos-lesson-language/ink-runtime");
 type InkRuntime = ReturnType<InkModule["mountInkRuntime"]>;
 
 /**
+ * Runs one of the board's own ink changes (undo, cutting writing out) without
+ * reporting it as the learner's; returns how many ink steps it took.
+ */
+async function quietInk(ink: InkRuntime, quiet: { current: number }, revision: { current: number }, change: () => unknown): Promise<number> {
+  const before = ink.state.content_revision;
+  quiet.current += 1;
+  try { await change(); } finally {
+    revision.current = ink.state.content_revision;
+    quiet.current -= 1;
+  }
+  return ink.state.content_revision - before;
+}
+
+/**
  * The board while a learner records: the compiled lesson so far, laid out and
  * framed by the same teaching layout and camera rules as playback.
  */
@@ -151,6 +180,11 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
+  const marksRef = useRef<HTMLDivElement | null>(null);
+  // Live-ink changes the learner makes, told apart from the board's own (undo, cutting writing out).
+  const inkEditsRef = useRef(new Set<(steps: number) => void>());
+  const inkRevisionRef = useRef(0);
+  const inkQuietRef = useRef(0);
   const controlsRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<VariableControlsView | null>(null);
   // The compiled board, and what the learner's drags show on top of it until
@@ -247,6 +281,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       pointerRef.current = null;
       viewport.removeEventListener("click", handleClick);
       unsubscribeLocale();
+      marksRef.current = null;
       void inkRef.current?.destroy();
       inkRef.current = null;
       mounted.destroy();
@@ -266,6 +301,14 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       });
       await ink.ready;
       ink.setMode("navigate");
+      inkRevisionRef.current = ink.state.content_revision;
+      // Each js-draw command is one change and one undo step.
+      ink.subscribe((state) => {
+        if (inkRef.current !== ink || inkQuietRef.current || state.content_revision === inkRevisionRef.current) return;
+        const steps = state.content_revision - inkRevisionRef.current;
+        inkRevisionRef.current = state.content_revision;
+        if (steps > 0) for (const listener of inkEditsRef.current) listener(steps);
+      });
       inkRef.current = ink;
     },
     setPen(mode) {
@@ -322,8 +365,17 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const snapshot = await ink.captureSelectionSnapshot();
       const { bounds } = snapshot;
       const annotates = annotationFor(mounted.elements.viewport, bounds);
-      await ink.deleteSelection();
-      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+      const undoSteps = await quietInk(ink, inkQuietRef, inkRevisionRef, () => ink.deleteSelection());
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}), undoSteps };
+    },
+    onInkEdit(listener) {
+      inkEditsRef.current.add(listener);
+      return () => { inkEditsRef.current.delete(listener); };
+    },
+    async undoInk(steps = 1) {
+      const ink = inkRef.current;
+      if (!ink) return;
+      await quietInk(ink, inkQuietRef, inkRevisionRef, async () => { for (let step = 0; step < steps; step++) await ink.undo(); });
     },
     showPointer(target, options) {
       const view = mountedRef.current?.view;
@@ -349,6 +401,24 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     },
     hasStrokeAt(point) {
       return Boolean(inkRef.current?.strokeBoundsAt(point, 0));
+    },
+    markInk(boxes) {
+      const mounted = mountedRef.current;
+      if (!mounted) return;
+      let layer = marksRef.current;
+      if (!layer && boxes.length) {
+        layer = document.createElement("div");
+        layer.className = "teach-ink-marks";
+        layer.setAttribute("aria-hidden", "true");
+        mounted.view.mountWorldLayer(layer);
+        marksRef.current = layer;
+      }
+      if (!layer) return;
+      layer.replaceChildren(...boxes.map((box) => {
+        const mark = document.createElement("div");
+        Object.assign(mark.style, { left: `${box.x - MARK_PAD}px`, top: `${box.y - MARK_PAD}px`, width: `${box.width + MARK_PAD * 2}px`, height: `${box.height + MARK_PAD * 2}px` });
+        return mark;
+      }));
     },
   }), []);
 

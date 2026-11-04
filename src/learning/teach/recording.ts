@@ -276,6 +276,31 @@ export function appendEvent(recording: LearnerRecording, key: string, event: Rec
   })));
 }
 
+/**
+ * Undo during a take: takes back the take's last `count` board actions, and
+ * with them the frozen ink (by snapshot) or ink mark (by selection) that the
+ * same step added (an arrow between two strokes adds two marks). Board content carried over from the kept take is never
+ * removed this way: only actions recorded in this take can be taken back.
+ */
+export function undoTakeEvents(
+  recording: LearnerRecording, key: string, count: number, now: string,
+  added: { inkSnapshot?: string; inkMarks?: string[] } = {},
+): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!Number.isInteger(count) || count < 0 || count > take.events.length) throw new RecordingError("Nothing to undo");
+  const ink = added.inkSnapshot ? (take.ink ?? []).filter((piece) => piece.snapshotId !== added.inkSnapshot) : take.ink;
+  const marks = new Set(added.inkMarks ?? []);
+  const inkMarks = marks.size ? (take.inkMarks ?? []).filter((mark) => !marks.has(mark.selection)) : take.inkMarks;
+  const next: Take = { ...take, events: take.events.slice(0, take.events.length - count) };
+  if (ink) next.ink = ink;
+  if (inkMarks) next.inkMarks = inkMarks;
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? next : candidate)),
+  })));
+}
+
 /** Adds ink frozen during the take, for example handwriting the learner just made neat. */
 export function addTakeInk(recording: LearnerRecording, key: string, ink: CardInk, now: string): LearnerRecording {
   const take = currentTake(findCard(recording, key));

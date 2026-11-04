@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles } from "lucide-react";
+import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
@@ -28,6 +28,7 @@ import {
   setPresenter,
   setReview,
   startTake,
+  undoTakeEvents,
   type BoardTarget,
   type CardInk,
   type InkMark,
@@ -64,6 +65,16 @@ type NeatStage =
   | { stage: "selecting"; selected: number }
   | { stage: "reading" }
   | { stage: "confirming"; latex: string; confidence: "high" | "medium" | "low" };
+
+/**
+ * One step Undo takes back during a take, newest last: a change to the live
+ * writing, board actions (with the ink marks their taps added), or writing
+ * made neat (the formula goes and the handwriting comes back).
+ */
+type UndoStep =
+  | { kind: "ink"; steps: number }
+  | { kind: "board"; events: number; inkMarks?: string[] }
+  | { kind: "neat"; inkSnapshot: string; inkSteps: number };
 
 const centre = (box: BoardBox) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
 const contains = (box: BoardBox, point: { x: number; y: number }) =>
@@ -107,6 +118,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stopSelecting = useRef<(() => void) | null>(null);
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const undoSteps = useRef<UndoStep[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const pushUndo = (step: UndoStep) => { undoSteps.current.push(step); setCanUndo(true); };
+  const clearUndo = () => { undoSteps.current = []; setCanUndo(false); };
   const [form, setForm] = useState<InsertForm | null>(null);
   const [nextTo, setNextTo] = useState<string | null>(null);
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
@@ -149,11 +164,51 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     }
   }, [recording, profileId]);
 
-  const record = (event: RecordingEvent) => {
+  /** Records board actions of the take; together they are one step for Undo unless `undo` is false (the caller adds its own). */
+  const record = (events: RecordingEvent | RecordingEvent[], undo: false | { inkMarks?: string[] } = {}) => {
     if (!recording || !card || !isRecording) return;
     const key = card.key;
-    update((current) => appendEvent(current, key, event, now()));
+    const list = Array.isArray(events) ? events : [events];
+    update((current) => list.reduce((next, event) => appendEvent(next, key, event, now()), current));
+    if (undo) pushUndo({ kind: "board", events: list.length, ...(undo.inkMarks?.length ? { inkMarks: undo.inkMarks } : {}) });
   };
+  // Drawing, erasing and moving writing are steps for Undo too, in the order they happen.
+  const [inkVersion, setInkVersion] = useState(0);
+  useEffect(() => boardRef.current?.onInkEdit((steps) => {
+    setInkVersion((version) => version + 1);
+    if (takeStartedAt.current !== null) pushUndo({ kind: "ink", steps });
+  }), []);
+  /** Takes back the take's latest step: what was added last disappears from the board, as if it was never done. */
+  const undo = async () => {
+    const key = card?.key;
+    const step = undoSteps.current.pop();
+    setCanUndo(undoSteps.current.length > 0);
+    if (!step || !key || !isRecording) return;
+    setArrowFrom(null);
+    boardRef.current?.showPointer(null);
+    if (step.kind === "board") update((current) => undoTakeEvents(current, key, step.events, now(), { inkMarks: step.inkMarks }));
+    if (step.kind === "neat") update((current) => undoTakeEvents(current, key, 1, now(), { inkSnapshot: step.inkSnapshot }));
+    if (step.kind !== "board") {
+      await boardRef.current?.undoInk(step.kind === "ink" ? step.steps : step.inkSteps);
+      setInkVersion((version) => version + 1);
+    }
+  };
+  // ⌘Z / Ctrl+Z is Undo while recording, except while typing; caught first, so the ink editor never undoes on its own.
+  const undoRef = useRef(undo);
+  useEffect(() => { undoRef.current = undo; });
+  useEffect(() => {
+    if (!isRecording) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "z" || !(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return;
+      const typing = event.target instanceof HTMLElement && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName));
+      if (typing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void undoRef.current();
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [isRecording]);
   const withTime = <T extends object>(event: T) => ({ t: elapsed(), ...event }) as T & { t: number };
 
   const openAdd = () => {
@@ -180,6 +235,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const key = card.key;
     setNotice(null);
     update((current) => startTake(current, key, now(), { fresh }));
+    clearUndo();
     cameraTake.current = latest.current?.presenter?.cameraMotion === "on";
     if (cameraTake.current) startCamera(takeStartedAt.current);
     void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
@@ -215,6 +271,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stop = async () => {
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
+    clearUndo();
     const performance = cameraTake.current ? stopCamera() : null;
     cameraTake.current = false;
     takeStartedAt.current = null;
@@ -358,7 +415,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const marks = unassignedMarks(key).filter((mark) => contains(frozen, centre(mark.box)) && !board.hasStrokeAt(centre(mark.box)));
     const ink = await keepInk(key, take, frozen, [selection], part, marks);
     update((current) => addTakeInk(current, key, { ...ink, neat: { selection, latex, alias } }, now()));
-    record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }));
+    record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }), false);
+    pushUndo({ kind: "neat", inkSnapshot: ink.snapshotId, inkSteps: frozen.undoSteps });
   };
 
   // Check my lesson: the screen check and Octo's review run together; what
@@ -390,6 +448,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     speechRef.current = null;
     cancelCamera();
     cameraTake.current = false;
+    clearUndo();
     setLiveText("");
     setMic({ listening: null, speaking: false, transcribing: 0 });
     endNeat();
@@ -412,28 +471,34 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
-  /** A pointing tool used on a card, part, or stroke of writing; `at` is where to show the pointer when not on a card. */
-  const onTarget = (target: BoardTarget, at?: { x: number; y: number }) => {
+  /**
+   * A pointing tool used on a card, part, or stroke of writing; `at` is where
+   * to show the pointer when not on a card, `mark` the ink mark a tap on
+   * writing added. The laser points for a moment; the highlighter's mark
+   * stays (the board draws it from the recording).
+   */
+  const onTarget = (target: BoardTarget, at?: { x: number; y: number }, mark?: string) => {
     const pointer = at ? { at } : target;
+    const marks = (...selections: Array<string | undefined>) => ({ inkMarks: selections.filter((selection): selection is string => Boolean(selection)) });
     if (tool === "laser") {
-      record(withTime({ type: "tool.laser" as const, target }));
+      record(withTime({ type: "tool.laser" as const, target }), marks(mark));
       boardRef.current?.showPointer(pointer);
     }
-    if (tool === "highlighter") {
-      record(withTime({ type: "tool.highlighter" as const, target }));
-      boardRef.current?.showPointer(pointer);
-    }
+    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }), marks(mark));
     if (tool === "arrow") {
       if (!arrowFrom) {
         setArrowFrom(target);
+        arrowFromMark.current = mark;
         boardRef.current?.showPointer(pointer, { hold: true });
         return;
       }
-      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }));
+      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }), marks(arrowFromMark.current, mark));
       setArrowFrom(null);
+      arrowFromMark.current = undefined;
       boardRef.current?.showPointer(null);
     }
   };
+  const arrowFromMark = useRef<string | undefined>(undefined);
   // A stroke of the take's own writing becomes a selection when the writing is frozen.
   const onStroke = (box: BoardBox) => {
     if (!card || !recordingTake) return;
@@ -441,8 +506,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const marks = latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.inkMarks ?? [];
     const selection = `sel-${key}-t${recordingTake.take}-m${marks.length + 1}`;
     update((current) => addInkMark(current, key, { selection, box }, now()));
-    onTarget({ inkSelection: selection }, centre(box));
+    onTarget({ inkSelection: selection }, centre(box), selection);
   };
+  // The highlighter's marks on writing that is still live; frozen writing shows its marks from the lesson.
+  const liveTake = card ? currentTake(card) : undefined;
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const frozen = new Set((liveTake?.ink ?? []).flatMap((ink) => ink.selections));
+    const highlighted = new Set((liveTake?.events ?? []).flatMap((event) => (event.type === "tool.highlighter" && "inkSelection" in event.target ? [event.target.inkSelection] : [])));
+    board.markInk((liveTake?.inkMarks ?? [])
+      .filter((mark) => highlighted.has(mark.selection) && !frozen.has(mark.selection) && board.hasStrokeAt(centre(mark.box)))
+      .map((mark) => mark.box));
+  }, [liveTake, inkVersion]);
 
   useEffect(() => {
     if (!isRecording) takeStartedAt.current = null;
@@ -477,7 +553,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
   const hint = !isRecording ? null
     : addOpen ? null
-      : tool === "laser" || tool === "highlighter" ? tr("在白板上点一张卡片、它的一部分或你写的字。")
+      : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
+        : tool === "highlighter" ? tr("荧光笔：点一下卡片、它的一部分或你写的字，它会一直标黄，提醒大家这是重点。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
           : tool === "pen" ? tr("直接在白板上写。写在图上的会贴在那张图上。")
             : null;
@@ -577,6 +654,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-tool teach-tool-add" disabled={!isRecording} aria-pressed={addOpen} onClick={() => (addOpen ? closeAdd() : openAdd())}>
               <Plus size={20} aria-hidden="true" />{tr("放入")}
             </button>
+            <span className="teach-dock-divider" aria-hidden="true" />
+            <button type="button" className="teach-tool" disabled={!isRecording || !canUndo} title={tr("撤销（⌘/Ctrl+Z）")} onClick={() => void undo()}>
+              <Undo2 size={20} aria-hidden="true" />{tr("撤销")}
+            </button>
           </div>
         </section>
 
@@ -624,9 +705,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   variables={recordingVariables(recording)}
                   valueOf={(alias) => boardRef.current?.variableValue(alias)}
                   onSave={(exercise) => {
-                    record(withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }));
-                    record(withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }));
-                    if (exercise.hint) record(withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint }));
+                    record([
+                      withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }),
+                      withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }),
+                      ...(exercise.hint ? [withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint })] : []),
+                    ]);
                   }}
                 />
               )}

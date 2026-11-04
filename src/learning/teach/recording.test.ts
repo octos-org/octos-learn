@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  addInkMark,
+  addTakeInk,
   appendEvent,
   cancelTake,
   correctTranscript,
@@ -11,6 +13,7 @@ import {
   recordingComplete,
   RecordingError,
   startTake,
+  undoTakeEvents,
   type LearnerRecording,
 } from "./recording";
 
@@ -61,6 +64,29 @@ describe("learner recording", () => {
     const later = appendEvent(recording, "card-1", laser(500), now);
     expect(() => appendEvent(later, "card-1", laser(100), now)).toThrow(RecordingError);
     expect(() => appendEvent(slopeLesson(), "card-2", laser(0), now)).toThrow(RecordingError);
+  });
+
+  it("undoes the take's latest actions with the ink they added, but not carried-over board content", () => {
+    let recording = startTake(slopeLesson(), "card-1", now);
+    recording = appendEvent(recording, "card-1", { t: 0, type: "component.insert", panel: "graph", alias: "sine", expression: "sin(x)", x: [-7, 7], y: [-2, 2] }, now);
+    recording = finishTake(recording, "card-1", now, { durationMs: 2000, asrText: "A sine graph.", speechSpanMs: [0, 2000] });
+    // Re-recording keeps the graph on the board; this take adds a formula from neat writing.
+    recording = startTake(recording, "card-1", now);
+    recording = addTakeInk(recording, "card-1", { snapshotId: "ink-snap:neat@v1", sha256: "a".repeat(64), selections: ["sel-n1"] }, now);
+    recording = appendEvent(recording, "card-1", { t: 400, type: "make_neat.confirmed", selection: "sel-n1", latex: "y=\\sin x", alias: "formula-1", replacesInk: true }, now);
+    recording = addInkMark(recording, "card-1", { selection: "sel-m1", box: { x: 0, y: 0, width: 10, height: 10 } }, now);
+    recording = appendEvent(recording, "card-1", { t: 600, type: "tool.highlighter", target: { inkSelection: "sel-m1" } }, now);
+    const take = () => currentTake(recording.cards[0]!)!;
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert", "make_neat.confirmed", "tool.highlighter"]);
+
+    recording = undoTakeEvents(recording, "card-1", 1, now, { inkMarks: ["sel-m1"] });
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert", "make_neat.confirmed"]);
+    expect(take().inkMarks).toEqual([]);
+    recording = undoTakeEvents(recording, "card-1", 1, now, { inkSnapshot: "ink-snap:neat@v1" });
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert"]);
+    expect(take().ink).toEqual([]);
+    expect(() => undoTakeEvents(recording, "card-1", 2, now)).toThrow(RecordingError);
+    expect(() => undoTakeEvents(slopeLesson(), "card-1", 1, now)).toThrow(RecordingError);
   });
 
   it("allows only one card to record at a time", () => {

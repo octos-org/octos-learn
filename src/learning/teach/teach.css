@@ -187,3 +187,10 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-camera-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
 .teach-camera-status { margin: 8px 0 0; padding: 6px 10px; border-radius: 10px; background: #eef4f1; color: #24584a; font-size: 13px; }
 .teach-camera-status[data-state="lost"], .teach-camera-status[data-state="failed"] { background: #fbf1e3; color: #7a4b12; }
+
+/* Highlighter: a lasting marker wash, unlike the laser's brief red dot. Learner
+   lessons only use focus emphasis for the highlighter, so recording and every
+   playback of a learner lesson show the same mark. */
+.teach-studio .board-node.emphasis-focus { border-color: #e0a800; box-shadow: 0 0 0 4px #ffd84d, 0 0 0 10px rgba(255, 216, 77, 0.32); background-image: linear-gradient(rgba(255, 224, 102, 0.2), rgba(255, 224, 102, 0.2)); }
+.teach-ink-marks { position: absolute; inset: 0; pointer-events: none; }
+.teach-ink-marks > div { position: absolute; border-radius: 8px; background: rgba(255, 214, 51, 0.38); mix-blend-mode: multiply; }

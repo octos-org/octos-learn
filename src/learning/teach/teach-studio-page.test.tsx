@@ -22,6 +22,9 @@ const board = vi.hoisted(() => ({
   onStroke: undefined as ((box: { x: number; y: number; width: number; height: number }) => void) | undefined,
   strokes: [] as Array<{ x: number; y: number }>,
   inkDocuments: [] as string[],
+  inkEdits: new Set<(steps: number) => void>(),
+  inkUndos: [] as number[],
+  marks: [] as Array<Array<{ x: number; y: number; width: number; height: number }>>,
 }));
 vi.mock("./teach-board", async () => {
   const { forwardRef, useImperativeHandle } = await import("react");
@@ -42,7 +45,10 @@ vi.mock("./teach-board", async () => {
         selectInk: (onChange: (selected: number) => void) => { board.pen.push("select"); board.onSelect = onChange; return () => { board.onSelect = undefined; }; },
         selectAllInk: () => { board.selected ??= { svg: "<svg/>", width: 80, height: 40 }; },
         selectedInk: async () => board.selected,
-        cutSelectedInk: async () => board.cut,
+        cutSelectedInk: async () => (board.cut ? { ...board.cut, undoSteps: 1 } : null),
+        onInkEdit: (listener: (steps: number) => void) => { board.inkEdits.add(listener); return () => { board.inkEdits.delete(listener); }; },
+        undoInk: async (steps = 1) => { board.inkUndos.push(steps); },
+        markInk: (boxes: Array<{ x: number; y: number; width: number; height: number }>) => { board.marks.push(boxes); },
         showPointer: (target: BoardTarget | { at: { x: number; y: number } } | null) => { board.pointers.push(target); },
         hasStrokeAt: (point: { x: number; y: number }) => board.strokes.some((stroke) => stroke.x === point.x && stroke.y === point.y),
       }));
@@ -122,6 +128,9 @@ beforeEach(() => {
   board.selected = null;
   board.cut = null;
   board.pointers = [];
+  board.inkEdits.clear();
+  board.inkUndos = [];
+  board.marks = [];
   screenCheck.results = [];
   board.strokes = [];
   voice.pending = null;
@@ -624,4 +633,91 @@ it("puts a new graph next to a card of the current row, picked in the list or ta
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[1]!.takes.at(-1)!;
   expect(take.events.at(-1)).toMatchObject({ type: "component.insert", panel: "graph", nextTo: "grid-1" });
   expect(board.compiled!.lesson.steps[0]!.beats[1]!.actions[0]).toMatchObject({ place: { relation: "right_of", anchor: "grid-1" }, role: "supporting_visual" });
+});
+
+const takeEvents = () => loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!.events.map((event) => event.type);
+const undoButton = () => screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement;
+
+it("undoes the take's steps newest first: a graph, writing, a grid — and only this take's", async () => {
+  renderStudio();
+  expect(undoButton().disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  expect(undoButton().disabled).toBe(true);
+  addKind("Coordinate grid");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  // A stroke of writing, then a graph.
+  act(() => { for (const listener of board.inkEdits) listener(1); });
+  time = 2_000;
+  addKind("Graph");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  expect(takeEvents()).toEqual(["component.insert", "component.insert"]);
+  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "write")).toHaveLength(2);
+
+  fireEvent.click(undoButton());
+  expect(takeEvents()).toEqual(["component.insert"]);
+  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "write")).toHaveLength(1);
+  expect(board.inkUndos).toEqual([]);
+  // ⌘Z / Ctrl+Z does the same: next comes the stroke, then the grid.
+  fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+  await waitFor(() => expect(board.inkUndos).toEqual([1]));
+  expect(takeEvents()).toEqual(["component.insert"]);
+  fireEvent.keyDown(window, { key: "z", metaKey: true });
+  expect(takeEvents()).toEqual([]);
+  expect(undoButton().disabled).toBe(true);
+
+  // A re-recorded card keeps its board from the kept take; Undo cannot take that away.
+  addKind("Coordinate grid");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
+  expect(takeEvents()).toEqual(["component.insert"]);
+  expect(undoButton().disabled).toBe(true);
+  fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+  expect(takeEvents()).toEqual(["component.insert"]);
+});
+
+it("undoing neat writing removes the formula and brings the handwriting back", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  board.inkCount = 2;
+  fireEvent.click(screen.getByRole("button", { name: "Neat" }));
+  board.selected = { svg: "<svg/>", width: 50, height: 30 };
+  act(() => board.onSelect!(2));
+  fireEvent.click(screen.getByRole("button", { name: "Make the circled writing neat" }));
+  await screen.findByRole("textbox", { name: "Formula (you can edit it)" });
+  board.cut = { svg: "<svg xmlns=\"http://www.w3.org/2000/svg\"/>", width: 50, height: 30 };
+  fireEvent.click(screen.getByRole("button", { name: "Use this" }));
+  await waitFor(() => expect(takeEvents()).toEqual(["make_neat.confirmed"]));
+
+  fireEvent.click(undoButton());
+  await waitFor(() => expect(board.inkUndos).toEqual([1]));
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!;
+  expect(take.events).toEqual([]);
+  expect(take.ink).toEqual([]);
+  expect(board.compiled).toBeNull();
+});
+
+it("the highlighter's mark stays, unlike the laser's brief dot", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Coordinate grid");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: /Highlighter/ }));
+  expect(screen.getByText(/stays highlighted/)).toBeTruthy();
+  const pointersBefore = board.pointers.length;
+  act(() => board.onTarget!({ node: "grid-1" }));
+  // No laser dot: the lesson itself shows the highlight, now and in playback.
+  expect(board.pointers.slice(pointersBefore).filter(Boolean)).toEqual([]);
+  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "emphasize")).toMatchObject({ target: "grid-1", emphasis: "focus" });
+
+  // On live writing, the board marks the stroke until the writing is frozen into the lesson.
+  board.strokes = [{ x: 150, y: 100 }];
+  act(() => board.onStroke!({ x: 140, y: 80, width: 20, height: 40 }));
+  await waitFor(() => expect(board.marks.at(-1)).toEqual([{ x: 140, y: 80, width: 20, height: 40 }]));
+  fireEvent.click(undoButton());
+  await waitFor(() => expect(board.marks.at(-1)).toEqual([]));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!.inkMarks).toEqual([]);
+
+  fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
+  expect(screen.getByText(/flashes for a moment/)).toBeTruthy();
 });
