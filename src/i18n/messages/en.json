@@ -3033,5 +3033,6 @@
   "再试一次": "Try again",
   "这台设备暂时画不出形象。摄像头动作仍会记下来，看课时形象会跟着动。": "This device can't draw your character right now. Your camera movement is still recorded, and your character will follow it when you watch the lesson.",
   "摄像头还没打开。打开后，你的形象会跟着你的表情和转头动。": "The camera isn't on yet. Once it's on, your character follows your expressions and head turns.",
-  "你的形象会跟着你的表情和转头动，录课时这些动作会记下来。只在这台设备上识别，不保存、不上传你的画面。": "Your character follows your expressions and head turns, and that movement is recorded with each card. It's worked out on this device only. Your picture is never saved or uploaded."
+  "你的形象会跟着你的表情和转头动，录课时这些动作会记下来。只在这台设备上识别，不保存、不上传你的画面。": "Your character follows your expressions and head turns, and that movement is recorded with each card. It's worked out on this device only. Your picture is never saved or uploaded.",
+  "你写的字": "Your writing"
 }

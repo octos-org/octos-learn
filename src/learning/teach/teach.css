@@ -200,3 +200,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-studio-avatar-stage > .illustrated-avatar { position: absolute; inset: 0; min-height: 0; }
 .teach-studio-avatar-stage > span { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 20px; background: #eee4ca; color: #605230; font-size: 11px; }
 .teach-studio[data-recording] .teach-studio-avatar-stage { height: 150px; }
+/* The sliders of the lesson's variables float at the top of the board while
+   recording, inside the editing area like in playback; the board keeps cards clear of them. */
+.teach-stage .teach-board-frame { position: relative; }
+.teach-stage .teach-board-controls { position: absolute; top: 12px; left: 50%; z-index: 2; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); box-sizing: border-box; padding: 6px 14px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 14px; background: #fffef9; box-shadow: 0 6px 18px rgba(31, 45, 51, 0.1); }

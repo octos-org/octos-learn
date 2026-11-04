@@ -69,6 +69,8 @@ export interface TeachBoardHandle {
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
 /** How long the pointer stays where the learner tapped with the laser. */
 const POINTER_MS = 1_600;
+/** Room kept at the top of the board for the sliders of the lesson's variables, which float there. */
+const CONTROLS_SPACE = 64;
 /** How far, in board units, a highlighter mark reaches past the writing it marks. */
 const MARK_PAD = 6;
 /** How close, in board units, a tap must be to a stroke of writing to point at it. */
@@ -181,6 +183,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
   const marksRef = useRef<HTMLDivElement | null>(null);
+  // The board's insets: the dock below, and the sliders above when the lesson has any.
+  const insetsRef = useRef({ top: 0, bottom: bottomInset });
   // Live-ink changes the learner makes, told apart from the board's own (undo, cutting writing out).
   const inkEditsRef = useRef(new Set<(steps: number) => void>());
   const inkRevisionRef = useRef(0);
@@ -212,6 +216,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     const setLocale = () => (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
     setLocale();
     const unsubscribeLocale = subscribeLocale(setLocale);
+    insetsRef.current = { top: 0, bottom: bottomInset };
     mounted.view.setViewportInsets({ top: 0, right: 0, bottom: bottomInset, left: 0 });
     mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
@@ -445,6 +450,12 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       .map((node) => [node.id, node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, node.content.camera) : node.content.camera])));
     mounted.view.render(state);
     sliderRef.current?.render(state);
+    // The sliders float inside the board, so the camera keeps cards clear of them.
+    const top = controlsRef.current?.childElementCount ? CONTROLS_SPACE : 0;
+    if (top !== insetsRef.current.top) {
+      insetsRef.current = { ...insetsRef.current, top };
+      mounted.view.setViewportInsets({ top, right: 0, bottom: insetsRef.current.bottom, left: 0 });
+    }
     const framed = focusCard ? cardEndTargets(compiled, focusCard) : state.focus;
     if (framed.length) mounted.view.focusTargets(framed);
     // A redraw hides the pointer; the learner's tap still shows until it fades.

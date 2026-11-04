@@ -639,10 +639,10 @@ it("puts a new graph next to a card of the current row, picked in the list or ta
   addKind("Graph");
   const choices = within(screen.getByRole("group", { name: "Put it next to…" }));
   expect((choices.getByRole("radio", { name: "On a new row below" }) as HTMLInputElement).checked).toBe(true);
-  expect(choices.getByRole("radio", { name: /Grid/ })).toBeTruthy();
+  expect(choices.getByRole("radio", { name: /Coordinate grid/ })).toBeTruthy();
   // Tapping the grid on the board picks it too.
   act(() => board.onTarget!({ node: "grid-1" }));
-  expect((choices.getByRole("radio", { name: /Grid/ }) as HTMLInputElement).checked).toBe(true);
+  expect((choices.getByRole("radio", { name: /Coordinate grid/ }) as HTMLInputElement).checked).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[1]!.takes.at(-1)!;
   expect(take.events.at(-1)).toMatchObject({ type: "component.insert", panel: "graph", nextTo: "grid-1" });

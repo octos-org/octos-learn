@@ -1,3 +1,4 @@
+import { setLocale } from "@/i18n";
 import { describe, expect, it } from "vitest";
 import { normalizeAuthoringLesson } from "octos-lesson-language";
 import { computeBoardLayout, visibleBoard } from "octos-lesson-language/web-runtime";
@@ -37,7 +38,12 @@ describe("currentRowCards", () => {
   it("lists the cards of the row a new figure would join, not handwriting that was made neat", () => {
     const recording = slope().cards.slice(0, 2);
     const compiled = compileRecording({ ...slope(), cards: recording }, { author, language: "en-US" });
-    expect(currentRowCards(compiled)).toEqual([{ alias: "grid-1", label: "Grid", card: 1 }, { alias: "formula-1", label: "m=2", card: 2 }]);
+    // Named in the learner's language (it was always English).
+    setLocale("zh-CN");
+    expect(currentRowCards(compiled)).toEqual([{ alias: "grid-1", label: "坐标网格", card: 1 }, { alias: "formula-1", label: "m=2", card: 2 }]);
+    setLocale("en-US");
+    expect(currentRowCards(compiled)[0]!.label).toBe("Coordinate grid");
+    setLocale("zh-CN");
   });
 
   it("starts again at a figure that opens a new row, but not at one put next to a card", () => {
