@@ -2,6 +2,8 @@
 
 更新：2026-11-04。用户认可被动耳部随动，要求兔耳幅度更大、四角色有区别；同时加强细腻嘴部动作和“眉目传情”。工作区 `octos-learn-avatar-local-rig`，分支 `codex/avatar-local-rig`，回退点 `e4e524f4`。不恢复主动转耳。
 
+发布状态更新：用户随后授权推送及创建 PR，现已推送至 `origin/codex/avatar-local-rig`，见 [PR #120](https://github.com/octos-org/octos-learn/pull/120)。依赖尚未合并的 #119，目前目标为其 `codex/avatar-capture-prototype` 分支；主交接和 PR 说明记录后续合并顺序。正文末尾“未推送”为实现阶段历史，当前已推送、未合并/部署。
+
 ## 当前执行清单
 
 - [x] 按狐狸、小熊猫、兔子、猫分别设置耳部惯性，并验证兔耳更明显、静止仍归零。
