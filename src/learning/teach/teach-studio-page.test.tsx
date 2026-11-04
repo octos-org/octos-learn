@@ -102,10 +102,13 @@ vi.mock("./readability-check", () => ({ checkReadability: vi.fn(async () => scre
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
-const camera = vi.hoisted(() => ({ starts: [] as number[], stops: 0, cancels: 0, saved: [] as unknown[],
+const camera = vi.hoisted(() => ({ starts: [] as number[], stops: 0, cancels: 0, opens: 0, closes: 0, saved: [] as unknown[],
   track: { schema: "octos.avatar-performance.v1", durationMs: 1000, frames: [] as unknown[] } as unknown }));
-vi.mock("./use-take-camera", () => ({ useTakeCamera: () => ({ video: { current: null }, state: "off", error: null,
-  start: (at: number) => { camera.starts.push(at); }, stop: () => { camera.stops++; return camera.track; }, cancel: () => { camera.cancels++; } }) }));
+vi.mock("./use-take-camera", () => ({ useTakeCamera: () => ({ video: { current: null }, state: "tracking", error: null,
+  open: () => { camera.opens++; }, close: () => { camera.closes++; }, frame: () => ({ timeMs: 0, source: "mediapipe", tracked: false, channels: {}, rotation: [0, 0, 0] }),
+  begin: (at: number) => { camera.starts.push(at); }, end: () => { camera.stops++; return camera.track; }, abort: () => { camera.cancels++; } }) }));
+// The character itself is drawn on a canvas; here it only says who it is and how the camera is doing.
+vi.mock("./studio-avatar", () => ({ default: ({ characterId, state }: { characterId: string; state: string }) => <section aria-label="Your character" data-character={characterId} data-state={state} /> }));
 vi.mock("./take-performance-store", () => ({ saveTakePerformance: async (key: unknown) => { camera.saved.push(key); }, deleteRecordingPerformances: async () => undefined }));
 
 import { createRecording, keptTake, planCards } from "./recording";
@@ -140,7 +143,7 @@ beforeEach(() => {
   voice.listening = true;
   voice.available = true;
   voice.transcripts = [];
-  camera.starts = []; camera.stops = 0; camera.cancels = 0; camera.saved = [];
+  camera.starts = []; camera.stops = 0; camera.cancels = 0; camera.opens = 0; camera.closes = 0; camera.saved = [];
   const recording = planCards(
     createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Finding slope", type: "math_off_map" }, goals: ["Find slope"] }),
     "2026-10-31T12:00:00.000Z",
@@ -201,22 +204,33 @@ it("records the learner's face movement with a take only when they turn the came
   expect(camera.starts).toEqual([]); expect(camera.saved).toEqual([]);
   expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.camera).toBeUndefined();
 
+  expect(screen.queryByRole("region", { name: "Your character" })).toBeNull();
   fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
   expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ cameraMotion: "on", mouthMotion: "basic" });
   expect(screen.getByText(/Your picture is never saved or uploaded/)).toBeTruthy();
+  // Turning it on starts the camera right away, and the learner's character follows them before recording.
+  expect(camera.opens).toBe(1);
+  const preview = await screen.findByRole("region", { name: "Your character" });
+  expect(preview.dataset.character).toBe("star-fox");
   time = 3_000;
   fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
   expect(camera.starts).toEqual([3_000]);
+  // It keeps following them while they record.
+  expect(await screen.findByRole("region", { name: "Your character" })).toBeTruthy();
   time = 5_000;
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(camera.saved).toHaveLength(1));
   expect(camera.saved[0]).toEqual({ profileId: "learner-1", recordingId: "rec-1", cardKey: "card-1", take: 2 });
   await waitFor(() => expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.camera).toBe(true));
 
-  // A discarded take turns the camera off and keeps nothing.
+  // A discarded take keeps nothing.
   fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
   fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
   expect(camera.cancels).toBe(1); expect(camera.saved).toHaveLength(1);
+  // Turning it off turns the camera off and the character goes away.
+  fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
+  expect(camera.closes).toBe(1);
+  expect(screen.queryByRole("region", { name: "Your character" })).toBeNull();
 });
 
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {

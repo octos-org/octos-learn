@@ -2847,7 +2847,6 @@
   "讲课的形象": "The presenter",
   "这次的摄像头动作没能保存，形象会只跟着配音动嘴。": "This take's camera movement couldn't be saved. Your character will only move its mouth with the narration.",
   "用摄像头带动我的形象": "Let my camera move my character",
-  "录的时候，形象会学你的表情和转头。只在这台设备上记下动作，不保存、不上传你的画面。": "While you record, your character copies your expressions and head turns. Only the movement is kept, on this device. Your picture is never saved or uploaded.",
   "摄像头：形象正在跟着你": "Camera: your character is following you",
   "摄像头：看不到你的脸，形象会先停在原来的样子": "Camera: can't see your face, so your character holds still for now",
   "摄像头不能用，这次形象只跟着配音动嘴。": "The camera isn't working. This time your character will only move its mouth with the narration.",
@@ -3029,5 +3028,10 @@
   "撤销": "Undo",
   "撤销（⌘/Ctrl+Z）": "Undo (⌘/Ctrl+Z)",
   "激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。": "Laser pointer: tap a card, a part of it, or your writing. A red dot flashes for a moment, like pointing and saying “look here.”",
-  "荧光笔：点一下卡片、它的一部分或你写的字，它会一直标黄，提醒大家这是重点。": "Highlighter: tap a card, a part of it, or your writing. It stays highlighted in yellow, so everyone knows it matters."
+  "荧光笔：点一下卡片、它的一部分或你写的字，它会一直标黄，提醒大家这是重点。": "Highlighter: tap a card, a part of it, or your writing. It stays highlighted in yellow, so everyone knows it matters.",
+  "你的形象": "Your character",
+  "再试一次": "Try again",
+  "这台设备暂时画不出形象。摄像头动作仍会记下来，看课时形象会跟着动。": "This device can't draw your character right now. Your camera movement is still recorded, and your character will follow it when you watch the lesson.",
+  "摄像头还没打开。打开后，你的形象会跟着你的表情和转头动。": "The camera isn't on yet. Once it's on, your character follows your expressions and head turns.",
+  "你的形象会跟着你的表情和转头动，录课时这些动作会记下来。只在这台设备上识别，不保存、不上传你的画面。": "Your character follows your expressions and head turns, and that movement is recorded with each card. It's worked out on this device only. Your picture is never saved or uploaded."
 }

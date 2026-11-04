@@ -1,12 +1,14 @@
-// The camera during a take, when the learner turned "the camera moves my
-// character" on. The face model runs on this device; only the smoothed face
-// and head parameters are recorded, on the take's own clock. The camera is
-// on only while a take records, and nothing is uploaded.
+// The camera behind "the camera moves my character". Once the learner turns
+// it on, the face model runs on this device and the studio shows their
+// character following them live, so they can see it works before recording.
+// During a take, the same smoothed face and head parameters are also recorded
+// on the take's own clock. Nothing is uploaded, and the camera image itself is
+// never shown or kept.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { FaceCapture, type CaptureError, type CaptureState } from "../avatar/face-capture";
-import { FaceSmoother } from "../avatar/face-frame";
+import { FaceSmoother, neutralFrame, type FaceFrame } from "../avatar/face-frame";
 import { PerformanceRecorder, type AvatarTrack } from "../avatar/performance-track";
 
 export type TakeCameraState = "off" | "starting" | "tracking" | "lost" | "failed";
@@ -16,31 +18,38 @@ export function useTakeCamera(clock: () => number) {
   const capture = useRef<FaceCapture | null>(null);
   const smoother = useRef(new FaceSmoother());
   const recorder = useRef(new PerformanceRecorder());
+  // Whether the current take is being recorded; the camera may be on without it.
+  const recording = useRef(false);
   const calibrated = useRef(false);
+  const latest = useRef<FaceFrame | null>(null);
   const generation = useRef(0);
   const [state, setState] = useState<TakeCameraState>("off");
   const [error, setError] = useState<CaptureError | null>(null);
   const clockRef = useRef(clock);
   useEffect(() => { clockRef.current = clock; }, [clock]);
 
-  const release = useCallback(() => {
+  /** Turns the camera off. */
+  const close = useCallback(() => {
     generation.current++;
     capture.current?.stop();
     capture.current = null;
+    recording.current = false;
+    latest.current = null;
     setState("off");
   }, []);
-  useEffect(() => release, [release]);
+  useEffect(() => close, [close]);
 
-  /** Starts the camera for a take that started at `takeStart` (on `clock`). */
-  const start = useCallback((takeStart: number) => {
-    release();
+  /** Turns the camera on, for the live character; nothing is recorded until a take begins. */
+  const open = useCallback(() => {
+    if (capture.current) return;
     const element = video.current;
     if (!element) return;
-    const run = generation.current;
+    const run = ++generation.current;
     smoother.current.reset();
     calibrated.current = false;
-    recorder.current.begin(takeStart);
+    latest.current = null;
     setError(null);
+    setState("starting");
     const owner = new FaceCapture(element, {
       onState: (next: CaptureState) => {
         if (run !== generation.current) return;
@@ -48,28 +57,51 @@ export function useTakeCamera(clock: () => number) {
       },
       onError: (code) => {
         if (run !== generation.current) return;
+        // A failed camera is released, so turning it on again can retry.
+        capture.current?.stop();
+        capture.current = null;
+        recording.current = false;
         setError(code); setState("failed");
       },
       onFrame: (frame) => {
         if (run !== generation.current) return;
-        // The learner looks at the board when a take starts: that pose is their neutral.
+        // The pose the learner holds when the camera starts, or when a take starts, is their neutral.
         if (!calibrated.current && frame.tracked) { smoother.current.calibrate(frame); calibrated.current = true; }
         const now = clockRef.current();
-        if (!recorder.current.append(smoother.current.update(frame, now), now)) capture.current?.stop();
+        const display = smoother.current.update(frame, now);
+        latest.current = display;
+        // Past the longest track the recorder keeps, frames are simply not added; the live character carries on.
+        if (recording.current) recorder.current.append(display, now);
       },
     });
     capture.current = owner;
     void owner.start();
-  }, [release]);
+  }, []);
 
-  /** Ends the take: the camera turns off and the recorded performance is returned, if a face was seen. */
-  const stop = useCallback((): AvatarTrack | null => {
-    const active = Boolean(capture.current) && recorder.current.recording;
-    release();
+  /** Starts recording the take that started at `takeStart` (on `clock`), turning the camera on if needed. */
+  const begin = useCallback((takeStart: number) => {
+    open();
+    if (!capture.current) return;
+    smoother.current.reset();
+    calibrated.current = false;
+    recorder.current.begin(takeStart);
+    recording.current = true;
+  }, [open]);
+
+  /** Ends the take's recording and returns its performance, if a face was seen; the camera stays on. */
+  const end = useCallback((): AvatarTrack | null => {
+    const active = recording.current && recorder.current.recording;
+    recording.current = false;
     if (!active) return null;
     const track = recorder.current.finish(clockRef.current());
     return track.frames.some((frame) => frame.tracked) && track.frames.length >= 2 && track.durationMs > 0 ? track : null;
-  }, [release]);
+  }, []);
 
-  return { video, state, error, start, stop, cancel: release };
+  /** Drops the take's recording; the camera stays on. */
+  const abort = useCallback(() => { recording.current = false; }, []);
+
+  /** The learner's face as the character should show it now; neutral before a face is seen. */
+  const frame = useCallback((now: number): FaceFrame => latest.current ?? neutralFrame(now, "mediapipe"), []);
+
+  return { video, state, error, open, close, begin, end, abort, frame };
 }

@@ -1,7 +1,7 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 
@@ -48,7 +48,8 @@ import { AddPanel } from "./studio-add";
 import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
-import { useTakeCamera, type TakeCameraState } from "./use-take-camera";
+import { useTakeCamera } from "./use-take-camera";
+import { presenterAvatar } from "./presenters";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
 import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
@@ -76,6 +77,8 @@ type UndoStep =
   | { kind: "board"; events: number; inkMarks?: string[] }
   | { kind: "neat"; inkSnapshot: string; inkSteps: number };
 
+const StudioAvatar = lazy(() => import("./studio-avatar"));
+
 const centre = (box: BoardBox) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
 const contains = (box: BoardBox, point: { x: number; y: number }) =>
   point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height;
@@ -102,7 +105,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [takeStart, setTakeStart] = useState<number | null>(null);
   const boardRef = useRef<TeachBoardHandle>(null);
   const capture = useVoiceCapture();
-  const { video: cameraVideo, state: cameraState, start: startCamera, stop: stopCamera, cancel: cancelCamera } = useTakeCamera(clock);
+  const camera = useTakeCamera(clock);
   // Whether this take started with the camera on; a performance is kept only then.
   const cameraTake = useRef(false);
   const speechRef = useRef<TakeSpeech | null>(null);
@@ -237,7 +240,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     update((current) => startTake(current, key, now(), { fresh }));
     clearUndo();
     cameraTake.current = latest.current?.presenter?.cameraMotion === "on";
-    if (cameraTake.current) startCamera(takeStartedAt.current);
+    if (cameraTake.current) camera.begin(takeStartedAt.current);
     void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
     // Each sentence is transcribed as soon as the learner finishes it.
     const recognition = fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
@@ -272,7 +275,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
     clearUndo();
-    const performance = cameraTake.current ? stopCamera() : null;
+    const performance = cameraTake.current ? camera.end() : null;
     cameraTake.current = false;
     takeStartedAt.current = null;
     setTakeStart(null);
@@ -446,7 +449,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     chooseTool("none");
     speechRef.current?.cancel();
     speechRef.current = null;
-    cancelCamera();
+    camera.abort();
     cameraTake.current = false;
     clearUndo();
     setLiveText("");
@@ -564,6 +567,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const pointers: Array<[Tool, string, typeof PenLine]> = [
     ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight],
   ];
+  const cameraMotion = recording.presenter?.cameraMotion === "on";
+  const avatarPreview = (
+    <Suspense fallback={null}>
+      <StudioAvatar characterId={presenterAvatar(recording.presenter?.avatar).id} frame={camera.frame} state={camera.state} onOpen={camera.open} />
+    </Suspense>
+  );
   const dockButton = ([value, label, Icon]: [Tool | "neat", string, typeof PenLine]) => (
     <button key={value} type="button" className="teach-tool" disabled={!isRecording}
       aria-pressed={value === "neat" ? neat.stage !== "idle" : tool === value && !addOpen}
@@ -575,7 +584,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   return (
     <main className="teach-page teach-studio" data-recording={isRecording || undefined}>
       {/* The camera image is only read by the on-device face model; it is never shown, kept or sent. */}
-      <video ref={cameraVideo} className="teach-camera-feed" muted playsInline aria-hidden="true" />
+      <video ref={camera.video} className="teach-camera-feed" muted playsInline aria-hidden="true" />
       <header className="teach-studio-head">
         <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{recording.topic.text}</h1>
@@ -669,10 +678,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
               <label className="teach-place teach-camera-toggle">
                 <input type="checkbox" checked={recording.presenter?.cameraMotion === "on"}
-                  onChange={(event) => update((current) => setPresenter(current, event.target.checked ? { cameraMotion: "on", mouthMotion: "basic" } : { cameraMotion: "off" }, now()))} />
+                  onChange={(event) => {
+                    const on = event.target.checked;
+                    update((current) => setPresenter(current, on ? { cameraMotion: "on", mouthMotion: "basic" } : { cameraMotion: "off" }, now()));
+                    if (on) camera.open(); else camera.close();
+                  }} />
                 <span>{tr("用摄像头带动我的形象")}</span>
               </label>
-              {recording.presenter?.cameraMotion === "on" && <p className="academy-muted teach-camera-note">{tr("录的时候，形象会学你的表情和转头。只在这台设备上记下动作，不保存、不上传你的画面。")}</p>}
+              {cameraMotion && <p className="academy-muted teach-camera-note">{tr("你的形象会跟着你的表情和转头动，录课时这些动作会记下来。只在这台设备上识别，不保存、不上传你的画面。")}</p>}
+              {cameraMotion && avatarPreview}
             </div>
           )}
 
@@ -682,7 +696,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 <span aria-hidden="true" />{transcribing ? tr("正在整理字幕…") : tr("停止 · {{v0}}", { v0: clockText(takeClock) })}
               </button>
               {notice && <p role="status" className="teach-notice">{notice}</p>}
-              {cameraState !== "off" && <CameraStatus state={cameraState} />}
+              {cameraMotion && avatarPreview}
               <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
                 <MicStatus state={mic} level={level} />
                 <h2 className="teach-group-label">{tr("你正在说的话")}</h2>
@@ -796,13 +810,6 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   );
 }
 
-function CameraStatus({ state }: { state: TakeCameraState }) {
-  const text = state === "tracking" ? tr("摄像头：形象正在跟着你")
-    : state === "lost" ? tr("摄像头：看不到你的脸，形象会先停在原来的样子")
-      : state === "failed" ? tr("摄像头不能用，这次形象只跟着配音动嘴。")
-        : tr("摄像头：正在准备…");
-  return <p role="status" className="teach-camera-status" data-state={state}>{text}</p>;
-}
 
 /** m:ss for a take's length. */
 function clockText(ms: number): string {
