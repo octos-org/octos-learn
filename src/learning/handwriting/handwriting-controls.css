@@ -1,0 +1,31 @@
+.learning-ink-toolbar > button.board-handwriting-toggle {
+  display: inline-flex; width: auto; min-width: max-content;
+  align-items: center; justify-content: center; gap: 5px; padding: 0 8px; white-space: nowrap;
+}
+.learning-ink-toolbar > button.board-handwriting-toggle svg { flex-shrink: 0; }
+.board-handwriting-controls {
+  position: absolute; top: 64px; right: 16px; width: 280px; z-index: 40;
+  color: #20302c; background: #fbfdfc; border: 1px solid #cddcd5;
+  border-radius: 12px; box-shadow: 0 5px 20px #152e241a; overflow: hidden;
+  max-height: calc(100% - 90px); overflow-y: auto;
+}
+.board-handwriting-controls[hidden], .board-handwriting-body[hidden] { display: none; }
+.board-handwriting-controls header { display: flex; align-items: center; gap: 7px; padding: 8px 10px; }
+.board-handwriting-controls strong { font-size: 13px; }
+.board-handwriting-controls header span { flex: 1; font-size: 11px; color: #587467; }
+.board-handwriting-controls button { min-height: 32px; padding: 5px 8px; border: 1px solid #cddcd5; border-radius: 7px; background: white; color: #214d3e; cursor: pointer; }
+.board-handwriting-controls button:disabled { opacity: .5; cursor: default; }
+.board-handwriting-body { padding: 0 10px; }
+.board-handwriting-camera { position: relative; aspect-ratio: 4 / 3; background: #17211f; border-radius: 8px; overflow: hidden; }
+.board-handwriting-camera video, .board-handwriting-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.board-handwriting-camera canvas { pointer-events: none; }
+.board-handwriting-body p { margin: 8px 0; font-size: 12px; line-height: 1.5; }
+.board-handwriting-note { color: #61766b; }
+.board-handwriting-state { padding: 6px 10px; font-size: 12px; color: #1f6b51; }
+.board-handwriting-state[data-phase="drawing"] { color: #ac452e; }
+.board-handwriting-controls footer { padding: 4px 10px 10px; }
+.board-handwriting-controls footer button { width: 100%; font-size: 12px; }
+.board-handwriting-cursor { position: absolute; top: 0; left: 0; z-index: 35; width: 0; height: 0; pointer-events: none; }
+.board-handwriting-cursor i { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border: 2px solid #17745b; border-radius: 50%; background: #ffffffb3; box-shadow: 0 0 0 3px #17745b20; }
+.board-handwriting-cursor[data-down="true"] i { border-color: #ce5a3d; background: #ce5a3d25; }
+@media (max-width: 640px) { .board-handwriting-controls { width: 230px; top: 10px; right: 10px; } }

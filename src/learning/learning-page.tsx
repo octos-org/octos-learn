@@ -1,4 +1,5 @@
 import { getLocale, tr } from "@/i18n";
+import { cameraSource, type CameraLease } from "@/media/camera-source";
 import { useLocale } from "@/i18n/use-locale";
 import { flushLearningDocumentWrites } from "./learning-document-store";
 import {
@@ -132,7 +133,7 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
   // instead of waiting for getUserMedia and the ASR session sequentially.
   preloadLearningVoiceRuntime();
   let microphoneStream: MediaStream | null = null;
-  let cameraStream: MediaStream | null = null;
+  let cameraLease: CameraLease | null = null;
   try {
     // Use the same Android-compatible acquisition path as the live voice
     // capture. Requesting audio+video directly here used to fail at the
@@ -146,14 +147,11 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
       microphoneStream = await getEchoCancelledMicStream();
     }
     if (autoCamera) {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: true,
-      });
+      cameraLease = await cameraSource.acquire("teacher-frame");
     }
   } finally {
     microphoneStream?.getTracks().forEach((track) => track.stop());
-    cameraStream?.getTracks().forEach((track) => track.stop());
+    cameraLease?.release();
   }
   localStorage.setItem(AUTO_CAMERA_KEY, String(autoCamera));
   localStorage.setItem(INPUT_MODE_KEY, "voice");

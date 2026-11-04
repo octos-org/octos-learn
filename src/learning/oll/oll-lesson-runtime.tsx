@@ -1,3 +1,6 @@
+import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
+import { useHandwritingInput } from "../handwriting/use-handwriting-input";
+import { HandwritingControls, HandwritingToolbarButton } from "../handwriting/handwriting-controls";
 import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
@@ -863,6 +866,8 @@ export function LearningWhiteboard({
   const inkPenWidthRef = useRef(inkPenWidth);
   const [inkWidthMenuOpen, setInkWidthMenuOpen] = useState(false);
   const [inkAvailable, setInkAvailable] = useState(false);
+  const handwritingEnabled = import.meta.env.VITE_ENABLE_HANDWRITING === "true";
+  const handwritingInputRef = useRef<BoardHandwritingInput | null>(null);
   const [inkError, setInkError] = useState("");
   const [writingRetry, setWritingRetry] = useState(0);
   const [writingError, setWritingError] = useState("");
@@ -1980,6 +1985,7 @@ export function LearningWhiteboard({
   }, [inkState.mode, inkSuspendedForPlayback]);
 
   const setInkMode = useCallback((mode: InkMode) => {
+    if (mode !== "draw") handwritingInputRef.current?.pause("tool");
     try {
       inkRuntimeRef.current?.setMode(mode);
       if (mode !== "draw") setInkWidthMenuOpen(false);
@@ -1987,24 +1993,27 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : tr("无法切换书写工具"));
     }
-  }, [setInkError]);
+  }, [setInkError, handwritingInputRef]);
 
   // Starting or resuming playback restores the clean browsing environment.
   // This runs on the playback transition, not on later deliberate tool choices.
   useLayoutEffect(() => {
     if (!runtime?.playing) return;
+    handwritingInputRef.current?.pause("playback");
     inkRuntimeRef.current?.setMode("navigate");
-  }, [runtime?.playing]);
+  }, [runtime?.playing, handwritingInputRef]);
 
   const runInkHistory = useCallback((action: "undo" | "redo") => {
+    handwritingInputRef.current?.pause("tool");
     const ink = inkRuntimeRef.current;
     if (!ink) return;
     void Promise.resolve(action === "undo" ? ink.undo() : ink.redo()).catch(
       (cause) => setInkError(cause instanceof Error ? cause.message : tr("笔迹历史操作失败")),
     );
-  }, [setInkError]);
+  }, [setInkError, handwritingInputRef]);
 
   const selectAllInk = useCallback(() => {
+    handwritingInputRef.current?.pause("tool");
     try {
       const ink = inkRuntimeRef.current;
       if (!ink) return;
@@ -2014,7 +2023,7 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : tr("无法选择笔迹"));
     }
-  }, [setInkError]);
+  }, [setInkError, handwritingInputRef]);
 
   const inkModeRef = useRef(inkState.mode);
   useEffect(() => {
@@ -2493,10 +2502,21 @@ export function LearningWhiteboard({
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
+    // Register before the editor so a synthetic stroke ends before its camera
+    // transform updates. No old screen point crosses a view change.
+    let previousHandwritingCamera = mounted.view.getCameraState();
+    const unsubscribeHandwritingCamera = mounted.view.subscribeCamera((camera) => {
+      if (camera.panX !== previousHandwritingCamera.panX || camera.panY !== previousHandwritingCamera.panY || camera.scale !== previousHandwritingCamera.scale) {
+        handwritingInputRef.current?.pause("view");
+      }
+      previousHandwritingCamera = camera;
+    });
+
     let destroyAndroidInkDensity: (() => void) | null = null;
     let inkCameraGate: InkCameraGate<typeof mounted.view> | null = null;
     const destroyInk = (): Promise<void> | undefined => {
       if (!ink || inkDestroyed) return undefined;
+      handwritingInputRef.current?.pause("tool");
       inkDestroyed = true;
       destroyAndroidInkDensity?.();
       destroyAndroidInkDensity = null;
@@ -2592,6 +2612,7 @@ export function LearningWhiteboard({
         );
         inkRuntimeRef.current = ink;
         onInkSaveHandlerChangeRef.current?.(async () => {
+          handwritingInputRef.current?.pause("tool");
           await ink?.saveNow();
         });
         ink.setPenWidth?.(inkPenWidthRef.current);
@@ -2670,6 +2691,7 @@ export function LearningWhiteboard({
       : null;
     return () => {
       active = false;
+      unsubscribeHandwritingCamera();
       cameraController.destroy();
       if (cameraControllerRef.current === cameraController) {
         cameraControllerRef.current = null;
@@ -2701,7 +2723,7 @@ export function LearningWhiteboard({
       mounted.destroy();
       if (destruction) void destruction.catch(() => undefined);
     };
-  }, [flushBoardVariableUpdates, inkSessionId]);
+  }, [flushBoardVariableUpdates, inkSessionId, handwritingInputRef]);
 
   useEffect(() => {
     const mounted = mountedRef.current;
@@ -3403,6 +3425,11 @@ export function LearningWhiteboard({
     };
   }, []);
 
+  const handwriting = useHandwritingInput({
+    viewportRef, inputRef: handwritingInputRef, inkRef: inkRuntimeRef, enabled: handwritingEnabled,
+    ready: inkAvailable && handwritingEnabled, playing: Boolean(runtime?.playing), sessionId: inkSessionId,
+  });
+
   return (
     <div className="learning-oll-board-shell">
       <div
@@ -3412,6 +3439,7 @@ export function LearningWhiteboard({
         data-embedded-lesson={embedded ? "" : undefined}
         aria-label={tr("OLL 无限白板")}
       />
+      {handwritingEnabled && inkSessionId && inkAvailable ? <HandwritingControls {...handwriting} canResume={!runtime?.playing} /> : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0
@@ -3481,6 +3509,7 @@ export function LearningWhiteboard({
           >
             <PenLine size={17} />
           </button>
+          {handwritingEnabled ? <HandwritingToolbarButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} /> : null}
           <button
             type="button"
             className={inkState.mode === "erase" ? "is-active" : ""}

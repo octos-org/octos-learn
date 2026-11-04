@@ -30,6 +30,7 @@ import { lazy, Suspense } from "react";
 const AvatarLabPage = lazy(() => import("./learning/avatar/avatar-lab-page"));
 const IllustratedAvatarPage = lazy(() => import("./learning/avatar/illustrated-avatar-page"));
 const LearnerPackageViewer = lazy(() => import("./learning/teach/learner-package-viewer"));
+const HandwritingLabPage = lazy(() => import("./learning/handwriting/handwriting-lab-page").then(module => ({ default: module.HandwritingLabPage })));
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -79,6 +80,7 @@ export function AppRoutes() {
       <Route path="/course/:packId" element={<CourseRoute />} />
       <Route path="/learn" element={<LegacyLearningRedirect />} />
       <Route element={<AuthGuard />}>
+        <Route path="/handwriting-lab" element={<Suspense fallback={null}><HandwritingLabPage /></Suspense>} />
         <Route path="/board" element={<LearningSetupGate><LearningPage key={location.key} /></LearningSetupGate>} />
         <Route path="/setup" element={<SetupWhiteboard />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
