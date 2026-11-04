@@ -20,7 +20,7 @@
 
 ## 可直接查看的实际程序输出
 
-- [8 秒随动与表情动画](avatar-animation-phase-a/ears-expressions-v2/preview.gif)
+- 8 秒随动与表情动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ears-expressions-v2/preview.gif`）
 - [完整耳朵与八种姿态](avatar-animation-phase-a/ears-expressions-v2/poses.jpg)
 - [自然 / 皱眉脸部对照](avatar-animation-phase-a/ears-expressions-v2/frown-detail.jpg)
 - [嘴部采样前后放大](avatar-animation-phase-a/ears-expressions-v2/mouth-detail.jpg)

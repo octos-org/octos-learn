@@ -13,9 +13,9 @@
 
 实际产品绘制器输出：
 
-![新表情定格](avatar-animation-phase-a/expressions-v1/poses.jpg)
+新表情定格（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/expressions-v1/poses.jpg`）
 
-- [此前 / 本轮 10 秒动作对照](avatar-animation-phase-a/expressions-v1/comparison.gif)：同一原画、同一组合控制参数；此前绘制器取自 `51acb03f`。
+- 此前 / 本轮 10 秒动作对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/expressions-v1/comparison.gif`）：同一原画、同一组合控制参数；此前绘制器取自 `51acb03f`。
 - [像素检查报告](avatar-animation-phase-a/expressions-v1/report.json)。
 
 该动画是**合成控制参数驱动真实绘制器**，没有用生成图片替代程序输出，也不是新的摄像头录制。
@@ -39,7 +39,7 @@
 
 输入是 scikit-image 官方公开样例中 NASA 的成人肖像，[来源说明](https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut)标注公共领域。它只是实验输入，不代表该人物认可产品，也不是产品形象候选。
 
-![真实本地卡通化输出](avatar-animation-phase-a/cartoon-style/dct-probe/comparison.jpg)
+真实本地卡通化输出（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/cartoon-style/dct-probe/comparison.jpg`）
 
 左侧是固定裁剪后的输入，中间/右侧是 288/512 输入尺寸的真实模型输出。它不是 Snapchat 模型，也不是本项目生成的概念画。
 

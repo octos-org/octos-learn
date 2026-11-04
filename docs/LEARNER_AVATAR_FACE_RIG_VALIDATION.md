@@ -8,11 +8,11 @@
 
 用户再次询问停止原因。没有需要用户处理的外部阻塞或等待确认项；此前在小检查点就结束回复，不是授权不足。本轮直接完成眼角中性跳变修正并扩到双眼。上一轮单眼提交 `35fa2b7f` 保留。
 
-可操作入口：正常开发环境 [HTTPS 5173 双眼表情页](https://127.0.0.1:5173/docs/avatar-animation-phase-a/facial-rig/eyes.html)。前后端仍沿用现有 5173 / 50080 进程、账号与工作区，没有新开服务或测试账号。另有[素材内嵌独立页](avatar-animation-phase-a/facial-rig/eyes-preview.html)，本地文件打开时只启用手动/演示，摄像头和模型检查按钮禁用。
+可操作入口：正常开发环境 [HTTPS 5173 双眼表情页](https://127.0.0.1:5173/docs/avatar-animation-phase-a/facial-rig/eyes.html)。前后端仍沿用现有 5173 / 50080 进程、账号与工作区，没有新开服务或测试账号。另有素材内嵌独立页（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/eyes-preview.html`），本地文件打开时只启用手动/演示，摄像头和模型检查按钮禁用。
 
-- [双眼六状态实际渲染](avatar-animation-phase-a/facial-rig/blink-v3/comparison.jpg)：0 / 25 / 50 / 75 / 100% 与复位。
-- [实际 5 秒双眼 / 左右单眼动画](avatar-animation-phase-a/facial-rig/blink-v3/validation.gif)、[MP4](avatar-animation-phase-a/facial-rig/blink-v3/validation.mp4)。参数驱动，不是摄像头实拍或实时性能成绩。
-- [实际浏览器半闭眼截图](avatar-animation-phase-a/facial-rig/blink-v3/browser-half.jpg)和[全闭眼截图](avatar-animation-phase-a/facial-rig/blink-v3/browser-closed.jpg)。本轮完成了真实页面按钮、键盘滑杆、播放/暂停和复位操作，不能与前两轮未完成的网页验收混为一谈。
+- 双眼六状态实际渲染（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v3/comparison.jpg`）：0 / 25 / 50 / 75 / 100% 与复位。
+- 实际 5 秒双眼 / 左右单眼动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v3/validation.gif`）、MP4（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v3/validation.mp4`）。参数驱动，不是摄像头实拍或实时性能成绩。
+- 实际浏览器半闭眼截图（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v3/browser-half.jpg`）和全闭眼截图（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v3/browser-closed.jpg`）。本轮完成了真实页面按钮、键盘滑杆、播放/暂停和复位操作，不能与前两轮未完成的网页验收混为一谈。
 
 修正方法：把“原图与局部底画的绘画残差”按眼皮、眼球和周围皮肤分配，眼球采样坐标固定，只移动上/下眼皮残差；从同一套连续权重重建所有闭合状态。中性时这些层重建同一张原图，不再先换成另一个近似眼睛再开始移动，也没有新增整脸生成或用快速淡入遮住跳变。`eye-occlusion.mjs` 是这次的独立实验绘制器，旧版脚本和媒体保留作对照。
 
@@ -45,9 +45,9 @@ node scripts/avatar-face-rig-export.mjs
 
 用户询问是否需要配合。当前没有必须由用户处理的设备、素材或授权阻塞；直接继续单眼变形验证。上一轮保存在提交 `57a274d5`。
 
-- [五档闭合对照](avatar-animation-phase-a/facial-rig/blink-v2/comparison.png)：上排 V1 将整块眼睛压缩，下排 V2 保持眼球原始绘画位置，由上下眼皮遮挡；0 / 25 / 50 / 75 / 100% 均实际渲染。
-- [单眼慢速对照动画](avatar-animation-phase-a/facial-rig/blink-v2/validation.gif)与[视频](avatar-animation-phase-a/facial-rig/blink-v2/validation.mp4)：左侧旧版、右侧新版，故意慢速展示闭合与睁开。只验证画面左眼，没有扩到另一眼或接摄像头。
-- [可独立打开的单眼交互页](avatar-animation-phase-a/facial-rig/blink-preview.html)：同一滑杆同步控制新旧版，提供五档定格和慢速演示，不需要服务器。完成内嵌资源与脚本语法检查；**未完成真实浏览器点击或截图验收**。
+- 五档闭合对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v2/comparison.png`）：上排 V1 将整块眼睛压缩，下排 V2 保持眼球原始绘画位置，由上下眼皮遮挡；0 / 25 / 50 / 75 / 100% 均实际渲染。
+- 单眼慢速对照动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v2/validation.gif`）与视频（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-v2/validation.mp4`）：左侧旧版、右侧新版，故意慢速展示闭合与睁开。只验证画面左眼，没有扩到另一眼或接摄像头。
+- 可独立打开的单眼交互页（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/blink-preview.html`）：同一滑杆同步控制新旧版，提供五档定格和慢速演示，不需要服务器。完成内嵌资源与脚本语法检查；**未完成真实浏览器点击或截图验收**。
 
 V2 使用原画本身的眼白与虹膜纹理，保持坐标不变；从原画提取深色眼睫毛窄条，沿手工拟合的平滑曲线移动并单独改变厚度。没有新生成整张脸，也没有压缩眼球。它是遮挡变形试验，**不是已经得到可独立转动的虹膜/眼白完整模型**。
 
@@ -67,10 +67,10 @@ node scripts/avatar-face-rig-export.mjs
 
 ## 本轮可检查的输出
 
-- [六状态实际渲染对照](avatar-animation-phase-a/facial-rig/comparison.jpg)：原画/复位、半闭眼、全闭眼、小开口、大开口、组合。
-- [5 秒固定参数动画](avatar-animation-phase-a/facial-rig/validation.mp4)与[GIF](avatar-animation-phase-a/facial-rig/validation.gif)。120 帧以 24 FPS 回放，只证明这些控制值可以合成，**不是实测摄像头帧率**。
-- [独立交互样本](avatar-animation-phase-a/facial-rig/preview.html)：本地打开即可，素材内嵌，不依赖服务器。可以分别调两眼闭合、开口，播放固定演示。仅作面部素材检查，没有摄像头、录制、声音、头部转动或手臂。尚未完成该最终页面的真实浏览器点击验收。
-- [七图层 PSD](avatar-animation-phase-a/facial-rig/star-fox-face.psd)和[绑定诊断](avatar-animation-phase-a/facial-rig/upstream-anchors.json)。这是实验材料，不是正式 Live2D 模型。
+- 六状态实际渲染对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/comparison.jpg`）：原画/复位、半闭眼、全闭眼、小开口、大开口、组合。
+- 5 秒固定参数动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/validation.mp4`）与GIF（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/validation.gif`）。120 帧以 24 FPS 回放，只证明这些控制值可以合成，**不是实测摄像头帧率**。
+- 独立交互样本（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/preview.html`）：本地打开即可，素材内嵌，不依赖服务器。可以分别调两眼闭合、开口，播放固定演示。仅作面部素材检查，没有摄像头、录制、声音、头部转动或手臂。尚未完成该最终页面的真实浏览器点击验收。
+- 七图层 PSD（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/facial-rig/star-fox-face.psd`）和[绑定诊断](avatar-animation-phase-a/facial-rig/upstream-anchors.json)。这是实验材料，不是正式 Live2D 模型。
 
 ## 实际做了什么
 

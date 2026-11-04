@@ -42,9 +42,9 @@
 
 ## 实际输出与检查
 
-- [四款自然状态](avatar-animation-phase-a/four-characters/lineup.jpg)
-- [四款同输入动作动画](avatar-animation-phase-a/four-characters/preview.gif)
-- [自然、闭眼、皱眉开口、头动对照](avatar-animation-phase-a/four-characters/poses.jpg)
+- 四款自然状态（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/four-characters/lineup.jpg`）
+- 四款同输入动作动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/four-characters/preview.gif`）
+- 自然、闭眼、皱眉开口、头动对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/four-characters/poses.jpg`）
 - [完整像素报告](avatar-animation-phase-a/four-characters/report.json)
 
 媒体是当前产品绘制器的真实本机输出，使用确定的模拟参数；不是浏览器截图或摄像头验收。

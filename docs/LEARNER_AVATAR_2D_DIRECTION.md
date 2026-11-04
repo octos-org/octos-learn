@@ -12,7 +12,7 @@
 
 视觉概念先展示同一个角色的四种状态：自然、讲解、思考、开心。静态概念图用于确认画风；不把生成出来的表情图当作已做好图层、嘴型对齐和绑定的运行资产。
 
-本轮使用内置 image_gen，根据已有星狐参考生成了[四种表现概念图](avatar-animation-phase-a/2d-concept/star-fox-expression-direction-v1.png)。已检查为明确的手绘插画风，保留角色与学院服识别；姿态之间的头角度和部件位置有差别，不能直接当连续动画帧。[最终提示词和生成记录](avatar-animation-phase-a/2d-concept/GENERATION.md)随图保存。未调用项目 BYOK 语音服务，未修改应用资产或默认渲染器。
+本轮使用内置 image_gen，根据已有星狐参考生成了四种表现概念图（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/2d-concept/star-fox-expression-direction-v1.png`）。已检查为明确的手绘插画风，保留角色与学院服识别；姿态之间的头角度和部件位置有差别，不能直接当连续动画帧。[最终提示词和生成记录](avatar-animation-phase-a/2d-concept/GENERATION.md)随图保存。未调用项目 BYOK 语音服务，未修改应用资产或默认渲染器。
 
 ## 首版技术选择
 

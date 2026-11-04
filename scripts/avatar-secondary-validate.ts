@@ -2,7 +2,7 @@
 import{createRequire}from'node:module';import{mkdir,writeFile}from'node:fs/promises';import{resolve}from'node:path';
 import{PAINTED_CHARACTERS}from'../src/learning/avatar/painted-characters';import{createPaintedFoxPainter,paintedHeadPoint,paintedMotionPoint}from'../src/learning/avatar/painted-fox';
 import{FOX_MOTION,paintedIdlePose,createPaintedSecondaryMotion}from'../src/learning/avatar/painted-secondary-motion';import{neutralFrame,type FaceFrame}from'../src/learning/avatar/face-frame';
-const[toolsDir,output='docs/avatar-animation-phase-a/ear-orientation-v2']=process.argv.slice(2);if(!toolsDir)throw Error('Expected authoring tools directory');
+const[toolsDir,output='scratch/avatar-secondary-motion']=process.argv.slice(2);if(!toolsDir)throw Error('Expected authoring tools directory');
 const require=createRequire(`${resolve(toolsDir)}/package.json`),{createCanvas,loadImage,GlobalFonts}=require('@napi-rs/canvas'),{GIFEncoder,quantize,applyPalette}=require('gifenc');GlobalFonts.registerFromPath('/System/Library/Fonts/STHeiti Medium.ttc','AvatarChinese');
 const surface=(w:number,h:number)=>{const canvas=createCanvas(w,h);return{canvas,context:canvas.getContext('2d')as CanvasRenderingContext2D};},sz=736,canvas=createCanvas(sz,sz),ctx=canvas.getContext('2d');
 const frame=(timeMs=0,rotation:FaceFrame['rotation']=[0,0,0]):FaceFrame=>({...neutralFrame(timeMs),tracked:true,rotation});

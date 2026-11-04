@@ -13,8 +13,8 @@
 
 ## 实际对照
 
-- [前后静态对比](avatar-animation-phase-a/mouth-head-response/comparison.jpg)：相同画稿、相同输入参数，左为基线，右为修改后；上排同为 MediaPipe 张颌 0.5，下排同为组合头动。
-- [已有真实识别动作的回放对比](avatar-animation-phase-a/mouth-head-response/recorded-input.gif)：同一份此前原生模型实际识别生成的 `real-input/recorded-track.json`，分别驱动旧/新产品绘制器。未重新推理、未开用户摄像头，不是新浏览器验收。110 帧、每帧 100ms，共 11s；GIF 播放速度不代表实时性能。
+- 前后静态对比（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/mouth-head-response/comparison.jpg`）：相同画稿、相同输入参数，左为基线，右为修改后；上排同为 MediaPipe 张颌 0.5，下排同为组合头动。
+- 已有真实识别动作的回放对比（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/mouth-head-response/recorded-input.gif`）：同一份此前原生模型实际识别生成的 `real-input/recorded-track.json`，分别驱动旧/新产品绘制器。未重新推理、未开用户摄像头，不是新浏览器验收。110 帧、每帧 100ms，共 11s；GIF 播放速度不代表实时性能。
 - [测量报告](avatar-animation-phase-a/mouth-head-response/report.json)、[绘制边界检查](avatar-animation-phase-a/mouth-head-response/render-report.json)、[动画说明](avatar-animation-phase-a/mouth-head-response/animation.json)。
 
 同一合成 MediaPipe 输入，在中央窄条内测量深色/粉色口腔像素覆盖的行数：

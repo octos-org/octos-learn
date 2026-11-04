@@ -6,8 +6,8 @@
 
 ## 本轮实际结果
 
-- [十一秒角色动画](avatar-animation-phase-a/real-input/real-input.mp4) / [GIF](avatar-animation-phase-a/real-input/real-input.gif)：前八秒用实际视频帧的识别结果驱动角色，之后两秒输入均匀空白图、最后一秒重复视频末帧用于检查重新识别。不包含用户、源视频的人脸画面或音频。
-- [修正前六状态](avatar-animation-phase-a/real-input/before-poses.jpg) / [修正后相同识别事件](avatar-animation-phase-a/real-input/after-poses.jpg)。不是另生成一组理想表情。
+- 十一秒角色动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/real-input/real-input.mp4`） / GIF（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/real-input/real-input.gif`）：前八秒用实际视频帧的识别结果驱动角色，之后两秒输入均匀空白图、最后一秒重复视频末帧用于检查重新识别。不包含用户、源视频的人脸画面或音频。
+- 修正前六状态（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/real-input/before-poses.jpg`） / 修正后相同识别事件（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/real-input/after-poses.jpg`）。不是另生成一组理想表情。
 - [可导入的识别动作片段](avatar-animation-phase-a/real-input/recorded-track.json)：实际 `mediapipe` 来源，已经过本项目的映射、平滑、录制、JSON 校验与回放。只含动作参数，原视频和原始人脸关键点没有加入产品资源或本文。
 - [完整指标与媒体检查](avatar-animation-phase-a/real-input/report.json)、[修正前](avatar-animation-phase-a/real-input/before.json)、[修正后](avatar-animation-phase-a/real-input/after.json)、[校验和](avatar-animation-phase-a/real-input/manifest.json)。
 

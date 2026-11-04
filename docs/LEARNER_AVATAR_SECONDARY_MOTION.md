@@ -36,9 +36,9 @@
 
 ## 实际输出与验证
 
-- [四款静止小动作，12 秒](avatar-animation-phase-a/secondary-motion/idle.gif)
-- [摆头与停下后的耳发回落，7 秒](avatar-animation-phase-a/secondary-motion/following.gif)
-- [自然 / 耳朵轻动定格](avatar-animation-phase-a/secondary-motion/idle-poses.jpg)
+- 四款静止小动作，12 秒（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/secondary-motion/idle.gif`）
+- 摆头与停下后的耳发回落，7 秒（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/secondary-motion/following.gif`）
+- 自然 / 耳朵轻动定格（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/secondary-motion/idle-poses.jpg`）
 - [像素、网格和弹簧报告](avatar-animation-phase-a/secondary-motion/report.json)
 
 以上使用**实际产品绘制器和模拟参数**，不是另画的示意图、真人摄像头或浏览器截图。

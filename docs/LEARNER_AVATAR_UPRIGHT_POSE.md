@@ -10,7 +10,7 @@
 
 曾尝试网格校正旧画稿，出现衣服和边缘拉伸，未采用；试验输出仅留在忽略的 scratch。产品代码不保留该剪切/边缘补偿。
 
-[当前自然状态](avatar-animation-phase-a/painted-v0.2/neutral.png)、[表情组合](avatar-animation-phase-a/painted-v0.2/poses.jpg)由实际产品绘制器离线输出，不是浏览器截图或摄像头验收。历史 `painted-v0.1` 和 `real-input` 资源保留原样，不能将其指标外推到本次换图后的实时设备表现。
+当前自然状态（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.2/neutral.png`）、表情组合（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.2/poses.jpg`）由实际产品绘制器离线输出，不是浏览器截图或摄像头验收。历史 `painted-v0.1` 和 `real-input` 资源保留原样，不能将其指标外推到本次换图后的实时设备表现。
 
 ## 实际技术
 

@@ -36,11 +36,11 @@ PATH=/opt/homebrew/opt/node@22/bin:$PATH node_modules/.bin/vite-node scripts/ava
 
 ## 可查看的实际输出
 
-- [星狐耳部近景动画：4.8 秒](avatar-animation-phase-a/ear-orientation-v2/fox-ear-closeup.gif)
-- [星狐自然、单耳转向、回正近景](avatar-animation-phase-a/ear-orientation-v2/fox-ear-detail.jpg)
-- [四款自然动作：12 秒](avatar-animation-phase-a/ear-orientation-v2/idle.gif)
-- [四款头动：7 秒](avatar-animation-phase-a/ear-orientation-v2/following.gif)
-- [四款定格](avatar-animation-phase-a/ear-orientation-v2/idle-poses.jpg)
+- 星狐耳部近景动画：4.8 秒（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ear-orientation-v2/fox-ear-closeup.gif`）
+- 星狐自然、单耳转向、回正近景（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ear-orientation-v2/fox-ear-detail.jpg`）
+- 四款自然动作：12 秒（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ear-orientation-v2/idle.gif`）
+- 四款头动：7 秒（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ear-orientation-v2/following.gif`）
+- 四款定格（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/ear-orientation-v2/idle-poses.jpg`）
 - [像素/网格报告](avatar-animation-phase-a/ear-orientation-v2/report.json)
 
 所有媒体均为当前产品绘制器输出，使用模拟时间与头部参数，不是真人摄像头或浏览器截图。

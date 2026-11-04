@@ -4,9 +4,9 @@
 
 ## 可以直接查看的实际输出
 
-- [原图 / 中性输出 / 闭眼目标 / 开口目标对照](avatar-animation-phase-a/single-image/human-comparison.jpg)
-- [人像版与动物版对照](avatar-animation-phase-a/single-image/human-animal-comparison.jpg)
-- [约 5.3 秒离线短片](avatar-animation-phase-a/single-image/validation.mp4)：左侧为固定单张源图，右侧为真实模型逐帧输出；闭眼→开口→左右轻转头→复位。以 6 FPS 回放，**不能用播放速度代表实时生成速度**。
+- 原图 / 中性输出 / 闭眼目标 / 开口目标对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/single-image/human-comparison.jpg`）
+- 人像版与动物版对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/single-image/human-animal-comparison.jpg`）
+- 约 5.3 秒离线短片（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/single-image/validation.mp4`）：左侧为固定单张源图，右侧为真实模型逐帧输出；闭眼→开口→左右轻转头→复位。以 6 FPS 回放，**不能用播放速度代表实时生成速度**。
 - [完整短片报告](avatar-animation-phase-a/single-image/clip-report.json)：每帧控制参数与耗时、模型校验和、源图哈希与复位比较。
 
 这些结果没有使用此前的身体拼件、局部五官 PNG 或手工合成嘴眼。没有用 image_gen 代替 LivePortrait 的输出，也没有添加插帧来伪装实时速度。对照图与短片中的并排排版仅用于检查，不参与模型生成。

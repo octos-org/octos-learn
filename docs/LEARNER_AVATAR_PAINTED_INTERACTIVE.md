@@ -11,9 +11,9 @@
 ## 直接打开
 
 - 正常入口：[二维星狐互动试验室](https://127.0.0.1:5173/teach/avatar-2d)，别名 `/teach/avatar-lab`。现有 HTTPS 5173 开发进程读取当前工作区代码，后端仍用现有 50080 / 本机账号。不需要先合并 PR；本轮没有推送、合并或部署。
-- [八秒实际绘制动画](avatar-animation-phase-a/painted-v0.1/preview.gif)、[MP4](avatar-animation-phase-a/painted-v0.1/preview.mp4)：由产品的 `createPaintedFoxPainter` 实际逐帧绘制，包含说话、眨眼、轻微头动与圆唇。固定 `demo` 参数，不是摄像头录屏。
-- [十二种状态对照](avatar-animation-phase-a/painted-v0.1/poses.jpg)：自然、极小开口、四档开口、圆唇、微笑开口、双眼闭合、抬眉、组合偏头、复位。
-- [实际浏览器截图](avatar-animation-phase-a/painted-v0.1/browser-smile.jpg)：原有互动入口，使用新画稿的“微笑开口”定格。截图捕获于本轮浏览器可用期间，之后仅保存既有字节，没有绕过被关闭的控制设置。
+- 八秒实际绘制动画（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.1/preview.gif`）、MP4（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.1/preview.mp4`）：由产品的 `createPaintedFoxPainter` 实际逐帧绘制，包含说话、眨眼、轻微头动与圆唇。固定 `demo` 参数，不是摄像头录屏。
+- 十二种状态对照（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.1/poses.jpg`）：自然、极小开口、四档开口、圆唇、微笑开口、双眼闭合、抬眉、组合偏头、复位。
+- 实际浏览器截图（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/painted-v0.1/browser-smile.jpg`）：原有互动入口，使用新画稿的“微笑开口”定格。截图捕获于本轮浏览器可用期间，之后仅保存既有字节，没有绕过被关闭的控制设置。
 - [可导入的八秒合成动作](avatar-animation-phase-a/painted-v0.1/synthetic-track.json)：实际通过 `PerformanceRecorder` → JSON → `parseAvatarTrack` → `sampleAvatarTrack` 的本机生成文件。只包含 `demo` 参数，**不是浏览器下载的 60 秒录制或真人记录**。
 
 可自行查看的顺序：定格按钮 → 九个手动滑杆 → 恢复自然表情 → 播放演示 → 录一段动作 / 结束 / 回放 / 定位。手动模式录制期间拖动滑杆也会保留在同一片段。摄像头只在用户主动点击后开启，未授权时不能录制真人参数；用户现在不方便测试设备，不以此作为继续开发的前置条件。

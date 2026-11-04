@@ -1,7 +1,7 @@
 /** All four fitted product painters, pixel preservation, replay and preview export. */
 import{createRequire}from'node:module';import{mkdir,writeFile}from'node:fs/promises';import{resolve}from'node:path';import{execFileSync}from'node:child_process';
 import{PAINTED_CHARACTERS}from'../src/learning/avatar/painted-characters';import{createPaintedFoxPainter,PAINTED_FOX_VIEW}from'../src/learning/avatar/painted-fox';import{neutralFrame,type FaceFrame}from'../src/learning/avatar/face-frame';import{PerformanceRecorder,parseAvatarTrack,sampleAvatarTrack}from'../src/learning/avatar/performance-track';
-const[toolsDir,output='docs/avatar-animation-phase-a/four-characters']=process.argv.slice(2);if(!toolsDir)throw Error('Expected authoring tools directory');
+const[toolsDir,output='scratch/avatar-characters']=process.argv.slice(2);if(!toolsDir)throw Error('Expected authoring tools directory');
 const require=createRequire(`${resolve(toolsDir)}/package.json`),{createCanvas,loadImage,GlobalFonts}=require('@napi-rs/canvas'),{GIFEncoder,quantize,applyPalette}=require('gifenc');
 GlobalFonts.registerFromPath('/System/Library/Fonts/STHeiti Medium.ttc','AvatarChinese');
 const surface=(w:number,h:number)=>{const canvas=createCanvas(w,h);return{canvas,context:canvas.getContext('2d')as CanvasRenderingContext2D};};

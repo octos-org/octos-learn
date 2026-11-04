@@ -33,8 +33,8 @@
 
 媒体（`docs/avatar-animation-phase-a/head-follow-v1/`，均为产品绘制器离线输出，模拟头动/时间，不是真人摄像头或浏览器截图）：
 
-- [四角色摆头：耳朵滞后、侧转与头发惯性](avatar-animation-phase-a/head-follow-v1/following.gif)
-- [星狐耳部近景](avatar-animation-phase-a/head-follow-v1/fox-ear-closeup.gif)、[单耳转向对比](avatar-animation-phase-a/head-follow-v1/fox-ear-detail.jpg)、[四角色单耳转向](avatar-animation-phase-a/head-follow-v1/idle-poses.jpg)
+- 四角色摆头：耳朵滞后、侧转与头发惯性（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/head-follow-v1/following.gif`）
+- 星狐耳部近景（媒体已移出仓库，原文件见提交 `30a3e3d5` 的 `docs/avatar-animation-phase-a/head-follow-v1/fox-ear-closeup.gif`）、[单耳转向对比](avatar-animation-phase-a/head-follow-v1/fox-ear-detail.jpg)、[四角色单耳转向](avatar-animation-phase-a/head-follow-v1/idle-poses.jpg)
 - [表情/开口姿态](avatar-animation-phase-a/head-follow-v1/expressions/poses.jpg)、[报告](avatar-animation-phase-a/head-follow-v1/report.json)
 
 ## 边界
