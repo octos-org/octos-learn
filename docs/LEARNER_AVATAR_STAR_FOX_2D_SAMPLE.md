@@ -2,6 +2,8 @@
 
 更新：2026-11-04。用户授权完成全部五项优化，并要求通过机制持续执行。本轮在 `codex/avatar-local-rig` 完成星狐样板的程序/素材工作；**不等于用户最终美术认可或真人/设备验收**。
 
+后续反馈：用户不认可当前耳朵的扭曲感，另指出刘海抠图不净、待机毛发动作偏少。最新探索见[单耳绘制姿态试验](LEARNER_AVATAR_EAR_TURN_TRIAL.md)；本文记录双耳/发束基线，不代表这些反馈已解决。基线绘制约束已在本轮源码上复验；原 18 秒 GIF 保留 `662fc2e5` 阶段输出，新试验另有对照 GIF。
+
 ## 当前交付与工作区
 
 - 独立工作区 `/Users/yy/Documents/projects/OctosLearn/octos-learn-avatar-local-rig`，基于主线 PR 分支的 `e20c489e`。

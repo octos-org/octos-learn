@@ -1,5 +1,6 @@
 import {STAR_FOX_HAIR,STAR_FOX_RIGHT_EAR,type HairPartSpec} from './star-fox-parts';
 import type {PaintedSecondaryPose} from './painted-secondary-motion';
+import {drawEarTurn} from './painted-ear-turn';
 /** A limited Star Fox material/rig experiment. Coordinates are in the 704px
  * portrait, independent of the face-fitting crop. No capture data lives here. */
 export type RigPoint = [number, number];
@@ -17,7 +18,7 @@ export const LOCAL_RIG_ASSETS = {
   restore:'teach-avatars/star-fox/local-rig-v0.3/restore.png',
   oral:'teach-avatars/star-fox/local-rig-v0.3/oral.png',
 } as const;
-export type LocalRigImages = Record<keyof typeof LOCAL_RIG_ASSETS, CanvasImageSource>;
+export type LocalRigImages = Record<keyof typeof LOCAL_RIG_ASSETS, CanvasImageSource> & {earTurn?:CanvasImageSource};
 export const LOCAL_EAR_ROOT: RigPoint = [180, 307];
 /** Visible attachment follows the diagonal front-hair boundary. A horizontal
  * band at the bottom misses its upper corner, where the reported crack was. */
@@ -158,7 +159,9 @@ export function createLocalRigPainter(images:LocalRigImages,surface:Surface){
   const drawEar=earPart(images.ear,images.back,false),drawRightEar=earPart(images.rightEar,images.rightBack,true);
   const hairs=STAR_FOX_HAIR.map(spec=>{const[x,y,width,height]=spec.box;return{spec,image:images[spec.id],mesh:createPartMesh(read(images[spec.id]),surface,{x,y,width,height,columns:12,rows:12,output:[...spec.output]})};});
   return {drawEar,drawRightEar,draw(target:CanvasRenderingContext2D,pose:LocalRigPose){
-    target.drawImage(images.restore,0,0);drawEar(target,pose.ear);drawRightEar(target,pose.rightEar??0);target.drawImage(images.foreground,0,0);
+    target.drawImage(images.restore,0,0);
+    if(images.earTurn)drawEarTurn(target,images.earTurn,pose.ear);else drawEar(target,pose.ear);
+    drawRightEar(target,pose.rightEar??0);target.drawImage(images.foreground,0,0);
     for(const part of hairs){const value=clamp(pose[part.spec.id]??0);if(Math.abs(value)<1e-8)target.drawImage(part.image,0,0);else part.mesh(target,point=>starFoxHairPoint(point,value,part.spec));}
   }};
 }

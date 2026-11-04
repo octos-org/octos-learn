@@ -2871,5 +2871,10 @@
   "左侧发束": "Left hair lock",
   "刘海轻摆": "Forelock sway",
   "双耳独立转动，刘海和两侧发束随动；取消勾选可查看旧版。": "Both ears move independently; the forelock and side locks follow the head. Uncheck to compare the previous version.",
-  "横向口型": "Wide mouth shape"
+  "横向口型": "Wide mouth shape",
+  "左耳使用绘制姿态动画（试验）": "Use painted left-ear poses (experimental)",
+  "停止左耳转向对照": "Stop left-ear comparison",
+  "播放左耳转向对照": "Play left-ear comparison",
+  "左耳试验：转动时切换不同朝向的绘图；取消勾选可对照原来的变形效果。右耳保持原版。": "Left-ear trial: play drawings of different orientations. Uncheck to compare the previous deformation. The right ear uses the previous version.",
+  "左耳转向对照，未使用摄像头": "Left-ear comparison, camera off"
 }

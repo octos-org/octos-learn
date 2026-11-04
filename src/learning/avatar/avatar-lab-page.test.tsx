@@ -5,10 +5,10 @@ import type { CaptureCallbacks } from "./face-capture";
 import type { FaceFrame } from "./face-frame";
 
 const captureMock = vi.hoisted(() => ({ starts: vi.fn(), stops: vi.fn(), callbacks: null as CaptureCallbacks | null }));
-const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'',idleMotion:false }));
+const stageMock = vi.hoisted(() => ({ frame: null as ((now: number) => FaceFrame) | null, active: false,characterId:'',idleMotion:false,earTurn:false,earDemo:false }));
 vi.mock("../academy/academy-header", () => ({ AcademyHeader: () => <header /> }));
 vi.mock("../teach/teach-board", () => ({ TeachBoard: () => <div /> }));
-vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId,idleMotion=false }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string;idleMotion?:boolean }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox';stageMock.idleMotion=idleMotion; return <div />; } }));
+vi.mock("./illustrated-avatar-stage", () => ({ IllustratedAvatarStage: ({ frame, active,characterId,idleMotion=false,earTurn=false,earDemo=false }: { frame: (now: number) => FaceFrame; active: boolean;characterId?:string;idleMotion?:boolean;earTurn?:boolean;earDemo?:boolean }) => { stageMock.frame = frame; stageMock.active = active;stageMock.characterId=characterId??'star-fox';stageMock.idleMotion=idleMotion;stageMock.earTurn=earTurn;stageMock.earDemo=earDemo; return <div />; } }));
 vi.mock("./avatar-audio-preview", () => ({ AvatarAudioPreview: () => <div /> }));
 vi.mock("./face-capture", () => ({
   FaceCapture: class {
@@ -114,7 +114,10 @@ it("routes captured expressions into the 2D stage and records them for replay", 
   stageMock.frame!(1066); stageMock.frame!(1100);
   vi.mocked(performance.now).mockReturnValue(1133);
   fireEvent.click(screen.getByRole("button", { name: "结束动作片段", exact: true }));
+  fireEvent.click(screen.getByRole('button',{name:'播放左耳转向对照'}));
+  expect(stageMock.earDemo).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "回放片段", exact: true }));
+  expect(stageMock.earDemo).toBe(false);
   expect(stageMock.frame!(1133).source).toBe("mediapipe");
   expect(stageMock.frame!(1133).channels.eyeBlinkLeft).toBeGreaterThan(.5);
   page.unmount();
@@ -178,4 +181,15 @@ it("keeps a manual recording running across slider changes and replays the chang
   expect(stageMock.frame!(1300).channels.jawOpen).toBe(0);
   expect(stageMock.frame!(1400).channels.jawOpen).toBe(.8);
   expect(stageMock.frame!(1500).channels.mouthPucker).toBe(.6);
+});
+
+it('compares drawn ear poses on the same demo without opening capture and cancels it for manual inspection',()=>{
+  open();expect(stageMock.earTurn).toBe(true);
+  fireEvent.click(screen.getByRole('button',{name:'播放左耳转向对照'}));
+  expect(stageMock.earDemo).toBe(true);expect(stageMock.idleMotion).toBe(false);expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('checkbox',{name:'左耳使用绘制姿态动画（试验）'}));
+  expect(stageMock.earTurn).toBe(false);expect(stageMock.earDemo).toBe(true);
+  fireEvent.change(screen.getByRole('slider',{name:'左耳转向'}),{target:{value:'.8'}});
+  expect(stageMock.earDemo).toBe(false);
+  fireEvent.click(screen.getByRole('button',{name:'回到自动跟随'}));expect(stageMock.idleMotion).toBe(true);
 });

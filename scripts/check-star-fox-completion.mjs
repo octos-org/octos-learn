@@ -26,5 +26,14 @@ if(existsSync(reportPath)){
  if(!existsSync(validationPath))errors.push('Missing final test/build/preview evidence');
  else{const v=JSON.parse(readFileSync(validationPath,'utf8'));if(!v.fullUnit?.passed||v.fullUnit.tests<1700||!v.finalUi?.passed||!v.buildPassed||!v.lintPassed||!v.i18n?.passed||v.preview?.pageHttp!==200||v.preview?.allImageHttp!==200)errors.push('Final required checks are incomplete');if(JSON.stringify(v.inputSha256)!==JSON.stringify(report.inputSha256))errors.push('Final checks refer to a different source/material set');}
 }else errors.push('Missing current product-rendering report');
+const trialPath='docs/avatar-animation-phase-a/ear-turn-trial/report.json';
+if(existsSync(trialPath)){
+ const trial=JSON.parse(readFileSync(trialPath,'utf8'));
+ if(trial.frames<12||trial.checkedStates<135||trial.rootMax>1||trial.exposedPaper!==0||trial.bodyMax!==0||trial.innerWhite.at(-1)>trial.innerWhite[0]*.65)errors.push('Drawn ear trial failed its image-pose constraints');
+ for(const[path,hash]of Object.entries(trial.inputSha256??{}))if(!existsSync(path)||createHash('sha256').update(readFileSync(path)).digest('hex')!==hash)errors.push(`Ear trial validation is stale: ${path}`);
+ const recordPath='docs/avatar-animation-phase-a/ear-turn-trial/validation.json';
+ if(!existsSync(recordPath))errors.push('Missing ear trial completion evidence');
+ else{const v=JSON.parse(readFileSync(recordPath,'utf8'));if(!v.implementationComplete||!v.fullUnit?.passed||!v.buildPassed||!v.lintPassed||!v.i18nPassed||v.preview?.pageHttp!==200||v.preview?.atlasHttp!==200||JSON.stringify(v.inputSha256)!==JSON.stringify(trial.inputSha256))errors.push('Ear trial completion evidence is incomplete');}
+}
 if(errors.length){console.error('Star Fox work is incomplete:\n'+errors.map(x=>' - '+x).join('\n'));process.exit(1);}
 console.log('All six Star Fox work items have completion records and available evidence. This gate does not replace visual or device acceptance.');

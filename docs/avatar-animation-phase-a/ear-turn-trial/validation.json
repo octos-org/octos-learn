@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-04",
+  "baseline": "662fc2e5",
+  "implementationComplete": true,
+  "visualAcceptance": false,
+  "fullUnit": {
+    "files": 207,
+    "tests": 1729,
+    "passed": true
+  },
+  "finalUi": {
+    "files": 3,
+    "tests": 24,
+    "passed": true
+  },
+  "buildPassed": true,
+  "lintPassed": true,
+  "i18nPassed": true,
+  "preview": {
+    "pageHttp": 200,
+    "atlasHttp": 200,
+    "moduleContainsTrial": true,
+    "browserCameraAcceptance": false
+  },
+  "media": {
+    "path": "scratch/ear-turn/comparison.gif",
+    "width": 880,
+    "height": 540,
+    "frames": 132,
+    "durationMs": 4400,
+    "syntheticInputs": true
+  },
+  "inputSha256": {
+    "src/learning/avatar/painted-ear-turn.ts": "1b89d6b337194ac97889ff3989f5ba9a92a672a5fbacd30667fd8fad8519fc99",
+    "src/learning/avatar/painted-local-rig.ts": "d1d776fe8902e97cb57031fd9f2986e6d23033c8400dae8c033067b9115b2ea4",
+    "src/learning/avatar/painted-fox.ts": "208e451de6073ff8fe967fd9667d1cf08ccd6509e336007aa9255243ccdccac6",
+    "src/learning/avatar/illustrated-avatar-stage.tsx": "c295179fcaa8753902afa27e961a7b1b91e4db179667377f151eb48d79f493a9",
+    "src/learning/avatar/avatar-lab-page.tsx": "e87b82c2db730bd7678c2e80a3e6331ebfa7dbd24208b3486cb9463a52d516c6",
+    "scripts/prepare-ear-turn.ts": "bbc2e765623083dbd9bdd5d36f8138f12064f2511318458618cfce418c09caf0",
+    "scripts/avatar-ear-turn-validate.ts": "c585167c127fc3335a2b0800a061b8242debea36e7df9f8471649d31ad3ad0ef",
+    "public/teach-avatars/star-fox/ear-turn-v0.1/poses.png": "2bea7c33aa7e2d2dc5665fa3b04cd65633212d0830df5dc13d54adf330d1ef99"
+  }
+}

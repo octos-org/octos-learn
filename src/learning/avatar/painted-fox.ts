@@ -3,6 +3,7 @@ import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
 import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,HEAD_SHIFT,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
 import { createLocalRigPainter, starFoxFollowingPose,starFoxNaturalPose,type LocalRigImages, type LocalRigPose } from './painted-local-rig';
+import {earTurnDemoValue} from './painted-ear-turn';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -273,7 +274,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     deformed.context.putImageData(headOutput,0,0);return deformed.canvas;
   }
   return {
-    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean;localPose?:LocalRigPose}={}):{settling:boolean} {
+    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean;localPose?:LocalRigPose;earDemo?:boolean}={}):{settling:boolean} {
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
@@ -298,7 +299,8 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       if(localPainter){
         const pose=starFoxFollowingPose(secondary);
         if(options.idleMotion){const idle=starFoxNaturalPose(options.timeMs??0);for(const key of Object.keys(idle)as Array<keyof LocalRigPose>)pose[key]=(pose[key]??0)+(idle[key]??0);}
-        localPainter.draw(portraitCtx,options.localPose??pose);
+        const displayed=options.localPose??pose;
+        localPainter.draw(portraitCtx,options.earDemo?{...displayed,ear:earTurnDemoValue(options.timeMs??0)}:displayed);
         // Treat expression residuals as the top facial layer. A moving bang
         // must not restore the original brow pixels over a raised/lowered brow.
         const facial=portraitCtx.getImageData(padX+128,padY+128,272,210),posed=ctx.getImageData(128,128,272,210);

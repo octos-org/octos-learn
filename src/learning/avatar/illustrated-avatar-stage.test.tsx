@@ -49,6 +49,19 @@ it('loads local layers only for the explicitly enabled fox and releases them on 
   expect(images.slice(21).some(i=>i.src.includes('local-rig-v0.3'))).toBe(false);
 });
 
+it('loads the drawn-ear atlas only in the enabled fox trial and releases it on comparison',()=>{
+  const page=render(<IllustratedAvatarStage frame={neutralFrame} active={false} localRig earTurn earDemo />);
+  expect(images).toHaveLength(17);expect(images.some(i=>i.src.includes('ear-turn-v0.1/poses.png'))).toBe(true);
+  const original=[...images];act(()=>original.forEach(i=>i.onload!()));advance(100);advance(300);
+  expect(raf.size).toBe(1);
+  page.rerender(<IllustratedAvatarStage frame={neutralFrame} active={false} localRig earTurn={false} earDemo={false} />);
+  expect(original.every(i=>i.onload===null&&i.src==='')).toBe(true);
+  expect(images.slice(17)).toHaveLength(16);expect(images.slice(17).some(i=>i.src.includes('ear-turn-v0.1'))).toBe(false);
+  act(()=>images.slice(17).forEach(i=>i.onload!()));advance(400);advance(600);expect(raf.size).toBe(0);
+  page.rerender(<IllustratedAvatarStage characterId="moon-cat" frame={neutralFrame} active={false} localRig earTurn />);
+  expect(images.slice(33)).toHaveLength(5);expect(images.slice(33).some(i=>i.src.includes('ear-turn-v0.1'))).toBe(false);
+});
+
 it("stops scheduling when inactive and redraws a changed paused pose", () => {
   const page = render(<IllustratedAvatarStage frame={neutralFrame} active={false} />);
   act(() => images.forEach((image) => image.onload!())); advance(100); advance(200); expect(raf.size).toBe(0);
