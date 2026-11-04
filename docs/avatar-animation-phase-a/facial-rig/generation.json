@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-02",
+  "method": "Built-in imagegen precise local edits, followed by manually authored facial masks. Whole generated face/body is not a runtime texture.",
+  "reference": "../single-image/source.png",
+  "cleanPrompt": "Use case: precise-object-edit. Edit target: attached 512x512 Star Fox face-and-shoulders crop, from the original painting. This is animation material preparation, not a new illustration. Preserve exact head pose, outline, proportions, eye centers, hair strands, nose, collar, shoulder, badge, star embroidery, painterly rendering, cream backdrop and framing. Do not simplify or change the character. No hands or new body. Same square framing; edit only requested tiny facial regions.\nRemove ONLY both eyes including lashes, eyebrows and the tiny closed mouth line. Fill those small regions with seamless matching cream fur / warm skin shading. Keep hair overlapping eyes unchanged. Keep nose. No sockets, eyelids, blur smears, new features or text. This is the underlying face surface for an animation rig.",
+  "expressionPrompt": "Use case: precise-object-edit. Edit target: attached 512x512 Star Fox face-and-shoulders crop, from the original painting. This is animation material preparation, not a new illustration. Preserve exact head pose, outline, proportions, eye centers, hair strands, nose, collar, shoulder, badge, star embroidery, painterly rendering, cream backdrop and framing. Do not simplify or change the character. No hands or new body. Same square framing; edit only requested tiny facial regions.\nChange ONLY both eyes to gently fully CLOSED eyes: elegant thin dark brown eyelids/eyelashes, natural relaxed curved lines, NO visible iris, no eye sockets or shading patches. The closure line lies across the original eyes at their lower-middle height. Change ONLY the small mouth line to a modest mid-speech open mouth, soft dark warm interior and small pink tongue, width ~same as original closed smile, no teeth. Keep eyebrows and every other pixel region aligned with the reference. Maintain the original fine painted detail. No new pose or composition.",
+  "rawOutputs": {
+    "clean": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-bcff793a-2c5a-4a13-bcc2-2e2c6844316b.png",
+    "expression": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-3f49336a-6ca9-4ffe-a90a-d1a271da8709.png"
+  },
+  "boundOutputs": [
+    "materials/clean-aligned.png",
+    "materials/expression-aligned.png"
+  ],
+  "processing": "1254px outputs resampled to 512px. Only small masked underlying fur, eyelids and mouth used. Expression mouth shifted +10 px X to match source. Transparent RGB zeroed for compact final cutouts.",
+  "automaticSeeThroughExecuted": false,
+  "upstream": {
+    "url": "https://github.com/852wa/Anime2.5DRig",
+    "commit": "7ddbd9943ea3152561b3dc8348fd752c850f3e95",
+    "license": "MIT",
+    "note": "Diagnostic PSD/anchors tested upstream. Browser generic deformation rejected for this character; provided Canvas study is a separate conservative transition probe, not the upstream engine."
+  }
+}

@@ -8,6 +8,7 @@ import { loadRecoverableJson, writeRecoverableJson } from "../recoverable-storag
 import { loadInkSnapshots, saveInkSnapshot, type StoredInkSnapshot } from "./ink-snapshot-store";
 import type { LearnerRecording } from "./recording";
 import { decodeRecording, deleteRecordingDraft, loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
+import { deleteRecordingPerformances } from "./take-performance-store";
 import { listLessons, putLessonDraft, readLesson, type SavedLessonSummary } from "./learner-lessons-api";
 
 /** What both sides last agreed on for one draft. */
@@ -95,6 +96,7 @@ export async function syncLessonDrafts(storage: Storage, profileId: string, api:
       // Known to the service before and gone now: the learner deleted it there.
       if (known) {
         deleteRecordingDraft(storage, profileId, draft.id);
+        if (typeof indexedDB !== "undefined") void deleteRecordingPerformances(profileId, draft.id).catch(() => undefined);
         delete synced[draft.id];
         result.removed.push(draft.id);
       } else await push(draft, null);

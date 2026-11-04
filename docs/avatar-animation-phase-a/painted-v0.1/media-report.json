@@ -1,0 +1,11 @@
+{
+  "mp4DecodedFrames": 160,
+  "mp4Size": [
+    536,
+    536
+  ],
+  "mp4Fps": 20,
+  "gifDurationMs": 8000,
+  "source": "Actual createPaintedFoxPainter with deterministic demoFaceFrame input",
+  "limitation": "Offline playback rate is not real-time capture or television performance."
+}

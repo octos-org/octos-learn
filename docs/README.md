@@ -60,6 +60,51 @@
 
 ## 专题计划
 
+- [录课摄像头动作接入课程](LEARNER_AVATAR_CAMERA_PERFORMANCE.md)：录课时可选摄像头带动形象；表情/转头按最终配音重新对齐进课包，播放时与配音嘴型合成；隐私与校验边界。
+- [耳发随头动与张嘴线条](LEARNER_AVATAR_HEAD_FOLLOW_MOUTH.md)：当前版本；耳朵滞后跟随、转头侧耳朵侧转、头发惯性，张嘴改为光滑抗锯齿下唇。
+- [耳廓主动转向：四角色修正](LEARNER_AVATAR_EAR_ORIENTATION.md)：当前耳动实现；独立转向/保持/回正、小角度耳平面投影与单独发梢惯性，附近景与四角色实际动画、60 项测试和素材边界。
+
+- [动物耳部运动：重审当前随动](LEARNER_AVATAR_ANIMAL_EAR_RESEARCH.md)：用户否定旧耳动自然度后的机构资料/论文核查；区分主动耳廓转向与被动发梢随动，列明小熊猫/浣熊身份和证据缺口；后续实现见耳廓主动转向。
+
+- [四角色耳发随动与静止小动作](LEARNER_AVATAR_SECONDARY_MOTION.md)：历史弹簧/正弦版本，用户已否定耳动自然度；保留实现与检查记录，当前以耳廓主动转向为准。
+
+- [四款学生虚拟形象：同页互动预览](LEARNER_AVATAR_FOUR_CHARACTERS.md)：星狐、小熊猫、白兔、女性月猫，独立绑定与同页切换，附真实绘制器输出和原星狐零差异检查。
+- [给手势白板研究 agent 的 prompt](LEARNER_GESTURE_WHITEBOARD_RESEARCH_PROMPT.md)：MediaPipe Hand Landmarker、本地白板笔画映射与独立分支协作范围。
+
+- [星狐完整耳朵、随动与眉眼表情](LEARNER_AVATAR_EARS_EXPRESSIONS.md)：当前星狐工作入口；补绘完整耳朵、耳尖/发梢随动、皱眉覆盖修复与眉眼联动、口腔采样改善，附实际程序动画和像素验证。
+
+- [双线推进：星狐优化与神经卡通化实验](LEARNER_AVATAR_TWO_TRACK_PROGRESS.md)：最新工作入口。星狐新增视线、笑眼、眉毛/嘴角独立变化；DCT-Net 真实本地输出、ONNX 转换与 WASM 计算验证，附对照动画、数值检查和实际性能边界。
+
+- [Cartoon 3D Style 深入可行性](LEARNER_AVATAR_CARTOON_STYLE_FEASIBILITY.md)：用户已确认视觉目标；SDK 免费与内容授权分开核查，官方发布包 12 项静态接口检查、Face Generator 网页兼容性缺口、自托管模型元数据、匿名录制/最终配音/安卓落地顺序。尚未运行新模型。
+
+- [截图特效再研究：实时神经卡通化](LEARNER_AVATAR_NEURAL_CARTOON_RESEARCH.md)：用户否定现成角色后，按截图跨平台查找；记录 Google Lens 实际提交与结果读取限制、Snapchat 官方机器学习卡通化线索，以及自有画风、匿名与课程回放的限制。
+
+- [现成虚拟角色初筛](LEARNER_AVATAR_CHARACTER_SHORTLIST.md)：三组真实角色图、作者动作视频来源、成本与网页分发授权状态；尚未购买或接入，供先选外观。
+
+- [虚拟讲师路线重选：现成完整角色优先](LEARNER_AVATAR_DOUYIN_REASSESSMENT.md)：用户否定 DeepAR 外观与费用后，优先调研完整丰富表情 VRM + 开源渲染，专业 Live2D 备选；保留厂商调研和纯角色输出、最终配音回放、课程包及电视验证门槛。新候选尚未集成。
+
+- [二维星狐嘴型与头发/耳朵边缘修正](LEARNER_AVATAR_RESPONSE_FIX.md)：扩大相机张嘴响应与可见行程，撤销头部顶部/两侧的固定约束，附同输入前后对比与既有识别动作回放；保留源图裁切和缺失侧脸限制。
+
+- [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：当前接手入口；四角色/最新耳廓转向、交接提交范围、代码/素材/验证与复现、用户认可边界，以及 M6 目录/动态播放/v2 保存缺口。
+
+- [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
+- [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。
+- [正式星狐模型交付规范](LEARNER_AVATAR_MODEL_SPEC.md)：可交给建模/绑定制作人员的通道、资产、自动检查和组合表情验收要求。
+- [星狐三维小样 v0.1](LEARNER_AVATAR_STAR_FOX_SAMPLE.md)：本项目直接制作的可编辑模型、21 通道表情、真实 GLB 加载、定格检查与实际质量边界。
+- [学生讲师二维方向](LEARNER_AVATAR_2D_DIRECTION.md)：用户否定三维小样后的新路线；二维绘本角色、图层嘴眼动画、教学表现与分阶段验收，尚未替换运行渲染器。
+- [二维星狐可播放小样](LEARNER_AVATAR_2D_PREVIEW.md)：插画与独立程序五官、动作/中文配音预览、实际动图导出，以及浏览器验收限制；录课入口已指向新小样。
+- [二维星狐完整互动](LEARNER_AVATAR_2D_INTERACTIVE.md)：摄像头参数、校准/录制/回放、连续滑杆与试听接入二维舞台；主入口已改为互动试验室，附聊天内直接拖动版本。
+- [二维星狐正面姿态修正](LEARNER_AVATAR_UPRIGHT_POSE.md)：当前 `painted-v0.2` 完整正面立绘、眼口眉重新绑定；说明 MediaPipe → 参数 → Canvas 变形的实际实现，用户已取消继续浏览器验收。
+- [原画风二维星狐互动版本](LEARNER_AVATAR_PAINTED_INTERACTIVE.md)：上一版整合记录；连续双眼、开合/圆唇/微笑、抬眉、有限头部变形接入原有控制和录制回放，附实际浏览器截图、动画、像素检查与未验证边界。
+- [真实模型输入验证与眨眼修正](LEARNER_AVATAR_REAL_INPUT_VALIDATION.md)：五段本地公开视频的 966 次实际模型推理、真实参数驱动动画、快速眨眼修复、失跟恢复与回放检查；明确原生 Python 与网页 Worker 的差别及浏览器工具阻塞。
+- [单张星狐 LivePortrait 实测](LEARNER_AVATAR_SINGLE_IMAGE_VALIDATION.md)：真实运行人像版/动物版与官方动作对照，附离线短片、逐帧报告和复现脚本；当前画面质量与本机速度未通过，不接入产品。
+- [同原画面部素材与绑定验证](LEARNER_AVATAR_FACE_RIG_VALIDATION.md)：保留原画细节的分层实测；已修正中性跳变并验证双眼独立控制，附真实浏览器截图、慢速动画、可操作页与摄像头验收边界。
+- [单图与直播式二维面部动画调研](LEARNER_AVATAR_SINGLE_IMAGE_RESEARCH.md)：最新范围收敛为面部，核查 VTube Studio/Live2D、单图生成式与自动分层绑定；说明真实可用性、许可和未实测边界。
+- [正面二维角色与身体跟随](LEARNER_AVATAR_BODY_CAPTURE.md)：上一轮实现记录，用户已否定画面质量、手臂暂缓；保留原画细腻画风、重新制作头正的独立部件，加入双臂/手腕/三类手势捕捉与排练，身体动作录制回放，附验证与实际设备限制。
+- [原始插画表情驱动](LEARNER_AVATAR_ORIGINAL_ART.md)：历史阶段；按用户原图保留毛发、琥珀眼与服装细节；局部绘画素材与纹理形变驱动表情，自然状态实际像素与源图一致。
+- [正式星狐制作路线调研](LEARNER_AVATAR_PRODUCTION_RESEARCH.md)：人工制作、AI 辅助与现成资产比较；狐头小样、费用假设、分阶段验收和可直接使用的询价需求。
+- [配音与嘴型排练](LEARNER_AVATAR_AUDIO_SYNC.md)：本机音频预览、可选 v2 嘴型课包、完整白板同步播放器，以及高质量发音与正式角色待办。
+
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
 - [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。

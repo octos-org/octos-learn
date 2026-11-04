@@ -1,0 +1,100 @@
+{
+  "note": "SHA-256 of final product renderer, runtime assets and retained validation evidence. Browser screenshot predates final manual-recording fix; checks.json states the boundary.",
+  "files": [
+    {
+      "path": "src/learning/avatar/painted-fox.ts",
+      "bytes": 10625,
+      "sha256": "df5016aa8e32788cfcaf8d5a59f59e8da94dba53cff5f1ca27b9e4013fd6432d"
+    },
+    {
+      "path": "src/learning/avatar/painted-eyes.ts",
+      "bytes": 5217,
+      "sha256": "a96cbc591e4bdd94c1540e30cae48300eb3a38f91e778f92c1b7dd4adb79f2fe"
+    },
+    {
+      "path": "src/learning/avatar/avatar-lab-page.tsx",
+      "bytes": 21851,
+      "sha256": "47f7f54b0f3bd91969791c866987dfa2703101c764ca638fb4e03057d05364b5"
+    },
+    {
+      "path": "src/learning/avatar/illustrated-avatar-stage.tsx",
+      "bytes": 5303,
+      "sha256": "f847eb1a7720b24bb21674c81704eda7631982db047aee017940315ce8b5de35"
+    },
+    {
+      "path": "public/teach-avatars/star-fox/painted-v0.1/asset-info.json",
+      "bytes": 3303,
+      "sha256": "54c249f3f2b61f0a359ed722e59ef25b16979bc25fa3a50e287758d6b90ceb15"
+    },
+    {
+      "path": "public/teach-avatars/star-fox/painted-v0.1/brows-clean.png",
+      "bytes": 476320,
+      "sha256": "5f68b52183c4542199c226798e3eb08d79a9df0a2e15339a75fd740a0e83d99c"
+    },
+    {
+      "path": "public/teach-avatars/star-fox/painted-v0.1/clean.png",
+      "bytes": 446601,
+      "sha256": "56724b21a7bd16e1ba0211e01e717682f4e83cd62d5ab4149ef60cf069e48d2a"
+    },
+    {
+      "path": "public/teach-avatars/star-fox/painted-v0.1/mouth.png",
+      "bytes": 3791,
+      "sha256": "f3ad9601e5c65bdf8c29467052d32e00967d4b020af7fab881d1705167107e9e"
+    },
+    {
+      "path": "public/teach-avatars/star-fox/painted-v0.1/source.png",
+      "bytes": 457984,
+      "sha256": "7f57b7516b07d1302dbfca14ba22fdb70cdad11de2739e9b00dba1ba7122f81b"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/animation-report.json",
+      "bytes": 251,
+      "sha256": "2539ac2161354771f1eac7036108803d5c024f5cbc1925575438501d7a498b1f"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/browser-smile.jpg",
+      "bytes": 105179,
+      "sha256": "21587156fc2090b57488e0e137a291ad4c5fd1fc95f82e31e8af52e71f9c0283"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/checks.json",
+      "bytes": 1758,
+      "sha256": "3b761a6b4105893e882d17d39ce4fd3a3df7ca4e0eedbc7fb13b4c2116be88ae"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/media-report.json",
+      "bytes": 286,
+      "sha256": "20200e88e15c4b0eeecf685eb6c6fb0d0f0c98b46e7c5a6448d5bcec090e44f5"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/poses.jpg",
+      "bytes": 1099704,
+      "sha256": "53d2d5c2fa87268b6f6f40a8e10892f219d9b17ee5c8716cd36ae1f1d5186221"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/preview.gif",
+      "bytes": 7815192,
+      "sha256": "68ed4578434ea000eb3685c3e95e0f77291a44da6adf601a02e68333290fc1d0"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/preview.mp4",
+      "bytes": 2478943,
+      "sha256": "1cdd10a94779d745cfb3acb9993e9f69d2ccdafb723b7791b2c0cfdb1d3ef128"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/render-report.json",
+      "bytes": 1306,
+      "sha256": "89b0ab6805728dfb3484140b3818e5e68c6b6541c0b4f8c6c3315c079894ea27"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/round-trip-report.json",
+      "bytes": 213,
+      "sha256": "6cd806de89d67c30fc228aeee88bf63a6415f860ea9d51134fc735a1a122b13c"
+    },
+    {
+      "path": "docs/avatar-animation-phase-a/painted-v0.1/synthetic-track.json",
+      "bytes": 31867,
+      "sha256": "aa6be9b4b248550311cb415b16b9fe33d8d6ec92686fa0d886c5d0787b0e426d"
+    }
+  ]
+}

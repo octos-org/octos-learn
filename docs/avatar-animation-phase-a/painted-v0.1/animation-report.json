@@ -1,0 +1,8 @@
+{
+  "frames": 160,
+  "playbackFps": 20,
+  "durationMs": 8000,
+  "source": "Deterministic demoFaceFrame, no human/camera input",
+  "averageNativeDrawMs": 8.983920075000018,
+  "note": "Native authoring environment only, not browser or television FPS."
+}

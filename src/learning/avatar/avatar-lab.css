@@ -1,0 +1,97 @@
+.avatar-lab { color: #24394b; background: #f6f4ee; }
+.avatar-lab .course-launcher-inner { max-width: 1240px; }
+.avatar-lab-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 26px; }
+.avatar-lab-heading a { color: #53697c; font-size: 14px; }
+.avatar-lab-heading h1 { margin: 10px 0 0; font-size: 30px; font-weight: 600; }
+.avatar-lab-heading > span, .avatar-lab-stage-label { padding: 6px 12px; border-radius: 999px; color: #605230; background: #eee4ca; font-size: 12px; }
+.avatar-lab-intro { margin: 14px 0 22px; max-width: 760px; color: #53697c; line-height: 1.7; }
+.avatar-lab-natural-motion { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; }
+.avatar-lab-characters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; max-width: 620px; margin-bottom: 22px; }
+.avatar-lab-characters button { display: grid; justify-items: center; gap: 6px; padding: 8px; min-width: 0; border: 2px solid #d7dfe2; border-radius: 14px; background: #fffdf7; color: #24394b; cursor: pointer; }
+.avatar-lab-characters button[aria-pressed="true"] { border-color: #506e89; background: #eaf0f3; }
+.avatar-lab-characters button:focus-visible { outline: 3px solid #9d7940; outline-offset: 3px; }
+.avatar-lab-characters button:disabled { opacity: .6; cursor: default; }
+.avatar-lab-characters img { display: block; width: 100%; max-height: 108px; object-fit: contain; border-radius: 8px; }
+.avatar-lab-characters span { font-size: 14px; }
+.avatar-lab-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+.avatar-lab-stage { position: relative; min-height: 440px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 22px; background: radial-gradient(ellipse at 50% 43%, #f9f6eb 0%, #e6edf2 80%); }
+.avatar-lab-stage > .avatar-lab-illustrated { position: absolute; inset: 0 0 45px; width: auto; height: auto; }
+.avatar-lab-manual { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-manual-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
+.avatar-lab-manual h2 { margin: 0; font-size: 18px; }
+.avatar-lab-manual p { color: #617384; font-size: 13px; line-height: 1.65; margin: 8px 0 0; }
+.avatar-lab-sliders { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px 24px; margin-top: 20px; }
+.avatar-lab-sliders label { display: grid; gap: 10px; min-width: 0; font-size: 13px; }
+.avatar-lab-sliders label > span { display: flex; justify-content: space-between; gap: 10px; }
+.avatar-lab-sliders output { color: #8b7c62; font-variant-numeric: tabular-nums; }
+.avatar-lab-sliders input { width: 100%; accent-color: #34496c; }
+@media(max-width:800px) { .avatar-lab-sliders { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+.avatar-lab-render { position: absolute; inset: 0 0 45px; }
+.avatar-lab-render canvas { display: block; }
+.avatar-lab-stage-label { position: absolute; top: 16px; left: 16px; }
+.avatar-lab-recording { position: absolute; top: 16px; right: 16px; border-radius: 10px; padding: 6px 12px; color: #8e371e; background: #fbe4da; font-size: 12px; }
+.avatar-lab-status { position: absolute; bottom: 0; left: 0; right: 0; min-height: 45px; display: grid; place-items: center; padding: 8px 16px; box-sizing: border-box; color: #eef3f7; background: #243b56; text-align: center; }
+.avatar-lab-controls { display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid #d7dfe2; border-radius: 20px; background: #fffef9; }
+.avatar-lab-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.avatar-lab .teach-primary, .avatar-lab .teach-secondary { display: inline-flex; justify-content: center; align-items: center; gap: 9px; min-height: 42px; padding: 10px 14px; border: 1px solid #c9d2da; border-radius: 12px; color: #24394b; background: #fffef9; font: inherit; font-size: 14px; text-decoration: none; cursor: pointer; }
+.avatar-lab .teach-primary { color: #fff8e8; background: #273e75; border-color: #273e75; }
+.avatar-lab button:disabled { opacity: .5; cursor: default; }
+.avatar-lab-controls .avatar-lab-actions { flex-direction: column; align-items: stretch; }
+.avatar-lab-controls p, .avatar-lab-track > p, .avatar-lab-metrics > p { margin: 0; color: #617384; font-size: 13px; line-height: 1.65; }
+.avatar-lab-camera { width: 100%; max-height: 150px; object-fit: cover; border-radius: 12px; transform: scaleX(-1); }
+.avatar-lab-camera[hidden] { display: none; }
+.avatar-lab-select { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 14px; }
+.avatar-lab select { max-width: 190px; padding: 8px; border: 1px solid #c9d2da; border-radius: 9px; background: #fff; color: #24394b; }
+.avatar-lab-concept { display: flex; align-items: center; gap: 14px; margin-top: auto; border-top: 1px solid #e2e5e7; padding-top: 12px; color: #53697c; font-size: 12px; }
+.avatar-lab-concept img { width: 72px; height: 86px; object-fit: contain; }
+.avatar-lab-track, .avatar-lab-metrics, .avatar-lab-whiteboard { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-track > p, .avatar-lab-metrics > p { margin: 12px 0; }
+.avatar-lab-import { display: inline-flex; flex-direction: column; gap: 5px; font-size: 13px; }
+.avatar-lab-import input { max-width: 220px; font-size: 12px; }
+.avatar-lab-scrub { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; }
+.avatar-lab-scrub input { flex: 1; min-width: 100px; accent-color: #273e75; }
+.avatar-lab-metrics dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin: 0; }
+.avatar-lab-metrics dt { font-size: 12px; color: #617384; }
+.avatar-lab-metrics dd { margin: 6px 0 0; font-size: 22px; font-variant-numeric: tabular-nums; }
+.avatar-lab-board-heading { display: flex; gap: 16px; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.avatar-lab-board-heading h2 { margin: 0 0 5px; font-size: 18px; }
+.avatar-lab-board-heading p { margin: 0; color: #617384; font-size: 13px; }
+.avatar-lab-whiteboard .teach-board-frame { display: block; }
+.avatar-lab-whiteboard .teach-board { position: relative; min-height: 330px; height: 330px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 12px; background: #fbf9f3; }
+.avatar-lab-error { padding: 14px; color: #8e371e; background: #fbe4da; border-radius: 12px; }
+.avatar-lab-pose { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+.avatar-lab-pose > span { font-size: 13px; color: #617384; margin-right: 4px; }
+.avatar-lab-pose button { padding: 8px 12px; border: 1px solid #c9d2da; border-radius: 999px; background: #fffef9; color: #24394b; font: inherit; font-size: 13px; cursor: pointer; }
+.avatar-lab-pose button:hover { border-color: #273e75; background: #edf1f7; }
+.avatar-model-loading { position: absolute; left: 0; right: 0; top: 45%; text-align: center; color: #617384; font-size: 13px; }
+.avatar-lab-library, .avatar-lab-samples { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-library h2, .avatar-lab-samples h2 { margin: 0; font-size: 18px; }
+.avatar-lab-library p, .avatar-lab-samples p { color: #617384; font-size: 13px; line-height: 1.65; }
+.avatar-lab-library label { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; }
+.avatar-lab-library input { width: min(220px, 100%); min-width: 0; padding: 10px; border: 1px solid #c9d2da; border-radius: 9px; background: #fff; color: #24394b; }
+.avatar-lab-library-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.avatar-lab-library-tabs button[aria-pressed="true"] { background: #e8edf5; border-color: #273e75; }
+.avatar-lab-library ul { list-style: none; margin: 16px 0 0; padding: 0; }
+.avatar-lab-library li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 0; border-top: 1px solid #e2e5e7; }
+.avatar-lab-library li > div:first-child { display: grid; gap: 5px; min-width: 0; }
+.avatar-lab-library li strong { overflow-wrap: anywhere; }
+.avatar-lab-library li span { color: #617384; font-size: 12px; }
+.avatar-lab-audio { margin-top: 20px; padding: 20px 22px; border: 1px solid #d7dfe2; border-radius: 18px; background: #fffef9; }
+.avatar-lab-audio h2 { margin: 0; font-size: 18px; }
+.avatar-lab-audio p { color: #617384; font-size: 13px; line-height: 1.65; }
+.avatar-audio-grid { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(0, 1.2fr); gap: 24px; margin-top: 18px; }
+.avatar-audio-stage { position: relative; min-height: 360px; overflow: hidden; border: 1px solid #d7dfe2; border-radius: 18px; background: #e9eff2; }
+.avatar-audio-stage .avatar-lab-render { inset: 0; }
+.avatar-audio-stage > .illustrated-avatar { position: absolute; inset: 0; width: auto; height: auto; }
+.avatar-audio-controls { min-width: 0; }
+.avatar-audio-controls audio { width: 100%; margin: 12px 0; }
+.avatar-audio-controls audio[hidden] { display: none; }
+@media(max-width:800px) { .avatar-audio-grid { grid-template-columns: 1fr; } .avatar-audio-stage { min-height: 300px; } }
+@media(max-width:800px) { .avatar-lab-grid { grid-template-columns: 1fr; } .avatar-lab-stage { min-height: 400px; } .avatar-lab-controls .avatar-lab-actions { flex-direction: row; } .avatar-lab-metrics dl { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:440px) { .avatar-lab-heading h1 { font-size: 25px; } .avatar-lab-heading { align-items: flex-start; } .avatar-lab-board-heading { flex-direction: column; align-items: flex-start; } .avatar-lab-recording { top: 48px; left: 16px; right: auto; } .avatar-lab-controls, .avatar-lab-track, .avatar-lab-metrics, .avatar-lab-whiteboard { padding: 16px; } .avatar-lab-stage { min-height: 340px; } }
+.avatar-lab-body-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.avatar-lab-arm { display: grid; gap: 18px; }
+.avatar-lab-arm h3 { margin: 0; font-size: 14px; }
+.avatar-lab-manual .avatar-lab-sliders:has(.avatar-lab-arm) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.avatar-lab-lean { display: flex; gap: 14px; align-items: center; margin-top: 20px; font-size: 14px; }
+.avatar-lab-lean input { width: min(240px,60%); }

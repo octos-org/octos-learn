@@ -44,35 +44,44 @@ export function presenterVoices(resourceId: string | undefined): PresenterVoice[
   return VOICES[resourceId?.trim() ?? ""] ?? [];
 }
 
-/** A presenter avatar. Its picture is the artwork file named by its ID, once added. */
+/** The painted 2D characters a lesson can be presented by (src/learning/avatar/painted-characters.ts). */
+export type PresenterCharacterId = "star-fox" | "red-panda" | "white-rabbit" | "moon-cat";
+
+/** A presenter avatar: one of the painted 2D characters, shown animated when the lesson has mouth motion. */
 export interface PresenterAvatar {
-  id: string;
+  id: PresenterCharacterId;
   name: () => string;
-  /** Background of the placeholder shown until the artwork exists. */
+  /** The completed upright portrait, relative to the app's base URL; the same file the animated character draws. */
+  portrait: string;
+  /** Background behind the portrait, and of the placeholder if it cannot load. */
   color: string;
 }
 
 /**
- * Presenter avatar slots. The artwork is provided separately: one square PNG
- * per slot at public/teach-avatars/<id>.png (transparent background, at least
- * 512 × 512). A slot without its file shows a placeholder.
+ * The presenter catalog. Each ID is also the character ID of the animated
+ * 2D stage and the catalog ID in the lesson's `avatar:` reference.
+ * The earlier placeholder slots (octo, avatar-2 … avatar-6) never had artwork;
+ * lessons that name them are shown with the default character.
  */
 export const PRESENTER_AVATARS: PresenterAvatar[] = [
-  { id: "octo", name: () => tr("小章鱼"), color: "#1b2457" },
-  { id: "avatar-2", name: () => tr("形象 2"), color: "#0f766e" },
-  { id: "avatar-3", name: () => tr("形象 3"), color: "#b45309" },
-  { id: "avatar-4", name: () => tr("形象 4"), color: "#7a5aa3" },
-  { id: "avatar-5", name: () => tr("形象 5"), color: "#2f6fb0" },
-  { id: "avatar-6", name: () => tr("形象 6"), color: "#a3364b" },
+  { id: "star-fox", name: () => tr("星狐"), portrait: "teach-avatars/star-fox/painted-v0.3/portrait-extended.png", color: "#f3e3cf" },
+  { id: "red-panda", name: () => tr("小熊猫"), portrait: "teach-avatars/red-panda/painted-v0.1/portrait.png", color: "#f1ddd6" },
+  { id: "white-rabbit", name: () => tr("白兔"), portrait: "teach-avatars/white-rabbit/painted-v0.1/portrait.png", color: "#e9e7f2" },
+  { id: "moon-cat", name: () => tr("月猫"), portrait: "teach-avatars/moon-cat/painted-v0.1/portrait.png", color: "#e6e1f2" },
 ];
 
-export const DEFAULT_AVATAR = "octo";
+export const DEFAULT_AVATAR: PresenterCharacterId = "star-fox";
 
 export function presenterAvatar(id: string | undefined): PresenterAvatar {
-  return PRESENTER_AVATARS.find((avatar) => avatar.id === id) ?? PRESENTER_AVATARS[0]!;
+  return PRESENTER_AVATARS.find((avatar) => avatar.id === id) ?? PRESENTER_AVATARS.find((avatar) => avatar.id === DEFAULT_AVATAR)!;
 }
 
-/** Where an avatar's artwork is served from. */
-export function avatarArtUrl(id: string): string {
-  return `${import.meta.env.BASE_URL}teach-avatars/${id}.png`;
+/** The presenter a package names by its `avatar:` reference. */
+export function presenterOfReference(reference: string | undefined): PresenterAvatar {
+  return presenterAvatar(reference?.replace(/^avatar:/, ""));
+}
+
+/** Where an avatar's portrait is served from. */
+export function avatarArtUrl(avatar: PresenterAvatar): string {
+  return `${import.meta.env.BASE_URL}${avatar.portrait}`;
 }

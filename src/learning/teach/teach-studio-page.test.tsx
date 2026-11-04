@@ -96,6 +96,12 @@ vi.mock("./readability-check", () => ({ checkReadability: vi.fn(async () => scre
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
+const camera = vi.hoisted(() => ({ starts: [] as number[], stops: 0, cancels: 0, saved: [] as unknown[],
+  track: { schema: "octos.avatar-performance.v1", durationMs: 1000, frames: [] as unknown[] } as unknown }));
+vi.mock("./use-take-camera", () => ({ useTakeCamera: () => ({ video: { current: null }, state: "off", error: null,
+  start: (at: number) => { camera.starts.push(at); }, stop: () => { camera.stops++; return camera.track; }, cancel: () => { camera.cancels++; } }) }));
+vi.mock("./take-performance-store", () => ({ saveTakePerformance: async (key: unknown) => { camera.saved.push(key); }, deleteRecordingPerformances: async () => undefined }));
+
 import { createRecording, keptTake, planCards } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { TeachStudioPage } from "./teach-studio-page";
@@ -125,6 +131,7 @@ beforeEach(() => {
   voice.listening = true;
   voice.available = true;
   voice.transcripts = [];
+  camera.starts = []; camera.stops = 0; camera.cancels = 0; camera.saved = [];
   const recording = planCards(
     createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Finding slope", type: "math_off_map" }, goals: ["Find slope"] }),
     "2026-10-31T12:00:00.000Z",
@@ -173,6 +180,34 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   fireEvent.click(screen.getByRole("button", { name: "Save captions" }));
   expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.text).toBe("Point A is at 1 comma 2.");
   expect(board.compiled?.lesson.steps[0]!.beats[0]!.say).toBe("Point A is at 1 comma 2.");
+});
+
+it("records the learner's face movement with a take only when they turn the camera on", async () => {
+  renderStudio();
+  // Off by default: no camera at all.
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  time = 2_000;
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
+  expect(camera.starts).toEqual([]); expect(camera.saved).toEqual([]);
+  expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.camera).toBeUndefined();
+
+  fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ cameraMotion: "on", mouthMotion: "basic" });
+  expect(screen.getByText(/Your picture is never saved or uploaded/)).toBeTruthy();
+  time = 3_000;
+  fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
+  expect(camera.starts).toEqual([3_000]);
+  time = 5_000;
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(camera.saved).toHaveLength(1));
+  expect(camera.saved[0]).toEqual({ profileId: "learner-1", recordingId: "rec-1", cardKey: "card-1", take: 2 });
+  await waitFor(() => expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.camera).toBe(true));
+
+  // A discarded take turns the camera off and keeps nothing.
+  fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
+  fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
+  expect(camera.cancels).toBe(1); expect(camera.saved).toHaveLength(1);
 });
 
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {

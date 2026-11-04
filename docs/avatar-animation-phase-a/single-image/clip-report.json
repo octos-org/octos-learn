@@ -1,0 +1,391 @@
+{
+  "upstream": "https://github.com/KlingAIResearch/LivePortrait",
+  "upstream_commit": "9b294b3d0536135442ea73cb01e6cb3ca7029dd3",
+  "model": "human",
+  "torch": "2.3.0",
+  "device": "CPU F/W + Metal M/G",
+  "cpu_threads": 6,
+  "source_file": "scratch/avatar-single-image/inputs/original-face.png",
+  "source_sha256": "233d97cf7ad6970ce49bf8d3a7e1057cd3e4d97d65679e3ecdd67161def5a796",
+  "output_size": [
+    512,
+    512
+  ],
+  "mode": "clip",
+  "network_used_for_inference": false,
+  "camera_used": false,
+  "input_notes": "Pre-cropped single complete illustration; no InsightFace or X-Pose detector.",
+  "weights": [
+    {
+      "file": "liveportrait/base_models/appearance_feature_extractor.pth",
+      "bytes": 3387959,
+      "sha256": "5279bb8654293dbdf327030b397f107237dd9212fb11dd75b83dfb635211ceb5",
+      "source": "https://huggingface.co/KlingTeam/LivePortrait/resolve/main/liveportrait/base_models/appearance_feature_extractor.pth"
+    },
+    {
+      "file": "liveportrait/base_models/motion_extractor.pth",
+      "bytes": 112545506,
+      "sha256": "251e6a94ad667a1d0c69526d292677165110ef7f0cf0f6d199f0e414e8aa0ca5",
+      "source": "https://huggingface.co/KlingTeam/LivePortrait/resolve/main/liveportrait/base_models/motion_extractor.pth"
+    },
+    {
+      "file": "liveportrait/base_models/spade_generator.pth",
+      "bytes": 221813590,
+      "sha256": "4780afc7909a9f84e24c01d73b31a555ef651521a1fe3b2429bd04534d992aee",
+      "source": "https://huggingface.co/KlingTeam/LivePortrait/resolve/main/liveportrait/base_models/spade_generator.pth"
+    },
+    {
+      "file": "liveportrait/base_models/warping_module.pth",
+      "bytes": 182180086,
+      "sha256": "2f61a6f265fe344f14132364859a78bdbbc2068577170693da57fb96d636e282",
+      "source": "https://huggingface.co/KlingTeam/LivePortrait/resolve/main/liveportrait/base_models/warping_module.pth"
+    },
+    {
+      "file": "liveportrait/retargeting_models/stitching_retargeting_module.pth",
+      "bytes": 2393098,
+      "sha256": "3652d5a3f95099141a56986aaddec92fadf0a73c87a20fac9a2c07c32b28b611",
+      "source": "https://huggingface.co/KlingTeam/LivePortrait/resolve/main/liveportrait/retargeting_models/stitching_retargeting_module.pth"
+    }
+  ],
+  "frames": [
+    {
+      "index": 0,
+      "file": "000-neutral.png",
+      "label": "neutral",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.9934260000000004
+    },
+    {
+      "index": 1,
+      "file": "001-blink.png",
+      "label": "blink",
+      "blink_weight": 0.14644660940672624,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 4.827989209
+    },
+    {
+      "index": 2,
+      "file": "002-blink.png",
+      "label": "blink",
+      "blink_weight": 0.4999999999999999,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 4.23319575
+    },
+    {
+      "index": 3,
+      "file": "003-blink.png",
+      "label": "blink",
+      "blink_weight": 0.8535533905932737,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 4.145465874999999
+    },
+    {
+      "index": 4,
+      "file": "004-blink.png",
+      "label": "blink",
+      "blink_weight": 1.0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 4.124780000000001
+    },
+    {
+      "index": 5,
+      "file": "005-blink.png",
+      "label": "blink",
+      "blink_weight": 0.8535533905932737,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.9574324579999995
+    },
+    {
+      "index": 6,
+      "file": "006-blink.png",
+      "label": "blink",
+      "blink_weight": 0.5000000000000001,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.8595933749999993
+    },
+    {
+      "index": 7,
+      "file": "007-blink.png",
+      "label": "blink",
+      "blink_weight": 0.14644660940672632,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.939255541999998
+    },
+    {
+      "index": 8,
+      "file": "008-blink.png",
+      "label": "blink",
+      "blink_weight": 1.4997597826618576e-32,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.9176603329999935
+    },
+    {
+      "index": 9,
+      "file": "009-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.14644660940672624,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.8148542499999962
+    },
+    {
+      "index": 10,
+      "file": "010-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.4999999999999999,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.826015583
+    },
+    {
+      "index": 11,
+      "file": "011-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.8535533905932737,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 4.037068290999997
+    },
+    {
+      "index": 12,
+      "file": "012-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 1.0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.855631332999998
+    },
+    {
+      "index": 13,
+      "file": "013-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.8535533905932737,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.8488932919999996
+    },
+    {
+      "index": 14,
+      "file": "014-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.5000000000000001,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.9584384580000034
+    },
+    {
+      "index": 15,
+      "file": "015-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 0.14644660940672632,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.954032542
+    },
+    {
+      "index": 16,
+      "file": "016-open-mouth.png",
+      "label": "open-mouth",
+      "blink_weight": 0,
+      "mouth_weight": 1.4997597826618576e-32,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.973952374999996
+    },
+    {
+      "index": 17,
+      "file": "017-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 4.3388373911755815,
+      "inference_seconds": 3.7238300000000066
+    },
+    {
+      "index": 18,
+      "file": "018-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 7.818314824680298,
+      "inference_seconds": 3.929444583999995
+    },
+    {
+      "index": 19,
+      "file": "019-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 9.749279121818237,
+      "inference_seconds": 3.955297250000001
+    },
+    {
+      "index": 20,
+      "file": "020-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 9.749279121818237,
+      "inference_seconds": 3.954115542000011
+    },
+    {
+      "index": 21,
+      "file": "021-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 7.818314824680299,
+      "inference_seconds": 3.9219667920000063
+    },
+    {
+      "index": 22,
+      "file": "022-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 4.338837391175582,
+      "inference_seconds": 3.8360183329999984
+    },
+    {
+      "index": 23,
+      "file": "023-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 1.2246467991473533e-15,
+      "inference_seconds": 3.762654458
+    },
+    {
+      "index": 24,
+      "file": "024-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -4.33883739117558,
+      "inference_seconds": 3.717264
+    },
+    {
+      "index": 25,
+      "file": "025-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -7.8183148246802965,
+      "inference_seconds": 3.8042782920000064
+    },
+    {
+      "index": 26,
+      "file": "026-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -9.749279121818237,
+      "inference_seconds": 3.923357709000001
+    },
+    {
+      "index": 27,
+      "file": "027-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -9.749279121818239,
+      "inference_seconds": 3.774074083000002
+    },
+    {
+      "index": 28,
+      "file": "028-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -7.818314824680299,
+      "inference_seconds": 3.857176457999998
+    },
+    {
+      "index": 29,
+      "file": "029-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -4.338837391175575,
+      "inference_seconds": 3.855117832999994
+    },
+    {
+      "index": 30,
+      "file": "030-head-turn.png",
+      "label": "head-turn",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": -2.4492935982947065e-15,
+      "inference_seconds": 3.9775128329999916
+    },
+    {
+      "index": 31,
+      "file": "031-return.png",
+      "label": "return",
+      "blink_weight": 0,
+      "mouth_weight": 0,
+      "relative_yaw_degrees": 0,
+      "inference_seconds": 3.987137125000018
+    }
+  ],
+  "source_ratios": {
+    "eyes": [
+      0.5,
+      0.5
+    ],
+    "lip": 0.02
+  },
+  "target_ratios": {
+    "eyes": 0,
+    "lip": 0.28
+  },
+  "estimated_head_degrees": {
+    "pitch": 12.719757080078125,
+    "yaw": -5.379035949707031,
+    "roll": -9.201080322265625
+  },
+  "initialization_seconds": 0.9475296660000001,
+  "reset_max_pixel_difference": 0,
+  "reset_mean_pixel_difference": 0.0,
+  "neutral_vs_source_mean_absolute_pixel_difference": 12.707715352376303,
+  "timing": {
+    "mean_seconds": 3.9452165611875003,
+    "median_seconds": 3.926401146499998,
+    "p95_seconds": 4.23319575,
+    "note": "Local offline core inference, excludes capture, network, encoding and display; not an optimized real-time benchmark."
+  },
+  "preview_playback_fps": 6,
+  "preview_note": "Offline generated frames shown at 6 FPS for inspection; model inference is substantially slower.",
+  "preview_files": [
+    {
+      "name": "star-fox-liveportrait-validation.mp4",
+      "bytes": 864304,
+      "sha256": "62a2f33461a1106fd4f221b6fde058c380f0aac3a5147138864368d745e5687e"
+    },
+    {
+      "name": "star-fox-liveportrait-validation.gif",
+      "bytes": 4210125,
+      "sha256": "aea8f265d766adca33c37a09fc3c0a71828bf98aa1b3c36bda0fb2bebe2599ae"
+    },
+    {
+      "name": "star-fox-liveportrait-comparison.jpg",
+      "bytes": 289772,
+      "sha256": "d443a44bf480516a9ea23a2ae7f86ef4341fe1e486b7466db5b9f00733c72fb5"
+    },
+    {
+      "name": "star-fox-liveportrait-human-animal.jpg",
+      "bytes": 284588,
+      "sha256": "d7b2c2197dec8c518eab1327044d96e287ddd4b99c9b2077e6f36821a52e9b97"
+    }
+  ],
+  "prepared_source_in_repository": "docs/avatar-animation-phase-a/single-image/source.png"
+}

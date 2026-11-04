@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-03",
+  "scope": "onnxruntime-web WASM executed locally under Node, one thread",
+  "runtime": {
+    "common": "1.26.0",
+    "web": "1.26.0"
+  },
+  "node": "v22.23.3",
+  "machine": "arm64",
+  "modelSha256": "5d9eec30e48d5081574e5c0957180ed9370d01bf877016d19e2e831892c8ce73",
+  "shape": [
+    288,
+    288,
+    3
+  ],
+  "warmupMs": 409.295375,
+  "inferenceMs": [
+    399.28700000000003,
+    391.637375,
+    391.15374999999995,
+    390.4413340000003,
+    418.71129199999996
+  ],
+  "medianMs": 391.637375,
+  "maxChannelDifferenceVsTensorFlow": 1,
+  "meanChannelDifferenceVsTensorFlow": 0.000020093878600823045,
+  "browserTested": false,
+  "webGpuTested": false,
+  "cameraUsed": false,
+  "limits": "Core graph only. No capture/alignment/background/display timing. Node WASM success does not establish real-time browser or Android compatibility."
+}

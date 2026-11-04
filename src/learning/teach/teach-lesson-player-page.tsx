@@ -6,8 +6,10 @@
 import { tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+
+import type { AudioPlaybackClock } from "@/home/voice/audio-playback";
 
 import { AcademyHeader } from "../academy/academy-header";
 import { holdAwards } from "../academy/award-events";
@@ -17,10 +19,12 @@ import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { fetchLessonPackage } from "./learner-lessons-api";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage } from "./learner-package-store";
-import { presenterAvatar } from "./presenters";
+import { presenterOfReference } from "./presenters";
 import { AvatarPicture } from "./teach-watch-page";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
+
+const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
 
 type Loaded = { status: "loading" } | { status: "missing" } | { status: "ready"; lesson: LoadedLearnerPackage };
 
@@ -61,6 +65,17 @@ export function TeachLessonPlayerPage() {
   const onComplete = useCallback((beatId: string) => runtimeRef.current?.completeNarration(beatId), []);
   const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
   const resolveAudio = useCallback((beatId: string, text: string) => lesson?.narration(beatId, text) ?? null, [lesson]);
+  // The presenter moves only with the clip that is actually playing: its own
+  // media clock and the mouth track made from the same audio in this package.
+  const hasMouthTracks = Boolean(lesson?.manifest.lipSync?.length);
+  const packageHash = lesson?.manifest.contentSha256 ?? "";
+  const [mediaClock, setMediaClock] = useState<{ beatId: string; clock: AudioPlaybackClock; packageHash: string } | null>(null);
+  const onMediaClock = useCallback((beatId: string, clock: AudioPlaybackClock | null) => {
+    setMediaClock((previous) => clock ? { beatId, clock, packageHash } : previous?.beatId === beatId ? null : previous);
+  }, [packageHash]);
+  const beatId = runtime?.currentBeatId, speech = runtime?.activeSpeech ?? "";
+  const mouthTrack = useMemo(() => (lesson && beatId ? lesson.mouthTrack(beatId, speech) : null), [lesson, beatId, speech]);
+  const performanceTrack = useMemo(() => (lesson && beatId ? lesson.performanceTrack(beatId, speech) : null), [lesson, beatId, speech]);
   const narration = useOllNarrationTts({
     language: lesson?.manifest.language,
     enabled: sound && Boolean(lesson),
@@ -75,7 +90,9 @@ export function TeachLessonPlayerPage() {
     onPlaybackStart: onStart,
     onPlaybackComplete: onComplete,
     onPlaybackEnd: onEnd,
+    ...(hasMouthTracks ? { onMediaClock } : {}),
   });
+  const speaking = Boolean(runtime?.playing && speech.trim()) && sound;
   const playing = Boolean(runtime?.playing);
   useEffect(() => {
     holdAwards("teach-lesson-player", playing);
@@ -95,7 +112,7 @@ export function TeachLessonPlayerPage() {
   }
 
   const card = !runtime ? 0 : runtime.completed ? cards : Math.min(cards, runtime.beatIndex + 1);
-  const avatar = presenterAvatar(lesson.manifest.author.avatar_ref.replace(/^avatar:/, ""));
+  const avatar = presenterOfReference(lesson.manifest.author.avatar_ref);
   return (
     <main className="teach-page teach-studio teach-watch">
       <header className="teach-studio-head">
@@ -103,11 +120,22 @@ export function TeachLessonPlayerPage() {
         <h1>{lesson.manifest.title}</h1>
         <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: cards })}</span>
       </header>
-      <section className="teach-watch-stage" aria-label={tr("这节课")}>
-        <LearningWhiteboard runtime={runtime} resolveAsset={lesson.resolveAsset} />
-      </section>
+      {hasMouthTracks ? (
+        <div className="teach-watch-layout">
+          <section className="teach-watch-stage" aria-label={tr("这节课")}>
+            <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset} />
+          </section>
+          <Suspense fallback={null}><LessonAvatarPreview mode="player" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
+            clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
+            playing={speaking} preparing={narration.preparing} /></Suspense>
+        </div>
+      ) : (
+        <section className="teach-watch-stage" aria-label={tr("这节课")}>
+          <LearningWhiteboard runtime={runtime} resolveAsset={lesson.resolveAsset} />
+        </section>
+      )}
       <div className="teach-watch-bar">
-        <AvatarPicture avatar={avatar} size={44} />
+        {!hasMouthTracks && <AvatarPicture avatar={avatar} size={44} />}
         <button type="button" className="teach-primary" disabled={!runtime}
           onClick={() => (runtime?.completed ? runtime.restart() : runtime?.playing ? runtime.pause() : runtime?.play())}>
           {runtime?.playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}

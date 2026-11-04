@@ -1,0 +1,34 @@
+{
+  "checks": {
+    "neutralMax": 0,
+    "originalFaceMax": 0,
+    "mouthOutsideMax": 0,
+    "mouthCloseMax": 0,
+    "independentRightEyeMax": 0,
+    "closedLidTensionMax": 0,
+    "invalidMax": 0,
+    "lidAfterBrowOverlayMax": 0,
+    "clothesMax": 0,
+    "resetMax": 0
+  },
+  "continuity": {
+    "jawOpen": 0,
+    "browDownLeft": 0,
+    "browInnerUp": 0,
+    "eyeSquintLeft": 0,
+    "eyeLookInLeft": 0
+  },
+  "minAlpha": 255,
+  "frownLidDelta": {
+    "max": 255,
+    "changed": 1910
+  },
+  "replayMax": 0,
+  "animation": {
+    "frames": 80,
+    "durationMs": 8000,
+    "synthetic": true
+  },
+  "meanNativeDrawMs": 6.487542737499995,
+  "limits": "Actual product painter, deterministic synthetic controls; no browser/camera/TV acceptance. Bicubic sampling adds no missing oral artwork. Small 2D bends do not reconstruct a side view."
+}

@@ -1,0 +1,108 @@
+{
+  "totalRealInferences": 966,
+  "videoInferences": 666,
+  "constructedBlankInferences": 200,
+  "repeatedRecoveryInferences": 100,
+  "mp4DecodedFrames": 220,
+  "mp4Size": [
+    536,
+    536
+  ],
+  "mp4Fps": 20,
+  "gifDurationMs": 11000,
+  "note": "Real MediaPipe CPU model output from public local clips, through production mapping/smoother/record/replay/painter. Python is not browser/WASM; no user camera or audio was used.",
+  "selectedClipPhases": [
+    {
+      "startMs": 0,
+      "endMs": 8000,
+      "phase": "public video frames"
+    },
+    {
+      "startMs": 8000,
+      "endMs": 10000,
+      "phase": "constructed blank input"
+    },
+    {
+      "startMs": 10000,
+      "endMs": 11000,
+      "phase": "repeat last real frame for reacquisition"
+    }
+  ],
+  "blinkComparison": [
+    {
+      "video": "d0.mp4",
+      "eyes": {
+        "eyeBlinkLeft": {
+          "oldPaintedPeak": 0.6513925846358342,
+          "newSmoothedPeak": 0.7470485343170729,
+          "newPaintedPeak": 0.9853719735691173
+        },
+        "eyeBlinkRight": {
+          "oldPaintedPeak": 0.6090561904231346,
+          "newSmoothedPeak": 0.6822168823562234,
+          "newPaintedPeak": 0.9320628162268539
+        }
+      }
+    },
+    {
+      "video": "d10.mp4",
+      "eyes": {
+        "eyeBlinkLeft": {
+          "oldPaintedPeak": 0.7375254356468567,
+          "newSmoothedPeak": 0.8719262775437305,
+          "newPaintedPeak": 1
+        },
+        "eyeBlinkRight": {
+          "oldPaintedPeak": 0.645140327521517,
+          "newSmoothedPeak": 0.7582447899236633,
+          "newPaintedPeak": 0.9908076412363779
+        }
+      }
+    },
+    {
+      "video": "d11.mp4",
+      "eyes": {
+        "eyeBlinkLeft": {
+          "oldPaintedPeak": 0.6789427814099027,
+          "newSmoothedPeak": 0.7901730590102483,
+          "newPaintedPeak": 0.9994756363974824
+        },
+        "eyeBlinkRight": {
+          "oldPaintedPeak": 0.4660380941628347,
+          "newSmoothedPeak": 0.5413597347691956,
+          "newPaintedPeak": 0.7189133518925347
+        }
+      }
+    },
+    {
+      "video": "d18.mp4",
+      "eyes": {
+        "eyeBlinkLeft": {
+          "oldPaintedPeak": 0.47641305320588045,
+          "newSmoothedPeak": 0.5763374893768898,
+          "newPaintedPeak": 0.781163204500122
+        },
+        "eyeBlinkRight": {
+          "oldPaintedPeak": 0.5798047929489881,
+          "newSmoothedPeak": 0.6523492505797025,
+          "newPaintedPeak": 0.8964526806792252
+        }
+      }
+    },
+    {
+      "video": "d20.mp4",
+      "eyes": {
+        "eyeBlinkLeft": {
+          "oldPaintedPeak": 0.46584799806707855,
+          "newSmoothedPeak": 0.4813182724731236,
+          "newPaintedPeak": 0.603356486752348
+        },
+        "eyeBlinkRight": {
+          "oldPaintedPeak": 0.38129526395115937,
+          "newSmoothedPeak": 0.3975571653201949,
+          "newPaintedPeak": 0.43440603270204425
+        }
+      }
+    }
+  ]
+}

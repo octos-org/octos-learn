@@ -1,0 +1,53 @@
+{
+  "scope": "Screen-left eye only, local Canvas study; no webcam or full face/head rig",
+  "poses": [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    1
+  ],
+  "outsideRect": [
+    120,
+    160,
+    255,
+    270
+  ],
+  "outsideRectMaxChannelDifference": 0,
+  "resetMaxChannelDifference": 0,
+  "stationaryIrisPatch": {
+    "rect": [
+      180,
+      223,
+      195,
+      226
+    ],
+    "blinkValues": [
+      0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "maxChannelDifference": 0
+  },
+  "neutralReconstructionBoundary": {
+    "atBlink": 0.0001,
+    "maxChannelDifference": 190,
+    "meanAbsoluteRgbDifferenceInEyeRect": 2.0233894500561167,
+    "note": "Zero blink uses source pixels. Very small positive blink reconstructs painted lashes; remaining boundary jump is a known limitation, not a quality pass."
+  },
+  "frameCount": 120,
+  "playbackFps": 24,
+  "quality": "Iris no longer squeezed. Some lash edge aliasing and reconstruction changes remain; not a finished animation quality pass.",
+  "mediaVerification": {
+    "mp4DecodedFrames": 120,
+    "mp4Dimensions": [
+      800,
+      300
+    ],
+    "playbackFps": 24,
+    "mp4Seconds": 5,
+    "gifActualDurationMs": 5000,
+    "note": "Offline parameter sequence, not capture or real-time performance."
+  }
+}

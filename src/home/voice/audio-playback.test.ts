@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { playAudioBlob, stopAudio, unlockAudio } from "./audio-playback";
+import { playAudioBlob, stopAudio, unlockAudio, type AudioPlaybackClock } from "./audio-playback";
 
 class FakeSource {
   buffer: unknown = null;
@@ -29,6 +29,8 @@ const originalCreateObjectURL = URL.createObjectURL;
 const originalRevokeObjectURL = URL.revokeObjectURL;
 
 class FakeMediaElement {
+  currentTime = 0;
+  duration = NaN;
   preload = "";
   src = "";
   onended: (() => void) | null = null;
@@ -42,10 +44,11 @@ class FakeMediaElement {
 
 class FakeAudioContext {
   state = "running";
+  currentTime = 0;
   destination = {};
   resume = vi.fn(async () => {});
   setSinkId = vi.fn(async () => {});
-  decodeAudioData = vi.fn(async () => ({}) as AudioBuffer);
+  decodeAudioData = vi.fn(async () => ({ duration: 4 }) as AudioBuffer);
   constructor() {
     contexts.push(this);
   }
@@ -96,6 +99,27 @@ afterEach(() => {
 });
 
 describe("playAudioBlob / stopAudio", () => {
+  it("exposes source-owned AudioContext time and invalidates a superseded clock", async () => {
+    unlockAudio(); contexts[0].currentTime = 42;
+    let clock: AudioPlaybackClock | undefined;
+    const ended = vi.fn();
+    await playAudioBlob(makeBlob(), ended, undefined, (value) => { clock = value; });
+    contexts[0].currentTime = 43.25;
+    expect(clock?.read()).toEqual({ positionMs: 1250, durationMs: 4000 });
+    expect(clock?.read()).toEqual({ positionMs: 1250, durationMs: 4000 });
+    await playAudioBlob(makeBlob(), vi.fn());
+    expect(clock?.read()).toBeNull(); expect(ended).toHaveBeenCalledOnce();
+  });
+
+  it("does not let a failing view observer break audio, and invalidates aborted clocks", async () => {
+    const ended = vi.fn();
+    await expect(playAudioBlob(makeBlob(), ended, undefined, () => { throw new Error("view failed"); })).resolves.toBe(true);
+    stopAudio(); expect(ended).toHaveBeenCalledOnce();
+    let clock: AudioPlaybackClock | undefined;
+    const controller = new AbortController();
+    await playAudioBlob(makeBlob(), vi.fn(), controller.signal, (value) => { clock = value; });
+    controller.abort(); expect(clock?.read()).toBeNull();
+  });
   it("rebinds the long-lived AudioContext to the current default output", async () => {
     unlockAudio();
     expect(contexts[0].setSinkId).toHaveBeenCalledWith("");
@@ -204,5 +228,19 @@ describe("playAudioBlob / stopAudio", () => {
     mediaElements[0].onended?.();
     expect(onEnded).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:lesson-audio");
+  });
+  it("reads HTML media seek/rate positions directly and invalidates its ended clock", async () => {
+    document.documentElement.dataset.runtimePlatform = "android";
+    vi.stubGlobal("Audio", FakeMediaElement);
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: () => "blob:clock-test" });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+    let clock: AudioPlaybackClock | undefined;
+    await playAudioBlob(makeBlob(), vi.fn(), undefined, (value) => { clock = value; });
+    expect(clock?.read()).toBeNull();
+    mediaElements[0].duration = 4; mediaElements[0].currentTime = 2.5;
+    expect(clock?.read()).toEqual({ positionMs: 2500, durationMs: 4000 });
+    mediaElements[0].currentTime = .5;
+    expect(clock?.read()?.positionMs).toBe(500);
+    mediaElements[0].onended?.(); expect(clock?.read()).toBeNull();
   });
 });

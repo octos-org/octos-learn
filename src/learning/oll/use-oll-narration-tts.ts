@@ -7,6 +7,7 @@ import { playPrivateSpeech } from "@/home/voice/private-tts";
 import {
   playAudioBlob,
   stopAudio,
+  type AudioPlaybackClock,
 } from "@/home/voice/audio-playback";
 import {
   nativePackagedAudioAvailable,
@@ -54,6 +55,8 @@ export interface OllNarrationTtsOptions {
   onPlaybackStart?: (narrationId: string) => void;
   onPlaybackComplete?: (narrationId: string) => void;
   onPlaybackEnd?: (narrationId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => void;
+  /** Verified packaged web/media audio only. Native bridges without a clock remain null. */
+  onMediaClock?: (narrationId: string, clock: AudioPlaybackClock | null) => void;
 }
 
 export interface OllNarrationTtsState {
@@ -116,6 +119,7 @@ export function useOllNarrationTts({
   onPlaybackStart,
   onPlaybackComplete,
   onPlaybackEnd,
+  onMediaClock,
 }: OllNarrationTtsOptions): OllNarrationTtsState {
   const normalizedText = text.trim();
   const normalizedPrewarmText = prewarmText.trim();
@@ -146,7 +150,8 @@ export function useOllNarrationTts({
     onSpeakingChange,
     onPlaybackStart,
     onPlaybackComplete,
-  onPlaybackEnd,
+    onPlaybackEnd,
+    onMediaClock,
   });
 
   useEffect(() => {
@@ -165,9 +170,10 @@ export function useOllNarrationTts({
       onSpeakingChange,
       onPlaybackStart,
       onPlaybackComplete,
-  onPlaybackEnd,
+      onPlaybackEnd,
+      onMediaClock,
     };
-  }, [onPlaybackComplete, onPlaybackEnd, onPlaybackStart, onSpeakingChange]);
+  }, [onPlaybackComplete, onPlaybackEnd, onPlaybackStart, onSpeakingChange, onMediaClock]);
 
   // One end per playback of a beat: the effect below reruns when the voice
   // becomes known or changes, and must not end the same playback again. A
@@ -181,10 +187,12 @@ export function useOllNarrationTts({
     const request = new AbortController();
     let current = true;
     let completed = false;
+    if (narrationId) callbacksRef.current.onMediaClock?.(narrationId, null);
     const reportEnd = (reason: "ended" | "disabled" | "failed" | "cancelled") => {
       if (!current || completed || !narrationId || endedNarrationRef.current === narrationId) return false;
       completed = true;
       endedNarrationRef.current = narrationId;
+      callbacksRef.current.onMediaClock?.(narrationId, null);
       callbacksRef.current.onPlaybackEnd?.(narrationId, reason);
       return true;
     };
@@ -317,7 +325,11 @@ export function useOllNarrationTts({
           }
           return nativePackagedAudioAvailable()
             ? playNativeAudioBlob(audio, finishAudio, audioRequest.signal)
-            : playAudioBlob(audio, finishAudio, audioRequest.signal);
+            : callbacksRef.current.onMediaClock
+              ? playAudioBlob(audio, finishAudio, audioRequest.signal, (clock) => {
+                  if (current && !audioRequest.signal.aborted && narrationId) callbacksRef.current.onMediaClock?.(narrationId, clock);
+                })
+              : playAudioBlob(audio, finishAudio, audioRequest.signal);
         })
       : playFallbackTts();
 

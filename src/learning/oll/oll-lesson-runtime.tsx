@@ -483,6 +483,7 @@ function InkColorControl({
 function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
   occlusions: Array<{ x: number; y: number; width: number; height: number }>;
 } {
+  const embedded = viewport.hasAttribute("data-embedded-lesson");
   const androidRuntime = viewport.ownerDocument.documentElement
     .dataset.runtimePlatform === "android";
   const compact = viewport.clientWidth <= 900;
@@ -505,11 +506,11 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
     // Desktop keeps a modest band for the dock area as a floor; Android's
     // bands come only from its actual chrome so a 540px display is not
     // double-counted. Both layout and camera use these same insets.
-    top: Math.round(Math.max(androidRuntime ? 0 : compact ? 78 : 92, bands.top)),
-    right: androidRuntime ? 0 : compact ? 18 : 28,
-    bottom: Math.round(Math.max(androidRuntime ? 0 : compact ? 180 : 120, bands.bottom)),
-    left: androidRuntime ? 0 : compact ? 18 : 28,
-    ...(androidRuntime ? { focusMargin: 24 } : {}),
+    top: Math.round(Math.max(embedded ? 12 : androidRuntime ? 0 : compact ? 78 : 92, bands.top)),
+    right: embedded ? 12 : androidRuntime ? 0 : compact ? 18 : 28,
+    bottom: Math.round(Math.max(embedded ? 12 : androidRuntime ? 0 : compact ? 180 : 120, bands.bottom)),
+    left: embedded ? 12 : androidRuntime ? 0 : compact ? 18 : 28,
+    ...(androidRuntime || embedded ? { focusMargin: 24 } : {}),
     occlusions: bands.occlusions,
   };
 }
@@ -677,6 +678,7 @@ function geometryTaskSnapDistance(
 export function LearningWhiteboard({
   runtime,
   resolveAsset,
+  embedded = false,
   portableCourseRegion,
   inkSessionId,
   inkMergeSourceSessionId,
@@ -707,6 +709,8 @@ export function LearningWhiteboard({
   runtime?: OllLessonRuntimeController | null;
   /** Images the lesson refers to by asset ID, such as a learner's frozen handwriting. */
   resolveAsset?: ImageAssetResolver;
+  /** A bounded lesson player with its controls outside the board viewport. */
+  embedded?: boolean;
   /** Fixed task lines of the teacher who gave this lesson. */
   taskReactions?: TeacherReactions;
   portableCourseRegion?: {
@@ -3405,6 +3409,7 @@ export function LearningWhiteboard({
         ref={viewportRef}
         className="learning-oll-board"
         data-testid="oll-lesson-board"
+        data-embedded-lesson={embedded ? "" : undefined}
         aria-label={tr("OLL 无限白板")}
       />
       {!runtime
