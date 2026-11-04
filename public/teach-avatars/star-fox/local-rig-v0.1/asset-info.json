@@ -1,0 +1,55 @@
+{
+  "schema": "octos.avatar-local-rig-assets.v1",
+  "date": "2026-11-03",
+  "character": "star-fox",
+  "source": "../painted-v0.3/portrait-extended.png",
+  "baseline": "e20c489e",
+  "scope": "One image-left ear and one image-right hair lock, not a finished four-character rig.",
+  "tool": "Built-in image_gen",
+  "prompts": {
+    "underpaint": "Use case: precise-object-edit. The attached image is an exact EDIT TARGET for a 2D animation hidden background plate. Keep the exact square composition, face, both eyes, mouth, hair on the image-left, and clothing. Make ONLY TWO removals. First, remove the ear on the LEFT of the image completely, replace its entire exposed triangle with the same cream paper background, and smoothly complete orange scalp where that ear attached. Second, on the RIGHT edge of the hairstyle, remove the THREE OUTERMOST sideways-pointing curled orange hair tips that stick out beside the temple and eye: the outward waving tip at roughly 3 o'clock, the tip just above it and the tip just below it. Shorten that outer right side of the hairstyle back close to the cheek, with softly finished shorter orange hair behind it. This must visibly remove those outer long curls from the silhouette so they can later be placed on top as moving animation layers. The face must NOT change. Preserve the remaining right ear, forehead bangs, ear colors, eyebrow, cream muzzle and jacket exactly. Same detailed orange painted hair texture. No labels or layout. No new objects. Output one square clean background plate registered to the input.",
+    "earFront": "Use case: identity-preserve. Asset type: 2D animation isolated FRONT fox ear sprite. Reference portrait is the precise style reference. Draw ONE COMPLETE ear matching the ear on the LEFT side of this portrait: warm orange outer fur, fine dark brown edge, pink inner skin, layered ivory/white inner fur, pointed tip leaning left. IMPORTANT: include the ENTIRE broad rounded bottom/root of the ear which is hidden by hair in the portrait. No forehead hair, no head, no face or eyes, no body, no second ear. The root should be broad and fluffy, not cropped or cut off. Three-quarter frontal orientation as in the source, not a side view. Same refined hand-painted glossy orange fur and detailed fine fur strokes. One ear only centered on genuinely transparent background with all tip/base visible and margin on every side. No text, no diagram, no watermark.",
+    "earBack": "Use case: identity-preserve. Asset type: transparent 2D animation sprite, REAR surface of the fox's ear on the LEFT SIDE of the supplied portrait. Reference image provides exact painted style, warm orange fur colors, brown fine outline and fluffy fur texture. Draw ONLY ONE isolated large fox ear viewed from its back: a gently tapered triangular pinna with pointed tip leaning slightly left, broad fluffy base, orange/copper outer fur with subtle golden highlights and a dark brown thin outer rim. The rear face must be orange fur, NOT pink or white inner-ear skin. No head, no face, no eyes, no hair bangs, no other ear, no body, no labels, no cast shadow. Preserve the elegant hand-painted 2D illustration look, sharp fine fur strokes, avoid simple flat cartoon. Entire ear including complete tip and base visible, generous transparent margins, transparent background. Its shape should match the left ear in the reference so it can be texture-mapped to that ear's rotating silhouette."
+  },
+  "sources": {
+    "underpaint": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-03dfa640-9319-4420-89b4-5c4c10149a25.png",
+    "earFront": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-e67c9f7a-ebf0-4a9b-8bc9-fccfea0056f5.png",
+    "earBack": "/Users/yy/.codex/generated_images/01a1903e-e764-7191-84de-f7aeb1a0dce2/exec-c6df2102-7e5e-457c-ac19-b70ecdf32bc1.png"
+  },
+  "preparation": "scripts/prepare-avatar-local-rig.ts /absolute/path/to/authoring-tools; generated input copies live beside these metadata; project runtime loads only base/ear-front/ear-back/hair/foreground PNGs. Hair and exposed ear pixels retain source portrait texels; generated front art fills hidden root only. Rear art mapped inside same silhouette.",
+  "limits": "Authored root/pinna planes and two-bone local skinning. No genuine 3D ear, arbitrary side view, new phoneme producer, or device FPS claim.",
+  "files": {
+    "base.png": {
+      "bytes": 663989,
+      "sha256": "c5c35ab7c0ea9bea0ed0356be1642e4a15bbf4b87265b2647be0f6d3ec3fccc4"
+    },
+    "ear-back-generated.png": {
+      "bytes": 1585894,
+      "sha256": "754522c7b741c5f95b0bdc3655792c043e304aac2f0ce264f5091cb6756286e6"
+    },
+    "ear-back.png": {
+      "bytes": 89834,
+      "sha256": "dea27e5f56a85109bf832ca83c449148e2980c3082e64e7ef0f4ac143a68df40"
+    },
+    "ear-front-generated.png": {
+      "bytes": 1463158,
+      "sha256": "3755210d69a8a000356873b03e777be743d3d771fe43fc24a07dd32d8c69e4cb"
+    },
+    "ear-front.png": {
+      "bytes": 84552,
+      "sha256": "6e2a1dda646402034c836a2963e54ac358b305f331ec114cad0d89e81f1a05c4"
+    },
+    "foreground.png": {
+      "bytes": 48703,
+      "sha256": "62da1f8e2f1f349479d602863f63f5b0fbf0ed8fa6db3a1321099be8aad71820"
+    },
+    "hair.png": {
+      "bytes": 11656,
+      "sha256": "6b7a3d710419398e2093145061e6db775b5fd7a57240bb2ec3a2f0fb71557071"
+    },
+    "underpaint-generated-v2.png": {
+      "bytes": 2079371,
+      "sha256": "f321e0968a041c117f6940e611be2dbeeee070110918555126cc87db5bcfc5f9"
+    }
+  }
+}

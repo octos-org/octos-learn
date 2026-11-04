@@ -17,6 +17,7 @@ import { demoFaceFrame, FaceSmoother, neutralFrame, type FaceFrame } from "./fac
 import { AVATAR_TRACK_SCHEMA, MAX_TRACK_MS, parseAvatarTrack, percentile, PerformanceRecorder, sampleAvatarTrack, type AvatarTrack } from "./performance-track";
 import "../teach/teach.css";
 import "./avatar-lab.css";
+import type { LocalRigPose } from './painted-local-rig';
 
 const noAssets = () => undefined;
 const INITIAL_MANUAL = { mouth: 0, round: 0, smile: 0, frown: 0, leftEye: 0, rightEye: 0, squint: 0, gazeX: 0, gazeY: 0, brows: 0, browDown: 0, yaw: 0, pitch: 0, tilt: 0 };
@@ -34,6 +35,8 @@ export default function AvatarLabPage() {
   const [manual, setManual] = useState(INITIAL_MANUAL);
   const [characterId,setCharacterId]=useState<PaintedCharacterId>('star-fox');
   const [naturalMotion,setNaturalMotion]=useState(true);
+  const [localRig,setLocalRig]=useState(true);
+  const [localPose,setLocalPose]=useState<LocalRigPose|undefined>();
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [error, setError] = useState<CaptureError | "graphics" | "track" | "ink" | null>(null);
   const [metrics, setMetrics] = useState<AvatarRenderMetrics | null>(null);
@@ -135,6 +138,7 @@ export default function AvatarLabPage() {
   }, [replayPlaying, track]);
 
   const stop = useCallback(() => {
+    setLocalPose(undefined);
     sourceRevision.current++;
     modelCheckAbort.current?.abort(); modelCheckAbort.current = null; setModelCheck("idle");
     capture.current?.stop(); finishRecording(); setReplayPlaying(false); setMode("idle");
@@ -207,12 +211,22 @@ export default function AvatarLabPage() {
         </div>
         <div className="avatar-lab-grid">
           <section className="avatar-lab-stage" aria-label={tr("动态头像")}>
-            <IllustratedAvatarStage key={characterId} characterId={characterId} idleMotion={naturalMotion&&mode!=='replay'} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
+            <IllustratedAvatarStage key={characterId} characterId={characterId} localRig={localRig&&characterId==='star-fox'} localPose={localPose} idleMotion={naturalMotion&&mode!=='replay'&&!localPose} className="avatar-lab-illustrated" frame={getFrame} fpsLimit={fpsLimit} active={mode === "demo" || mode === "camera" || (mode === "manual" && recording) || replayPlaying} onMetrics={setMetrics} onError={onGraphicsError} />
             <span className="avatar-lab-stage-label">{paintedCharacter(characterId).name()}</span>
             {recording && <span className="avatar-lab-recording">{tr("正在录动作片段（最长 60 秒）")}</span>}
             <div className="avatar-lab-status" role="status">{status}</div>
           </section>
           <section className="avatar-lab-controls" aria-label={tr("头像控制")}>
+            {characterId==='star-fox'&&<fieldset className="avatar-lab-local-rig">
+              <legend>{tr('星狐耳发对照')}</legend>
+              <label><input type="checkbox" checked={localRig} disabled={recording} onChange={e=>{setLocalRig(e.target.checked);setLocalPose(undefined);}} />{tr('使用新版单耳与侧发')}</label>
+              {localRig&&<>
+                <label>{tr('单耳转向')}<input aria-label={tr('单耳转向')} type="range" min="-.4" max="1" step=".01" value={localPose?.ear??0} disabled={recording} onChange={e=>setLocalPose(p=>({ear:Number(e.target.value),hair:p?.hair??0}))} /></label>
+                <label>{tr('侧发摆动')}<input aria-label={tr('侧发摆动')} type="range" min="-1" max="1" step=".01" value={localPose?.hair??0} disabled={recording} onChange={e=>setLocalPose(p=>({ear:p?.ear??0,hair:Number(e.target.value)}))} /></label>
+                <button type="button" className="teach-secondary" onClick={()=>setLocalPose(undefined)}>{tr('回到自动跟随')}</button>
+                <small>{tr('先比较画面左侧单耳和右侧一撮头发；取消勾选可查看旧版。')}</small>
+              </>}
+            </fieldset>}
             <label className="avatar-lab-natural-motion"><input type="checkbox" checked={naturalMotion} onChange={event=>setNaturalMotion(event.target.checked)} />{tr('耳朵与毛发自然小动作')}</label>
             <div className="avatar-lab-actions">
               <button type="button" className="teach-primary" disabled={mode === "camera" || modelCheck === "running"} onClick={startCamera}><Camera size={17} />{tr("开启摄像头跟随")}</button>
@@ -255,7 +269,7 @@ export default function AvatarLabPage() {
         <section className="avatar-lab-track" aria-label={tr("动作片段")}>
           <div className="avatar-lab-actions">
             <button type="button" className="teach-secondary" disabled={!canRecord} onClick={() => {
-              if (recording) finishRecording(); else { sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
+              if (recording) finishRecording(); else { setLocalPose(undefined); sourceRevision.current++; recorder.current.begin(performance.now()); setRecording(true); }
             }}>{recording ? tr("结束动作片段") : tr("录一段动作")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => replayPlaying ? pauseReplay() : replay()}>{replayPlaying ? <Pause size={17} /> : <Play size={17} />}{replayPlaying ? tr("暂停片段") : tr("回放片段")}</button>
             <button type="button" className="teach-secondary" disabled={!track || recording} onClick={() => track && download(track, "avatar-performance.json")}><Download size={17} />{tr("导出动作片段")}</button>

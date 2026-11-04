@@ -2,6 +2,7 @@ import { faceChannel, type FaceFrame } from "./face-frame";
 import type { FoxSurfaceFactory } from "./original-fox";
 import { paintEyes, preparePaintedEyes, type EyeProfile } from "./painted-eyes";
 import {createPaintedSecondaryMotion,paintedIdlePose,paintedSecondaryPoint,FOX_MOTION,HEAD_SHIFT,type PaintedMotionProfile,type PaintedSecondaryPose} from './painted-secondary-motion';
+import { createLocalRigPainter, type LocalRigImages, type LocalRigPose } from './painted-local-rig';
 
 const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
@@ -89,7 +90,8 @@ function sampleOral(array:Float32Array,x:number,y:number,ch:number) {
 }
 
 /** One painted portrait with internal facial layers; no independent body pieces. */
-export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSurfaceFactory,rig:PaintedFaceRig={}) {
+export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSurfaceFactory,rig:PaintedFaceRig={},localImages?:LocalRigImages) {
+  const localPainter=localImages?createLocalRigPainter(localImages,surface):null;
   const texture = surface(512, 512), ctx = texture.context;
   const pixels = (image: CanvasImageSource) => { ctx.clearRect(0, 0, 512, 512); ctx.drawImage(image, 0, 0, 512, 512); return ctx.getImageData(0, 0, 512, 512); };
   const source = pixels(images.base), oral = pixels(images.mouth), browClean = pixels(images.brows);
@@ -239,7 +241,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   for(let i=0;i<(340+padY)*size*4;i+=4)headBackground.set(paper,i);
   function deformHead(pitch:number,yaw:number,roll:number,pose:PaintedSecondaryPose) {
     const input=portraitCtx.getImageData(0,0,size,size).data,out=headOutput.data;out.set(headBackground);
-    const points=vertices.map(([x,y])=>{const p=paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll,pose,motionProfile);return[p[0]+padX,p[1]+padY]as Point;});
+    const points=vertices.map(([x,y])=>{const p=localPainter?paintedHeadPoint([x-padX,y-padY],pitch,yaw,roll):paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll,pose,motionProfile);return[p[0]+padX,p[1]+padY]as Point;});
     for(const [ia,ib,ic]of triangles) {
       const a=vertices[ia],b=vertices[ib],c=vertices[ic],p=points[ia],q=points[ib],r=points[ic];
       // Idle twitches leave most of the head stationary. Those triangles still
@@ -260,7 +262,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
     deformed.context.putImageData(headOutput,0,0);return deformed.canvas;
   }
   return {
-    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean}={}):{settling:boolean} {
+    draw(target: CanvasRenderingContext2D,width:number,height:number,frame:FaceFrame,options:{timeMs?:number;idleMotion?:boolean;backdrop?:boolean;localPose?:LocalRigPose}={}):{settling:boolean} {
       const c=(key:Parameters<typeof faceChannel>[1])=>bounded(faceChannel(frame,key));
       const t=(options.timeMs??0)/1000,phase=(t+.8)%4.7;
       const auto=options.idleMotion&&!frame.tracked&&phase>3.9&&phase<4.17?Math.sin((phase-3.9)/.27*Math.PI)**2:0;
@@ -271,7 +273,7 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
       paintMouth(open,round,c('mouthSmileLeft')-c('mouthFrownLeft'),c('mouthSmileRight')-c('mouthFrownRight'));
       paintBrows([{inner:c('browInnerUp'),outer:c('browOuterUpLeft'),down:eyeState.leftTension},
         {inner:c('browInnerUp'),outer:c('browOuterUpRight'),down:eyeState.rightTension}]);
-      portraitCtx.clearRect(0,0,size,size);portraitCtx.drawImage(images.extended,0,0,size,size);
+      portraitCtx.clearRect(0,0,size,size);portraitCtx.drawImage(localImages?.base??images.extended,0,0,size,size);
       // Only facial pixels change. The original fitted face is preserved exactly
       // inside the outpainted portrait, so this patch has no visible boundary.
       portraitCtx.drawImage(texture.canvas,128,128,272,210,padX+128,padY+128,272,210);
@@ -283,7 +285,8 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
         const idle=paintedIdlePose(options.timeMs??0,motionProfile);
         for(const key of Object.keys(secondary)as Array<keyof PaintedSecondaryPose>)secondary[key]+=idle[key];
       }
-      const moving=pitch!==0||yaw!==0||roll!==0||Object.values(secondary).some(n=>Math.abs(n)>.00001);
+      localPainter?.draw(portraitCtx,options.localPose??{ear:bounded(secondary.leftEar/.5+secondary.leftTilt*2,-.4,1),hair:bounded(secondary.hair/14,-1,1)});
+      const moving=pitch!==0||yaw!==0||roll!==0||(!localPainter&&Object.values(secondary).some(n=>Math.abs(n)>.00001));
       target.clearRect(0,0,width,height);const scale=Math.min(width/PAINTED_FOX_VIEW.frame,height/PAINTED_FOX_VIEW.frame),ox=(width-size*scale)/2,oy=(height-size*scale)/2;
       target.save();target.translate(ox,oy);target.scale(scale,scale);
       if(options.backdrop){target.fillStyle='#f4f1e6';target.fillRect(0,0,size,size);}

@@ -2857,5 +2857,11 @@
   "{{v0}} 张卡片录了摄像头动作。课里只放表情和头部动作的数字，按配音重新对齐；不会放你的画面或声音。": "{{v0}} card(s) were recorded with camera movement. The lesson keeps only numbers for expressions and head movement, lined up with the narration. Your picture and voice are never included.",
   "要带上表情和转头，请先勾选保存基础嘴型。": "To include expressions and head turns, first turn on Save basic mouth motion.",
   "嘴型跟随最终配音；表情和转头来自你录这张卡片时的摄像头动作，已按配音重新对齐。": "The mouth follows the final narration. Expressions and head turns come from your camera movement when you recorded this card, lined up with the narration.",
-  "形象只跟随最终配音的基础张嘴，精细发音嘴型仍在完善。": "The presenter follows only the basic mouth opening of the final narration. Detailed speech mouth shapes are still in progress."
+  "形象只跟随最终配音的基础张嘴，精细发音嘴型仍在完善。": "The presenter follows only the basic mouth opening of the final narration. Detailed speech mouth shapes are still in progress.",
+  "星狐耳发对照": "Compare Star Fox ear and hair",
+  "使用新版单耳与侧发": "Use the new single ear and hair lock",
+  "单耳转向": "Ear direction",
+  "侧发摆动": "Hair lock sway",
+  "回到自动跟随": "Return to automatic following",
+  "先比较画面左侧单耳和右侧一撮头发；取消勾选可查看旧版。": "Compare the left ear and one hair lock on the right. Uncheck to see the previous version."
 }

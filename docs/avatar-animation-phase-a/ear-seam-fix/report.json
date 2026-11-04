@@ -1,0 +1,28 @@
+{
+  "poses": [
+    {
+      "ear": 0,
+      "exposedPaper": 0,
+      "seamMaxDifference": 0
+    },
+    {
+      "ear": 0.4,
+      "exposedPaper": 0,
+      "seamMaxDifference": 0
+    },
+    {
+      "ear": 0.7,
+      "exposedPaper": 0,
+      "seamMaxDifference": 0
+    },
+    {
+      "ear": 1,
+      "exposedPaper": 0,
+      "seamMaxDifference": 0
+    }
+  ],
+  "sweepStates": 87,
+  "maximumExposedPaper": 0,
+  "maximumSeamDifference": 0,
+  "scope": "Actual diagonal upper ear/front-hair seam. Native product painter, simulated poses, no browser/camera acceptance."
+}

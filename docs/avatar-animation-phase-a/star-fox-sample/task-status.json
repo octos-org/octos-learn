@@ -1,0 +1,12 @@
+{
+  "schema": "octos.star-fox-work.v1",
+  "scope": "Complete the Star Fox sample; four-character expansion and final phoneme alignment are later scope.",
+  "tasks": [
+    { "id": "baseline", "status": "in_progress", "evidence": [] },
+    { "id": "both_ears", "status": "pending", "evidence": [] },
+    { "id": "main_hair_locks", "status": "pending", "evidence": [] },
+    { "id": "natural_motion", "status": "pending", "evidence": [] },
+    { "id": "mouth_material_and_shapes", "status": "pending", "evidence": [] },
+    { "id": "validation_and_preview", "status": "pending", "evidence": [] }
+  ]
+}

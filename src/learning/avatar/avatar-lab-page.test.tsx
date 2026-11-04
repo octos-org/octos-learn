@@ -32,6 +32,16 @@ it('enables natural motion on entry without a camera and freezes it for pose ins
   fireEvent.click(screen.getByRole('button',{name:'皱眉',exact:true}));expect(stageMock.idleMotion).toBe(false);
 });
 
+it('inspects the local ear and lock without a camera and can return to automatic following',()=>{
+  open();
+  expect((screen.getByRole('checkbox',{name:'使用新版单耳与侧发'}) as HTMLInputElement).checked).toBe(true);
+  fireEvent.change(screen.getByRole('slider',{name:'单耳转向'}),{target:{value:'.8'}});
+  expect(stageMock.idleMotion).toBe(false);expect(captureMock.starts).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'回到自动跟随'}));expect(stageMock.idleMotion).toBe(true);
+  fireEvent.click(screen.getByRole('checkbox',{name:'使用新版单耳与侧发'}));
+  expect(screen.queryByRole('slider',{name:'单耳转向'})).toBeNull();
+});
+
 it('switches the fitted character without restarting capture or losing the current expression',()=>{
   open();expect(stageMock.characterId).toBe('star-fox');
   fireEvent.change(screen.getByRole('slider',{name:'嘴巴开合'}),{target:{value:'.65'}});
