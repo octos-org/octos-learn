@@ -75,6 +75,7 @@ export function TeachLessonPlayerPage() {
   }, [packageHash]);
   const beatId = runtime?.currentBeatId, speech = runtime?.activeSpeech ?? "";
   const mouthTrack = useMemo(() => (lesson && beatId ? lesson.mouthTrack(beatId, speech) : null), [lesson, beatId, speech]);
+  const performanceTrack = useMemo(() => (lesson && beatId ? lesson.performanceTrack(beatId, speech) : null), [lesson, beatId, speech]);
   const narration = useOllNarrationTts({
     language: lesson?.manifest.language,
     enabled: sound && Boolean(lesson),
@@ -124,7 +125,7 @@ export function TeachLessonPlayerPage() {
           <section className="teach-watch-stage" aria-label={tr("这节课")}>
             <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset} />
           </section>
-          <Suspense fallback={null}><LessonAvatarPreview mode="player" characterId={avatar.id} track={mouthTrack}
+          <Suspense fallback={null}><LessonAvatarPreview mode="player" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
             clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
             playing={speaking} preparing={narration.preparing} /></Suspense>
         </div>

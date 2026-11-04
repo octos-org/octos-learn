@@ -54,3 +54,20 @@ it("cancels before requesting speech and refuses a late synthesis after cancella
   await expect(makeLearnerPackage({ ...input(late.signal), includeLipSync: true })).rejects.toMatchObject({ name: "AbortError" });
   expect(preparePreviewAudio).not.toHaveBeenCalled();
 });
+
+it("re-times a camera take onto the card's final narration, beside its mouth track", async () => {
+  const source = input(), [line] = (await import("./learner-package")).lessonNarration(source.events);
+  // The learner spoke from 1 s to 3 s of the take and turned their head while speaking.
+  const track = { schema: "octos.avatar-performance.v1" as const, durationMs: 4000, frames: [
+    { timeMs: 1000, source: "mediapipe" as const, tracked: true, channels: { browInnerUp: .1, jawOpen: 1 }, rotation: [0, 0, 0] as [number, number, number] },
+    { timeMs: 3000, source: "mediapipe" as const, tracked: true, channels: { browInnerUp: .9, jawOpen: 1 }, rotation: [0, .4, 0] as [number, number, number] }] };
+  const result = await makeLearnerPackage({ ...source, includeLipSync: true, performances: { [line!.beatId]: { track, speechSpanMs: [1000, 3000] } } });
+  expect(result.manifest.requiredCapabilities).toEqual(["avatar-lip-sync-v1", "avatar-performance-v1"]);
+  const moves = (await readLearnerPackage(result.archive)).performanceTrack(line!.beatId, line!.text)!;
+  expect(moves.durationMs).toBe(4000);
+  // The 4 s narration spans the 2 s the learner spoke: its end is the end of their head turn.
+  expect(moves.keys[0]!.rotation[1]).toBeCloseTo(0, 3); expect(moves.keys.at(-1)!.rotation[1]).toBeCloseTo(.4, 3);
+  expect(moves.keys.some((key) => "jawOpen" in key.channels)).toBe(false);
+  // Without mouth motion the performance is not used at all.
+  expect((await makeLearnerPackage({ ...source, performances: { [line!.beatId]: { track } } })).manifest.schema).toBe(LEARNER_PACKAGE_SCHEMA);
+});

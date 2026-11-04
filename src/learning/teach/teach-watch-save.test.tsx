@@ -19,13 +19,16 @@ vi.mock("./lesson-check", () => ({ cardChecks: () => [], lessonReady: () => true
 vi.mock("./draft-sync", () => ({ syncLessonDrafts: saving.sync }));
 vi.mock("./learner-lessons-api", () => ({ listLessons: async () => [], saveLessonPackage: saving.upload }));
 vi.mock("./make-learner-package", () => ({ makeLearnerPackage: saving.make }));
+const takes = vi.hoisted(() => ({ read: vi.fn() }));
+vi.mock("./take-performance-store", () => ({ readTakePerformance: takes.read }));
 vi.mock("./learner-package-store", () => ({ readStoredLearnerPackage: async () => undefined, writeStoredLearnerPackage: saving.write }));
 vi.mock("./learner-package", async (original) => ({
   ...(await original<object>()),
   readLearnerPackage: async () => ({ manifest: { contentSha256: "a".repeat(64) }, narration: async () => null, mouthTrack: () => null }),
 }));
 
-import { appendEvent, createRecording, finishTake, planCards, startTake } from "./recording";
+import { appendEvent, createRecording, finishTake, planCards, setPresenter, startTake } from "./recording";
+import { loadRecordingDrafts } from "./recording-store";
 import { saveRecordingDraft } from "./recording-store";
 import { TeachWatchPage } from "./teach-watch-page";
 
@@ -78,4 +81,26 @@ it("does not upload a package completed after the learner changes the presenter"
   expect(saving.write).not.toHaveBeenCalled();
   expect(saving.sync).not.toHaveBeenCalled();
   expect(saving.upload).not.toHaveBeenCalled();
+});
+
+it("re-times the camera takes kept on this device into the package, only when the learner includes them", async () => {
+  const [draft] = loadRecordingDrafts(localStorage, "learner-1");
+  const card = draft!.cards[0]!;
+  const withCamera = setPresenter({ ...draft!, cards: [{ ...card, takes: card.takes.map((take) => ({ ...take, camera: true as const })) }] },
+    { cameraMotion: "on", mouthMotion: "basic" }, "2026-11-03T11:30:00Z");
+  saveRecordingDraft(localStorage, "learner-1", withCamera);
+  const track = { schema: "octos.avatar-performance.v1", durationMs: 1000, frames: [] };
+  takes.read.mockResolvedValue(track);
+  open();
+  expect(await screen.findByRole("checkbox", { name: "Include my expressions and head turns from recording" })).toHaveProperty("checked", true);
+  const button = await screen.findByRole("button", { name: "Save to My lessons" });
+  await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+  fireEvent.click(button);
+  await waitFor(() => expect(saving.make).toHaveBeenCalledOnce());
+  expect(takes.read).toHaveBeenCalledWith({ profileId: "learner-1", recordingId: "merge-save", cardKey: "card-1", take: 1 });
+  const performances = saving.make.mock.calls[0]![0].performances as Record<string, { track: unknown; speechSpanMs?: unknown }>;
+  expect(Object.keys(performances)).toHaveLength(1);
+  expect(Object.keys(performances)[0]).toMatch(/:beat:card-1$/);
+  expect(Object.values(performances)[0]!.track).toBe(track);
+  expect(saving.make.mock.calls[0]![0]).toMatchObject({ includeLipSync: true });
 });

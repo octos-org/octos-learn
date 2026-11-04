@@ -60,6 +60,8 @@ export default function LearnerPackageViewer() {
   const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
   const mouth = useMemo(() => pack && narrationBeatId ? pack.mouthTrack(narrationBeatId, narrationText) : null,
     [pack, narrationBeatId, narrationText]);
+  const moves = useMemo(() => pack && narrationBeatId ? pack.performanceTrack(narrationBeatId, narrationText) : null,
+    [pack, narrationBeatId, narrationText]);
   const narration = useOllNarrationTts({ enabled: Boolean(pack) && sound, playing: speaking,
     language: pack?.manifest.language, narrationId: runtime?.currentBeatId, text: runtime?.activeSpeech ?? "",
     resolveAudio, onPlaybackStart: start, onPlaybackComplete: complete, onPlaybackEnd: end,
@@ -83,7 +85,7 @@ export default function LearnerPackageViewer() {
     </div>
     {pack ? <>
       <div className="teach-watch-layout"><section className="teach-watch-stage" aria-label={tr("你的课")}><LearningWhiteboard embedded runtime={runtime} resolveAsset={pack.resolveAsset} /></section>
-        {hasMouth && showAvatar && <Suspense fallback={null}><LessonAvatarPreview characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth}
+        {hasMouth && showAvatar && <Suspense fallback={null}><LessonAvatarPreview characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth} performance={moves}
           clock={media && media.beatId === narrationBeatId && media.packageHash === pack.manifest.contentSha256 ? media.clock : null}
           playing={speaking && sound} preparing={narration.preparing} /></Suspense>}
       </div>

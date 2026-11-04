@@ -12,6 +12,11 @@ import { tr } from "@/i18n";
 import type { StoredInkSnapshot } from "./ink-snapshot-store";
 import { buildLearnerPackage, lessonNarration, type NarrationClip } from "./learner-package";
 import { preparePreviewAudio } from "../avatar/prepare-preview-audio";
+import { retimePerformance } from "../avatar/lesson-performance";
+import type { AvatarTrack } from "../avatar/performance-track";
+
+/** A card's camera performance from its kept take, by the card's narration beat. */
+export type CardPerformances = Record<string, { track: AvatarTrack; speechSpanMs?: [number, number] }>;
 
 /** A clip's length from its audio, or a reading-time estimate when the browser cannot tell. */
 export function audioDuration(blob: Blob, text: string): Promise<number> {
@@ -48,6 +53,8 @@ export async function makeLearnerPackage(input: {
   signal: AbortSignal;
   onProgress: (done: number, total: number) => void;
   includeLipSync?: boolean;
+  /** Re-timed onto each card's final narration; needs `includeLipSync`. */
+  performances?: CardPerformances;
 }) {
   const cancelled = () => { if (input.signal.aborted) throw new DOMException("Aborted", "AbortError"); };
   cancelled();
@@ -70,7 +77,9 @@ export async function makeLearnerPackage(input: {
     }
     cancelled();
     const mediaType = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4"].includes(clip.type) ? clip.type as NarrationClip["mediaType"] : undefined;
-    narration.push({ beatId, text, audio, mediaType, durationMs: lipSync?.durationMs ?? await audioDuration(clip, text), ...(lipSync ? { lipSync } : {}) });
+    const moves = lipSync ? input.performances?.[beatId] : undefined;
+    const performance = moves && lipSync ? retimePerformance(moves.track, moves.speechSpanMs, { sha256: lipSync.audioSha256, durationMs: lipSync.durationMs }) : undefined;
+    narration.push({ beatId, text, audio, mediaType, durationMs: lipSync?.durationMs ?? await audioDuration(clip, text), ...(lipSync ? { lipSync } : {}), ...(performance ? { performance } : {}) });
   }
   cancelled();
   input.onProgress(lines.length, lines.length);

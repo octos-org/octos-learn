@@ -7,7 +7,7 @@ import { useLocale } from "@/i18n/use-locale";
 import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { normalizeAuthoringLesson } from "octos-lesson-language";
+import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
 import { availableService, type LessonVoices } from "@/byok/providers";
@@ -22,13 +22,14 @@ import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { compileRecording } from "./compile-recording";
 import { syncLessonDrafts } from "./draft-sync";
 import { listLessons, saveLessonPackage } from "./learner-lessons-api";
-import { LEARNER_PACKAGE_EXTENSION, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
+import { LEARNER_PACKAGE_EXTENSION, lessonNarration, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage, writeStoredLearnerPackage, type StoredLearnerPackage } from "./learner-package-store";
 import { cardChecks, lessonReady } from "./lesson-check";
-import { makeLearnerPackage } from "./make-learner-package";
+import { makeLearnerPackage, type CardPerformances } from "./make-learner-package";
 import { findPersonalDetails } from "./privacy";
 import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
-import { recordingComplete, setPresenter, type Presenter } from "./recording";
+import { keptTake, recordingComplete, setPresenter, type Presenter } from "./recording";
+import { readTakePerformance } from "./take-performance-store";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
@@ -37,6 +38,24 @@ import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
+
+/**
+ * The stored camera performance of each camera take, by the card's narration
+ * beat. A take whose movement is missing on this device (for example a draft
+ * recorded on another device) is presented with mouth motion only.
+ */
+async function cardPerformances(profileId: string, recordingId: string, takes: Array<{ cardKey: string; take: number; speechSpanMs?: [number, number] }>,
+  events: CanonicalEvent[]): Promise<CardPerformances> {
+  const beats = lessonNarration(events);
+  const found: CardPerformances = {};
+  for (const take of takes) {
+    const beat = beats.find((line) => line.beatId.endsWith(`:beat:${take.cardKey}`));
+    if (!beat) continue;
+    const track = await readTakePerformance({ profileId, recordingId, cardKey: take.cardKey, take: take.take }).catch(() => null);
+    if (track) found[beat.beatId] = { track, ...(take.speechSpanMs ? { speechSpanMs: take.speechSpanMs } : {}) };
+  }
+  return found;
+}
 
 /** A short, stable fingerprint of the lesson, so a changed lesson starts again from the top. */
 function fingerprint(text: string): string {
@@ -115,10 +134,17 @@ export function TeachWatchPage() {
   }, [wantedVoice, resource]);
   const avatar = presenterAvatar(recording?.presenter?.avatar);
   const includeLipSync = recording?.presenter?.mouthMotion === "basic";
+  // Cards whose kept take was recorded with the camera on (their movement is on this device).
+  const cameraTakes = useMemo(() => recording?.cards.flatMap((card) => {
+    const kept = keptTake(card);
+    return kept?.camera ? [{ cardKey: card.key, take: kept.take, speechSpanMs: kept.speechSpanMs }] : [];
+  }) ?? [], [recording]);
+  const includePerformance = includeLipSync && recording?.presenter?.cameraMotion === "on" && cameraTakes.length > 0;
 
   // The lesson's package, made on this device: once it matches the lesson,
   // the lesson plays from it with no speech service and no model.
-  const lessonPrint = fingerprint((lesson?.source ?? "") + (includeLipSync ? "\u0000avatar-mouth-v1" : ""));
+  const lessonPrint = fingerprint((lesson?.source ?? "") + (includeLipSync ? "\u0000avatar-mouth-v1" : "")
+    + (includePerformance ? `\u0000avatar-performance-v1:${cameraTakes.map((take) => `${take.cardKey}#${take.take}`).join(",")}` : ""));
   const [pack, setPack] = useState<PackState>({ status: "loading" });
   useEffect(() => {
     if (!recording || !lesson) return;
@@ -161,9 +187,11 @@ export function TeachWatchPage() {
     try {
       let stored = pack.status === "ready" ? pack.stored : undefined;
       if (!stored) {
+        const performances = includePerformance ? await cardPerformances(profileId, recording.id, cameraTakes, lesson.events) : undefined;
+        if (controller.signal.aborted || makeWork.current !== controller) return;
         const { archive, manifest } = await makeLearnerPackage({
           lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
-          voices, includeLipSync, signal: controller.signal, onProgress: (done, total) => { if (makeWork.current === controller) setMaking({ done, total }); },
+          voices, includeLipSync, ...(performances ? { performances } : {}), signal: controller.signal, onProgress: (done, total) => { if (makeWork.current === controller) setMaking({ done, total }); },
         });
         if (controller.signal.aborted || makeWork.current !== controller) return;
         stored = { recordingId: recording.id, lessonFingerprint: lessonPrint, contentSha256: manifest.contentSha256, archive: archive.slice().buffer, builtAt: manifest.createdAt };
@@ -213,6 +241,8 @@ export function TeachWatchPage() {
   const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
   const mouthTrack = useMemo(() => packaged && narrationBeatId
     ? packaged.mouthTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
+  const performanceTrack = useMemo(() => packaged && narrationBeatId
+    ? packaged.performanceTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
   const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length);
   const playing = Boolean(runtime?.playing);
   useEffect(() => {
@@ -292,7 +322,7 @@ export function TeachWatchPage() {
               <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
             </section>
             {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
-              characterId={presenterOfReference(packaged?.manifest.author.avatar_ref).id} track={mouthTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
+              characterId={presenterOfReference(packaged?.manifest.author.avatar_ref).id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
               playing={speaking && narrated} preparing={narration.preparing}
             /></Suspense>}
           </div>
@@ -319,6 +349,11 @@ export function TeachWatchPage() {
             {hasMouthTracks && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
             <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
             {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
+            {cameraTakes.length > 0 && <label className="teach-place"><input type="checkbox" checked={includePerformance} disabled={Boolean(making) || !includeLipSync}
+              onChange={(event) => choosePresenter({ cameraMotion: event.target.checked ? "on" : "off" })} /><span>{tr("带上我录课时的表情和转头")}</span></label>}
+            {cameraTakes.length > 0 && <p className="academy-muted">{includeLipSync
+              ? tr("{{v0}} 张卡片录了摄像头动作。课里只放表情和头部动作的数字，按配音重新对齐；不会放你的画面或声音。", { v0: cameraTakes.length })
+              : tr("要带上表情和转头，请先勾选保存基础嘴型。")}</p>}
             {making ? (
               <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…")}</p>
             ) : pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256 ? (
