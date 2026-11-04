@@ -118,4 +118,17 @@ describe("BYOK voice settings", () => {
     expect(state.save).not.toHaveBeenCalled();
   });
 
+  it("switches narration to Azure only with the new provider's key, then saves region, voice and key together", async () => {
+    show(); const region = await screen.findByRole("region", { name: tr("Text to Speech") });
+    fireEvent.change(within(region).getByLabelText(tr("Provider")), { target: { value: "azure" } });
+    expect(within(region).getByLabelText(tr("Region"))).toHaveProperty("value", "eastus");
+    expect(within(region).getByLabelText(tr("Voice ID"))).toHaveProperty("value", "en-US-AnaNeural");
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(state.save).not.toHaveBeenCalled();
+    fireEvent.change(within(region).getByLabelText(tr("{{v0}} key", { v0: tr("Azure AI Speech (US English)") })), { target: { value: " synthetic-azure-key " } });
+    fireEvent.change(within(region).getByLabelText(tr("Voice ID")), { target: { value: "en-US-AndrewNeural" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("Save Changes") }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", { provider: "azure", enabled: true, params: { region: "eastus", voice: "en-US-AndrewNeural" }, key: "synthetic-azure-key" }, "r1"));
+  });
 });

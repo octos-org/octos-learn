@@ -10,6 +10,41 @@ export const SERVICE_FIELDS = {
   tts: { key: "OCTOS_LEARN_TTS_API_KEY", params: "OCTOS_LEARN_TTS_PARAMS", provider: "volcano", endpoint: "https://openspeech.bytedance.com/api/v3/tts/unidirectional" },
   admission: { key: "OCTOS_LEARN_JEV_API_KEY", params: "OCTOS_LEARN_JEV_PARAMS", provider: "typesafe", endpoint: "https://api.typesafe.ai/v1/systemone" },
 };
+/** Providers each capability accepts; the first is the default for records without one. */
+export const PROVIDERS = { asr: ["volcano", "azure"], tts: ["volcano", "azure"], admission: ["typesafe"] };
+const PARAMS = {
+  typesafe: () => ["model"],
+  volcano: () => ["auth_mode", "resource_id", "voice"],
+  azure: capability => capability === "tts" ? ["region", "voice"] : ["region"],
+};
+export const AZURE_REGION = /^[a-z][a-z0-9]{1,31}$/;
+export const AZURE_VOICE = /^[a-z]{2,3}-[A-Za-z0-9]{2,4}(?:-[A-Za-z0-9]+){1,3}$/;
+const AZURE_LANGUAGES = new Set(["en-US", "zh-CN"]);
+// 60 s of 16 kHz 16-bit mono PCM plus its header: Azure's short-audio limit.
+const AZURE_MAX_WAV_BYTES = 60 * 16000 * 2 + 44;
+const xml = value => value.replace(/[<>&'"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[c]);
+/** The upstream request for one Azure AI Speech call, built here so the client never sends raw SSML or headers. */
+export function azureRequest(capability, params, key, payload) {
+  if (!object(payload)) throw new HttpError(400, "Invalid speech request.");
+  const region = params.region.trim();
+  const headers = { "Ocp-Apim-Subscription-Key": key, "User-Agent": "octos-learn" };
+  if (capability === "tts") {
+    const voice = typeof payload.voice === "string" ? payload.voice.trim() : "";
+    if (typeof payload.text !== "string" || !payload.text.trim() || payload.text.length > 5000 || !AZURE_VOICE.test(voice) || Object.keys(payload).some(k => !["text", "voice"].includes(k))) throw new HttpError(400, "Invalid speech request.");
+    const lang = voice.split("-").slice(0, 2).join("-");
+    return { url: `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, binary: true,
+      headers: { ...headers, "content-type": "application/ssml+xml", "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3" },
+      body: `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xml(lang)}"><voice name="${xml(voice)}">${xml(payload.text)}</voice></speak>` };
+  }
+  if (typeof payload.audio !== "string" || !AZURE_LANGUAGES.has(payload.language) || Object.keys(payload).some(k => !["audio", "language"].includes(k))) throw new HttpError(400, "Invalid speech request.");
+  const audio = Buffer.from(payload.audio, "base64");
+  // Only 16 kHz mono 16-bit PCM WAV, which is what the app records.
+  if (audio.length < 44 || audio.length > AZURE_MAX_WAV_BYTES || audio.toString("ascii", 0, 4) !== "RIFF" || audio.toString("ascii", 8, 12) !== "WAVE"
+    || audio.readUInt16LE(20) !== 1 || audio.readUInt16LE(22) !== 1 || audio.readUInt32LE(24) !== 16000 || audio.readUInt16LE(34) !== 16) throw new HttpError(400, "Unsupported audio. Speak a shorter sentence.");
+  const query = new URLSearchParams({ language: payload.language, format: "simple", profanity: "raw" });
+  return { url: `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?${query}`, binary: false,
+    headers: { ...headers, "content-type": "audio/wav; codecs=audio/pcm; samplerate=16000", accept: "application/json" }, body: audio };
+}
 const PREFIX = "/api/learn/byok";
 const VERSION = "OCTOS_LEARN_BYOK_VERSION";
 const hash = value => createHash("sha256").update(value).digest("hex");
@@ -27,17 +62,20 @@ function fields(capability) {
   return SERVICE_FIELDS[capability];
 }
 function validateDraft(capability, draft, allowMissingKey = true) {
-  const definition = fields(capability);
-  if (!object(draft) || draft.provider !== definition.provider || !object(draft.params)
+  fields(capability);
+  if (!object(draft) || !PROVIDERS[capability].includes(draft.provider) || !object(draft.params)
     || Object.keys(draft).some(k => !["provider", "enabled", "params", "key", "expected_revision"].includes(k))
-    || Object.keys(draft.params).some(k => !(capability === "admission" ? ["model"] : ["auth_mode", "resource_id", "voice"]).includes(k))
+    || Object.keys(draft.params).some(k => !PARAMS[draft.provider](capability).includes(k))
     || Object.entries(draft.params).some(([k, v]) => k.length > 80 || typeof v !== "string" || v.length > 1024 || /[\r\n]/.test(v))
     || (draft.key !== undefined && (typeof draft.key !== "string" || draft.key.length > 8192 || /[\r\n]/.test(draft.key)))) {
     throw new HttpError(400, "Invalid service configuration.");
   }
   if (!allowMissingKey && !draft.key?.trim()) throw new HttpError(400, "Enter your own service key.");
-  if (capability !== "admission" && ((draft.params.auth_mode && draft.params.auth_mode !== "api-key") || draft.params.app_id)) {
+  if (draft.provider === "volcano" && ((draft.params.auth_mode && draft.params.auth_mode !== "api-key") || draft.params.app_id)) {
     throw new HttpError(400, "Use the new Volcano speech API Key.");
+  }
+  if (draft.provider === "azure" && (!AZURE_REGION.test(draft.params.region ?? "") || (draft.params.voice !== undefined && draft.params.voice !== "" && !AZURE_VOICE.test(draft.params.voice)))) {
+    throw new HttpError(400, "Enter an Azure Speech region (for example eastus) and a voice name (for example en-US-AnaNeural).");
   }
   return draft;
 }
@@ -48,8 +86,10 @@ function savedService(env, capability) {
   try { record = JSON.parse(env[definition.params] || "null"); } catch { /* reported as unsupported metadata, never leak content */ }
   if (!key && !record) return undefined;
   if (key.startsWith("keychain:")) throw new HttpError(503, "This service credential uses an unsupported secret-store reference. Enter a speech API Key in settings.");
-  const defaults = capability === "admission" ? { model: "jev-latest" } : { auth_mode: "api-key", resource_id: capability === "tts" ? "seed-tts-2.0" : "volc.bigasr.auc_turbo", ...(capability === "tts" ? { voice: "" } : {}) };
   const provider = record?.provider ?? definition.provider;
+  const defaults = capability === "admission" ? { model: "jev-latest" }
+    : provider === "azure" ? { region: "eastus", ...(capability === "tts" ? { voice: "en-US-AnaNeural" } : {}) }
+      : { auth_mode: "api-key", resource_id: capability === "tts" ? "seed-tts-2.0" : "volc.bigasr.auc_turbo", ...(capability === "tts" ? { voice: "" } : {}) };
   const params = object(record?.params) ? record.params : defaults;
   validateDraft(capability, { provider, params, key });
   return { provider, params, key, enabled: !!key, execution_target: "client",
@@ -72,7 +112,10 @@ function authHeaders(request) {
   return headers;
 }
 async function limitedText(response, limit, signal) {
-  if (!response.body) return "";
+  return (await limitedBytes(response, limit, signal)).toString("utf8");
+}
+async function limitedBytes(response, limit, signal) {
+  if (!response.body) return Buffer.alloc(0);
   const reader = response.body.getReader();
   const chunks = []; let size = 0;
   try {
@@ -85,7 +128,7 @@ async function limitedText(response, limit, signal) {
       chunks.push(value);
     }
   } catch (error) { await reader.cancel().catch(() => {}); throw error; }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
 }
 async function readJson(request) {
   const chunks = []; let size = 0;
@@ -195,6 +238,8 @@ export function createByokHandler({ octosBaseUrl = "http://127.0.0.1:50080", reg
             return persist(request, profile, { [definition.key]: null, [definition.params]: null });
           }
           const draft = validateDraft(capability, body);
+          // A saved key belongs to its provider: switching providers needs the new provider's key.
+          if (current && draft.provider !== current.provider && !draft.key?.trim()) throw new HttpError(400, "Enter the key for the new provider.");
           return persist(request, profile, { [definition.key]: draft.key === undefined ? current?.key || null : draft.key.trim() || null, [definition.params]: JSON.stringify({ provider: draft.provider, params: draft.params }) });
         }));
         return true;
@@ -205,7 +250,10 @@ export function createByokHandler({ octosBaseUrl = "http://127.0.0.1:50080", reg
         const saved = savedService(await readEnv(profile.id), capability);
         if (!body.key && body.expected_revision && body.expected_revision !== saved?.revision) throw new HttpError(409, "Configuration changed. Reload Voice.");
         const draft = validateDraft(capability, { provider: body.provider, params: body.params, key: body.key === undefined ? saved?.key : body.key }, false);
-        if (capability !== "admission" && !draft.params.resource_id?.trim()) throw new HttpError(400, "Enter a resource ID.");
+        // A saved key is only ever sent to the provider it was saved for.
+        if (body.key === undefined && saved && body.provider !== saved.provider) throw new HttpError(409, "Configuration changed. Reload Voice.");
+        if (draft.provider === "volcano" && !draft.params.resource_id?.trim()) throw new HttpError(400, "Enter a resource ID.");
+        const azure = draft.provider === "azure" ? azureRequest(capability, draft.params, draft.key.trim(), body.payload) : null;
         if (active >= 16 || (perOwner.get(profile.id) ?? 0) >= 4) throw new HttpError(429, "Service relay busy. Try again later.");
         active++; perOwner.set(profile.id, (perOwner.get(profile.id) ?? 0) + 1);
         const controller = new AbortController();
@@ -213,16 +261,17 @@ export function createByokHandler({ octosBaseUrl = "http://127.0.0.1:50080", reg
         const cancelled = () => { if (!response.writableEnded) controller.abort(); };
         response.on("close", cancelled);
         try {
-          const headers = { "content-type": "application/json" };
-          if (capability === "admission") headers.authorization = `Bearer ${draft.key.trim()}`;
+          const headers = azure ? azure.headers : { "content-type": "application/json" };
+          if (azure) { /* azureRequest built the supplier headers */ } else if (capability === "admission") headers.authorization = `Bearer ${draft.key.trim()}`;
           else {
             headers["X-Api-Key"] = draft.key.trim(); headers["X-Api-Resource-Id"] = draft.params.resource_id;
             headers["X-Api-Request-Id"] = randomUUID();
             if (capability === "asr") headers["X-Api-Sequence"] = "-1";
           }
-          const upstream = await supplierFetch(fields(capability).endpoint, { method: "POST", headers, body: JSON.stringify(body.payload), redirect: "error", signal: controller.signal });
-          const code = upstream.headers.get("X-Api-Status-Code");
-          const text = upstream.ok ? await limitedText(upstream, 12 * 1024 * 1024, controller.signal) : "";
+          const upstream = await supplierFetch(azure ? azure.url : fields(capability).endpoint, { method: "POST", headers, body: azure ? azure.body : JSON.stringify(body.payload), redirect: "error", signal: controller.signal });
+          const code = azure ? null : upstream.headers.get("X-Api-Status-Code");
+          // Azure synthesis returns MP3 bytes; the JSON envelope carries them base64-encoded.
+          const text = !upstream.ok ? "" : azure?.binary ? (await limitedBytes(upstream, 12 * 1024 * 1024, controller.signal)).toString("base64") : await limitedText(upstream, 12 * 1024 * 1024, controller.signal);
           if (!upstream.ok) await upstream.body?.cancel().catch(() => {});
           send(200, { status: upstream.status, body: text, code: code && /^\d{7,8}$/.test(code) ? code : null });
         } finally {

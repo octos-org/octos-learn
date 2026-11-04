@@ -3,6 +3,7 @@
 // learner's own face or voice. The lesson refers to them only by catalog ID.
 
 import { tr } from "@/i18n";
+import { AZURE_VOICES } from "@/byok/azure-voices";
 
 /** A voice offered to learners, for one speech resource. */
 export interface PresenterVoice {
@@ -13,8 +14,8 @@ export interface PresenterVoice {
 
 /**
  * Friendly voices that read English well, per Volcano speech resource. The
- * catalog has no native US English or child voices yet; this set is revisited
- * with the en-US provider decision.
+ * catalog has no native US English or child voices; learners who need them
+ * use Azure AI Speech (below).
  */
 const VOICES: Record<string, PresenterVoice[]> = {
   "seed-tts-2.0": [
@@ -35,8 +36,10 @@ const VOICES: Record<string, PresenterVoice[]> = {
   ],
 };
 VOICES["seed-tts-1.0-concurr"] = VOICES["seed-tts-1.0"]!;
+/** Azure AI Speech native US English voices; Ana is a child's voice. */
+VOICES["azure"] = [...AZURE_VOICES];
 
-/** The voices a learner can choose with this speech resource; none for an unknown resource. */
+/** The voices a learner can choose with this speech resource (the provider for Azure); none for an unknown resource. */
 export function presenterVoices(resourceId: string | undefined): PresenterVoice[] {
   return VOICES[resourceId?.trim() ?? ""] ?? [];
 }
