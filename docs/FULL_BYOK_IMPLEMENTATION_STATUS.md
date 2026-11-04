@@ -82,7 +82,7 @@
 |---|---|---|
 | 火山 TTS V3 / 极速 ASR | `X-Api-Key` 未被预检允许 | 电视原生直连；网页使用认证 BYOK relay |
 | TypeSafe Jev System One | 未允许 `https://learn.pitun.cc` 来源 | 电视原生直连；网页使用认证 BYOK relay |
-| Azure | 曾研究预检可行性 | 已移出首期供应商与适配实现，不要求用户另开通 |
+| Azure | 曾研究预检可行性 | 已移出首期；2026-11-03 作为美式英语供应商重新接入网页 relay（[EN_US_SPEECH_AZURE.md](EN_US_SPEECH_AZURE.md)），电视暂不支持 |
 
 OPTIONS 成功不等于实际付费请求、错误响应 CORS、音色资源或音频播放成功。此分支尚不能作为完成线上迁移的证据。
 
