@@ -49,6 +49,16 @@ describe("cardChecks", () => {
     expect(cardChecks(recording, null, review)[1]!.status).toBe("good");
   });
 
+  it("a card whose words were changed after the check waits for the next check", () => {
+    let recording = lesson();
+    const review = { at: "2026-11-01T10:05:00.000Z", overall: "", screen: [],
+      cards: [{ key: "card-2", status: "check" as const, kind: "unclear" as const, message: "Say a bit more." }] };
+    expect(cardChecks(recording, null, review)[1]!.status).toBe("fix");
+    recording = correctTranscript(recording, "card-2", "The arrow shows the slope is 2.", "2026-11-01T10:06:00.000Z");
+    expect(cardChecks(recording, null, review)[1]).toMatchObject({ status: "redo", findings: [] });
+    expect(cardChecks(recording, null, { ...review, at: "2026-11-01T10:07:00.000Z", cards: [] })[1]!.status).toBe("good");
+  });
+
   it("a card re-recorded after the check waits for the next check", () => {
     let recording = lesson();
     recording = finishTake(startTake(recording, "card-1", "2026-11-01T10:06:00.000Z"), "card-1", "2026-11-01T10:06:10.000Z", { durationMs: 5_000, asrText: "Again." });

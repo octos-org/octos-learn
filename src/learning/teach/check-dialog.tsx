@@ -71,7 +71,7 @@ export function CheckDialog({ run, checks, overall, watchHref, onFix, onAgain, o
               <div>
                 <strong>{index + 1} · {check.title}</strong>
                 {check.status === "good" && check.praise && <p>{check.praise}</p>}
-                {check.status === "redo" && <p>{tr("这张卡片检查后又重录了，再检查一遍就知道了。")}</p>}
+                {check.status === "redo" && <p>{tr("这张卡片检查后又改过了，再检查一遍就知道了。")}</p>}
                 {check.findings.map((finding, findingIndex) => (
                   <p key={`${finding.source}-${findingIndex}`}>
                     <span className="teach-tag" data-source={finding.source}>{finding.source === "screen" ? tr("屏幕检查") : finding.source === "privacy" ? tr("隐私") : finding.source === "words" ? tr("讲解") : finding.kind ? KIND_TAG[finding.kind]() : tr("小章鱼")}</span>

@@ -72,6 +72,8 @@ export interface Take {
   asrText?: string;
   /** Transcript the lesson narrates; personal details are removed before publishing. */
   text?: string;
+  /** When the learner last changed `text` by hand; a check made before it no longer applies. */
+  textEditedAt?: string;
   /** Start and end of speech inside the take, for action phases. */
   speechSpanMs?: [number, number];
   /** The take's camera performance (face and head parameters, no images) is kept on this device (take-performance-store). */
@@ -391,7 +393,7 @@ export function correctTranscript(recording: LearnerRecording, key: string, text
   if (!corrected) throw new RecordingError("The transcript cannot be empty");
   return touch(recording, now, replaceCard(recording, key, (card) => ({
     ...card,
-    takes: card.takes.map((candidate) => (candidate === take ? { ...take, text: corrected } : candidate)),
+    takes: card.takes.map((candidate) => (candidate === take ? (corrected === take.text ? take : { ...take, text: corrected, textEditedAt: now }) : candidate)),
   })));
 }
 

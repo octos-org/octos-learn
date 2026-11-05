@@ -80,7 +80,8 @@ export function cardChecks(recording: LearnerRecording, compiled: CompiledLesson
   return recording.cards.flatMap((card): CardCheck[] => {
     const take = keptTake(card);
     if (!take) return [];
-    if (take.startedAt > review.at) return [{ key: card.key, title: card.title, status: "redo", findings: [] }];
+    // Re-recorded, or its words changed, since the check: what the check said may no longer apply.
+    if (take.startedAt > review.at || (take.textEditedAt ?? "") > review.at) return [{ key: card.key, title: card.title, status: "redo", findings: [] }];
     const octo = review.cards.find((entry) => entry.key === card.key);
     const findings: CheckFinding[] = privacyFindings(take.text ?? "", (review.personal ?? []).filter((detail) => detail.card === card.key));
     // Without words the card plays in silence, with no captions.
