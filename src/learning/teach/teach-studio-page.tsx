@@ -525,13 +525,20 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     }
     if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }), marks(mark));
     if (tool === "arrow") {
+      // An arrow joins cards: a tap on part of a card means the card.
+      const end: BoardTarget = "node" in target ? { node: target.node } : target;
       if (!arrowFrom) {
-        setArrowFrom(target);
+        setArrowFrom(end);
         arrowFromMark.current = mark;
-        boardRef.current?.showPointer(pointer, { hold: true });
+        boardRef.current?.showPointer("node" in end ? end : pointer, { hold: true });
         return;
       }
-      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }), marks(arrowFromMark.current, mark));
+      if ("node" in end && "node" in arrowFrom && end.node === arrowFrom.node) {
+        setNotice(tr("箭头连接两张不同的卡片。请点另一张卡片。"));
+        return;
+      }
+      setNotice(null);
+      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: end }), marks(arrowFromMark.current, mark));
       setArrowFrom(null);
       arrowFromMark.current = undefined;
       boardRef.current?.showPointer(null);

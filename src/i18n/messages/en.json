@@ -3067,5 +3067,6 @@
   "小章鱼的检查技能还没有启动。请重启本机的 Octos 后再试。": "Octo's checking skill hasn't started. Restart Octos on this computer, then try again.",
   "小章鱼这次等得太久了，请再检查一遍。": "Octo waited too long this time. Please check again.",
   "出了点问题：{{v0}}": "Something went wrong: {{v0}}",
-  "没有说明原因": "no reason given"
+  "没有说明原因": "no reason given",
+  "箭头连接两张不同的卡片。请点另一张卡片。": "An arrow joins two different cards. Tap another card."
 }
