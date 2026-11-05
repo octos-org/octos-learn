@@ -49,7 +49,7 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
   if (placement === "board") {
     if (failed) return null;
     return <aside className="teach-board-presenter" data-learning-board-occlusion="" aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
-      <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30}
+      <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30} transparentBackground
         active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />
       <p role="status" className="teach-visually-hidden">{status}</p>
     </aside>;

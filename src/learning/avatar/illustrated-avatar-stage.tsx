@@ -8,8 +8,10 @@ import type { AvatarRenderMetrics } from "./avatar-render-metrics";
 import "./illustrated-avatar.css";
 import { LOCAL_RIG_ASSETS, type LocalRigImages, type LocalRigPose } from './painted-local-rig';
 
-export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, localRig=false, localPose, className = "", fpsLimit = 30, onMetrics, onError }: {
+export function IllustratedAvatarStage({ frame, active, characterId='star-fox', idleMotion = false, localRig=false, localPose, transparentBackground=false, className = "", fpsLimit = 30, onMetrics, onError }: {
   localRig?:boolean; localPose?:LocalRigPose;
+  /** Use the character's registered silhouette when it stands over a board. */
+  transparentBackground?:boolean;
   characterId?:PaintedCharacterId;
   frame: (now: number) => FaceFrame; active: boolean; idleMotion?: boolean; className?: string; fpsLimit?: 30 | 60; onMetrics?: (metrics: AvatarRenderMetrics) => void; onError?: () => void;
 }) {
@@ -25,7 +27,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     let disposed = false, ready = false, failed = false, handle = 0, last = 0, idleAt = 0, lastReport = 0, count = 0;
     const samples: number[] = [];
     const localEnabled=localRig&&character.id==='star-fox';
-    const paths:Record<string,string>={...character.assets,...(localEnabled?Object.fromEntries(Object.entries(LOCAL_RIG_ASSETS).map(([key,path])=>[`local_${key}`,path])):{})};
+    const paths:Record<string,string>={...character.assets,...(transparentBackground&&character.silhouette?{silhouette:character.silhouette}:{}),...(localEnabled?Object.fromEntries(Object.entries(LOCAL_RIG_ASSETS).map(([key,path])=>[`local_${key}`,path])):{})};
     const images = Object.entries(paths).map(([key, path]) => ({ key, path, image: new Image() }));
     let loaded = 0, painter: ReturnType<typeof createPaintedFoxPainter> | null = null;
     const fail = () => { if (!disposed && !failed) { failed = true; ready = false; cancelAnimationFrame(handle); handle = 0; setState("failed"); callbacks.current.onError?.(); } };
@@ -75,7 +77,7 @@ export function IllustratedAvatarStage({ frame, active, characterId='star-fox', 
     const visibility = () => { if (document.hidden) { cancelAnimationFrame(handle); handle = 0; } else request(); };
     document.addEventListener("visibilitychange", visibility);
     return () => { disposed = true; clearTimeout(timeout); wake.current = null; cancelAnimationFrame(handle); observer.disconnect(); painter = null; for (const { image } of images) { image.onload = null; image.onerror = null; image.removeAttribute("src"); } document.removeEventListener("visibilitychange", visibility); };
-  }, [character,localRig]);
+  }, [character,localRig,transparentBackground]);
   return <div className={`illustrated-avatar ${className}`}><canvas ref={canvas} role="img" aria-label={tr("{{v0}}动画",{v0:character.name()})} />
     {state !== "ready" && <span role="status">{state === "failed" ? tr("二维角色未能载入，请刷新重试。") : tr("正在载入角色…")}</span>}</div>;
 }
