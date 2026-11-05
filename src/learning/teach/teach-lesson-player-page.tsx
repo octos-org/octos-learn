@@ -106,7 +106,7 @@ export function TeachLessonPlayerPage() {
         <div className="course-launcher-inner">
           <AcademyHeader />
           {loaded.status === "loading" ? <p role="status">{tr("正在打开这节课…")}</p> : <p role="alert">{tr("找不到这节课。它可能已经删除，或者还没有保存。")}</p>}
-          <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+          <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         </div>
       </main>
     );
@@ -117,7 +117,7 @@ export function TeachLessonPlayerPage() {
   return (
     <main className="teach-page teach-studio teach-watch">
       <header className="teach-studio-head">
-        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{lesson.manifest.title}</h1>
         <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: cards })}</span>
       </header>

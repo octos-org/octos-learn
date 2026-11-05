@@ -1,6 +1,16 @@
 # 摄像头隔空书写接入白板的方案
 
-日期：2026-11-04。状态：第一阶段已实现，自动验证通过，用户已完成初步真人试用，准备提交 main 的 PR。
+日期：2026-11-05。状态：第一阶段已通过 PR #121 合入 main（`0b46ab00`）；本轮补充设置页实验功能开关，尚未提交或合并。
+
+### 设置页开关（2026-11-05）
+
+打开“设置 → 实验功能”（`/settings?tab=experiments`），开启“隔空书写”，即可在学习白板 `/board` 工具栏看到入口。设置即时生效，保存在当前浏览器的 `octos-learn-experiment-air-writing`，刷新后保留，同源标签页同步；普通用户也可使用，无需开启开发者调试模式。关闭开关会结束当前手势笔画、保存笔迹并释放手势识别资源。
+
+开关只控制入口，摄像头仍须点击白板入口后显式启动，不会因设置开启或刷新页面自动启动。手势识别在本机完成，不因此启用发送画面给老师。讲课录制暂未接入。
+
+`VITE_ENABLE_HANDWRITING` 仅作为没有浏览器选择时的启动默认值；设置页保存的开启或关闭优先。默认产品配置仍关闭，本机本轮已在 gitignored `.env.local-https.local`（仅本机 HTTPS 开发模式）中将启动默认值开启。无需为切换设置重启服务或重新构建。
+
+本轮验证：设置页、实验设置订阅、手势输入与共享摄像头相关 8 个测试文件共 115 项通过；构建与 i18n 检查通过，涉及文件 lint 无错误（白板大组件保留原有 5 条 warning）。真实 HTTPS 5173 浏览器验证通过：本机默认开启、设置页开关、跨标签页白板入口同步、显式关闭覆盖启动默认值、刷新后保留、没有触发摄像头申请，以及 1440px / 390px 页面布局。动态关闭手势时提交笔画并释放采集的行为另有生命周期回归覆盖。本轮未重新验收真人轨迹质量，未部署公网。
 
 工作分支 `codex/board-air-writing`，从本轮 `git fetch origin main` 得到的 `619960e59f1de221ef34b67110e7bc9fa30bd1b9` 新建。独立 worktree：`/Users/yy/Documents/projects/OctosLearn/octos-learn-air-writing`。手势原型与头像 checkout 均保留。
 
@@ -24,7 +34,7 @@ VITE_ENABLE_HANDWRITING=true VITE_ENABLE_BOARD_WRITING=true pnpm dev:https --hos
 
 打开 <https://127.0.0.1:5173/board>，点击工具栏的“隔空书写”。实验开关只影响这次启动，不改变默认产品配置；启动前应先结束原来占用 5173 的预览。当前交付不切换现有头像 checkout、不合并 PR，也不启动 main 的服务。
 
-`VITE_ENABLE_HANDWRITING` 默认关闭；摄像头只在点击后启动。Node 22 是本仓库配置加载所需环境（包含 `node:sqlite`）。当前本机复用了原 worktree 已安装的依赖；离线安装因缺少锁定的 GitHub 包缓存未完成，尚未做干净环境安装验证。包清单和锁文件包含独立的 `@mediapipe/tasks-vision@0.10.32`，未改 OLL / Course Library 锁定版本。
+`VITE_ENABLE_HANDWRITING` 默认关闭；若浏览器已有保存的选择，以设置页为准。摄像头只在点击后启动。Node 22 是本仓库配置加载所需环境（包含 `node:sqlite`）。当前本机复用了原 worktree 已安装的依赖；离线安装因缺少锁定的 GitHub 包缓存未完成，尚未做干净环境安装验证。包清单和锁文件包含独立的 `@mediapipe/tasks-vision@0.10.32`，未改 OLL / Course Library 锁定版本。
 
 ## 目标与第一版范围
 

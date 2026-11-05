@@ -638,7 +638,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       {/* The camera image is only read by the on-device face model; it is never shown, kept or sent. */}
       <video ref={camera.video} className="teach-camera-feed" muted playsInline aria-hidden="true" />
       <header className="teach-studio-head">
-        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{recording.topic.text}</h1>
         {isRecording ? (
           <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>

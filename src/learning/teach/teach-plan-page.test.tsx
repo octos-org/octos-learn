@@ -8,7 +8,7 @@ vi.mock("../history/history-api", async (original) => ({ ...(await original<obje
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
-import { createRecording, finishTake, planCards, startTake } from "./recording";
+import { createRecording, planCards } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { TeachPlanPage } from "./teach-plan-page";
 
@@ -73,17 +73,13 @@ it("keeps between one and six cards", () => {
   expect((screen.getByRole("button", { name: "Remove card 1" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
-it("lists the learner's lessons in progress so they can continue one", () => {
+it("keeps lesson planning separate from the library and links back to it", () => {
   const now = "2026-11-01T10:00:00.000Z";
-  let older = planCards(createRecording({ id: "rec-old", now, topic: { text: "Dinosaur teeth", type: "other" }, goals: [] }), now, [{ title: "Teeth" }]);
-  older = finishTake(startTake(older, "card-1", now), "card-1", now, { durationMs: 1_000, asrText: "Sharp." });
-  const newer = planCards(createRecording({ id: "rec-new", now: "2026-11-01T11:00:00.000Z", topic: { text: "Finding slope", type: "math_off_map" }, goals: [] }), "2026-11-01T11:00:00.000Z", [{ title: "A" }, { title: "B" }]);
-  saveRecordingDraft(localStorage, "learner-1", older);
-  saveRecordingDraft(localStorage, "learner-1", newer);
+  const existing = planCards(createRecording({ id: "rec-old", now, topic: { text: "Dinosaur teeth", type: "other" }, goals: [] }), now, [{ title: "Teeth" }]);
+  saveRecordingDraft(localStorage, "learner-1", existing);
   renderPage();
-  const links = screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.startsWith("/teach/rec-"));
-  expect(links.map((link) => [link.getAttribute("href"), link.textContent])).toEqual([
-    ["/teach/rec-new", "Finding slope0 of 2 cards recorded"],
-    ["/teach/rec-old", "Dinosaur teeth1 of 1 cards recorded"],
-  ]);
+  expect(screen.queryByText("Dinosaur teeth")).toBeNull();
+  expect(screen.getByRole("link", { name: "My lessons" }).getAttribute("href")).toBe("/teach");
+  expect(screen.getByRole("heading", { name: "Teach a new lesson" })).toBeTruthy();
+  expect(screen.getByRole("list", { name: "Lesson planning progress" })).toBeTruthy();
 });

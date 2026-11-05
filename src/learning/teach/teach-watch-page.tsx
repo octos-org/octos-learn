@@ -375,7 +375,7 @@ export function TeachWatchPage() {
             ) : pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256 ? (
               <>
                 <p role="status">{tr("这节课已经保存在“我的课”里，只有你能看到。声音已经做好，不联网也能播放。")}</p>
-                <Link to="/teach/lessons" className="teach-secondary">{tr("去“我的课”")}</Link>
+                <Link to="/teach" className="teach-secondary">{tr("去“我的课”")}</Link>
                 <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>
               </>
             ) : (

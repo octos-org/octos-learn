@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminSettingsPage } from "./settings-page";
+import { AIR_WRITING_STORAGE_KEY } from "@/hooks/use-experimental-features";
 
 const apiMocks = vi.hoisted(() => ({
   getMyProfile: vi.fn(),
@@ -40,6 +41,24 @@ describe("AdminSettingsPage", () => {
     apiMocks.getMyProfile.mockResolvedValue(null);
     authMocks.portal.can_access_admin_portal = true;
     authMocks.portal.accessible_profiles = [];
+  });
+
+  it("lets non-admins enable and disable air writing from Experimental features", async () => {
+    authMocks.portal.can_access_admin_portal = false;
+    localStorage.setItem(AIR_WRITING_STORAGE_KEY, "false");
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=experiments"]}>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+    const toggle = await screen.findByRole("switch", { name: tr("隔空书写") });
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    expect(localStorage.getItem(AIR_WRITING_STORAGE_KEY)).toBe("true");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    expect(localStorage.getItem(AIR_WRITING_STORAGE_KEY)).toBe("false");
   });
 
   it("keeps self-service settings scoped to the authenticated profile", async () => {
