@@ -184,15 +184,18 @@ describe("compileRecording", () => {
       actions: (beat.actions as Array<{ do: string; when?: string; content?: { points: Array<{ label?: string }> } }>)
         .map((action) => `${action.when}:${action.do}${action.do === "revise" ? `:${action.content!.points.length}` : ""}`),
     }));
-    // Sentences with no action before or during them join the beat before; nothing is reordered.
+    // One beat per sentence; each action before, during or after the sentence it happened at.
     expect(beats).toEqual([
       { say: "Here is a grid.", actions: ["during_speech:write", "after_speech:revise:1"] },
-      { say: "Point B. It goes up. Then right.", actions: ["during_speech:revise:2", "after_speech:point", "after_speech:focus"] },
+      { say: "Point B.", actions: ["during_speech:revise:2"] },
+      { say: "It goes up.", actions: [] },
+      { say: "Then right.", actions: ["after_speech:point", "after_speech:focus"] },
     ]);
-    expect(lesson.steps[0]!.beats.map((beat) => beat.key)).toEqual(["card-1-s1", "card-1-s2"]);
-    expect(beatSpeech).toEqual({
+    expect(lesson.steps[0]!.beats.map((beat) => beat.key)).toEqual(["card-1-s1", "card-1-s2", "card-1-s3", "card-1-s4"]);
+    expect(beatSpeech).toMatchObject({
       "card-1-s1": { card: "card-1", sentences: [0, 0], speechSpanMs: [0, 1_000] },
-      "card-1-s2": { card: "card-1", sentences: [1, 3], speechSpanMs: [2_000, 7_000] },
+      "card-1-s2": { card: "card-1", sentences: [1, 1], speechSpanMs: [2_000, 3_000] },
+      "card-1-s4": { card: "card-1", sentences: [3, 3], speechSpanMs: [6_000, 7_000] },
     });
   });
 
@@ -206,9 +209,10 @@ describe("compileRecording", () => {
       segments: [{ startMs: 1_000, endMs: 2_000, text: "", failed: true }, { startMs: 2_500, endMs: 3_000, text: "Look." }],
     });
     const beats = check(recording).lesson.steps[0]!.beats;
-    // The point placed during the sentence that was not understood comes as "Look." starts.
+    // The sentence that was not understood has no words; its point still comes before "Look.".
     expect(beats.map((beat) => [beat.say, beat.actions.map((action) => `${action.when}:${action.do}`)])).toEqual([
-      ["Look.", ["before_speech:write", "during_speech:revise", "after_speech:focus"]],
+      [undefined, ["before_speech:write", "during_speech:revise"]],
+      ["Look.", ["after_speech:focus"]],
     ]);
   });
 

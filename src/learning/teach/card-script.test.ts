@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { setLocale } from "@/i18n";
-import { cardScript, gapOf, joinSentences, moveScriptChip, ScriptMoveError, splitSentence } from "./card-script";
+import { cardSequence, joinWithPrevious, moveAction, SequenceError, splitSentence } from "./card-script";
 import { compileRecording } from "./compile-recording";
 import { appendEvent, createRecording, finishTake, planCards, startTake, type CardInk, type LearnerRecording, type RecordingEvent } from "./recording";
 
@@ -30,49 +30,46 @@ const grid: RecordingEvent = { t: 500, type: "component.insert", panel: "coordin
 const pointA: RecordingEvent = { t: 1_500, type: "point_tool.place", node: "grid", point: "point-a", x: 1, y: 2, label: "A" };
 const laser: RecordingEvent = { t: 2_500, type: "tool.laser", target: { node: "grid" } };
 
-const summary = (recording: LearnerRecording) => cardScript(recording.cards[0]!)!.chips.map((chip) => `${chip.label}@${chip.slot.phase}${chip.slot.sentence}`);
+const names = (recording: LearnerRecording) => cardSequence(recording.cards[0]!)!.map((item) => (item.kind === "sentence" ? `“${item.text}”` : item.label));
 
-describe("card script", () => {
-  it("lists the sentences and where each action plays among them", () => {
+describe("card sequence", () => {
+  it("lists sentences and actions in the order they play", () => {
     const recording = card([grid, pointA, laser], [{ snapshotId: "ink-snap:w@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [300, 1_200, 4_500] }]);
-    expect(cardScript(recording.cards[0]!)!.sentences).toEqual(["Here is a grid.", "Point B.", "It goes up."]);
-    expect(summary(recording)).toEqual([
-      "Writing (1 stroke)@during0", "Put on a coordinate grid@during0",
-      "Writing (1 stroke)@after0", "Mark point A@after0",
-      "Point at it@during1", "Writing (1 stroke)@during2",
+    expect(names(recording)).toEqual([
+      "Writing (1 stroke)", "Put on a coordinate grid", "“Here is a grid.”",
+      "Writing (1 stroke)", "Mark point A", "Point at it", "“Point B.”",
+      "Writing (1 stroke)", "“It goes up.”",
     ]);
   });
 
-  it("moves an action to another gap, after what is already there, and the lesson plays it there", () => {
-    const recording = moveScriptChip(card([grid, pointA, laser]), "card-1", "event:2", 3, now);
-    expect(summary(recording)).toEqual(["Put on a coordinate grid@during0", "Mark point A@after0", "Point at it@after2"]);
-    const moved = moveScriptChip(recording, "card-1", "event:2", 1, now);
-    expect(summary(moved)).toEqual(["Put on a coordinate grid@during0", "Mark point A@after0", "Point at it@after0"]);
-    const beats = compileRecording(moved, { author, language: "en-US" }).lesson.steps[0]!.beats;
-    expect(beats[0]!.actions.map((action) => action.do)).toEqual(["write", "revise", "point"]);
+  it("moves an action anywhere in the sequence, and the lesson plays it there", () => {
+    const start = card([grid, pointA, laser]);
+    // Sequence without the laser: grid, s1, A, s2, s3. Put it last, then right after the grid.
+    const last = moveAction(start, "card-1", "event:2", 5, now);
+    expect(names(last)).toEqual(["Put on a coordinate grid", "“Here is a grid.”", "Mark point A", "“Point B.”", "“It goes up.”", "Point at it"]);
+    const early = moveAction(last, "card-1", "event:2", 1, now);
+    expect(names(early)).toEqual(["Put on a coordinate grid", "Point at it", "“Here is a grid.”", "Mark point A", "“Point B.”", "“It goes up.”"]);
+    const beats = compileRecording(early, { author, language: "en-US" }).lesson.steps[0]!.beats;
+    expect(beats[0]!.actions.map((action) => `${action.when}:${action.do}`)).toEqual(["during_speech:write", "during_speech:point", "after_speech:revise"]);
+    // Before everything: before the first sentence starts.
+    expect(names(moveAction(start, "card-1", "event:1", 0, now))[0]).toBe("Mark point A");
   });
 
   it("refuses to show later strokes of writing before earlier ones", () => {
     const recording = card([], [{ snapshotId: "ink-snap:w@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [300, 4_500] }]);
-    const [, later] = cardScript(recording.cards[0]!)!.chips;
-    expect(() => moveScriptChip(recording, "card-1", later!.id, 0, now)).toThrow(ScriptMoveError);
-    // Later in the card is fine.
-    expect(summary(moveScriptChip(recording, "card-1", later!.id, 3, now))).toEqual(["Writing (1 stroke)@during0", "Writing (1 stroke)@after2"]);
+    const later = cardSequence(recording.cards[0]!)!.filter((item) => item.kind === "action")[1]!;
+    expect(() => moveAction(recording, "card-1", later.id, 0, now)).toThrow(SequenceError);
+    expect(names(moveAction(recording, "card-1", later.id, 4, now)).at(-1)).toBe("Writing (1 stroke)");
   });
 
-  it("makes room before the first sentence when the learner started talking at once", () => {
-    const moved = moveScriptChip(card([grid, pointA]), "card-1", "event:1", 0, now);
-    expect(summary(moved)).toEqual(["Mark point A@before0", "Put on a coordinate grid@during0"]);
-    expect(gapOf(cardScript(moved.cards[0]!)!.chips[0]!.slot)).toBe(0);
-  });
-
-  it("splits and joins sentences; a join waits until nothing plays between them", () => {
-    const split = splitSentence(card([grid, laser]), "card-1", 0, "Here is".length, now);
-    expect(cardScript(split.cards[0]!)!.sentences).toEqual(["Here is", "a grid.", "Point B.", "It goes up."]);
+  it("splits a sentence where the learner pressed Enter, and joins it back", () => {
+    const split = splitSentence(card([grid, laser]), "card-1", 2, "It".length, now);
+    expect(names(split)).toEqual(["Put on a coordinate grid", "“Here is a grid.”", "Point at it", "“Point B.”", "“It”", "“goes up.”"]);
     expect(split.cards[0]!.takes[0]!.text).toBe("Here is a grid. Point B. It goes up.");
-    const joined = joinSentences(split, "card-1", 0, now);
-    expect(cardScript(joined.cards[0]!)!.sentences).toEqual(["Here is a grid.", "Point B.", "It goes up."]);
-    const between = moveScriptChip(card([grid, laser]), "card-1", "event:1", 1, now);
-    expect(() => joinSentences(between, "card-1", 0, now)).toThrow(ScriptMoveError);
+    expect(names(joinWithPrevious(split, "card-1", 3, now)).at(-1)).toBe("“It goes up.”");
+    // The laser stands between "Here is a grid." and "Point B.": they stay apart.
+    expect(() => joinWithPrevious(split, "card-1", 1, now)).toThrow(SequenceError);
+    // An action made while a sentence was said stays with the part where it happened.
+    expect(names(splitSentence(card([grid]), "card-1", 0, "Here is".length, now)).slice(0, 3)).toEqual(["“Here is”", "Put on a coordinate grid", "“a grid.”"]);
   });
 });

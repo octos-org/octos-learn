@@ -40,7 +40,8 @@ import {
   type RecordingEvent,
   type Take,
 } from "./recording";
-import { ScriptEditor } from "./script-editor";
+import { SequenceBar } from "./sequence-bar";
+import { cardSequence } from "./card-script";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { syncLessonDrafts } from "./draft-sync";
 import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
@@ -845,7 +846,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
                 {cardCheck.findings.map((finding, index) => <p key={`${finding.source}-${index}`}>{finding.message}</p>)}
               </div>
-              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)}
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now}
                 label={tr("你的话（课会用这些话来讲，可以直接改）")} />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
@@ -865,7 +866,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
                 />
               )}
-              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)} />
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} />
               {notice && <p role="status" className="teach-notice">{notice}</p>}
               <div className="teach-panel-end teach-panel-actions">
                 {nextCard ? (
@@ -889,6 +890,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             onApply={(override) => update((current) => setOllOverride(current, override, now()))} onClose={() => setAdvanced(false)} />
         )}
       </div>
+
+      {/* The order of the selected card's words and actions, under the board. */}
+      {card && kept && !isRecording && cardSequence(card) && (
+        <SequenceBar key={`${card.key}-${kept.take}`} card={card} cardNumber={cardIndex + 1} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)} />
+      )}
 
       {checkRun && (
         <CheckDialog
@@ -916,17 +922,15 @@ function clockText(ms: number): string {
  * What the learner said on a card, to correct before the lesson narrates it:
  * one box per sentence when the take kept its sentences, else one box.
  */
-function WordsEditor({ card, take, label, update, now, check, watchFrom }: {
+function WordsEditor({ card, take, label, update, now }: {
   card: RecordingCard; take: Take; label?: string;
   update: (change: (current: LearnerRecording) => LearnerRecording) => void; now: () => string;
-  check: (before: LearnerRecording, after: LearnerRecording) => string | null;
-  watchFrom?: (sentence: number) => string | undefined;
 }) {
   if (!take.segments) {
     return <TranscriptEditor text={take.text ?? ""} {...(label ? { label } : {})} onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))} />;
   }
-  // The script: the sentences, with the board actions between and during them.
-  return <ScriptEditor card={card} {...(label ? { label } : {})} update={update} now={now} check={check} {...(watchFrom ? { watchFrom } : {})} />;
+  // Sentences and their order with the actions are edited in the strip under the board.
+  return <p className="academy-muted">{tr("你说的话和动作的顺序在白板下面的“顺序”条里，可以拖动和修改。")}</p>;
 }
 
 function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {

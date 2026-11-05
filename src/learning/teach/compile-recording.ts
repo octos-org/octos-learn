@@ -5,7 +5,6 @@
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
 
 import {
-  joinSpoken,
   keptTake,
   currentTake,
   type BoardTarget,
@@ -184,35 +183,48 @@ export function inkStages(times: number[], sentences: Sentences): Array<{ rank: 
 /** An action and where it happened among the card's sentences. */
 interface Ranked { action: Action; rank: number }
 
+/** OLL's limit on actions in one beat; more continue in beats of their own. */
+const MAX_BEAT_ACTIONS = 24;
+
 /**
- * Splits a card into beats in the recorded order. Sentences with no action
- * before or during them join the previous beat, so a beat is a run of
- * sentences, and actions play before, during or after the run as recorded.
+ * Splits a card into beats in the recorded order: one beat per sentence, so
+ * captions follow the sentences and a lesson can be played from any of them,
+ * with each action before, during or after the sentence it happened at. A
+ * sentence with neither words nor actions (not understood, nothing done)
+ * makes no beat.
  */
 function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], speech: NonNullable<CompiledLesson["beatSpeech"]>): AuthoringLesson["steps"][number]["beats"] {
   const count = Math.max(1, sentences.texts.length);
-  const starts = [0];
-  for (let index = 1; index < count; index += 1) {
-    if (ranked.some((entry) => entry.rank === 3 * index + DURING || entry.rank === 3 * (index - 1) + AFTER)) starts.push(index);
-  }
   // Stable sort keeps the recorded order of actions at the same rank.
   const ordered = [...ranked].sort((a, b) => a.rank - b.rank);
-  return starts.map((first, beat) => {
-    const last = (starts[beat + 1] ?? count) - 1;
-    const say = joinSpoken(sentences.texts.slice(first, last + 1));
-    const actions = ordered.flatMap((entry) => {
-      const sentence = Math.floor(entry.rank / 3);
-      if (sentence < first || sentence > last) return [];
+  const beats: AuthoringLesson["steps"][number]["beats"] = [];
+  const add = (sentence: number, say: string, actions: Action[]) => {
+    const key = `${card.key}-s${beats.length + 1}`;
+    const span = sentences.spans[sentence];
+    speech[key] = { card: card.key, sentences: [sentence, sentence], ...(span && say ? { speechSpanMs: [span[0], span[1]] as [number, number] } : {}) };
+    // Every beat after a card's first goes straight on, like the next sentence of the same talk.
+    beats.push({ key, ...(say ? { say } : {}), ...(beats.length ? { pace: "continuous" as const } : {}), actions: actions as AuthoringAction[] });
+  };
+  for (let sentence = 0; sentence < count; sentence += 1) {
+    const say = sentences.texts[sentence]?.trim() ?? "";
+    const actions = ordered.filter((entry) => Math.floor(entry.rank / 3) === sentence).map((entry) => {
       const phase = entry.rank % 3;
-      // Inside a run, only the run's first sentence can have actions during or before it.
-      const when: Phase = phase === 0 ? "before_speech" : phase === DURING ? "during_speech" : "after_speech";
-      return [{ ...entry.action, when } as Action];
+      return { ...entry.action, when: (phase === 0 ? "before_speech" : phase === DURING ? "during_speech" : "after_speech") as Phase } as Action;
     });
-    const key = `${card.key}-s${beat + 1}`;
-    const [from, to] = [sentences.spans[first], sentences.spans[last]];
-    speech[key] = { card: card.key, sentences: [first, last], ...(from && to ? { speechSpanMs: [from[0], to[1]] as [number, number] } : {}) };
-    return { key, ...(say ? { say } : {}), actions: actions as AuthoringAction[] };
-  });
+    if (!say && !actions.length) continue;
+    if (actions.length <= MAX_BEAT_ACTIONS) { add(sentence, say, actions); continue; }
+    // Too many actions for one beat: those before the words, and those after the sentence's
+    // beat is full, play in beats of their own, in the same order.
+    const firstSpoken = Math.max(0, actions.findIndex((action) => action.when !== "before_speech"));
+    const chunks: Action[][] = [];
+    for (let index = 0; index < actions.length; index += MAX_BEAT_ACTIONS) chunks.push(actions.slice(index, index + MAX_BEAT_ACTIONS));
+    const spoken = Math.min(Math.floor(firstSpoken / MAX_BEAT_ACTIONS), chunks.length - 1);
+    chunks.forEach((chunk, index) => {
+      if (index === spoken) add(sentence, say, chunk);
+      else add(sentence, "", chunk.map((action) => ({ ...action, when: index < spoken ? "before_speech" : "after_speech" }) as Action));
+    });
+  }
+  return beats;
 }
 
 /** Card ink aliases: one card may hold several pieces of ink. */

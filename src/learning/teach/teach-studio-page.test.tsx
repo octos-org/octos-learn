@@ -314,12 +314,15 @@ it("turns what the learner says into the card's captions, timed from the take st
     { startMs: 600, endMs: 3_000, text: "Here is a grid.", asrText: "Here is a grid." },
     { startMs: 3_500, endMs: 6_000, text: "Point A is at one two.", asrText: "Point A is at one two." },
   ]);
-  expect((screen.getByRole("textbox", { name: "Sentence 1" }) as HTMLTextAreaElement).value).toBe("Here is a grid.");
-  expect((screen.getByRole("textbox", { name: "Sentence 2" }) as HTMLTextAreaElement).value).toBe("Point A is at one two.");
+  // The words are edited in the strip under the board: one block per sentence.
+  const strip = within(screen.getByRole("region", { name: "Order of card 1" }));
+  expect(strip.getByRole("button", { name: /^Sentence 1: Here is a grid\./ })).toBeTruthy();
 
   // Correcting one sentence keeps the others and the card's words in step.
-  fireEvent.change(screen.getByRole("textbox", { name: "Sentence 2" }), { target: { value: "Point A is at 1, 2." } });
-  fireEvent.click(screen.getByRole("button", { name: "Save captions" }));
+  fireEvent.click(strip.getByRole("button", { name: /^Sentence 2: / }));
+  const box = strip.getByRole("textbox", { name: "Sentence 2" });
+  fireEvent.change(box, { target: { value: "Point A is at 1, 2." } });
+  fireEvent.blur(box);
   const corrected = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
   expect(corrected.segments!.map((segment) => segment.text)).toEqual(["Here is a grid.", "Point A is at 1, 2."]);
   expect(corrected.text).toBe("Here is a grid. Point A is at 1, 2.");

@@ -161,7 +161,7 @@ test("strokes written in the studio keep when they were written, numbered in dra
   expect(saved.times[2]! - saved.times[1]!).toBeGreaterThan(500);
 });
 
-test("the script editor moves an action between sentences, refuses one that would come before what it needs, and opens the lesson at a sentence", async ({ page }) => {
+test("the order strip: drag an action, split and join sentences, move with the keyboard, and watch from a sentence", async ({ page }) => {
   await installTestAccount(page);
   await page.addInitScript((draft) => {
     localStorage.setItem("octos-locale", "zh-CN");
@@ -172,26 +172,52 @@ test("the script editor moves an action between sentences, refuses one that woul
   }, recording);
   await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
   await page.goto(`/teach/${recording.id}`);
-  const script = page.locator(".teach-script");
-  await expect(script.getByRole("textbox", { name: "第 4 句" })).toHaveValue("然后往右走。");
+  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  const order = () => strip.locator("[data-item]").evaluateAll((items) => items.map((item) => item.textContent?.trim()));
+  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "标出点 Beta", "现在放第二个点。", "它往上走。", "然后往右走。"]);
 
-  // Point B was placed while sentence 2 was said; move it after the last sentence.
-  await script.getByRole("button", { name: "标出点 Beta" }).click();
-  await script.getByRole("button", { name: "放到这里" }).last().click();
-  await expect(script.getByRole("button", { name: "放到这里" })).toHaveCount(0);
-  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!)[0].cards[0].takes[0]);
-  const take = await stored();
-  expect(take.events.at(-1).label).toBe("Beta");
-  expect(take.events.at(-1).t).toBeGreaterThan(7_000);
+  // Drag point Beta past the last sentence.
+  const beta = strip.locator("[data-item]", { hasText: "标出点 Beta" });
+  const last = strip.locator("[data-item]", { hasText: "然后往右走。" });
+  const from = (await beta.boundingBox())!, to = (await last.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  for (let step = 1; step <= 10; step += 1) await page.mouse.move(from.x + (to.x + to.width + 8 - from.x) * step / 10, from.y + from.height / 2);
+  await page.mouse.up();
+  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
 
-  // The grid cannot go after the points placed on it.
-  await script.getByRole("button", { name: "放上坐标网格" }).click();
-  await script.getByRole("button", { name: "放到这里" }).last().click();
-  await expect(page.getByRole("alert").filter({ hasText: "不能放在那里" })).toBeVisible();
-  expect((await stored()).events[0].type).toBe("component.insert");
+  // The arrow keys move an action one place; the grid cannot go after the points placed on it.
+  const gridBlock = strip.locator("[data-item]", { hasText: "放上坐标网格" });
+  await gridBlock.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(order).toEqual(["这是一个坐标网格。", "放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await expect(gridBlock).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(strip.getByRole("alert")).toContainText("不能放在那里");
+  expect((await order())[1]).toBe("放上坐标网格");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+
+  await strip.locator("[data-item]", { hasText: "标出点 Alpha" }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(order).toEqual(["放上坐标网格", "标出点 Alpha", "这是一个坐标网格。", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+
+  // Enter inside a sentence splits it; Backspace at the start of the second part joins it back.
+  await strip.getByRole("button", { name: /^第 3 句：/ }).click();
+  const third = strip.getByRole("textbox", { name: "第 3 句" });
+  await third.press("Home");
+  await third.press("ArrowRight");
+  await third.press("Enter");
+  await expect.poll(order).toContain("它");
+  await expect.poll(order).toContain("往上走。");
+  await strip.getByRole("button", { name: /^第 4 句：往上走/ }).click();
+  const fourth = strip.getByRole("textbox", { name: "第 4 句" });
+  await fourth.press("Home");
+  await fourth.press("Backspace");
+  await expect.poll(order).toContain("它往上走。");
 
   // Watch from sentence 2: the lesson starts there.
-  await script.getByRole("link", { name: "从这句开始看" }).nth(1).click();
+  await strip.getByRole("link", { name: "从这句开始看" }).nth(1).click();
   await expect(page).toHaveURL(/\/watch\?from=card-1-s2$/);
   const sound = page.getByRole("button", { name: "关掉声音" });
   if (await sound.isVisible().catch(() => false)) await sound.click();

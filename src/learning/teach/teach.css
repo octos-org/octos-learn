@@ -247,13 +247,25 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 /* The presenter panel keeps its notes inside its box rather than over the contents below. */
 .teach-watch-layout .teach-watch-avatar { overflow-y: auto; }
 
-/* The card's script: sentences with the board actions between and during them.
-   Scoped under .teach-step so they win over the panel's default buttons. */
-.teach-script-gap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 0 4px 10px; border-left: 3px solid rgba(15, 118, 110, .35); }
-.teach-script-during { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: #3d5a63; }
-.teach-script-sentence { display: grid; gap: 4px; }
-.teach-step button.teach-script-chip { min-height: 32px; padding: 0 12px; border: 1px solid rgba(15, 118, 110, .5); border-radius: 999px; background: #effaf8; color: #0f4f4a; font-size: 14px; }
-.teach-step button.teach-script-chip[aria-pressed="true"] { background: #0f766e; border-color: #0f766e; color: #fff; box-shadow: 0 0 0 3px rgba(15, 118, 110, .25); }
-.teach-step button.teach-script-drop { gap: 4px; min-height: 32px; padding: 0 12px; border: 1px dashed #0f766e; border-radius: 999px; background: #fff; color: #0f766e; font-size: 14px; }
-.teach-script-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
-.teach-step .teach-script-tools button.teach-link-button, .teach-script-tools a.teach-link-button { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0; border: 0; border-radius: 0; background: none; color: #3d5a63; font-size: 13px; text-decoration: underline; }
+/* The order of a card: one strip of blocks under the board, words and actions alike. */
+.teach-sequence { flex: none; margin-top: 10px; border: 1px solid rgba(40, 65, 67, .14); border-radius: 14px; background: #fffef9; }
+.teach-sequence-head { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px; }
+.teach-sequence-toggle { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 36px; padding: 0 4px; border: 0; background: none; color: #1b2457; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.teach-sequence-note { flex: 1; min-width: 0; margin: 0; overflow: hidden; color: #5b6b73; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.teach-sequence-note[data-problem] { color: #9a3412; white-space: normal; }
+.teach-sequence-track { display: flex; align-items: stretch; gap: 0; margin: 0; padding: 4px 12px 12px; overflow-x: auto; list-style: none; scroll-padding: 0 40px; }
+.teach-sequence-slot { position: relative; display: flex; flex: none; padding: 0 4px; }
+/* Where a dragged action will land. */
+.teach-sequence-slot[data-before-marker]::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: -2px; width: 4px; border-radius: 2px; background: #1b2457; }
+.teach-sequence-end { min-width: 24px; }
+.teach-sequence-block { position: relative; display: flex; align-items: flex-start; gap: 6px; box-sizing: border-box; min-height: 56px; max-width: 240px; padding: 8px 10px; border: 1px solid rgba(40, 65, 67, .22); border-radius: 10px; background: #fff; color: #1f2d33; font-size: 14px; line-height: 1.4; }
+.teach-sequence-block > svg { flex: none; margin-top: 2px; color: #3d5a63; }
+.teach-sequence-block[data-action] { align-items: center; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; }
+.teach-sequence-block[data-action]:focus-visible, .teach-sequence-words:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
+.teach-sequence-block[data-dragging] { z-index: 2; cursor: grabbing; box-shadow: 0 6px 18px rgba(27, 36, 87, .22); pointer-events: none; }
+.teach-sequence-block[data-sentence] { width: max-content; min-width: 120px; padding-right: 28px; }
+.teach-sequence-block[data-editing] { width: 260px; max-width: 260px; }
+.teach-sequence-words { display: -webkit-box; padding: 0; overflow: hidden; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: text; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.teach-sequence-text { flex: 1; min-height: 3.2em; padding: 2px 4px; border: 1px solid rgba(27, 36, 87, .4); border-radius: 6px; font: inherit; resize: none; }
+.teach-sequence-play { position: absolute; top: 6px; right: 6px; display: inline-flex; padding: 3px; border-radius: 999px; color: #3d5a63; }
+.teach-sequence-play:hover { background: rgba(40, 65, 67, .08); }
