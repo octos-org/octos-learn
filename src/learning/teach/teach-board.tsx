@@ -129,7 +129,9 @@ const SMALL_PART_BONUS = 10;
  * The part of a card nearest a tap, when one is within reach. Points win over
  * lines through them, and of parts equally near, the one drawn on top wins.
  */
-function nearestPart(node: Element, x: number, y: number): HTMLElement | SVGElement | null {
+function nearestPart(node: HTMLElement, x: number, y: number): HTMLElement | SVGElement | null {
+  // A 3D scene's parts are faces, areas the tap is either on or not.
+  if (node.dataset.kind === "scene3d") return null;
   let best: HTMLElement | SVGElement | null = null;
   let bestScore = PART_REACH;
   for (const part of node.querySelectorAll<HTMLElement | SVGElement>('[data-id*=":fragment:"]')) {
@@ -282,7 +284,13 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         onStrokeRef.current(stroke);
         return;
       }
-      const hit = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
+      // What is under the tap: a 3D scene captures the pointer, which makes the
+      // click's target its whole drawing rather than the face that was tapped.
+      const under = viewport.ownerDocument.elementFromPoint?.(event.clientX, event.clientY) ?? (event.target as Element | null);
+      const tapped = viewport.contains(under) ? under : (event.target as Element | null);
+      // A card's own buttons (a 3D view's presets, Explore) are not something to point at.
+      if (tapped?.closest("button, input, select, label")) return;
+      const hit = tapped?.closest<HTMLElement | SVGElement>("[data-id]");
       // A part is small (a point is a few pixels): a tap near one points at it, not at its card.
       const node = hit?.closest<HTMLElement>(".board-node[data-id]");
       const element = (node && nearestPart(node, event.clientX, event.clientY)) || hit;

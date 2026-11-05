@@ -214,6 +214,13 @@ describe("compileRecording", () => {
     const { lesson, state } = check(recording);
     expect(lesson.steps[0]!.beats[1]!.actions[0]).toMatchObject({ do: "view", target: "box", preset: "top" });
     expect(state.nodes["l:node:box"]!.view_intent).toEqual({ preset: "top" });
+    // The box turns about its own centre; its faces show only once highlighted, and the front faces the viewer (+y).
+    const box = lesson.steps[0]!.beats[0]!.actions[0] as unknown as { content: { objects: Array<{ center: object }>; highlights: Array<{ as: string; shown: string; points: Array<{ y: number; z: number }> }> } };
+    expect(box.content.objects[0]!.center).toEqual({ x: 0, y: 0, z: 0 });
+    expect(box.content.highlights.every((face) => face.shown === "when_emphasized")).toBe(true);
+    const face = (as: string) => box.content.highlights.find((candidate) => candidate.as === as)!.points;
+    expect(face("front-face").every((point) => point.y === 1.5)).toBe(true);
+    expect(face("top-face").every((point) => point.z === 1)).toBe(true);
   });
 
   it("points at a point placed on a grid in an earlier card", () => {

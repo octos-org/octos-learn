@@ -127,18 +127,24 @@ function nearestPreset(yaw: number, pitch: number): "front" | "top" | "side" | "
   return "isometric";
 }
 
+/**
+ * The box's six faces, around its centre at the origin (the view turns about
+ * the origin, so the box stays put). Each is drawn only once the learner
+ * highlights it, and can be tapped while it faces the viewer.
+ */
 function boxFaces(size: { x: number; y: number; z: number }) {
-  const [hx, hy, z] = [size.x / 2, size.y / 2, size.z];
+  const [hx, hy, hz] = [size.x / 2, size.y / 2, size.z / 2];
   const face = (as: string, label: string, points: Array<[number, number, number]>) =>
-    ({ as, kind: "face", label, points: points.map(([x, y, pz]) => ({ x, y, z: pz })) });
+    ({ as, kind: "face", label, shown: "when_emphasized", points: points.map(([x, y, z]) => ({ x, y, z })) });
   const area = (a: number, b: number) => `${a} × ${b}`;
   return [
-    face("top-face", `top ${area(size.x, size.y)}`, [[-hx, -hy, z], [hx, -hy, z], [hx, hy, z], [-hx, hy, z]]),
-    face("bottom-face", `bottom ${area(size.x, size.y)}`, [[-hx, -hy, 0], [hx, -hy, 0], [hx, hy, 0], [-hx, hy, 0]]),
-    face("front-face", `front ${area(size.x, size.z)}`, [[-hx, -hy, 0], [hx, -hy, 0], [hx, -hy, z], [-hx, -hy, z]]),
-    face("back-face", `back ${area(size.x, size.z)}`, [[-hx, hy, 0], [hx, hy, 0], [hx, hy, z], [-hx, hy, z]]),
-    face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, 0], [-hx, hy, 0], [-hx, hy, z], [-hx, -hy, z]]),
-    face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, 0], [hx, hy, 0], [hx, hy, z], [hx, -hy, z]]),
+    face("top-face", `top ${area(size.x, size.y)}`, [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("bottom-face", `bottom ${area(size.x, size.y)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz]]),
+    // The viewer looks from +y (OLL's "front" preset), so the front face is the +y one.
+    face("front-face", `front ${area(size.x, size.z)}`, [[-hx, hy, -hz], [hx, hy, -hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("back-face", `back ${area(size.x, size.z)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz]]),
+    face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, -hz], [-hx, hy, -hz], [-hx, hy, hz], [-hx, -hy, hz]]),
+    face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], [hx, -hy, hz]]),
   ];
 }
 
@@ -252,7 +258,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         fallback: `A box ${component.size.x} by ${component.size.y} by ${component.size.z}.`,
         axes: false,
         camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
-        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: component.size.z / 2 }, size: component.size }],
+        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: component.size }],
         highlights: boxFaces(component.size),
       },
     } as Action;
