@@ -29,6 +29,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import {
   mountInfiniteBoard,
@@ -708,7 +709,13 @@ export function LearningWhiteboard({
   onSelectionCardLayoutChange,
   onRetryDegradedVisual,
   taskReactions = NEUTRAL_REACTIONS,
+  overlay,
 }: {
+  /**
+   * Shown over the board, such as a presenter in its corner. Elements marked
+   * data-learning-board-occlusion keep the lesson's content clear of it.
+   */
+  overlay?: ReactNode;
   runtime?: OllLessonRuntimeController | null;
   /** Images the lesson refers to by asset ID, such as a learner's frozen handwriting. */
   resolveAsset?: ImageAssetResolver;
@@ -3439,6 +3446,7 @@ export function LearningWhiteboard({
         data-embedded-lesson={embedded ? "" : undefined}
         aria-label={tr("OLL 无限白板")}
       />
+      {overlay}
       {handwritingEnabled && inkSessionId && inkAvailable ? <HandwritingControls {...handwriting} canResume={!runtime?.playing} /> : null}
       {!runtime
         && inkState.component_count === 0

@@ -48,7 +48,7 @@ import { CheckDialog, type CheckPart, type CheckRun } from "./check-dialog";
 import { cardChecks, lessonReady } from "./lesson-check";
 import { checkReadability } from "./readability-check";
 import { AddPanel } from "./studio-add";
-import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
+import { askOcto, explainAssistFailure, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
 import { useTakeCamera } from "./use-take-camera";
@@ -413,8 +413,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         return;
       }
       setNeat({ stage: "confirming", latex: result.latex, confidence: result.confidence });
-    } catch {
-      setNotice(tr("这次没能整理，请再试一次。"));
+    } catch (error) {
+      // A rejected key is not the learner's handwriting: say what to fix.
+      const problem = explainAssistFailure(error);
+      setNotice(problem.startsWith(tr("出了点问题：")) ? tr("这次没能整理，请再试一次。") : problem);
       setNeat({ stage: "selecting", selected: 1 });
     }
   };
@@ -451,7 +453,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const finished = (part: keyof CheckRun, state: CheckPart) => setCheckRun((run) => (run ? { ...run, [part]: state } : run));
     const [screen, reviewed] = await Promise.all([
       checkReadability(lesson, resolveAsset).then((found) => { finished("screen", "done"); return found; }, () => { finished("screen", "failed"); return null; }),
-      reviewLesson(current, lesson, getLocale()).then((found) => { finished("octo", "done"); return found; }, () => { finished("octo", "failed"); return null; }),
+      reviewLesson(current, lesson, getLocale()).then((found) => { finished("octo", "done"); return found; }, (error: unknown) => {
+        const octoProblem = explainAssistFailure(error);
+        setCheckRun((run) => (run ? { ...run, octo: "failed", octoProblem } : run));
+        return null;
+      }),
     ]);
     if (!screen && !reviewed) return;
     update((latestRecording) => setReview(latestRecording, {

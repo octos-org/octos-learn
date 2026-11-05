@@ -113,6 +113,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-check-parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
 .teach-check-progress { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; color: #3d5a63; background: #eef1f6; font-size: 14px; font-weight: 500; }
 .teach-check-progress[data-state="done"] { color: #0f5c55; background: #e8f3ef; }
+.teach-check-reason { margin: -2px 0 0; padding: 8px 14px; border-radius: 12px; color: #7a4b12; background: #fbf1e3; font-size: 13px; line-height: 1.5; }
 .teach-check-progress[data-state="failed"] { color: #8a3b07; background: #fdf1e4; }
 .teach-spinner { width: 14px; height: 14px; border: 2px solid rgba(27, 36, 87, 0.25); border-top-color: #1b2457; border-radius: 50%; animation: teach-spin 0.9s linear infinite; }
 @keyframes teach-spin { to { transform: rotate(360deg); } }
@@ -161,6 +162,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-avatar > img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.45); transform-origin: 50% 54%; }
 .teach-avatar-placeholder { display: grid; place-items: center; border-radius: 50%; color: #3b3328; font-size: 20px; font-weight: 700; }
 .teach-tag[data-source="privacy"] { color: #6b2160; background: #f6e3f1; }
+.teach-tag[data-source="words"] { color: #7a4b12; background: #fbecd6; }
 .teach-package { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 16px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 14px; background: #fffef9; }
 .teach-package p { flex: 1; min-width: 240px; margin: 0; font-size: 14px; }
 

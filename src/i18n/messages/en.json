@@ -3060,5 +3060,12 @@
   "② 摆好了，点这个按钮记下来：": "② When it's in place, tap this to note it:",
   "③ 选看的人要做对的是哪个数，可以写一句提示，然后保存。看课的人要自己拖到这个答案，才算做对。": "③ Choose which number the viewer has to get right, add a hint if you like, then save. The viewer gets it right by dragging to this answer themselves.",
   "θ（第 {{v0}} 张的单位圆）": "θ (the unit circle on card {{v0}})",
-  "θ 本身（弧度）": "θ itself (radians)"
+  "θ 本身（弧度）": "θ itself (radians)",
+  "这张卡片没有你说的话，看的人听不到讲解，也看不到字幕。在“你在这张卡片说的话”里写下你讲的内容，或者点“重录我的话”再讲一遍。": "This card has none of your words, so viewers hear no explanation and see no captions. Type what you said under “What you said on this card”, or tap “Re-record my words” and say it again.",
+  "讲解": "Words",
+  "小章鱼用的模型服务 Key 无效。请在 Octos 的设置里换一个有效的模型 API Key，再检查一遍。": "The model service Octo uses rejected its key. Put a valid model API key in Octos settings, then check again.",
+  "小章鱼的检查技能还没有启动。请重启本机的 Octos 后再试。": "Octo's checking skill hasn't started. Restart Octos on this computer, then try again.",
+  "小章鱼这次等得太久了，请再检查一遍。": "Octo waited too long this time. Please check again.",
+  "出了点问题：{{v0}}": "Something went wrong: {{v0}}",
+  "没有说明原因": "no reason given"
 }

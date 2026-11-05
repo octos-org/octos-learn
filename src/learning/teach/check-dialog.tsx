@@ -13,6 +13,8 @@ export type CheckPart = "running" | "done" | "failed";
 export interface CheckRun {
   screen: CheckPart;
   octo: CheckPart;
+  /** Why Octo's review failed. */
+  octoProblem?: string;
 }
 
 function Progress({ state, running, done, failed }: { state: CheckPart; running: string; done: string; failed: string }) {
@@ -54,6 +56,7 @@ export function CheckDialog({ run, checks, overall, watchHref, onFix, onAgain, o
       <div className="teach-check-parts">
         <Progress state={run.screen} running={tr("正在小屏幕和大屏幕上各播放一遍…")} done={tr("在小屏幕和大屏幕上都检查过了")} failed={tr("屏幕检查没做完")} />
         <Progress state={run.octo} running={tr("小章鱼在看你的课…")} done={tr("小章鱼看完了你的课")} failed={tr("小章鱼这次没看完")} />
+        {run.octo === "failed" && run.octoProblem && <p className="teach-check-reason" role="alert">{run.octoProblem}</p>}
       </div>
       {!running && (
         <p className="teach-check-summary">
@@ -71,7 +74,7 @@ export function CheckDialog({ run, checks, overall, watchHref, onFix, onAgain, o
                 {check.status === "redo" && <p>{tr("这张卡片检查后又重录了，再检查一遍就知道了。")}</p>}
                 {check.findings.map((finding, findingIndex) => (
                   <p key={`${finding.source}-${findingIndex}`}>
-                    <span className="teach-tag" data-source={finding.source}>{finding.source === "screen" ? tr("屏幕检查") : finding.source === "privacy" ? tr("隐私") : finding.kind ? KIND_TAG[finding.kind]() : tr("小章鱼")}</span>
+                    <span className="teach-tag" data-source={finding.source}>{finding.source === "screen" ? tr("屏幕检查") : finding.source === "privacy" ? tr("隐私") : finding.source === "words" ? tr("讲解") : finding.kind ? KIND_TAG[finding.kind]() : tr("小章鱼")}</span>
                     {finding.message}
                   </p>
                 ))}

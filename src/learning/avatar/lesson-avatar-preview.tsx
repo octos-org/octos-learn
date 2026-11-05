@@ -16,7 +16,7 @@ const ignoreMetrics = () => undefined;
  * wall-clock time. Decorative ear and hair motion stays off here until its
  * naturalness is approved in the avatar lab.
  */
-export default function LessonAvatarPreview({ characterId, track, performance = null, clock, playing, preparing, mode = "preview" }: {
+export default function LessonAvatarPreview({ characterId, track, performance = null, clock, playing, preparing, mode = "preview", placement = "panel" }: {
   characterId: PaintedCharacterId;
   track: LipSyncTrack | null;
   /** The learner's expression and head, re-timed onto this clip; mouth motion alone without it. */
@@ -26,6 +26,11 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
   preparing: boolean;
   /** "preview" for the author's "Watch my lesson", "player" for a saved lesson. */
   mode?: "preview" | "player";
+  /**
+   * "board": in the whiteboard's bottom-right corner, like a teacher beside
+   * the board, with no frame; the board keeps its content clear of it.
+   */
+  placement?: "panel" | "board";
 }) {
   const [failed, setFailed] = useState(false);
   const onGraphicsError = useCallback(() => setFailed(true), []);
@@ -41,6 +46,14 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
     : preparing ? tr("正在准备配音…") : !playing ? tr("播放课程时，头像会跟随配音。")
       : !track ? tr("这张卡片没有配音嘴型。") : clock ? tr("正在跟随课程配音")
         : tr("当前播放方式暂不支持头像同步，声音和白板仍可播放。");
+  if (placement === "board") {
+    if (failed) return null;
+    return <aside className="teach-board-presenter" data-learning-board-occlusion="" aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
+      <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30}
+        active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />
+      <p role="status" className="teach-visually-hidden">{status}</p>
+    </aside>;
+  }
   return <aside className={`teach-watch-avatar teach-watch-avatar-${mode}`} aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
     <div className="teach-watch-avatar-stage">
       {!failed && <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30}

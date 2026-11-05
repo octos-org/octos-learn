@@ -11,7 +11,7 @@ vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn(async () => ["uploads/handwrit
 
 import { compileRecording } from "./compile-recording";
 import { appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
-import { askOcto, cardSummaries, reviewLesson, teachAssistSessionId } from "./teach-assist";
+import { askOcto, cardSummaries, explainAssistFailure, reviewLesson, teachAssistSessionId } from "./teach-assist";
 
 const now = "2026-10-31T12:00:00.000Z";
 const author = { kind: "learner" as const, learner_ref: "learner:demo", presented_by: { avatar_ref: "avatar:octo", voice_ref: "voice:learner-default" } };
@@ -65,5 +65,20 @@ describe("teach assist", () => {
     expect(await reviewLesson(recording, compileRecording(recording, { author, language: "en-US" }), "en-US")).toEqual(review);
     skill.reply = { action_id: "x", ok: false, results: [{ success: false, output: "Model unavailable" }] };
     await expect(reviewLesson(recording, null, "en-US")).rejects.toThrow("Model unavailable");
+  });
+});
+
+describe("explainAssistFailure", () => {
+  it("names a rejected model key, a missing skill and a timeout, and otherwise gives the first line", async () => {
+    const { setLocale } = await import("@/i18n");
+    setLocale("en-US");
+    try {
+      expect(explainAssistFailure(new Error('Gemini API teach-review failed (400): {\n "message": "API key not valid. Please pass a valid API key."'))).toMatch(/rejected its key/);
+      expect(explainAssistFailure(new Error("skill action learning.teach.review is not available in this session"))).toMatch(/Restart Octos/);
+      expect(explainAssistFailure(new DOMException("Aborted", "AbortError"))).toMatch(/too long/);
+      expect(explainAssistFailure(new Error("Boom\nmore"))).toBe("Something went wrong: Boom");
+    } finally {
+      setLocale("zh-CN");
+    }
   });
 });

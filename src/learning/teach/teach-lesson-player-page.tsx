@@ -124,11 +124,11 @@ export function TeachLessonPlayerPage() {
       {hasMouthTracks ? (
         <div className="teach-watch-layout">
           <section className="teach-watch-stage" aria-label={tr("这节课")}>
-            <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset} />
+            <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset}
+              overlay={<Suspense fallback={null}><LessonAvatarPreview mode="player" placement="board" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
+                clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
+                playing={speaking} preparing={narration.preparing} /></Suspense>} />
           </section>
-          <Suspense fallback={null}><LessonAvatarPreview mode="player" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
-            clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
-            playing={speaking} preparing={narration.preparing} /></Suspense>
         </div>
       ) : (
         <section className="teach-watch-stage" aria-label={tr("这节课")}>

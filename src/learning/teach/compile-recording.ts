@@ -265,10 +265,17 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   };
 
   const steps: AuthoringLesson["steps"] = [{ key: "teach", purpose: `${recording.topic.text}: taught by the learner`, beats: [] }];
+  // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
+  let highlighted: string[] = [];
   for (const card of recording.cards) {
     const take = options.includeTakeInProgress ? currentTake(card) ?? keptTake(card) : keptTake(card);
     if (!take) continue;
     const actions: Action[] = [];
+    for (const marked of highlighted) {
+      if (hidden.has(owner(marked))) continue;
+      actions.push({ do: "emphasize", target: marked, emphasis: "none", when: "before_speech" } as Action);
+    }
+    highlighted = [];
     const createdGrids: Array<{ alias: string; index: number }> = [];
     const annotations: Action[] = [];
     let focus: string[] = [];
@@ -344,6 +351,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         case "tool.highlighter":
           if (pointsAtMissingInk(event.target)) break;
           actions.push({ do: "emphasize", target: target(event.target), emphasis: "focus", when } as Action);
+          if (!highlighted.includes(target(event.target))) highlighted.push(target(event.target));
           focus = [owner(target(event.target))];
           break;
         case "tool.arrow": {

@@ -3,6 +3,7 @@
 // The model sees what the learner said and short descriptions of the board,
 // never names or other personal details.
 
+import { tr } from "@/i18n";
 import { invokeSkillAction, type SkillActionInvokeResponse } from "@/api/skill-actions";
 import { uploadFiles } from "@/api/chat";
 
@@ -116,6 +117,18 @@ function metadata(response: SkillActionInvokeResponse, field: string): Record<st
 
 function turnId(recording: LearnerRecording, purpose: string): string {
   return `teach-${purpose}-${recording.id}-${Date.now()}`;
+}
+
+/** Why Octo's help failed, in words the learner (or whoever runs Octos for them) can act on. */
+export function explainAssistFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (/API key not valid|API_KEY_INVALID|invalid[ _-]?api[ _-]?key|incorrect api key|\b(401|403)\b/i.test(message)) {
+    return tr("小章鱼用的模型服务 Key 无效。请在 Octos 的设置里换一个有效的模型 API Key，再检查一遍。");
+  }
+  if (/not available in this session|unknown action|skill action/i.test(message)) return tr("小章鱼的检查技能还没有启动。请重启本机的 Octos 后再试。");
+  if (/timed? ?out|aborted|AbortError/i.test(message)) return tr("小章鱼这次等得太久了，请再检查一遍。");
+  const first = message.split("\n")[0]!.trim();
+  return tr("出了点问题：{{v0}}", { v0: first.length > 120 ? `${first.slice(0, 120)}…` : first || tr("没有说明原因") });
 }
 
 /** Octo, as a curious student, asks one question about the card just recorded. */

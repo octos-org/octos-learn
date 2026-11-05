@@ -64,6 +64,29 @@ describe("compileRecording", () => {
     expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "annotates" });
   });
 
+  it("ends a card's highlights when the next card starts", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: [] }), now, [{ title: "Circle" }, { title: "Cosine" }, { title: "More" }]);
+    recording = record(recording, "card-1", "The height of P is sine.", [
+      { t: 0, type: "component.insert", panel: "unit_circle", alias: "circle", variable: "theta" },
+      { t: 2_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+      { t: 3_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+    ]);
+    recording = record(recording, "card-2", "Now look at the foot.", [
+      { t: 1_000, type: "tool.highlighter", target: { node: "circle", part: "foot" } },
+    ]);
+    recording = record(recording, "card-3", "That is all.", []);
+    const { lesson, state } = check(recording);
+    const beats = lesson.steps[0]!.beats.map((beat) => beat.actions as Array<{ do: string; target?: string; emphasis?: string; when?: string }>);
+    expect(beats[1]!.filter((action) => action.do === "emphasize")).toEqual([
+      { do: "emphasize", target: "circle#point-p", emphasis: "none", when: "before_speech" },
+      expect.objectContaining({ target: "circle#foot", emphasis: "focus" }),
+    ]);
+    expect(beats[2]!.filter((action) => action.do === "emphasize")).toEqual([{ do: "emphasize", target: "circle#foot", emphasis: "none", when: "before_speech" }]);
+    const marks = (state.nodes["l:node:circle"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string }; emphasis: string }>;
+    const last = (part: string) => marks.filter((mark) => mark.target.fragment_id?.endsWith(`:${part}`)).at(-1)?.emphasis;
+    expect([last("point-p"), last("foot")]).toEqual(["none", "none"]);
+  });
+
   it("plays handwriting drawn on a graph and then made neat, with the formula over the handwriting", () => {
     let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "The line" }]);
     recording = record(recording, "card-1", "The slope is 2.", [

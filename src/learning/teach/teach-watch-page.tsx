@@ -334,12 +334,12 @@ export function TeachWatchPage() {
           )}
           <div className="teach-watch-layout">
             <section className="teach-watch-stage" aria-label={tr("你的课")}>
-              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
+              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset}
+                overlay={showAvatar && hasMouthTracks ? <Suspense fallback={null}><LessonAvatarPreview placement="board"
+                  characterId={packaged ? presenterOfReference(packaged.manifest.author.avatar_ref).id : avatar.id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === (packaged?.manifest.contentSha256 ?? "") ? mediaClock.clock : null}
+                  playing={speaking && narrated} preparing={narration.preparing}
+                /></Suspense> : null} />
             </section>
-            {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
-              characterId={packaged ? presenterOfReference(packaged.manifest.author.avatar_ref).id : avatar.id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === (packaged?.manifest.contentSha256 ?? "") ? mediaClock.clock : null}
-              playing={speaking && narrated} preparing={narration.preparing}
-            /></Suspense>}
           </div>
           <LessonContents runtime={runtime} entries={contents} onJump={() => { if (narrated) unlockAudio(); }} />
           <div className="teach-watch-bar">

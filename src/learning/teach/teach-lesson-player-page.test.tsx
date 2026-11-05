@@ -11,7 +11,7 @@ const state = vi.hoisted(() => ({
   archive: null as ArrayBuffer | null,
   runtime: { playing: false, completed: false, activeSpeech: "", currentBeatId: "", beatIndex: 0, play: vi.fn(), pause: vi.fn(), restart: vi.fn(), startNarration: vi.fn(), completeNarration: vi.fn(), recordNarrationEnd: vi.fn() },
 }));
-vi.mock("../oll/oll-lesson-runtime", () => ({ LearningWhiteboard: () => <div data-testid="lesson-board" /> }));
+vi.mock("../oll/oll-lesson-runtime", () => ({ LearningWhiteboard: ({ overlay }: { overlay?: import("react").ReactNode }) => <div data-testid="lesson-board">{overlay}</div> }));
 vi.mock("../oll/use-oll-lesson-runtime", () => ({ useOllLessonRuntime: ({ source }: { source: string | null }) => {
   if (!source) return null;
   const beat = source.split("\n").flatMap((line) => JSON.parse(line).step?.beats ?? []).find((beat: { narration?: { text?: string } }) => beat.narration?.text);
