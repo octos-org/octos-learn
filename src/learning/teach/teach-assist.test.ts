@@ -45,7 +45,7 @@ describe("teach assist", () => {
     const recording = slope();
     const compiled = compileRecording(recording, { author, language: "en-US" });
     expect(cardSummaries(recording, compiled)).toEqual([
-      { key: "card-1", title: "Two points", said: "A is 1, 2 and B is 4, 8.", board: ["coordinate grid grid-1 with points A (1, 2), B (4, 8)"] },
+      { key: "card-1", title: "Two points", said: "A is 1, 2 and B is 4, 8.", board: ["coordinate grid grid-1", "grid-1 now shows points A (1, 2)", "grid-1 now shows points A (1, 2), B (4, 8)"] },
       { key: "card-2", title: "The line", said: "So the slope is one half.", board: ["graph line-1: y = 2*x, A (1, 2), B (4, 8)", "points at line-1#line"] },
     ]);
   });

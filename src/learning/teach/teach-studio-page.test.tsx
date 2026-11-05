@@ -186,7 +186,7 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   const take = keptTake(draft!.cards[0]!)!;
   expect(take.durationMs).toBe(8_000);
   expect(take.events.map((event) => [event.t, event.type])).toEqual([[400, "component.insert"], [2_100, "point_tool.place"], [4_000, "tool.laser"]]);
-  expect(board.compiled?.lesson.steps[0]!.beats[0]!.actions.map((action) => action.do)).toEqual(["write", "point", "focus"]);
+  expect(board.compiled?.lesson.steps[0]!.beats[0]!.actions.map((action) => action.do)).toEqual(["write", "revise", "point", "focus"]);
 
   fireEvent.change(screen.getByRole("textbox", { name: "What you said on this card" }), { target: { value: "Point A is at 1 comma 2." } });
   fireEvent.click(screen.getByRole("button", { name: "Save captions" }));
@@ -432,7 +432,8 @@ it("draws the line through two placed points on their grid; an arrow joins two c
   const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
   // No new card: the grid itself shows the line, from edge to edge.
   expect(actions.filter((action) => action.do === "write").map((action) => (action as { kind?: string }).kind)).toEqual(["geometry"]);
-  const grid = actions.find((action) => action.do === "write" && action.as === "grid-1") as unknown as { content: { segments: unknown[]; points: Array<{ as: string; x: number; y: number }> } };
+  // The grid's last state in the card: the line is added after the points.
+  const grid = [...actions].reverse().find((action) => action.do === "revise" && (action as { target?: string }).target === "grid-1") as unknown as { content: { segments: unknown[]; points: Array<{ as: string; x: number; y: number }> } };
   expect(grid.content.segments).toEqual([{ as: "line-1", from: "line-1-start", to: "line-1-end", label: "y = 2x" }]);
   expect(grid.content.points.filter((point) => point.as.startsWith("line-1")).map(({ x, y }) => [x, y])).toEqual([[-2.5, -5], [2.5, 5]]);
   expect(actions.find((action) => action.do === "connect")).toBeUndefined();

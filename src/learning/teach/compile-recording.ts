@@ -211,7 +211,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         ...title,
         axes: { x: { min: component.x[0], max: component.x[1], label: "x" }, y: { min: component.y[0], max: component.y[1], label: "y" }, equal_scale: true },
       });
-      return { do: "write", as: alias, kind: "geometry", role: "diagram", content: {}, place: placeNext() } as Action;
+      // Empty when it appears; each point and line is added when the learner placed it.
+      return { do: "write", as: alias, kind: "geometry", role: "diagram", content: gridContent(alias), place: placeNext() } as Action;
     }
     if (component.panel === "unit_circle") {
       const variable = component.variable;
@@ -284,7 +285,6 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       actions.push({ do: "emphasize", target: marked, emphasis: "none", when: "before_speech" } as Action);
     }
     highlighted = [];
-    const createdGrids: Array<{ alias: string; index: number }> = [];
     const annotations: Action[] = [];
     let focus: string[] = [];
 
@@ -334,7 +334,6 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           // Put next to a card in the current row: it joins that row beside it.
           const beside = event.nextTo ? { place: { relation: "right_of", anchor: event.nextTo }, role: "supporting_visual" } : {};
           actions.push({ ...action, ...beside, when } as Action);
-          if (event.panel === "coordinate_grid") createdGrids.push({ alias: event.alias, index: actions.length - 1 });
           lastNode = event.alias;
           focus = [event.alias];
           break;
@@ -344,9 +343,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           const points = geometryPoints.get(event.node);
           if (!points) throw new CompileError(`Points can only be placed on a coordinate grid ('${event.node}')`);
           points.push({ as: requireAlias(event.point, "Point"), x: event.x, y: event.y, label: event.label });
-          if (!createdGrids.some((grid) => grid.alias === event.node)) {
-            actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner placed a point", when } as Action);
-          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner placed a point", when } as Action);
           focus = [event.node];
           break;
         }
@@ -401,9 +398,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
             segment: { as: alias, from: `${alias}-start`, to: `${alias}-end`, label: lineLabel(a, b) },
             ends: ends.map((end, index) => ({ as: `${alias}-${index ? "end" : "start"}`, x: end.x, y: end.y, visible: false })),
           }]);
-          if (!createdGrids.some((grid) => grid.alias === event.node)) {
-            actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner drew a line through two points", when } as Action);
-          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner drew a line through two points", when } as Action);
           focus = [event.node];
           break;
         }
@@ -439,8 +434,6 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       }
     }
 
-    // A grid created in this card shows every point placed in it.
-    for (const grid of createdGrids) actions[grid.index] = { ...actions[grid.index]!, content: gridContent(grid.alias) } as Action;
 
     // Ink drawn on a component appears once that component is on the board.
     for (const annotation of annotations) {

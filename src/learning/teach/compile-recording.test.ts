@@ -222,8 +222,11 @@ describe("compileRecording", () => {
       { t: 900, type: "tool.laser", target: { node: "grid", part: "point-c" } },
     ]);
     const { lesson, state } = check(recording);
-    const created = lesson.steps[0]!.beats[1]!.actions.find((action) => action.do === "write" && action.as === "grid") as { content: { points: Array<{ label: string }> } };
-    expect(created.content.points.map((point) => point.label)).toEqual(["A (1, 2)", "B (4, 8)"]);
+    // The grid appears empty, then each point when the learner placed it.
+    const card2 = lesson.steps[0]!.beats[1]!.actions as Array<{ do: string; as?: string; target?: string; content?: { points: Array<{ label?: string; visible?: boolean }> } }>;
+    const labels = (action: (typeof card2)[number]) => action.content!.points.filter((point) => point.visible !== false).map((point) => point.label);
+    expect(card2.filter((action) => action.as === "grid" || action.target === "grid").map((action) => [action.do, labels(action)]))
+      .toEqual([["write", []], ["revise", ["A (1, 2)"]], ["revise", ["A (1, 2)", "B (4, 8)"]]]);
     expect((state.nodes["l:node:grid"]!.content.points as Array<{ id: string; label: string }>).map((point) => [point.id, point.label])).toContainEqual(["l:node:grid:fragment:point-c", "C (2, 4)"]);
   });
 
