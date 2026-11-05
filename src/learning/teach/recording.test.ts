@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addInkMark,
   addTakeInk,
+  setCardKind,
   appendEvent,
   cancelTake,
   correctTranscript,
@@ -168,5 +169,14 @@ describe("learner recording", () => {
       recording = finishTake(recording, card.key, now, { durationMs: 1000, asrText: card.title });
     }
     expect(recordingComplete(recording)).toBe(true);
+  });
+  it("changes a card's kind only while it has nothing recorded, with one exercise per lesson", () => {
+    const planned = planCards(createRecording({ id: "rec-k", now: now, topic: { text: "Sine", type: "math_off_map" }, goals: ["g"] }), now, [{ title: "A" }, { title: "B" }]);
+    const exercise = setCardKind(planned, "card-2", "your_turn", now);
+    expect(exercise.cards.map((card) => card.kind)).toEqual(["teach", "your_turn"]);
+    expect(() => setCardKind(exercise, "card-1", "your_turn", now)).toThrow(/one/);
+    expect(setCardKind(exercise, "card-2", "teach", now).cards[1]!.kind).toBe("teach");
+    const recorded = startTake(planned, "card-1", now);
+    expect(() => setCardKind(recorded, "card-1", "your_turn", now)).toThrow(/already has a recording/);
   });
 });

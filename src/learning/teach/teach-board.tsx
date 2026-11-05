@@ -97,6 +97,51 @@ function cardEndTargets(compiled: CompiledLesson, key: string): string[] {
   return (focus?.targets ?? []).map((target) => boardIdOf({ node: target.split("#")[0]! }));
 }
 
+/** How close, in screen pixels, a tap must be to a part of a card to point at that part. */
+const PART_REACH = 18;
+
+/** Screen distance from a point to a part: along an SVG shape's outline, else to its box. */
+function distanceToPart(part: Element, x: number, y: number): number {
+  if (part instanceof SVGGeometryElement && typeof part.getTotalLength === "function") {
+    const matrix = part.getScreenCTM();
+    if (matrix) {
+      const length = part.getTotalLength();
+      const samples = Math.min(240, Math.max(12, Math.ceil(length / 2)));
+      let best = Infinity;
+      for (let index = 0; index <= samples; index += 1) {
+        const at = part.getPointAtLength((length * index) / samples);
+        const screen = new DOMPoint(at.x, at.y).matrixTransform(matrix);
+        best = Math.min(best, Math.hypot(screen.x - x, screen.y - y));
+      }
+      return best;
+    }
+  }
+  const box = part.getBoundingClientRect();
+  if (!(box.width > 0 || box.height > 0)) return Infinity;
+  return Math.hypot(Math.max(box.left - x, 0, x - box.right), Math.max(box.top - y, 0, y - box.bottom));
+}
+
+/** A part this small (a point) is preferred over a line or curve passing through it. */
+const SMALL_PART = 24;
+const SMALL_PART_BONUS = 10;
+
+/**
+ * The part of a card nearest a tap, when one is within reach. Points win over
+ * lines through them, and of parts equally near, the one drawn on top wins.
+ */
+function nearestPart(node: Element, x: number, y: number): HTMLElement | SVGElement | null {
+  let best: HTMLElement | SVGElement | null = null;
+  let bestScore = PART_REACH;
+  for (const part of node.querySelectorAll<HTMLElement | SVGElement>('[data-id*=":fragment:"]')) {
+    const distance = distanceToPart(part, x, y);
+    if (distance > PART_REACH) continue;
+    const box = part.getBoundingClientRect();
+    const score = distance - (box.width <= SMALL_PART && box.height <= SMALL_PART ? SMALL_PART_BONUS : 0);
+    if (score <= bestScore) { best = part; bestScore = score; }
+  }
+  return best;
+}
+
 function sameTarget(a: BoardTarget, b: BoardTarget): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -237,7 +282,10 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         onStrokeRef.current(stroke);
         return;
       }
-      const element = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
+      const hit = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
+      // A part is small (a point is a few pixels): a tap near one points at it, not at its card.
+      const node = hit?.closest<HTMLElement>(".board-node[data-id]");
+      const element = (node && nearestPart(node, event.clientX, event.clientY)) || hit;
       const target = boardTargetFromId(element?.dataset.id);
       if (!target || !element?.dataset.id) return;
       tappedRef.current = { target, canonical: canonicalTarget(element.dataset.id) };

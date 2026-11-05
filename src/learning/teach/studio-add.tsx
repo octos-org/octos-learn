@@ -121,7 +121,10 @@ function InsertPanel({
           <label className="teach-label">{tr("和单位圆的角度联动")}
             <select className="teach-input" value={linked} onChange={(event) => setLinked(event.target.value)}>
               <option value="">{tr("不联动")}</option>
-              {variables.map((variable) => <option key={variable} value={variable}>{variable}</option>)}
+              {variables.map((variable) => {
+                const at = recording.cards.findIndex((card) => card.takes.some((take) => take.events.some((event) => event.type === "component.insert" && event.panel === "unit_circle" && event.variable === variable)));
+                return <option key={variable} value={variable}>{at < 0 ? "θ" : tr("θ（第 {{v0}} 张的单位圆）", { v0: at + 1 })}</option>;
+              })}
             </select>
           </label>
         )}

@@ -477,6 +477,33 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
   });
 });
 
+it("turns a card with nothing recorded into the lesson's Your turn exercise, and back", async () => {
+  localStorage.clear();
+  const recording = planCards(
+    createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Sine", type: "math_off_map" }, goals: ["Sine is height"] }),
+    "2026-10-31T12:00:00.000Z",
+    [{ title: "The circle" }, { title: "Try it" }],
+  );
+  saveRecordingDraft(localStorage, "learner-1", recording);
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: "Make this a “Your turn” exercise" }));
+  fireEvent.click(screen.getByRole("button", { name: "Make it a teaching card again" }));
+  fireEvent.click(screen.getByRole("button", { name: /2 · Try it/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Make this a “Your turn” exercise" }));
+  expect(screen.getByRole("button", { name: "Make it a teaching card again" })).toBeTruthy();
+  // One exercise per lesson: the first card no longer offers it.
+  fireEvent.click(screen.getByRole("button", { name: /1 · The circle/ }));
+  expect(screen.queryByRole("button", { name: "Make this a “Your turn” exercise" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card 1/ }));
+  addKind("Unit circle");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("button", { name: /2 · Try it/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card 2/ }));
+  expect(screen.getByRole("form", { name: "Set up the “Your turn” exercise" })).toBeTruthy();
+});
+
 it("records a back-and-forth drag as moves in order", () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
@@ -717,7 +744,7 @@ it("the highlighter's mark stays, unlike the laser's brief dot", async () => {
   addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   fireEvent.click(screen.getByRole("button", { name: /Highlighter/ }));
-  expect(screen.getByText(/stays highlighted/)).toBeTruthy();
+  expect(screen.getByText(/only that stays yellow/)).toBeTruthy();
   const pointersBefore = board.pointers.length;
   act(() => board.onTarget!({ node: "grid-1" }));
   // No laser dot: the lesson itself shows the highlight, now and in playback.

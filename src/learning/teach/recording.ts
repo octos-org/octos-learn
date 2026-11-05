@@ -422,6 +422,18 @@ export function renameCard(recording: LearnerRecording, key: string, title: stri
   return touch(recording, now, replaceCard(recording, key, (card) => ({ ...card, title: trimmed })));
 }
 
+/**
+ * Makes a card a "Your turn" exercise, or a card that teaches. Only a card with
+ * nothing recorded yet changes, and a lesson has one exercise at most.
+ */
+export function setCardKind(recording: LearnerRecording, key: string, kind: RecordingCard["kind"], now: string): LearnerRecording {
+  const card = findCard(recording, key);
+  if (card.kind === kind) return recording;
+  if (card.takes.length > 0) throw new RecordingError(`Card ${key} already has a recording`);
+  if (kind === "your_turn" && recording.cards.some((other) => other.kind === "your_turn")) throw new RecordingError("A lesson has one \"Your turn\" card at most");
+  return touch(recording, now, replaceCard(recording, key, (current) => ({ ...current, kind })));
+}
+
 /** Advanced mode: keeps (or, with null, drops) the learner's hand-edited OLL. */
 export function setOllOverride(recording: LearnerRecording, override: OllOverride | null, now: string): LearnerRecording {
   const next: LearnerRecording = { ...recording, updatedAt: now };

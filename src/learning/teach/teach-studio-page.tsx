@@ -25,6 +25,7 @@ import {
   keptTake,
   recordingComplete,
   renameCard,
+  setCardKind,
   setOllOverride,
   setOctoQuestion,
   setPresenter,
@@ -574,7 +575,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const hint = !isRecording ? null
     : addOpen ? null
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
-        : tool === "highlighter" ? tr("荧光笔：点一下卡片、它的一部分或你写的字，它会一直标黄，提醒大家这是重点。")
+        : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
           : tool === "pen" ? tr("直接在白板上写。写在图上的会贴在那张图上。")
             : null;
@@ -759,6 +760,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 : tr("像给朋友讲一样讲出来。把步骤写下来，讲到哪里就指到哪里。")}</p>
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("录第 {{v0}} 张", { v0: cardIndex + 1 })}</button>
               <p className="academy-muted">{tr("录的时候你写的、放的、指的，都会和你的声音一起播放。每张卡片都可以重录。")}</p>
+              {card.takes.length === 0 && (card.kind === "your_turn" || !recording.cards.some((other) => other.kind === "your_turn")) && (
+                <button type="button" className="teach-secondary" onClick={() => update((current) => setCardKind(current, card.key, card.kind === "your_turn" ? "teach" : "your_turn", now()))}>
+                  {card.kind === "your_turn" ? tr("改回讲解卡片") : tr("把这张改成“轮到你了”练习")}
+                </button>
+              )}
               {notice && <p role="status" className="teach-notice">{notice}</p>}
             </>
           )}
@@ -857,10 +863,11 @@ function TranscriptEditor({ text, label, onSave }: { text: string; label?: strin
   );
 }
 
+// A unit circle's variable is its angle, which the board calls θ.
 const READOUTS = (variable: string) => [
-  { expression: variable, label: variable },
-  { expression: `sin(${variable})`, label: `sin ${variable}` },
-  { expression: `cos(${variable})`, label: `cos ${variable}` },
+  { expression: `sin(${variable})`, label: "sin θ" },
+  { expression: `cos(${variable})`, label: "cos θ" },
+  { expression: variable, label: tr("θ 本身（弧度）") },
 ];
 
 function evaluateReadout(expression: string, value: number): number {
@@ -892,15 +899,18 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
       onSave({ variable, value: demonstrated, expression, target, tolerance: expression === variable ? 0.05 : 0.01, hint: hint.trim() });
       setSaved(true);
     }}>
-      <p className="academy-muted">{tr("先在白板上把答案摆出来，再点“就是这个答案”。")}</p>
+      <h2 className="teach-group-label">{tr("设置练习")}</h2>
+      <p className="academy-muted">{tr("① 先说出题目，再在白板上拖动单位圆下面的滑块（或圆上的点），把正确答案摆出来。")}</p>
       {variables.length > 1 && (
-        <select className="teach-input" value={variable} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
+        <select className="teach-input" value={variable} aria-label={tr("拖动哪个")} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
           {variables.map((alias) => <option key={alias} value={alias}>{alias}</option>)}
         </select>
       )}
+      <p className="academy-muted">{tr("② 摆好了，点这个按钮记下来：")}</p>
       <button type="button" className="teach-secondary" onClick={() => setDemonstrated(valueOf(variable))}>{tr("就是这个答案")}</button>
       {demonstrated !== undefined && (
         <>
+          <p className="academy-muted">{tr("③ 选看的人要做对的是哪个数，可以写一句提示，然后保存。看课的人要自己拖到这个答案，才算做对。")}</p>
           <label className="teach-label">{tr("检查哪个读数")}
             <select className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)}>
               {READOUTS(variable).map((readout) => <option key={readout.expression} value={readout.expression}>{readout.label}</option>)}
