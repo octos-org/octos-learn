@@ -277,3 +277,13 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-sequence-block-tools { position: absolute; right: 6px; bottom: 4px; display: flex; gap: 2px; }
 .teach-sequence-tool { display: inline-flex; padding: 3px; border: 0; border-radius: 999px; background: none; color: #3d5a63; cursor: pointer; }
 .teach-sequence-tool:hover { background: rgba(40, 65, 67, .1); }
+
+/* While watching: the sentence being said and the action just done light up. */
+.teach-watch-sequence { margin-top: 12px; }
+.teach-sequence-block[data-readonly] { cursor: default; }
+.teach-sequence-block[data-sentence] .teach-sequence-words { cursor: pointer; }
+.teach-watch-sequence .teach-sequence-block[data-sentence] { padding-bottom: 8px; min-height: 48px; }
+.teach-sequence-block[data-lit][data-sentence] { border-color: #1b2457; background: #fff7d6; box-shadow: 0 0 0 3px rgba(27, 36, 87, .18); }
+.teach-sequence-block[data-lit][data-action] { border-style: solid; border-color: #0f766e; background: #0f766e; color: #fff; }
+.teach-sequence-block[data-lit][data-action] > svg { color: #fff; }
+@media (prefers-reduced-motion: no-preference) { .teach-sequence-block { transition: background-color .2s, box-shadow .2s, border-color .2s; } }

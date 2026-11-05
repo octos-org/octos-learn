@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 import { cardSequence, joinWithPrevious, moveAction, SequenceError, splitSentence, type ActionKind, type SequenceItem } from "./card-script";
 import { correctSentence, type LearnerRecording, type RecordingCard } from "./recording";
 
-const ICONS: Record<ActionKind, LucideIcon> = {
+export const ICONS: Record<ActionKind, LucideIcon> = {
   insert: Grid3x3, point: Crosshair, line: TrendingUp, laser: MousePointer2, highlight: Highlighter, arrow: ArrowUpRight,
   drag: MoveHorizontal, rotate: Box, neat: Sparkles, hide: Eraser, write: PenLine,
 };

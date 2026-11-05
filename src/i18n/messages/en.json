@@ -3128,5 +3128,7 @@
   "全部卡片录完、检查通过后就能保存。": "Once every card is recorded and checked, you can save.",
   "录好第一张卡片就能看了": "Record the first card to watch it",
   "和前一句合并成一句": "Join with the sentence before",
-  "拖动动作换位置；点你说的话可以修改；被停顿分开的一句话可以点合并按钮合回去。": "Drag an action to move it. Click your words to change them. Use the join button to put a sentence cut at a pause back together."
+  "拖动动作换位置；点你说的话可以修改；被停顿分开的一句话可以点合并按钮合回去。": "Drag an action to move it. Click your words to change them. Use the join button to put a sentence cut at a pause back together.",
+  "正在讲的话和刚做的动作会亮起来。点一句话，从那里开始看。": "The words being said and the action just done light up. Click a sentence to watch from there.",
+  "第 {{v0}} 句：{{v1}}。从这句开始看": "Sentence {{v0}}: {{v1}}. Watch from here"
 }

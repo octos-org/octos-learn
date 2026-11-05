@@ -273,3 +273,43 @@ test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a p
   await expect(page.getByRole("button", { name: "播放我的课" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "保存到我的课" })).toBeDisabled();
 });
+
+test("while watching, the playing card's strip lights the sentence being said and the action just done", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+  }, recording);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${recording.id}/watch`);
+  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  await expect(strip.locator("[data-item]")).toHaveCount(7);
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const lit = await page.evaluate(async () => {
+    const seen: string[] = [];
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 300; tick += 1) {
+      const now = Array.from(document.querySelectorAll(".teach-watch-sequence [data-lit]")).map((element) => element.textContent?.trim()).join(" + ");
+      if (now && now !== seen.at(-1)) seen.push(now);
+      if (caption.textContent?.includes("看完了")) break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return seen;
+  });
+  console.log(lit.join("\n"));
+  const first = (words: string) => lit.findIndex((entry) => entry.includes(words));
+  // In the order recorded: grid with sentence 1, point Alpha after it, point Beta with sentence 2.
+  expect(first("这是一个坐标网格。")).toBeGreaterThan(-1);
+  expect(first("放上坐标网格")).toBeGreaterThan(-1);
+  expect(first("标出点 Alpha")).toBeGreaterThan(first("这是一个坐标网格。"));
+  expect(first("现在放第二个点。")).toBeGreaterThan(first("标出点 Alpha"));
+  expect(first("标出点 Beta")).toBeGreaterThanOrEqual(first("现在放第二个点。"));
+  expect(first("然后往右走。")).toBeGreaterThan(first("它往上走。"));
+
+  // Clicking a sentence plays from there.
+  await strip.getByRole("button", { name: /^第 3 句：/ }).click();
+  await expect(page.locator(".teach-watch-caption")).toHaveText("它往上走。");
+  await expect(strip.locator("[data-lit]")).toHaveText(["它往上走。"]);
+});

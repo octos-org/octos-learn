@@ -64,6 +64,11 @@ export interface CompiledLesson {
   beatSpeech?: Record<string, { card: string; speechSpanMs?: [number, number]; sentences?: [number, number] }>;
   /** How many board actions play earlier than they happened, because an earlier action uses them. */
   forwarded?: number;
+  /**
+   * The block of a card's sequence each lesson action plays (card-script ids), by the action's
+   * place in the lesson: "<step>:<beat>:<action>", counted from 1 as OLL numbers action IDs.
+   */
+  actionSources?: Record<string, string>;
 }
 
 /** The recorded cards of a compiled lesson, in order, each with its actions in play order across its beats. */
@@ -180,6 +185,17 @@ export function inkStages(times: number[], sentences: Sentences): Array<{ rank: 
   return stages;
 }
 
+/**
+ * Which block of the card's sequence (see card-script) an action plays:
+ * "event:<index in the take>" or "ink:<snapshot>:<first stroke>". Kept beside
+ * the actions, which are copied as the lesson is put together.
+ */
+const sources = new WeakMap<object, string>();
+function from<T extends object>(source: string | undefined, action: T): T {
+  if (source) sources.set(action, source);
+  return action;
+}
+
 /** An action and where it happened among the card's sentences. */
 interface Ranked { action: Action; rank: number }
 
@@ -209,7 +225,7 @@ function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], 
     const say = sentences.texts[sentence]?.trim() ?? "";
     const actions = ordered.filter((entry) => Math.floor(entry.rank / 3) === sentence).map((entry) => {
       const phase = entry.rank % 3;
-      return { ...entry.action, when: (phase === 0 ? "before_speech" : phase === DURING ? "during_speech" : "after_speech") as Phase } as Action;
+      return from(sources.get(entry.action), { ...entry.action, when: (phase === 0 ? "before_speech" : phase === DURING ? "during_speech" : "after_speech") as Phase } as Action);
     });
     if (!say && !actions.length) continue;
     if (actions.length <= MAX_BEAT_ACTIONS) { add(sentence, say, actions); continue; }
@@ -221,7 +237,7 @@ function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], 
     const spoken = Math.min(Math.floor(firstSpoken / MAX_BEAT_ACTIONS), chunks.length - 1);
     chunks.forEach((chunk, index) => {
       if (index === spoken) add(sentence, say, chunk);
-      else add(sentence, "", chunk.map((action) => ({ ...action, when: index < spoken ? "before_speech" : "after_speech" }) as Action));
+      else add(sentence, "", chunk.map((action) => from(sources.get(action), { ...action, when: index < spoken ? "before_speech" : "after_speech" } as Action)));
     });
   }
   return beats;
@@ -424,7 +440,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     highlighted = [];
     // Writing on a component, with the stages it was written in (when timed).
-    const annotations: Array<{ action: Action; stages?: Array<{ rank: number; shown: number }> }> = [];
+    const annotations: Array<{ action: Action; stages?: Array<{ rank: number; shown: number }>; snapshot: string }> = [];
     let focus: string[] = [];
 
     // Neat math confirmed in an earlier take stays in its ink's place; one
@@ -459,20 +475,24 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         annotations.push({
           action: { do: "write", as: alias, kind: "ink", role: "annotation", content: { ...content, annotation: position }, place: { relation: "annotates", anchor: node } } as Action,
           ...(staged ? { stages: staged } : stages ? { stages } : {}),
+          snapshot: ink.snapshotId,
         });
       } else {
         const [first, ...more] = staged ?? [];
-        actions.push({ do: "write", as: alias, kind: "ink", role: "note", content: first ? { ...content, shown_strokes: first.shown } : content,
-          place: placeNext(), ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action);
+        actions.push(from(stages && `ink:${ink.snapshotId}:0`, { do: "write", as: alias, kind: "ink", role: "note", content: first ? { ...content, shown_strokes: first.shown } : content,
+          place: placeNext(), ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action));
+        let shown = first?.shown ?? 0;
         for (const stage of more) {
-          actions.push({ do: "revise", target: alias, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: stage.rank } as unknown as Action);
+          actions.push(from(`ink:${ink.snapshotId}:${shown}`, { do: "revise", target: alias, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: stage.rank } as unknown as Action));
+          shown = stage.shown;
         }
         lastNode = alias;
         focus = [alias];
       }
     });
 
-    for (const event of take.events as RecordingEvent[]) {
+    for (const [eventIndex, event] of (take.events as RecordingEvent[]).entries()) {
+      const madeBefore = actions.length;
       // On a Your turn card, dragging and turning only demonstrate the answer;
       // played back they would give it away. While the card is still being
       // recorded the board keeps showing the demonstration.
@@ -582,12 +602,13 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         case "your_turn.hint_spoken":
           break;
       }
+      for (const made of actions.slice(madeBefore)) from(`event:${eventIndex}`, made);
     }
 
 
     // Ink drawn on a component appears once that component is on the board.
     // Timed writing on it appears stroke by stroke, never before the component.
-    for (const { action: annotation, stages } of annotations) {
+    for (const { action: annotation, stages, snapshot } of annotations) {
       const anchor = (annotation.place as { anchor: string }).anchor;
       const created = actions.findIndex((action) => action.do === "write" && action.as === anchor);
       const anchorRank = created < 0 ? undefined : actions[created]!.when as unknown as number | undefined;
@@ -598,9 +619,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const rankAt = (rank: number) => Math.max(rank, anchorRank ?? DURING);
       const [first, ...more] = stages;
       const content = annotation.content as Record<string, unknown>;
-      actions.splice(created + 1, 0, { ...annotation, ...(more.length ? { content: { ...content, shown_strokes: first!.shown } } : {}), when: rankAt(first!.rank) } as unknown as Action);
+      actions.splice(created + 1, 0, from(`ink:${snapshot}:0`, { ...annotation, ...(more.length ? { content: { ...content, shown_strokes: first!.shown } } : {}), when: rankAt(first!.rank) } as unknown as Action));
+      let shown = first!.shown;
       for (const stage of more) {
-        actions.push({ do: "revise", target: annotation.as, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: rankAt(stage.rank) } as unknown as Action);
+        actions.push(from(`ink:${snapshot}:${shown}`, { do: "revise", target: annotation.as, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: rankAt(stage.rank) } as unknown as Action));
+        shown = stage.shown;
       }
     }
 
@@ -638,7 +661,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       lastFocus = focus;
     }
     // Writing has no time of its own yet: it plays while the card's first sentence is said.
-    const ranked: Ranked[] = actions.map(({ when, ...action }) => ({ action: action as Action, rank: typeof when === "number" ? when : DURING }));
+    const ranked: Ranked[] = actions.map((original) => {
+      const { when, ...action } = original;
+      return { action: from(sources.get(original), action as Action), rank: typeof when === "number" ? when : DURING };
+    });
     forwarded += bringReferencesForward(ranked);
 
     // A card being recorded may have nothing on the board yet; a kept one must.
@@ -668,5 +694,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     steps,
     close: { summary: recording.goals[0] ?? recording.topic.text, focus: lastFocus },
   };
-  return { lesson, resourceContext: { ink_snapshots: snapshots }, beatSpeech, forwarded };
+  // Where each lesson action came from, by its place in the lesson (as OLL numbers actions: step:beat:action, from 1).
+  const actionSources: Record<string, string> = {};
+  steps.forEach((step, stepIndex) => step.beats.forEach((beat, beatIndex) => beat.actions.forEach((action, actionIndex) => {
+    const source = sources.get(action);
+    if (source) actionSources[`${stepIndex + 1}:${beatIndex + 1}:${actionIndex + 1}`] = source;
+  })));
+  return { lesson, resourceContext: { ink_snapshots: snapshots }, beatSpeech, forwarded, actionSources };
 }

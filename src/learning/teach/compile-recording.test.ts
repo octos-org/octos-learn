@@ -248,6 +248,24 @@ describe("compileRecording", () => {
     ]);
   });
 
+  it("says which recorded action or stage of writing each lesson action plays", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "A" }]);
+    recording = record(recording, "card-1", "", [
+      { t: 500, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 6], y: [-1, 9] },
+      { t: 2_500, type: "tool.laser", target: { node: "grid" } },
+    ], {
+      asrText: "One. Two.", speechSpanMs: [0, 3_000],
+      segments: [{ startMs: 0, endMs: 1_000, text: "One." }, { startMs: 2_000, endMs: 3_000, text: "Two." }],
+      ink: [{ snapshotId: "ink-snap:w@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [200, 2_200, 2_300] }],
+    });
+    const { lesson, actionSources } = check(recording);
+    const placed = lesson.steps[0]!.beats.flatMap((beat, beatIndex) => beat.actions.map((action, actionIndex) => [action.do, actionSources![`1:${beatIndex + 1}:${actionIndex + 1}`]]));
+    expect(placed).toEqual([
+      ["write", "ink:ink-snap:w@v1:0"], ["write", "event:0"],
+      ["revise", "ink:ink-snap:w@v1:1"], ["point", "event:1"], ["focus", undefined],
+    ]);
+  });
+
   it("never shows a stroke before every stroke drawn ahead of it, and leaves untimed writing whole", () => {
     let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "A" }]);
     // Stroke 2 (by order) was drawn last, after sentence 2 started: strokes 2 and 3 wait for it.

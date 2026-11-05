@@ -38,6 +38,7 @@ import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference,
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
+import { WatchSequence } from "./watch-sequence";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
 
@@ -385,6 +386,8 @@ export function TeachWatchPage() {
             )}
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
+          {/* The playing card's words and actions, the current ones lit, to check the recording. */}
+          <WatchSequence recording={recording} compiled={lesson.compiled} cards={lesson.cards} runtime={runtime} onJump={() => { if (narrated) unlockAudio(); }} />
           <section className="teach-package" aria-label={tr("保存这节课")}>
             {avatarPossible && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
             <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
