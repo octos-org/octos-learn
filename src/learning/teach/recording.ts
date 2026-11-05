@@ -260,8 +260,11 @@ export function keptTake(card: RecordingCard): Take | undefined {
 }
 
 /** What a card's board is built from, as opposed to the learner's words and pointing. */
+// What stays on the board when only the words are re-recorded: cards, arrows
+// and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
   "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide",
+  "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
 ]);
 

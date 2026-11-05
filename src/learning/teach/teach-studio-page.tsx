@@ -152,11 +152,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const isRecording = Boolean(recordingTake);
   // The draft is also kept with the account, a few seconds after the learner stops changing it and never mid-take.
   const changedAt = recording?.updatedAt;
+  // Why this lesson could not be kept with the account, when the service refused it.
+  const [syncProblem, setSyncProblem] = useState<string | null>(null);
+  const lessonId = recording?.id;
   useEffect(() => {
-    if (!changedAt || isRecording) return;
-    const timer = setTimeout(() => { void syncLessonDrafts(localStorage, profileId).catch(() => undefined); }, 4_000);
+    if (!changedAt || isRecording || !lessonId) return;
+    const timer = setTimeout(() => {
+      void syncLessonDrafts(localStorage, profileId)
+        .then((result) => setSyncProblem(result.failed[lessonId] ?? null))
+        // Not reachable (offline, signed out): the draft is safe on this device and syncs later.
+        .catch(() => undefined);
+    }, 4_000);
     return () => clearTimeout(timer);
-  }, [changedAt, isRecording, profileId]);
+  }, [changedAt, isRecording, profileId, lessonId]);
   const now = () => new Date(clock()).toISOString();
   const elapsed = () => Math.max(0, clock() - (takeStartedAt.current ?? clock()));
 
@@ -650,6 +658,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           </>
         )}
       </header>
+      {syncProblem && <p role="status" className="teach-notice teach-sync-problem">{syncProblem}</p>}
 
       <ol className="teach-card-strip" aria-label={tr("卡片")}>
         {recording.cards.map((candidate, index) => {

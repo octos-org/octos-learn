@@ -3068,5 +3068,6 @@
   "出了点问题：{{v0}}": "Something went wrong: {{v0}}",
   "没有说明原因": "no reason given",
   "箭头连接两张不同的卡片。请点另一张卡片。": "An arrow joins two different cards. Tap another card.",
-  "这张卡片检查后又改过了，再检查一遍就知道了。": "You changed this card after the check. Check again to see how it does."
+  "这张卡片检查后又改过了，再检查一遍就知道了。": "You changed this card after the check. Check again to see how it does.",
+  "“我的课”没有收下这节课（{{v0}}）。课还保存在这台设备上。": "My lessons didn’t accept this lesson ({{v0}}). It’s still saved on this device."
 }

@@ -40,6 +40,9 @@ export function taughtEvent(lesson, occurredAt) {
   };
 }
 
+/** The OLL authoring schema's pattern for an ink snapshot id. */
+const INK_SNAPSHOT_ID = /^ink-snap:[A-Za-z0-9_.:@-]{1,96}$/;
+
 function checkDraft(lessonId, recording, ink) {
   if (!object(recording) || recording.schema !== RECORDING_SCHEMA) throw new LessonError(400, "Unknown recording schema");
   if (recording.id !== lessonId) throw new LessonError(400, "The recording belongs to a different lesson");
@@ -47,7 +50,8 @@ function checkDraft(lessonId, recording, ink) {
   const star = recording.topic.starTopicId;
   if (star !== undefined && (typeof star !== "string" || !/^mt_[A-Za-z0-9_-]{1,64}$/.test(star))) throw new LessonError(400, "Invalid star map topic");
   if (!Array.isArray(recording.cards) || recording.cards.length > 40) throw new LessonError(400, "Invalid lesson cards");
-  if (!object(ink) || Object.entries(ink).some(([key, value]) => !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(key) || !object(value) || typeof value.svg !== "string")) {
+  // Handwriting is keyed by its OLL snapshot id (e.g. "ink-snap:rec-…-card-1-t1@v1").
+  if (!object(ink) || Object.entries(ink).some(([key, value]) => !INK_SNAPSHOT_ID.test(key) || !object(value) || typeof value.svg !== "string")) {
     throw new LessonError(400, "Invalid handwriting");
   }
 }

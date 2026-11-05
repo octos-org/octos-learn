@@ -107,14 +107,17 @@ describe("learner recording", () => {
     expect(card.ink).toEqual(ink);
   });
 
-  it("re-recording keeps the board the learner built and replaces words and pointing", () => {
+  it("re-recording the words keeps the board the learner built, arrows and highlights included, and replaces words and the laser", () => {
     let recording = startTake(slopeLesson(), "card-2", now);
     recording = appendEvent(recording, "card-2", { t: 400, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now);
     recording = appendEvent(recording, "card-2", { t: 2_100, type: "point_tool.place", node: "grid-1", point: "point-a", x: 1, y: 2, label: "A (1, 2)" }, now);
     recording = appendEvent(recording, "card-2", { t: 3_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
+    recording = appendEvent(recording, "card-2", { t: 3_500, type: "tool.highlighter", target: { node: "grid-1", part: "point-a" } }, now);
+    recording = appendEvent(recording, "card-2", { t: 4_000, type: "tool.arrow", from: { node: "card-1-formula" }, to: { node: "grid-1" } }, now);
     recording = finishTake(recording, "card-2", now, { durationMs: 5_000, asrText: "Point A." });
     recording = startTake(recording, "card-2", now);
-    expect(currentTake(recording.cards[1]!)!.events.map((event) => [event.t, event.type])).toEqual([[0, "component.insert"], [0, "point_tool.place"]]);
+    // Cards, highlights and arrows stay; the laser was a moment in the talk.
+    expect(currentTake(recording.cards[1]!)!.events.map((event) => [event.t, event.type])).toEqual([[0, "component.insert"], [0, "point_tool.place"], [0, "tool.highlighter"], [0, "tool.arrow"]]);
     recording = appendEvent(recording, "card-2", { t: 1_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
   });
 

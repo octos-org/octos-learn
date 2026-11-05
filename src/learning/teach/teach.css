@@ -23,6 +23,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-range { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
 .teach-range label, .teach-label { display: grid; gap: 4px; color: #3d5a63; font-size: 13px; }
 .teach-notice { margin: 0; padding: 10px 12px; border-radius: 12px; color: #6a4f12; background: #fbf1d6; font-size: 14px; }
+.teach-sync-problem { margin-top: 8px; }
 .teach-board-frame { display: grid; gap: 8px; }
 .teach-octo p { margin: 0; }
 .teach-octo { padding: 12px; border-radius: 14px; background: #eef3fb; }
