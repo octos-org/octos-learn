@@ -18,7 +18,6 @@ import {
   appendEvent,
   boardTake,
   cancelTake,
-  correctSentence,
   correctTranscript,
   currentTake,
   finishTake,
@@ -37,9 +36,11 @@ import {
   type CardInk,
   type InkMark,
   type LearnerRecording,
+  type RecordingCard,
   type RecordingEvent,
   type Take,
 } from "./recording";
+import { ScriptEditor } from "./script-editor";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { syncLessonDrafts } from "./draft-sync";
 import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
@@ -397,6 +398,26 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       setOcto((state) => ({ pending: without(state.pending, key), failed: new Set(state.failed).add(key) }));
     }
   };
+  /**
+   * Whether the lesson can still play a recording after a change to a card's
+   * script: it must compile, and no board action may have to play earlier
+   * than where the learner put it because something before it uses it.
+   */
+  const scriptCheck = (before: LearnerRecording, after: LearnerRecording): string | null => {
+    const options = { author: learnerAuthor(profileId, after.presenter), language: getLocale() };
+    let made: CompiledLesson;
+    try { made = compileRecording(after, options); } catch { return tr("不能放在那里：动作要在它用到的东西之后。"); }
+    let was = Number.POSITIVE_INFINITY;
+    try { was = compileRecording(before, options).forwarded ?? 0; } catch { /* The recording could not play before either. */ }
+    return (made.forwarded ?? 0) > was ? tr("不能放在那里：动作要在它用到的东西之后。") : null;
+  };
+  /** The watch page from the beat that says a card's sentence. */
+  const watchFrom = (key: string) => (sentence: number) => {
+    const made = compiled.lesson;
+    const beat = Object.entries(made?.beatSpeech ?? {}).find(([, speech]) => speech.card === key && speech.sentences && speech.sentences[0] <= sentence && sentence <= speech.sentences[1]);
+    return beat && recording ? `/teach/${recording.id}/watch?from=${encodeURIComponent(beat[0])}` : undefined;
+  };
+
   const compileQuietly = (current: LearnerRecording) => {
     try {
       return compileRecording(current, { author: learnerAuthor(profileId, current.presenter), language: getLocale() });
@@ -824,7 +845,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
                 {cardCheck.findings.map((finding, index) => <p key={`${finding.source}-${index}`}>{finding.message}</p>)}
               </div>
-              <WordsEditor key={`${card.key}-${kept.take}`} cardKey={card.key} take={kept} update={update} now={now}
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)}
                 label={tr("你的话（课会用这些话来讲，可以直接改）")} />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
@@ -844,7 +865,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
                 />
               )}
-              <WordsEditor key={`${card.key}-${kept.take}`} cardKey={card.key} take={kept} update={update} now={now} />
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)} />
               {notice && <p role="status" className="teach-notice">{notice}</p>}
               <div className="teach-panel-end teach-panel-actions">
                 {nextCard ? (
@@ -895,41 +916,17 @@ function clockText(ms: number): string {
  * What the learner said on a card, to correct before the lesson narrates it:
  * one box per sentence when the take kept its sentences, else one box.
  */
-function WordsEditor({ cardKey, take, label, update, now }: {
-  cardKey: string; take: Take; label?: string;
+function WordsEditor({ card, take, label, update, now, check, watchFrom }: {
+  card: RecordingCard; take: Take; label?: string;
   update: (change: (current: LearnerRecording) => LearnerRecording) => void; now: () => string;
+  check: (before: LearnerRecording, after: LearnerRecording) => string | null;
+  watchFrom?: (sentence: number) => string | undefined;
 }) {
   if (!take.segments) {
-    return <TranscriptEditor text={take.text ?? ""} {...(label ? { label } : {})} onSave={(text) => update((current) => correctTranscript(current, cardKey, text, now()))} />;
+    return <TranscriptEditor text={take.text ?? ""} {...(label ? { label } : {})} onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))} />;
   }
-  return (
-    <SentencesEditor sentences={take.segments.map((segment) => segment.text)} {...(label ? { label } : {})}
-      onSave={(changes) => update((current) => changes.reduce((next, change) => correctSentence(next, cardKey, change.index, change.text, now()), current))} />
-  );
-}
-
-function SentencesEditor({ sentences, label, onSave }: { sentences: string[]; label?: string; onSave: (changes: Array<{ index: number; text: string }>) => void }) {
-  const [values, setValues] = useState(sentences);
-  const changes = values.flatMap((value, index) => (value.trim() !== sentences[index] ? [{ index, text: value }] : []));
-  const empty = values.every((value) => !value.trim());
-  return (
-    <form className="teach-step" onSubmit={(event) => { event.preventDefault(); if (changes.length && !empty) onSave(changes); }}>
-      <fieldset className="teach-sentences-edit">
-        <legend className="teach-label">{label ?? tr("你在这张卡片说的话")}</legend>
-        <ol className="teach-sentences">
-          {values.map((value, index) => (
-            <li key={index} className="teach-sentence">
-              <textarea className="teach-input" rows={2} value={value}
-                aria-label={tr("第 {{v0}} 句", { v0: index + 1 })}
-                placeholder={tr("这句没听清，在这里写下你说的话。")}
-                onChange={(event) => setValues((current) => current.map((item, position) => (position === index ? event.target.value : item)))} />
-            </li>
-          ))}
-        </ol>
-      </fieldset>
-      <button type="submit" disabled={!changes.length || empty}>{tr("保存字幕")}</button>
-    </form>
-  );
+  // The script: the sentences, with the board actions between and during them.
+  return <ScriptEditor card={card} {...(label ? { label } : {})} update={update} now={now} check={check} {...(watchFrom ? { watchFrom } : {})} />;
 }
 
 function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {

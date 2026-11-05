@@ -160,3 +160,51 @@ test("strokes written in the studio keep when they were written, numbered in dra
   expect(saved.times[1]! - saved.times[0]!).toBeGreaterThan(500);
   expect(saved.times[2]! - saved.times[1]!).toBeGreaterThan(500);
 });
+
+test("the script editor moves an action between sentences, refuses one that would come before what it needs, and opens the lesson at a sentence", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+      sessionStorage.setItem("seeded", "1");
+    }
+  }, recording);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${recording.id}`);
+  const script = page.locator(".teach-script");
+  await expect(script.getByRole("textbox", { name: "第 4 句" })).toHaveValue("然后往右走。");
+
+  // Point B was placed while sentence 2 was said; move it after the last sentence.
+  await script.getByRole("button", { name: "标出点 Beta" }).click();
+  await script.getByRole("button", { name: "放到这里" }).last().click();
+  await expect(script.getByRole("button", { name: "放到这里" })).toHaveCount(0);
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!)[0].cards[0].takes[0]);
+  const take = await stored();
+  expect(take.events.at(-1).label).toBe("Beta");
+  expect(take.events.at(-1).t).toBeGreaterThan(7_000);
+
+  // The grid cannot go after the points placed on it.
+  await script.getByRole("button", { name: "放上坐标网格" }).click();
+  await script.getByRole("button", { name: "放到这里" }).last().click();
+  await expect(page.getByRole("alert").filter({ hasText: "不能放在那里" })).toBeVisible();
+  expect((await stored()).events[0].type).toBe("component.insert");
+
+  // Watch from sentence 2: the lesson starts there.
+  await script.getByRole("link", { name: "从这句开始看" }).nth(1).click();
+  await expect(page).toHaveURL(/\/watch\?from=card-1-s2$/);
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const firstWords = await page.evaluate(async () => {
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 100; tick += 1) {
+      const words = caption.textContent?.trim();
+      if (words) return words;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return "";
+  });
+  // The lesson starts at sentence 2, not at the beginning.
+  expect(firstWords.startsWith("现在放第二个点")).toBe(true);
+});

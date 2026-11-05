@@ -6,7 +6,7 @@ import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
@@ -88,6 +88,9 @@ type PackState =
 export function TeachWatchPage() {
   useLocale();
   const { id } = useParams();
+  // The beat to start from, when the studio opened the lesson at a sentence.
+  const [searchParams] = useSearchParams();
+  const [startBeat, setStartBeat] = useState(() => searchParams.get("from"));
   const profileId = getSelectedProfileId() ?? "local";
   const [recording, setRecording] = useState(() => loadRecordingDrafts(localStorage, profileId).find((draft) => draft.id === id));
   const makeWork = useRef<AbortController | null>(null);
@@ -356,7 +359,13 @@ export function TeachWatchPage() {
               <AvatarPicture avatar={avatar} size={44} />
             </button>
             <button type="button" className="teach-primary" disabled={!runtime || audio === "checking"}
-              onClick={() => { if (narrated) unlockAudio(); if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play(); }}>
+              onClick={() => {
+                if (narrated) unlockAudio();
+                // Opened at a sentence from the studio: the first play starts there.
+                const from = startBeat && lesson?.cards.flatMap((entry) => entry.beatIds).find((beatId) => beatId.endsWith(`:beat:${startBeat}`));
+                if (from && runtime) { setStartBeat(null); runtime.playBeat(from); return; }
+                if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play();
+              }}>
               {runtime?.playing ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
               {runtime?.completed ? tr("再看一遍") : runtime?.playing ? tr("暂停播放") : tr("播放我的课")}
             </button>

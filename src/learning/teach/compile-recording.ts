@@ -62,7 +62,9 @@ export interface CompiledLesson {
    * For each beat (by key), its card and when its sentences were said in the
    * take, so the take's camera movement can follow each beat's narration.
    */
-  beatSpeech?: Record<string, { card: string; speechSpanMs?: [number, number] }>;
+  beatSpeech?: Record<string, { card: string; speechSpanMs?: [number, number]; sentences?: [number, number] }>;
+  /** How many board actions play earlier than they happened, because an earlier action uses them. */
+  forwarded?: number;
 }
 
 /** The recorded cards of a compiled lesson, in order, each with its actions in play order across its beats. */
@@ -97,14 +99,14 @@ function requireAlias(value: string, what: string): string {
  * (while it is said) and 3k+2 (after it, before the next one). Ranks keep the
  * recorded order of sentences and board actions, and decide the beats.
  */
-interface Sentences {
+export interface Sentences {
   /** Start and end of each sentence, in take time, in the order said. */
   spans: Array<[number, number]>;
   texts: string[];
 }
 
 /** The take's sentences; a take kept before sentences were stored is one sentence over its speech. */
-function sentencesOf(take: Take): Sentences {
+export function sentencesOf(take: Take): Sentences {
   if (take.segments?.length) {
     const segments = [...take.segments].sort((a, b) => a.startMs - b.startMs);
     return { spans: segments.map((segment) => [segment.startMs, segment.endMs]), texts: segments.map((segment) => segment.text.trim()) };
@@ -112,10 +114,10 @@ function sentencesOf(take: Take): Sentences {
   return { spans: take.speechSpanMs ? [take.speechSpanMs] : [], texts: [take.text?.trim() ?? ""] };
 }
 
-const DURING = 1;
-const AFTER = 2;
+export const DURING = 1;
+export const AFTER = 2;
 
-function rankOf(sentences: Sentences, t: number): number {
+export function rankOf(sentences: Sentences, t: number): number {
   const { spans } = sentences;
   // No speech heard at all: everything plays while the words are said.
   if (!spans.length) return DURING;
@@ -142,7 +144,8 @@ function referencedAliases(action: Action): string[] {
  * whatever an action refers to is brought forward to that action's rank, so
  * nothing refers ahead in time.
  */
-function bringReferencesForward(actions: Ranked[]): void {
+function bringReferencesForward(actions: Ranked[]): number {
+  let moved = 0;
   const creators = new Map(actions.flatMap((entry) => (typeof entry.action.as === "string" ? [[entry.action.as, entry] as const] : [])));
   for (let changed = true, rounds = 0; changed && rounds < actions.length; rounds += 1) {
     changed = false;
@@ -152,10 +155,12 @@ function bringReferencesForward(actions: Ranked[]): void {
         if (creator && creator !== entry && creator.rank > entry.rank) {
           creator.rank = entry.rank;
           changed = true;
+          moved += 1;
         }
       }
     }
   }
+  return moved;
 }
 
 /**
@@ -164,7 +169,7 @@ function bringReferencesForward(actions: Ranked[]): void {
  * A stroke shows only once every stroke before it was written, so moving a
  * stroke (which can reorder strokes) never shows writing early.
  */
-function inkStages(times: number[], sentences: Sentences): Array<{ rank: number; shown: number }> {
+export function inkStages(times: number[], sentences: Sentences): Array<{ rank: number; shown: number }> {
   const stages: Array<{ rank: number; shown: number }> = [];
   let reached = -1;
   times.forEach((t, index) => {
@@ -205,7 +210,7 @@ function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], 
     });
     const key = `${card.key}-s${beat + 1}`;
     const [from, to] = [sentences.spans[first], sentences.spans[last]];
-    speech[key] = { card: card.key, ...(from && to ? { speechSpanMs: [from[0], to[1]] as [number, number] } : {}) };
+    speech[key] = { card: card.key, sentences: [first, last], ...(from && to ? { speechSpanMs: [from[0], to[1]] as [number, number] } : {}) };
     return { key, ...(say ? { say } : {}), actions: actions as AuthoringAction[] };
   });
 }
@@ -388,6 +393,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   // One step per card, one beat per run of the card's sentences between board actions.
   const steps: AuthoringLesson["steps"] = [];
   const beatSpeech: NonNullable<CompiledLesson["beatSpeech"]> = {};
+  // How many things had to be brought ahead of when they happened, because something used them earlier.
+  let forwarded = 0;
   // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
   let highlighted: string[] = [];
   let reachedLast = false;
@@ -620,7 +627,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     // Writing has no time of its own yet: it plays while the card's first sentence is said.
     const ranked: Ranked[] = actions.map(({ when, ...action }) => ({ action: action as Action, rank: typeof when === "number" ? when : DURING }));
-    bringReferencesForward(ranked);
+    forwarded += bringReferencesForward(ranked);
 
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
@@ -649,5 +656,5 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     steps,
     close: { summary: recording.goals[0] ?? recording.topic.text, focus: lastFocus },
   };
-  return { lesson, resourceContext: { ink_snapshots: snapshots }, beatSpeech };
+  return { lesson, resourceContext: { ink_snapshots: snapshots }, beatSpeech, forwarded };
 }

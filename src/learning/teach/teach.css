@@ -246,3 +246,14 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-contents-number { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 50%; background: rgba(40, 65, 67, 0.08); font-size: 12px; font-weight: 600; }
 /* The presenter panel keeps its notes inside its box rather than over the contents below. */
 .teach-watch-layout .teach-watch-avatar { overflow-y: auto; }
+
+/* The card's script: sentences with the board actions between and during them.
+   Scoped under .teach-step so they win over the panel's default buttons. */
+.teach-script-gap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 0 4px 10px; border-left: 3px solid rgba(15, 118, 110, .35); }
+.teach-script-during { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: #3d5a63; }
+.teach-script-sentence { display: grid; gap: 4px; }
+.teach-step button.teach-script-chip { min-height: 32px; padding: 0 12px; border: 1px solid rgba(15, 118, 110, .5); border-radius: 999px; background: #effaf8; color: #0f4f4a; font-size: 14px; }
+.teach-step button.teach-script-chip[aria-pressed="true"] { background: #0f766e; border-color: #0f766e; color: #fff; box-shadow: 0 0 0 3px rgba(15, 118, 110, .25); }
+.teach-step button.teach-script-drop { gap: 4px; min-height: 32px; padding: 0 12px; border: 1px dashed #0f766e; border-radius: 999px; background: #fff; color: #0f766e; font-size: 14px; }
+.teach-script-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
+.teach-step .teach-script-tools button.teach-link-button, .teach-script-tools a.teach-link-button { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0; border: 0; border-radius: 0; background: none; color: #3d5a63; font-size: 13px; text-decoration: underline; }

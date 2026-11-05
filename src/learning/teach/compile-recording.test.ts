@@ -190,7 +190,10 @@ describe("compileRecording", () => {
       { say: "Point B. It goes up. Then right.", actions: ["during_speech:revise:2", "after_speech:point", "after_speech:focus"] },
     ]);
     expect(lesson.steps[0]!.beats.map((beat) => beat.key)).toEqual(["card-1-s1", "card-1-s2"]);
-    expect(beatSpeech).toEqual({ "card-1-s1": { card: "card-1", speechSpanMs: [0, 1_000] }, "card-1-s2": { card: "card-1", speechSpanMs: [2_000, 7_000] } });
+    expect(beatSpeech).toEqual({
+      "card-1-s1": { card: "card-1", sentences: [0, 0], speechSpanMs: [0, 1_000] },
+      "card-1-s2": { card: "card-1", sentences: [1, 3], speechSpanMs: [2_000, 7_000] },
+    });
   });
 
   it("plays actions before the first sentence before it, and leaves out untyped sentences' words", () => {
