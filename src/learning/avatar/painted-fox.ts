@@ -10,7 +10,10 @@ const root = "teach-avatars/star-fox/painted-v0.2/";
 export const PAINTED_FOX_ASSETS = { base: `${root}source.png`, clean: `${root}clean.png`, mouth: `${root}mouth.png`, brows: `${root}brows-clean.png`, extended: 'teach-avatars/star-fox/painted-v0.3/portrait-extended.png' } as const;
 /** The fitted face keeps its original coordinates inside the completed portrait. */
 export const PAINTED_FOX_VIEW = { size:704, x:96, y:192, frame:736 } as const;
-export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource>;
+export type PaintedFoxImages = Record<keyof typeof PAINTED_FOX_ASSETS, CanvasImageSource> & {
+  /** Registered alpha silhouette; the original artwork supplies all RGB pixels. */
+  silhouette?: CanvasImageSource;
+};
 type Point = [number, number];
 export interface PaintedFaceRig {
   earInertia?:EarInertiaProfile;
@@ -277,6 +280,8 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
   const headBackground=new Uint8ClampedArray(portraitSource.data);
   const paper=source.data.slice((350*512+10)*4,(350*512+10)*4+4);
   for(let i=0;i<(340+padY)*size*4;i+=4)headBackground.set(paper,i);
+  // A transparent presenter must not reveal the old paper when its head moves.
+  if(images.silhouette)headBackground.fill(0);
   function deformHead(pitch:number,yaw:number,roll:number,pose:PaintedSecondaryPose) {
     const input=portraitCtx.getImageData(0,0,size,size).data,out=headOutput.data;out.set(headBackground);
     const points=vertices.map(([x,y])=>{const p=localPainter?paintedHeadPoint([x-padX,y-padY],pitch,yaw,roll):paintedMotionPoint([x-padX,y-padY],pitch,yaw,roll,pose,motionProfile);return[p[0]+padX,p[1]+padY]as Point;});
@@ -336,6 +341,12 @@ export function createPaintedFoxPainter(images: PaintedFoxImages, surface: FoxSu
           for(let ch=0;ch<3;ch++)facial.data[i+ch]=bounded(facial.data[i+ch]+posed.data[i+ch]-source.data[original+ch],0,255);
         }
         portraitCtx.putImageData(facial,padX+128,padY+128);
+      }
+      if(images.silhouette){
+        portraitCtx.save();
+        portraitCtx.globalCompositeOperation='destination-in';
+        portraitCtx.drawImage(images.silhouette,0,0,size,size);
+        portraitCtx.restore();
       }
       const moving=pitch!==0||yaw!==0||roll!==0||(!localPainter&&Object.values(secondary).some(n=>Math.abs(n)>.00001));
       target.clearRect(0,0,width,height);const scale=Math.min(width/PAINTED_FOX_VIEW.frame,height/PAINTED_FOX_VIEW.frame),ox=(width-size*scale)/2,oy=(height-size*scale)/2;

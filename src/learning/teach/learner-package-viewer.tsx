@@ -10,6 +10,7 @@ import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { presenterOfReference } from "./presenters";
 import { nodeSections } from "./teaching-board-setup";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -84,11 +85,12 @@ export default function LearnerPackageViewer() {
       {failed && <p role="alert">{tr("课程包未能读取，可能已损坏或需要更新应用。")}</p>}
     </div>
     {pack ? <>
-      <div className="teach-watch-layout"><section className="teach-watch-stage" aria-label={tr("你的课")}><LearningWhiteboard embedded runtime={runtime} resolveAsset={pack.resolveAsset} /></section>
-        {hasMouth && showAvatar && <Suspense fallback={null}><LessonAvatarPreview characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth} performance={moves}
+      <div className="teach-watch-layout"><section className="teach-watch-stage" aria-label={tr("你的课")}><LearningWhiteboard embedded runtime={runtime} resolveAsset={pack.resolveAsset}
+        overlay={hasMouth && showAvatar ? <Suspense fallback={null}><LessonAvatarPreview placement="board" characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth} performance={moves}
           clock={media && media.beatId === narrationBeatId && media.packageHash === pack.manifest.contentSha256 ? media.clock : null}
-          playing={speaking && sound} preparing={narration.preparing} /></Suspense>}
+          playing={speaking && sound} preparing={narration.preparing} /></Suspense> : null} /></section>
       </div>
+      <LessonContents runtime={runtime} entries={lessonContents(pack.events)} onJump={() => { if (sound) unlockAudio(); }} />
       <div className="teach-watch-bar"><button type="button" className="teach-primary" disabled={!runtime} onClick={() => {
         if (sound) unlockAudio();
         if (runtime?.completed) runtime.restart(); else if (runtime?.playing) runtime.pause(); else runtime?.play();

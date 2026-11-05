@@ -1,14 +1,15 @@
 import { getLocale, subscribeLocale } from "@/i18n";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { normalizeAuthoringLesson, reduceCanonicalEvents, scene3dViewForIntent, setLessonVariable, type CanonicalTarget, type SemanticBoardState } from "octos-lesson-language";
-import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type VariableControlsView } from "octos-lesson-language/web-runtime";
+import { mountInfiniteBoard, mountVariableControls, type ImageAssetResolver, type MountedInfiniteBoard, type StudentVariableInputHandler, type VariableControlsView } from "octos-lesson-language/web-runtime";
+import { buildInteractionClusters } from "../oll/interaction-clusters";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
 import type { CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
-import { segmentDrag, unwrapAngle, type DragSample } from "./studio-helpers";
+import { segmentDrag, wrapDrag, unwrapAngle, type DragSample } from "./studio-helpers";
 import { teachingRegionLayout } from "./teaching-board-setup";
 
 
@@ -45,10 +46,23 @@ export interface TeachBoardHandle {
   selectAllInk(): void;
   /** The selected strokes as an image, without changing them; null when nothing is selected. */
   selectedInk(): Promise<{ svg: string; width: number; height: number } | null>;
-  /** Freezes the selected strokes on their own and removes them from the live ink; null when nothing is selected. */
-  cutSelectedInk(): Promise<FrozenInk | null>;
+  /**
+   * Freezes the selected strokes on their own and removes them from the live
+   * ink; null when nothing is selected. `undoSteps` is how many ink undos put
+   * the strokes back.
+   */
+  cutSelectedInk(): Promise<(FrozenInk & { undoSteps: number }) | null>;
+  /** Hears each change the learner makes to the live ink (a stroke drawn, erased or moved); not the board's own changes. */
+  onInkEdit(listener: (steps: number) => void): () => void;
+  /** Takes back the last `steps` changes to the live ink. */
+  undoInk(steps?: number): Promise<void>;
   /** Shows the pointer on what the learner tapped, or at a board point; briefly, or until replaced when `hold` is set; null hides it. */
   showPointer(target: BoardTarget | { at: { x: number; y: number } } | null, options?: { hold?: boolean }): void;
+  /**
+   * Highlighter marks on the take's live writing, in board units. Writing that
+   * is frozen into the lesson shows its highlight from the lesson itself.
+   */
+  markInk(boxes: BoardBox[]): void;
   /** Whether a live stroke still covers a board point (it may have been erased or made neat). */
   hasStrokeAt(point: { x: number; y: number }): boolean;
 }
@@ -56,6 +70,17 @@ export interface TeachBoardHandle {
 const ANNOTATABLE = new Set(["geometry", "plot", "scene3d", "image"]);
 /** How long the pointer stays where the learner tapped with the laser. */
 const POINTER_MS = 1_600;
+/** One card's slider panel: the variables it shows, drawn in a layer of the board. */
+interface Slider { layer: HTMLDivElement; view: VariableControlsView; aliases: Set<string> }
+const renderSlider = (slider: Slider, state: SemanticBoardState) => slider.view.render({
+  ...state, variables: Object.fromEntries(Object.entries(state.variables ?? {}).filter(([alias]) => slider.aliases.has(alias))),
+});
+
+/** A slider row's height and the slider panel's width, in board units (as in playback). */
+const SLIDER_ROW = 34;
+const SLIDER_WIDTH = 360;
+/** How far, in board units, a highlighter mark reaches past the writing it marks. */
+const MARK_PAD = 6;
 /** How close, in board units, a tap must be to a stroke of writing to point at it. */
 const STROKE_TOLERANCE = 10;
 
@@ -70,6 +95,53 @@ function cardEndTargets(compiled: CompiledLesson, key: string): string[] {
   const beat = compiled.lesson.steps[0]?.beats.find((candidate) => candidate.key === key);
   const focus = [...(beat?.actions ?? [])].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
   return (focus?.targets ?? []).map((target) => boardIdOf({ node: target.split("#")[0]! }));
+}
+
+/** How close, in screen pixels, a tap must be to a part of a card to point at that part. */
+const PART_REACH = 18;
+
+/** Screen distance from a point to a part: along an SVG shape's outline, else to its box. */
+function distanceToPart(part: Element, x: number, y: number): number {
+  if (part instanceof SVGGeometryElement && typeof part.getTotalLength === "function") {
+    const matrix = part.getScreenCTM();
+    if (matrix) {
+      const length = part.getTotalLength();
+      const samples = Math.min(240, Math.max(12, Math.ceil(length / 2)));
+      let best = Infinity;
+      for (let index = 0; index <= samples; index += 1) {
+        const at = part.getPointAtLength((length * index) / samples);
+        const screen = new DOMPoint(at.x, at.y).matrixTransform(matrix);
+        best = Math.min(best, Math.hypot(screen.x - x, screen.y - y));
+      }
+      return best;
+    }
+  }
+  const box = part.getBoundingClientRect();
+  if (!(box.width > 0 || box.height > 0)) return Infinity;
+  return Math.hypot(Math.max(box.left - x, 0, x - box.right), Math.max(box.top - y, 0, y - box.bottom));
+}
+
+/** A part this small (a point) is preferred over a line or curve passing through it. */
+const SMALL_PART = 24;
+const SMALL_PART_BONUS = 10;
+
+/**
+ * The part of a card nearest a tap, when one is within reach. Points win over
+ * lines through them, and of parts equally near, the one drawn on top wins.
+ */
+function nearestPart(node: HTMLElement, x: number, y: number): HTMLElement | SVGElement | null {
+  // A 3D scene's parts are faces, areas the tap is either on or not.
+  if (node.dataset.kind === "scene3d") return null;
+  let best: HTMLElement | SVGElement | null = null;
+  let bestScore = PART_REACH;
+  for (const part of node.querySelectorAll<HTMLElement | SVGElement>('[data-id*=":fragment:"]')) {
+    const distance = distanceToPart(part, x, y);
+    if (distance > PART_REACH) continue;
+    const box = part.getBoundingClientRect();
+    const score = distance - (box.width <= SMALL_PART && box.height <= SMALL_PART ? SMALL_PART_BONUS : 0);
+    if (score <= bestScore) { best = part; bestScore = score; }
+  }
+  return best;
 }
 
 function sameTarget(a: BoardTarget, b: BoardTarget): boolean {
@@ -130,6 +202,20 @@ type InkModule = typeof import("octos-lesson-language/ink-runtime");
 type InkRuntime = ReturnType<InkModule["mountInkRuntime"]>;
 
 /**
+ * Runs one of the board's own ink changes (undo, cutting writing out) without
+ * reporting it as the learner's; returns how many ink steps it took.
+ */
+async function quietInk(ink: InkRuntime, quiet: { current: number }, revision: { current: number }, change: () => unknown): Promise<number> {
+  const before = ink.state.content_revision;
+  quiet.current += 1;
+  try { await change(); } finally {
+    revision.current = ink.state.content_revision;
+    quiet.current -= 1;
+  }
+  return ink.state.content_revision - before;
+}
+
+/**
  * The board while a learner records: the compiled lesson so far, laid out and
  * framed by the same teaching layout and camera rules as playback.
  */
@@ -151,8 +237,14 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
-  const controlsRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<VariableControlsView | null>(null);
+  const marksRef = useRef<HTMLDivElement | null>(null);
+  // The sliders of the lesson's variables, one panel per card they belong to, docked under that card as in playback.
+  const slidersRef = useRef(new Map<string, Slider>());
+  const variableInputRef = useRef<StudentVariableInputHandler | null>(null);
+  // Live-ink changes the learner makes, told apart from the board's own (undo, cutting writing out).
+  const inkEditsRef = useRef(new Set<(steps: number) => void>());
+  const inkRevisionRef = useRef(0);
+  const inkQuietRef = useRef(0);
   // The compiled board, and what the learner's drags show on top of it until
   // the recording catches up.
   const boardStateRef = useRef<SemanticBoardState | null>(null);
@@ -192,7 +284,16 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         onStrokeRef.current(stroke);
         return;
       }
-      const element = (event.target as Element | null)?.closest<HTMLElement | SVGElement>("[data-id]");
+      // What is under the tap: a 3D scene captures the pointer, which makes the
+      // click's target its whole drawing rather than the face that was tapped.
+      const under = viewport.ownerDocument.elementFromPoint?.(event.clientX, event.clientY) ?? (event.target as Element | null);
+      const tapped = viewport.contains(under) ? under : (event.target as Element | null);
+      // A card's own buttons (a 3D view's presets, Explore) are not something to point at.
+      if (tapped?.closest("button, input, select, label")) return;
+      const hit = tapped?.closest<HTMLElement | SVGElement>("[data-id]");
+      // A part is small (a point is a few pixels): a tap near one points at it, not at its card.
+      const node = hit?.closest<HTMLElement>(".board-node[data-id]");
+      const element = (node && nearestPart(node, event.clientX, event.clientY)) || hit;
       const target = boardTargetFromId(element?.dataset.id);
       if (!target || !element?.dataset.id) return;
       tappedRef.current = { target, canonical: canonicalTarget(element.dataset.id) };
@@ -206,7 +307,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const next = setLessonVariable(state, alias, value);
       boardStateRef.current = next;
       mounted.view.render(next);
-      sliderRef.current?.render(next);
+      for (const slider of slidersRef.current.values()) renderSlider(slider, next);
     };
     const variableInput = (alias: string, value: number, event: { phase: "start" | "update" | "commit"; control: string }) => {
       if (!gesturesRef.current.onVariableGesture) return;
@@ -220,8 +321,11 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (event.phase === "commit") {
         const { samples } = gestureRef.current;
         gestureRef.current = null;
-        // A back-and-forth drag plays back as the moves the learner made.
-        for (const segment of segmentDrag(samples)) {
+        // A back-and-forth drag plays back as the moves the learner made; a
+        // wrapping angle may cross the end of its range on the way.
+        const declaration = boardStateRef.current?.variables?.[alias];
+        const segments = segmentDrag(samples);
+        for (const segment of declaration?.wrap ? wrapDrag(segments, declaration) : segments) {
           gesturesRef.current.onVariableGesture?.({
             variable: alias, via: event.control === "geometry_point" ? "geometry_point" : "slider",
             from: segment.from, to: segment.to,
@@ -233,7 +337,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       return `studio-gesture-${alias}`;
     };
     mounted.view.setVariableInputHandler((alias, value, event) => variableInput(alias, value, event));
-    if (controlsRef.current) sliderRef.current = mountVariableControls(controlsRef.current, (alias, value, event) => variableInput(alias, value, event));
+    variableInputRef.current = (alias, value, event) => variableInput(alias, value, event);
     mounted.view.setScene3dInputHandler((nodeId, view, event) => {
       if (!gesturesRef.current.onSceneGesture) return;
       mounted.view.setScene3dViews({ [nodeId]: view });
@@ -247,6 +351,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       pointerRef.current = null;
       viewport.removeEventListener("click", handleClick);
       unsubscribeLocale();
+      marksRef.current = null;
+      for (const { layer } of slidersRef.current.values()) layer.remove();
+      slidersRef.current.clear();
       void inkRef.current?.destroy();
       inkRef.current = null;
       mounted.destroy();
@@ -266,6 +373,14 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       });
       await ink.ready;
       ink.setMode("navigate");
+      inkRevisionRef.current = ink.state.content_revision;
+      // Each js-draw command is one change and one undo step.
+      ink.subscribe((state) => {
+        if (inkRef.current !== ink || inkQuietRef.current || state.content_revision === inkRevisionRef.current) return;
+        const steps = state.content_revision - inkRevisionRef.current;
+        inkRevisionRef.current = state.content_revision;
+        if (steps > 0) for (const listener of inkEditsRef.current) listener(steps);
+      });
       inkRef.current = ink;
     },
     setPen(mode) {
@@ -322,8 +437,17 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const snapshot = await ink.captureSelectionSnapshot();
       const { bounds } = snapshot;
       const annotates = annotationFor(mounted.elements.viewport, bounds);
-      await ink.deleteSelection();
-      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+      const undoSteps = await quietInk(ink, inkQuietRef, inkRevisionRef, () => ink.deleteSelection());
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}), undoSteps };
+    },
+    onInkEdit(listener) {
+      inkEditsRef.current.add(listener);
+      return () => { inkEditsRef.current.delete(listener); };
+    },
+    async undoInk(steps = 1) {
+      const ink = inkRef.current;
+      if (!ink) return;
+      await quietInk(ink, inkQuietRef, inkRevisionRef, async () => { for (let step = 0; step < steps; step++) await ink.undo(); });
     },
     showPointer(target, options) {
       const view = mountedRef.current?.view;
@@ -350,7 +474,51 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     hasStrokeAt(point) {
       return Boolean(inkRef.current?.strokeBoundsAt(point, 0));
     },
+    markInk(boxes) {
+      const mounted = mountedRef.current;
+      if (!mounted) return;
+      let layer = marksRef.current;
+      if (!layer && boxes.length) {
+        layer = document.createElement("div");
+        layer.className = "teach-ink-marks";
+        layer.setAttribute("aria-hidden", "true");
+        mounted.view.mountWorldLayer(layer);
+        marksRef.current = layer;
+      }
+      if (!layer) return;
+      layer.replaceChildren(...boxes.map((box) => {
+        const mark = document.createElement("div");
+        Object.assign(mark.style, { left: `${box.x - MARK_PAD}px`, top: `${box.y - MARK_PAD}px`, width: `${box.width + MARK_PAD * 2}px`, height: `${box.height + MARK_PAD * 2}px` });
+        return mark;
+      }));
+    },
   }), []);
+
+  /** Puts each card's slider panel where the layout docked it, under the card, in the board's own coordinates. */
+  const placeSliders = (mounted: MountedInfiniteBoard, state: SemanticBoardState | null, clusters: ReturnType<typeof buildInteractionClusters>) => {
+    const sliders = slidersRef.current;
+    const rects = state ? mounted.view.getAttachmentBoundsMap() : {};
+    for (const [id, { layer }] of sliders) {
+      if (!clusters.some((cluster) => cluster.id === id) || !rects[id]) { layer.remove(); sliders.delete(id); }
+    }
+    if (!state) return;
+    for (const cluster of clusters) {
+      const rect = rects[cluster.id];
+      if (!rect) continue;
+      let slider = sliders.get(cluster.id);
+      if (!slider) {
+        const layer = document.createElement("div");
+        layer.className = "teach-board-sliders";
+        layer.dataset.ollInkInput = "ignore";
+        mounted.view.mountWorldLayer(layer);
+        slider = { layer, view: mountVariableControls(layer, (alias, value, event) => variableInputRef.current?.(alias, value, event)), aliases: new Set() };
+        sliders.set(cluster.id, slider);
+      }
+      Object.assign(slider.layer.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.width}px` });
+      slider.aliases = new Set(cluster.variableAliases);
+      renderSlider(slider, state);
+    }
+  };
 
   useEffect(() => {
     const mounted = mountedRef.current;
@@ -358,6 +526,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     if (!mounted || !viewport) return;
     if (!compiled) {
       mounted.view.render(null);
+      placeSliders(mounted, null, []);
       return;
     }
     const events = normalizeAuthoringLesson(compiled.lesson, {
@@ -366,15 +535,23 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       baseRevision: 0,
       resourceContext: compiled.resourceContext,
     });
-    mounted.view.setRegionLayouts(teachingRegionLayout(events, viewport.clientWidth, viewport.clientHeight));
     const state = reduceCanonicalEvents(events);
+    // Each card's sliders are docked under it, and the layout keeps room for them, as in playback.
+    const clusters = buildInteractionClusters(state, { id: "__legacy__" }, Object.keys(state.variables ?? {}), []);
+    const layouts = teachingRegionLayout(events, viewport.clientWidth, viewport.clientHeight);
+    if (clusters.length) layouts.__legacy__ = { ...layouts.__legacy__!, attachments: clusters.map((cluster) => {
+      const height = 12 + cluster.variableAliases.length * SLIDER_ROW;
+      return { id: cluster.id, kind: "control" as const, anchorNodeId: cluster.anchorNodeId, ownerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId,
+        anchorNodeIds: cluster.nodeIds, width: SLIDER_WIDTH, height, focusHeight: height, gap: 24 };
+    }) };
+    mounted.view.setRegionLayouts(layouts);
     boardStateRef.current = state;
     // A 3D scene shows its recorded view: the camera of its last view intent.
     mounted.view.setScene3dViews(Object.fromEntries(Object.values(state.nodes)
       .filter((node) => node.kind === "scene3d")
       .map((node) => [node.id, node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, node.content.camera) : node.content.camera])));
     mounted.view.render(state);
-    sliderRef.current?.render(state);
+    placeSliders(mounted, state, clusters);
     const framed = focusCard ? cardEndTargets(compiled, focusCard) : state.focus;
     if (framed.length) mounted.view.focusTargets(framed);
     // A redraw hides the pointer; the learner's tap still shows until it fades.
@@ -385,7 +562,6 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   return (
     <div className="teach-board-frame">
       <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} data-interactive={onVariableGesture ? "true" : undefined} />
-      <div ref={controlsRef} className="teach-board-controls" />
     </div>
   );
 });

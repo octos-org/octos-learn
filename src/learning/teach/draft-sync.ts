@@ -63,11 +63,13 @@ export interface DraftSyncResult {
   pushed: string[];
   pulled: string[];
   removed: string[];
+  /** Drafts the service refused or that failed to sync, with why; the others still synced. */
+  failed: Record<string, string>;
 }
 
 /** Brings both sides in line. Throws only when the service cannot be reached; the device copy is never lost. */
 export async function syncLessonDrafts(storage: Storage, profileId: string, api: LessonsApi = { listLessons, readLesson, putLessonDraft }): Promise<DraftSyncResult> {
-  const result: DraftSyncResult = { lessons: await api.listLessons(), pushed: [], pulled: [], removed: [] };
+  const result: DraftSyncResult = { lessons: await api.listLessons(), pushed: [], pulled: [], removed: [], failed: {} };
   const synced = loadSynced(storage, profileId);
   const remote = new Map(result.lessons.map((lesson) => [lesson.lesson_id, lesson]));
   const agree = (id: string, revision: number, updatedAt: string) => { synced[id] = { revision, updatedAt }; };
@@ -88,8 +90,12 @@ export async function syncLessonDrafts(storage: Storage, profileId: string, api:
     return true;
   };
 
-  for (const draft of loadRecordingDrafts(storage, profileId)) {
-    if (!draft.cards.length) continue;
+  // One draft the service refuses must not stop the others from syncing.
+  const each = async (id: string, work: () => Promise<unknown>) => {
+    try { await work(); } catch (error) { result.failed[id] = error instanceof Error ? error.message : String(error); }
+  };
+  for (const draft of loadRecordingDrafts(storage, profileId)) await each(draft.id, async () => {
+    if (!draft.cards.length) return;
     const known = synced[draft.id];
     const server = remote.get(draft.id);
     if (!server) {
@@ -100,7 +106,7 @@ export async function syncLessonDrafts(storage: Storage, profileId: string, api:
         delete synced[draft.id];
         result.removed.push(draft.id);
       } else await push(draft, null);
-      continue;
+      return;
     }
     const localChanged = !known || known.updatedAt !== draft.updatedAt;
     const remoteChanged = !known || known.revision !== server.revision;
@@ -111,9 +117,9 @@ export async function syncLessonDrafts(storage: Storage, profileId: string, api:
       if (draft.updatedAt >= server.updated_at) { if (!await push(draft, server.revision)) await pull(draft.id); }
       else await pull(draft.id);
     }
-  }
+  });
   const local = new Set(loadRecordingDrafts(storage, profileId).map((draft) => draft.id));
-  for (const lesson of result.lessons) if (!local.has(lesson.lesson_id)) await pull(lesson.lesson_id);
+  for (const lesson of result.lessons) if (!local.has(lesson.lesson_id)) await each(lesson.lesson_id, () => pull(lesson.lesson_id));
   writeRecoverableJson(storage, draftSyncKey(profileId), synced);
   if (result.pushed.length) result.lessons = await api.listLessons();
   return result;

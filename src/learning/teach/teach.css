@@ -23,8 +23,8 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-range { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
 .teach-range label, .teach-label { display: grid; gap: 4px; color: #3d5a63; font-size: 13px; }
 .teach-notice { margin: 0; padding: 10px 12px; border-radius: 12px; color: #6a4f12; background: #fbf1d6; font-size: 14px; }
+.teach-sync-problem { margin-top: 8px; }
 .teach-board-frame { display: grid; gap: 8px; }
-.teach-board-controls:empty, .teach-board-controls[hidden] { display: none; }
 .teach-octo p { margin: 0; }
 .teach-octo { padding: 12px; border-radius: 14px; background: #eef3fb; }
 .teach-live-captions { display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: #fffef9; border: 1px solid rgba(26, 35, 80, .12); }
@@ -114,6 +114,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-check-parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
 .teach-check-progress { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; color: #3d5a63; background: #eef1f6; font-size: 14px; font-weight: 500; }
 .teach-check-progress[data-state="done"] { color: #0f5c55; background: #e8f3ef; }
+.teach-check-reason { margin: -2px 0 0; padding: 8px 14px; border-radius: 12px; color: #7a4b12; background: #fbf1e3; font-size: 13px; line-height: 1.5; }
 .teach-check-progress[data-state="failed"] { color: #8a3b07; background: #fdf1e4; }
 .teach-spinner { width: 14px; height: 14px; border: 2px solid rgba(27, 36, 87, 0.25); border-top-color: #1b2457; border-radius: 50%; animation: teach-spin 0.9s linear infinite; }
 @keyframes teach-spin { to { transform: rotate(360deg); } }
@@ -162,6 +163,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-avatar > img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.45); transform-origin: 50% 54%; }
 .teach-avatar-placeholder { display: grid; place-items: center; border-radius: 50%; color: #3b3328; font-size: 20px; font-weight: 700; }
 .teach-tag[data-source="privacy"] { color: #6b2160; background: #f6e3f1; }
+.teach-tag[data-source="words"] { color: #7a4b12; background: #fbecd6; }
 .teach-package { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 16px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 14px; background: #fffef9; }
 .teach-package p { flex: 1; min-width: 240px; margin: 0; font-size: 14px; }
 
@@ -187,3 +189,51 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-camera-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
 .teach-camera-status { margin: 8px 0 0; padding: 6px 10px; border-radius: 10px; background: #eef4f1; color: #24584a; font-size: 13px; }
 .teach-camera-status[data-state="lost"], .teach-camera-status[data-state="failed"] { background: #fbf1e3; color: #7a4b12; }
+
+/* Highlighter: a lasting marker wash, unlike the laser's brief red dot. Learner
+   lessons only use focus emphasis for the highlighter, so recording and every
+   playback of a learner lesson show the same mark. */
+.teach-studio .board-node.emphasis-focus { border-color: #e0a800; box-shadow: 0 0 0 4px #ffd84d, 0 0 0 10px rgba(255, 216, 77, 0.32); background-image: linear-gradient(rgba(255, 224, 102, 0.2), rgba(255, 224, 102, 0.2)); }
+/* A highlighted part of a card (a point, a line, a label) glows yellow on its own. */
+.teach-studio .board-node [data-id].emphasis-focus { filter: drop-shadow(0 0 2px #ffc400) drop-shadow(0 0 5px #ffd84d) drop-shadow(0 0 9px rgba(255, 216, 77, 0.8)); }
+/* A highlighted face of a 3D box is filled like the highlighter's other marks. */
+.teach-studio .board-node .scene3d-highlight-face.emphasis-focus { fill: #ffd84d; fill-opacity: .6; stroke: #e0a800; stroke-opacity: 1; }
+.teach-studio .board-node circle[data-id].emphasis-focus { stroke: #f0b400; stroke-width: 5px; paint-order: stroke; }
+.teach-ink-marks { position: absolute; inset: 0; pointer-events: none; }
+.teach-ink-marks > div { position: absolute; border-radius: 8px; background: rgba(255, 214, 51, 0.38); mix-blend-mode: multiply; }
+/* The learner's character following them live while the camera moves it. */
+.teach-studio-avatar { display: grid; gap: 6px; }
+.teach-studio-avatar-stage { position: relative; display: grid; place-items: center; height: 200px; border-radius: 14px; overflow: hidden; background: #e9eff2; }
+.teach-studio-avatar-stage > .illustrated-avatar { position: absolute; inset: 0; min-height: 0; }
+.teach-studio-avatar-stage > span { position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 20px; background: #eee4ca; color: #605230; font-size: 11px; }
+.teach-studio[data-recording] .teach-studio-avatar-stage { height: 150px; }
+/* A card's sliders are docked under it on the board, as in playback. */
+.teach-board-sliders { position: absolute; box-sizing: border-box; padding: 5px 12px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 12px; background: #fffef9; }
+/* A card's title with its rename button, or the field that renames it. */
+.teach-card-title { display: flex; align-items: center; gap: 8px; }
+.teach-card-title h2 { flex: 1; min-width: 0; }
+.teach-card-title .teach-icon-button { width: 32px; height: 32px; flex: none; }
+.teach-card-title input { flex: 1; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid rgba(40, 65, 67, 0.3); border-radius: 10px; font: inherit; font-size: 16px; }
+/* Advanced mode: the lesson's OLL and the draft, in a drawer over the right of the studio. */
+.teach-oll-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 30; display: flex; flex-direction: column; gap: 10px; width: min(620px, 100vw); box-sizing: border-box; padding: 16px; border-left: 1px solid rgba(40, 65, 67, 0.18); background: #fffef9; box-shadow: -12px 0 32px rgba(31, 45, 51, 0.14); }
+.teach-oll-drawer header { display: flex; align-items: center; justify-content: space-between; }
+.teach-oll-drawer h2 { margin: 0; font-size: 18px; }
+.teach-oll-drawer p { margin: 0; font-size: 13px; line-height: 1.5; }
+.teach-oll-tabs { display: flex; gap: 6px; }
+.teach-oll-tabs button { min-height: 36px; padding: 0 14px; border: 1px solid rgba(40, 65, 67, 0.2); border-radius: 999px; background: #fffef9; color: #2f4a52; font: inherit; font-size: 13px; cursor: pointer; }
+.teach-oll-tabs button[aria-selected="true"] { border-color: #1b2457; background: #1b2457; color: #f6dfa0; }
+.teach-oll-text { flex: 1; min-height: 0; padding: 10px; border: 1px solid rgba(40, 65, 67, 0.2); border-radius: 10px; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; resize: none; }
+.teach-oll-problem { padding: 8px 10px; border-radius: 10px; background: #fbf1e3; color: #7a4b12; font-size: 13px; white-space: pre-wrap; }
+/* Playback: a bar with one part per card, and the cards to jump to. */
+.teach-contents { display: grid; gap: 8px; margin: 10px 0 2px; }
+.teach-contents-bar { display: flex; gap: 4px; }
+.teach-contents-bar span { flex: 1; height: 6px; border-radius: 3px; background: rgba(40, 65, 67, 0.14); }
+.teach-contents-bar span[data-state="done"] { background: #23877c; }
+.teach-contents-bar span[data-state="current"] { background: linear-gradient(90deg, #23877c, #9fd3cb); }
+.teach-contents ol { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.teach-contents button { display: inline-flex; align-items: center; gap: 6px; max-width: 280px; min-height: 36px; padding: 0 12px 0 6px; overflow: hidden; border: 1px solid rgba(40, 65, 67, 0.18); border-radius: 999px; background: #fffef9; color: #2f4a52; font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.teach-contents button[data-state="current"] { border-color: #1b2457; background: #1b2457; color: #f6dfa0; }
+.teach-contents button[data-state="done"] { color: #23877c; }
+.teach-contents-number { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 50%; background: rgba(40, 65, 67, 0.08); font-size: 12px; font-weight: 600; }
+/* The presenter panel keeps its notes inside its box rather than over the contents below. */
+.teach-watch-layout .teach-watch-avatar { overflow-y: auto; }

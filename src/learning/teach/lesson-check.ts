@@ -11,7 +11,7 @@ import { findPersonalDetails } from "./privacy";
 import { keptTake, type LearnerRecording, type RecordingReview } from "./recording";
 
 export interface CheckFinding {
-  source: "octo" | "screen" | "privacy";
+  source: "octo" | "screen" | "privacy" | "words";
   /** Octo's kind of problem, shown as a short tag. */
   kind?: "slip" | "misconception" | "unclear";
   message: string;
@@ -80,9 +80,12 @@ export function cardChecks(recording: LearnerRecording, compiled: CompiledLesson
   return recording.cards.flatMap((card): CardCheck[] => {
     const take = keptTake(card);
     if (!take) return [];
-    if (take.startedAt > review.at) return [{ key: card.key, title: card.title, status: "redo", findings: [] }];
+    // Re-recorded, or its words changed, since the check: what the check said may no longer apply.
+    if (take.startedAt > review.at || (take.textEditedAt ?? "") > review.at) return [{ key: card.key, title: card.title, status: "redo", findings: [] }];
     const octo = review.cards.find((entry) => entry.key === card.key);
     const findings: CheckFinding[] = privacyFindings(take.text ?? "", (review.personal ?? []).filter((detail) => detail.card === card.key));
+    // Without words the card plays in silence, with no captions.
+    if (!take.text?.trim()) findings.push({ source: "words", message: tr("这张卡片没有你说的话，看的人听不到讲解，也看不到字幕。在“你在这张卡片说的话”里写下你讲的内容，或者点“重录我的话”再讲一遍。") });
     if (octo?.status === "check") findings.push({ source: "octo", ...(octo.kind !== "none" ? { kind: octo.kind } : {}), message: octo.message });
     const screen = screenFinding((review.screen ?? []).filter((result) => result.card === card.key), drawsArrow(compiled, card.key));
     if (screen) findings.push(screen);

@@ -74,6 +74,20 @@ describe("draft sync", () => {
     expect(loadRecordingDrafts(localStorage, "p")).toEqual([]);
   });
 
+  it("keeps syncing the other drafts when the service refuses one, and says why", async () => {
+    const service = fakeService();
+    const put = service.api.putLessonDraft;
+    service.api.putLessonDraft = async (recording, ink, base) => {
+      if (recording.id === "bad") throw new Error("My lessons didn’t accept this lesson (Invalid handwriting).");
+      return put(recording, ink, base);
+    };
+    saveRecordingDraft(localStorage, "p", draft("bad"));
+    saveRecordingDraft(localStorage, "p", draft("good"));
+    const result = await syncLessonDrafts(localStorage, "p", service.api);
+    expect(result.pushed).toEqual(["good"]);
+    expect(result.failed).toEqual({ bad: "My lessons didn’t accept this lesson (Invalid handwriting)." });
+  });
+
   it("finds handwriting anywhere in the recording", () => {
     const recording = { ...draft("one"), cards: [{ ...draft("one").cards[0]!, takes: [{ take: 1, status: "kept" as const, startedAt: at(0), events: [], ink: [{ snapshotId: "take-ink", sha256: "x", selections: [] }] }] }] };
     expect(Object.keys(recordingInk(recording, { "take-ink": { svg: "", width: 1, height: 1 }, other: { svg: "", width: 1, height: 1 } }))).toEqual(["take-ink"]);

@@ -1,0 +1,18 @@
+{
+  "source": "portrait.png",
+  "tool": "Built-in image_gen",
+  "generated_source": "exec-88d60a8f-cb3e-44c5-bd7f-229fc780978c.png",
+  "purpose": "Alpha-only registered silhouette for transparent lesson-board presenters. Original portrait and animated facial RGB remain unchanged.",
+  "size": [
+    704,
+    704
+  ],
+  "preparation": "scripts/prepare-presenter-silhouette.mjs: resample alpha to 704 square, saturate near-opaque alpha >= 240, fill enclosed extraction pinholes up to 64 pixels; retain soft exterior edges.",
+  "prompt": "Use case: background-extraction. Edit target: the attached square portrait of a red panda with red-brown hair, round furry ears and dark embroidered robe, an already-rigged 2D animation texture. Remove ONLY the cream/off-white paper background outside the character and in gaps between hair strands, yielding actual transparent alpha. Preserve the EXACT input composition and pixel registration: square canvas, unchanged scale, position, ears, every hair tuft, face, eyes, mouth, neck, accessories and clothing. No recentering, no cropping, no zoom, no extra padding, no reshaping or redrawing. Clothing must meet the bottom edge at the identical position. Keep white/pale fur, white/pale hair, inner ears, face and pale shirt fully opaque; they are part of the character, not background. Preserve soft antialiased fur/hair edges without a white halo. Output PNG with a genuinely transparent background. We will use ONLY the output alpha as a silhouette mask on the ORIGINAL portrait, so exact alignment is essential.",
+  "materials": {
+    "portrait-silhouette.png": {
+      "sha256": "fec8cdbac8b80c7f519b48f2eea00918d2605293b446a063bbab739a25715fc7",
+      "bytes": 30287
+    }
+  }
+}

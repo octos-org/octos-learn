@@ -55,7 +55,10 @@ async function request(path: string, init: RequestInit = {}, timeout = 15_000): 
   if (!response.ok && response.status !== 409) {
     const detail = await response.json().catch(() => null) as { error?: string } | null;
     throw new LessonsUnavailable(response.status === 422 ? tr("课程包没有通过检查：{{v0}}", { v0: detail?.error ?? "" })
-      : response.status === 413 ? tooLarge() : tr("现在连不上“我的课”，课还保存在这台设备上。"), response.status);
+      : response.status === 413 ? tooLarge()
+        // The service answered and refused this lesson: say why, not that it is unreachable.
+        : response.status === 400 ? tr("“我的课”没有收下这节课（{{v0}}）。课还保存在这台设备上。", { v0: detail?.error ?? response.statusText })
+          : tr("现在连不上“我的课”，课还保存在这台设备上。"), response.status);
   }
   return response;
 }

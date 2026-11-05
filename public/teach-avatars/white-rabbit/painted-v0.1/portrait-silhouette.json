@@ -1,0 +1,18 @@
+{
+  "source": "portrait.png",
+  "tool": "Built-in image_gen",
+  "generated_source": "exec-6df2fd87-e246-46bb-ab84-c9202706bf1c.png",
+  "purpose": "Alpha-only registered silhouette for transparent lesson-board presenters. Original portrait and animated facial RGB remain unchanged.",
+  "size": [
+    704,
+    704
+  ],
+  "preparation": "scripts/prepare-presenter-silhouette.mjs: resample alpha to 704 square, saturate near-opaque alpha >= 240, fill enclosed extraction pinholes up to 64 pixels; retain soft exterior edges.",
+  "prompt": "Use case: background-extraction. Edit target: the attached square portrait of a white rabbit with pale white hair and long pale ears, red bow and red embroidered robe, an already-rigged 2D animation texture. Remove ONLY the cream/off-white paper background outside the character and in gaps between hair strands, yielding actual transparent alpha. Preserve the EXACT input composition and pixel registration: square canvas, unchanged scale, position, ears, every hair tuft, face, eyes, mouth, neck, accessories and clothing. No recentering, no cropping, no zoom, no extra padding, no reshaping or redrawing. Clothing must meet the bottom edge at the identical position. Keep white/pale fur, white/pale hair, inner ears, face and pale shirt fully opaque; they are part of the character, not background. Preserve soft antialiased fur/hair edges without a white halo. Output PNG with a genuinely transparent background. We will use ONLY the output alpha as a silhouette mask on the ORIGINAL portrait, so exact alignment is essential.",
+  "materials": {
+    "portrait-silhouette.png": {
+      "sha256": "62265b90cabce3d98b22e9a614bce5219b2f3a5fc785650570a969b3872e3976",
+      "bytes": 42427
+    }
+  }
+}

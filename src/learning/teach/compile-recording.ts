@@ -41,6 +41,11 @@ export interface CompileOptions {
   language: string;
   /** Show the take being recorded instead of the card's kept take, for the live board. */
   includeTakeInProgress?: boolean;
+  /**
+   * Stop after this card: the lesson as viewers see it at the end of that
+   * card, which is what the studio board shows while the card is selected.
+   */
+  throughCard?: string;
 }
 
 export interface CompiledLesson {
@@ -122,18 +127,24 @@ function nearestPreset(yaw: number, pitch: number): "front" | "top" | "side" | "
   return "isometric";
 }
 
+/**
+ * The box's six faces, around its centre at the origin (the view turns about
+ * the origin, so the box stays put). Each is drawn only once the learner
+ * highlights it, and can be tapped while it faces the viewer.
+ */
 function boxFaces(size: { x: number; y: number; z: number }) {
-  const [hx, hy, z] = [size.x / 2, size.y / 2, size.z];
+  const [hx, hy, hz] = [size.x / 2, size.y / 2, size.z / 2];
   const face = (as: string, label: string, points: Array<[number, number, number]>) =>
-    ({ as, kind: "face", label, points: points.map(([x, y, pz]) => ({ x, y, z: pz })) });
+    ({ as, kind: "face", label, shown: "when_emphasized", points: points.map(([x, y, z]) => ({ x, y, z })) });
   const area = (a: number, b: number) => `${a} × ${b}`;
   return [
-    face("top-face", `top ${area(size.x, size.y)}`, [[-hx, -hy, z], [hx, -hy, z], [hx, hy, z], [-hx, hy, z]]),
-    face("bottom-face", `bottom ${area(size.x, size.y)}`, [[-hx, -hy, 0], [hx, -hy, 0], [hx, hy, 0], [-hx, hy, 0]]),
-    face("front-face", `front ${area(size.x, size.z)}`, [[-hx, -hy, 0], [hx, -hy, 0], [hx, -hy, z], [-hx, -hy, z]]),
-    face("back-face", `back ${area(size.x, size.z)}`, [[-hx, hy, 0], [hx, hy, 0], [hx, hy, z], [-hx, hy, z]]),
-    face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, 0], [-hx, hy, 0], [-hx, hy, z], [-hx, -hy, z]]),
-    face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, 0], [hx, hy, 0], [hx, hy, z], [hx, -hy, z]]),
+    face("top-face", `top ${area(size.x, size.y)}`, [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("bottom-face", `bottom ${area(size.x, size.y)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz]]),
+    // The viewer looks from +y (OLL's "front" preset), so the front face is the +y one.
+    face("front-face", `front ${area(size.x, size.z)}`, [[-hx, hy, -hz], [hx, hy, -hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("back-face", `back ${area(size.x, size.z)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz]]),
+    face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, -hz], [-hx, hy, -hz], [-hx, hy, hz], [-hx, -hy, hz]]),
+    face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], [hx, -hy, hz]]),
   ];
 }
 
@@ -149,7 +160,7 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
 
 /** Compiles one recording; the lesson still has to pass OLL validation. */
 export function compileRecording(recording: LearnerRecording, options: CompileOptions): CompiledLesson {
-  const variables = new Map<string, { as: string; initial: number; min: number; max: number; label: string; unit: string; control: { kind: "slider"; step: number } }>();
+  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
   // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
@@ -206,12 +217,13 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         ...title,
         axes: { x: { min: component.x[0], max: component.x[1], label: "x" }, y: { min: component.y[0], max: component.y[1], label: "y" }, equal_scale: true },
       });
-      return { do: "write", as: alias, kind: "geometry", role: "diagram", content: {}, place: placeNext() } as Action;
+      // Empty when it appears; each point and line is added when the learner placed it.
+      return { do: "write", as: alias, kind: "geometry", role: "diagram", content: gridContent(alias), place: placeNext() } as Action;
     }
     if (component.panel === "unit_circle") {
       const variable = component.variable;
       if (variables.has(variable)) throw new CompileError(`Variable '${variable}' is already used`);
-      variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
+      variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, wrap: true, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
       angleControlled.add(variable);
       return {
         do: "write", as: alias, kind: "geometry", role: "diagram", place: placeNext(),
@@ -246,7 +258,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         fallback: `A box ${component.size.x} by ${component.size.y} by ${component.size.z}.`,
         axes: false,
         camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
-        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: component.size.z / 2 }, size: component.size }],
+        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: component.size }],
         highlights: boxFaces(component.size),
       },
     } as Action;
@@ -265,11 +277,20 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   };
 
   const steps: AuthoringLesson["steps"] = [{ key: "teach", purpose: `${recording.topic.text}: taught by the learner`, beats: [] }];
+  // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
+  let highlighted: string[] = [];
+  let reachedLast = false;
   for (const card of recording.cards) {
+    if (reachedLast) break;
+    reachedLast = card.key === options.throughCard;
     const take = options.includeTakeInProgress ? currentTake(card) ?? keptTake(card) : keptTake(card);
     if (!take) continue;
     const actions: Action[] = [];
-    const createdGrids: Array<{ alias: string; index: number }> = [];
+    for (const marked of highlighted) {
+      if (hidden.has(owner(marked))) continue;
+      actions.push({ do: "emphasize", target: marked, emphasis: "none", when: "before_speech" } as Action);
+    }
+    highlighted = [];
     const annotations: Action[] = [];
     let focus: string[] = [];
 
@@ -319,7 +340,6 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           // Put next to a card in the current row: it joins that row beside it.
           const beside = event.nextTo ? { place: { relation: "right_of", anchor: event.nextTo }, role: "supporting_visual" } : {};
           actions.push({ ...action, ...beside, when } as Action);
-          if (event.panel === "coordinate_grid") createdGrids.push({ alias: event.alias, index: actions.length - 1 });
           lastNode = event.alias;
           focus = [event.alias];
           break;
@@ -329,9 +349,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           const points = geometryPoints.get(event.node);
           if (!points) throw new CompileError(`Points can only be placed on a coordinate grid ('${event.node}')`);
           points.push({ as: requireAlias(event.point, "Point"), x: event.x, y: event.y, label: event.label });
-          if (!createdGrids.some((grid) => grid.alias === event.node)) {
-            actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner placed a point", when } as Action);
-          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner placed a point", when } as Action);
           focus = [event.node];
           break;
         }
@@ -344,6 +362,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         case "tool.highlighter":
           if (pointsAtMissingInk(event.target)) break;
           actions.push({ do: "emphasize", target: target(event.target), emphasis: "focus", when } as Action);
+          if (!highlighted.includes(target(event.target))) highlighted.push(target(event.target));
           focus = [owner(target(event.target))];
           break;
         case "tool.arrow": {
@@ -385,9 +404,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
             segment: { as: alias, from: `${alias}-start`, to: `${alias}-end`, label: lineLabel(a, b) },
             ends: ends.map((end, index) => ({ as: `${alias}-${index ? "end" : "start"}`, x: end.x, y: end.y, visible: false })),
           }]);
-          if (!createdGrids.some((grid) => grid.alias === event.node)) {
-            actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner drew a line through two points", when } as Action);
-          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: "the learner drew a line through two points", when } as Action);
           focus = [event.node];
           break;
         }
@@ -423,8 +440,6 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       }
     }
 
-    // A grid created in this card shows every point placed in it.
-    for (const grid of createdGrids) actions[grid.index] = { ...actions[grid.index]!, content: gridContent(grid.alias) } as Action;
 
     // Ink drawn on a component appears once that component is on the board.
     for (const annotation of annotations) {

@@ -31,6 +31,9 @@ import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
 import { keptTake, recordingComplete, setPresenter, type Presenter } from "./recording";
 import { readTakePerformance } from "./take-performance-store";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
+import { useLiveNarrationAvatar } from "./live-narration-avatar";
+import { effectiveLesson } from "./oll-override";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
@@ -81,11 +84,11 @@ export function TeachWatchPage() {
   const makeWork = useRef<AbortController | null>(null);
   const [making, setMaking] = useState<{ done: number; total: number } | null>(null);
   const [makeFailed, setMakeFailed] = useState<string | null>(null);
-  const [showAvatar, setShowAvatar] = useState(() => recording?.presenter?.mouthMotion === "basic");
+  // The moving presenter shows by default; the learner can hide it.
+  const [showAvatar, setShowAvatar] = useState(true);
   const [mediaClock, setMediaClock] = useState<{ beatId: string; clock: AudioPlaybackClock; packageHash: string } | null>(null);
   const choosePresenter = (presenter: Presenter) => {
     if (!recording) return;
-    if (presenter.mouthMotion !== undefined) setShowAvatar(presenter.mouthMotion === "basic");
     makeWork.current?.abort(); makeWork.current = null; setMaking(null); setMakeFailed(null);
     const next = setPresenter(recording, presenter, new Date().toISOString());
     saveRecordingDraft(localStorage, profileId, next);
@@ -98,13 +101,14 @@ export function TeachWatchPage() {
   const lesson = useMemo(() => {
     if (!recording || !recordingComplete(recording)) return null;
     try {
-      const compiled = compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale() });
+      // The learner's hand-edited OLL (advanced mode) while it is current, else the lesson made from the recording.
+      const { compiled, override } = effectiveLesson(recording, compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale() }));
       const events = normalizeAuthoringLesson(compiled.lesson, {
         lessonId: `learner-${recording.id}`, boardId: `learner-${recording.id}-board`, baseRevision: 0, resourceContext: compiled.resourceContext,
       });
       const source = events.map((event) => JSON.stringify(event)).join("\n");
       const topics: OllLessonTopicDefinition[] = [learnerLessonTopic(events, recording.topic.text, compiled.lesson.lesson.language)];
-      return { compiled, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
+      return { compiled, override, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
     } catch {
       return null;
     }
@@ -239,11 +243,21 @@ export function TeachWatchPage() {
   const onEnd = useCallback((beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => runtimeRef.current?.recordNarrationEnd(beatId, reason), []);
   const speaking = Boolean(runtime?.playing && runtime.activeSpeech.trim());
   const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
+  // Before the lesson is saved, its narration is made while it plays, and the presenter follows it the same way.
+  const livePerformances = useCallback(async (): Promise<CardPerformances> => (recording && lesson && recording.presenter?.cameraMotion === "on" && cameraTakes.length
+    ? cardPerformances(profileId, recording.id, cameraTakes, lesson.events) : {}), [recording, lesson, cameraTakes, profileId]);
+  const live = useLiveNarrationAvatar({
+    enabled: showAvatar && !packaged && pack.status !== "loading" && audio === "on" && voiceAvailable && sound,
+    events: lesson?.events ?? null, voices, language: lesson?.language, performances: livePerformances,
+  });
+  const liveAvatar = Boolean(live.resolveAudio);
   const mouthTrack = useMemo(() => packaged && narrationBeatId
-    ? packaged.mouthTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
+    ? packaged.mouthTrack(narrationBeatId, narrationText) : live.mouthTrack(narrationBeatId, narrationText), [packaged, narrationBeatId, narrationText, live]);
   const performanceTrack = useMemo(() => packaged && narrationBeatId
-    ? packaged.performanceTrack(narrationBeatId, narrationText) : null, [packaged, narrationBeatId, narrationText]);
-  const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length);
+    ? packaged.performanceTrack(narrationBeatId, narrationText) : live.performanceTrack(narrationBeatId, narrationText), [packaged, narrationBeatId, narrationText, live]);
+  const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length) || liveAvatar;
+  // Whether the moving presenter can show at all: a saved package with mouth motion, or a voice to make narration with.
+  const avatarPossible = Boolean(packaged?.manifest.lipSync?.length) || (!packaged && audio === "on" && voiceAvailable && sound);
   const playing = Boolean(runtime?.playing);
   useEffect(() => {
     holdAwards("teach-watch", playing);
@@ -259,7 +273,7 @@ export function TeachWatchPage() {
     upcomingNarrationId: runtime?.nextNarration?.beatId,
     prefetchEnabled: true,
     voices,
-    ...(packaged ? { resolveAudio: resolvePackagedAudio } : {}),
+    ...(packaged ? { resolveAudio: resolvePackagedAudio } : live.resolveAudio ? { resolveAudio: live.resolveAudio } : {}),
     onPlaybackStart: onStart,
     onPlaybackComplete: onComplete,
     onPlaybackEnd: onEnd,
@@ -274,6 +288,7 @@ export function TeachWatchPage() {
     );
   }
 
+  const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
   const card = !runtime ? 0 : runtime.completed ? lesson?.cards ?? 0 : Math.min(lesson?.cards ?? 0, runtime.beatIndex + 1);
   return (
     <main className="teach-page teach-studio teach-watch">
@@ -319,13 +334,14 @@ export function TeachWatchPage() {
           )}
           <div className="teach-watch-layout">
             <section className="teach-watch-stage" aria-label={tr("你的课")}>
-              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset} />
+              <LearningWhiteboard embedded runtime={runtime} resolveAsset={packaged?.resolveAsset ?? resolveAsset}
+                overlay={showAvatar && hasMouthTracks ? <Suspense fallback={null}><LessonAvatarPreview placement="board"
+                  characterId={packaged ? presenterOfReference(packaged.manifest.author.avatar_ref).id : avatar.id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === (packaged?.manifest.contentSha256 ?? "") ? mediaClock.clock : null}
+                  playing={speaking && narrated} preparing={narration.preparing}
+                /></Suspense> : null} />
             </section>
-            {showAvatar && hasMouthTracks && <Suspense fallback={null}><LessonAvatarPreview
-              characterId={presenterOfReference(packaged?.manifest.author.avatar_ref).id} track={mouthTrack} performance={performanceTrack} clock={mediaClock && mediaClock.beatId === narrationBeatId && mediaClock.packageHash === packaged?.manifest.contentSha256 ? mediaClock.clock : null}
-              playing={speaking && narrated} preparing={narration.preparing}
-            /></Suspense>}
           </div>
+          <LessonContents runtime={runtime} entries={contents} onJump={() => { if (narrated) unlockAudio(); }} />
           <div className="teach-watch-bar">
             <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
               <AvatarPicture avatar={avatar} size={44} />
@@ -346,7 +362,7 @@ export function TeachWatchPage() {
             <p className="teach-watch-caption" aria-live="polite">{runtime?.activeSpeech || (runtime?.completed ? tr("看完了！") : "")}</p>
           </div>
           <section className="teach-package" aria-label={tr("保存这节课")}>
-            {hasMouthTracks && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
+            {avatarPossible && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
             <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
             {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
             {cameraTakes.length > 0 && <label className="teach-place"><input type="checkbox" checked={includePerformance} disabled={Boolean(making) || !includeLipSync}

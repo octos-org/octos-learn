@@ -3,6 +3,7 @@
 // at each card that adds a figure, unless the figure was put next to a card of
 // the current row; it only appends, so earlier rows are never a choice.
 
+import { tr } from "@/i18n";
 import type { CompiledLesson } from "./compile-recording";
 
 const FIGURES = new Set(["plot", "geometry", "scene3d", "image"]);
@@ -10,7 +11,7 @@ const FIGURES = new Set(["plot", "geometry", "scene3d", "image"]);
 /** A card on the board the learner can put something next to. */
 export interface RowCard {
   alias: string;
-  /** What the learner sees it as: the formula, "Grid", "Graph y = 2x". */
+  /** What the learner sees it as, in their language: the formula, "Grid", "Graph y = 2x". */
   label: string;
   /** Which recorded card made it, from 1. */
   card: number;
@@ -20,15 +21,15 @@ type Write = { do: string; as?: string; kind?: string; role?: string; content?: 
 
 function label(action: Write): string {
   const content = action.content ?? {};
-  if (action.kind === "math") return ((content.fragments as Array<{ latex?: string }> | undefined) ?? []).map((fragment) => fragment.latex ?? "").join(" ").trim() || "Formula";
+  if (action.kind === "math") return ((content.fragments as Array<{ latex?: string }> | undefined) ?? []).map((fragment) => fragment.latex ?? "").join(" ").trim() || tr("公式");
   if (action.kind === "plot") {
     const curve = (content.curves as Array<{ label?: string }> | undefined)?.[0]?.label;
-    return curve ? `Graph ${curve}` : "Graph";
+    return curve ? `${tr("函数图")} ${curve}` : tr("函数图");
   }
-  if (action.kind === "geometry") return Array.isArray(content.circles) && content.circles.length ? "Unit circle" : "Grid";
-  if (action.kind === "scene3d") return "Box";
-  if (action.kind === "ink") return "Your writing";
-  return String(content.text ?? action.as ?? "Card");
+  if (action.kind === "geometry") return Array.isArray(content.circles) && content.circles.length ? tr("单位圆") : tr("坐标网格");
+  if (action.kind === "scene3d") return tr("长方体");
+  if (action.kind === "ink") return tr("你写的字");
+  return String(content.text ?? action.as ?? tr("卡片"));
 }
 
 /** The cards in the current row, in board order; empty when the board is empty. */

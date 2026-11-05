@@ -6,3 +6,8 @@
 .teach-watch-avatar p { margin: 10px 0 6px; color: #314d63; font-size: 13px; line-height: 1.5; }
 .teach-watch-avatar small { color: #617384; font-size: 11px; line-height: 1.5; }
 @media(max-width:800px) { .teach-watch-avatar { flex-basis: auto; } .teach-watch-avatar-stage { min-height: 210px; } }
+/* In the board's bottom-right corner, like a teacher standing beside the board.
+   The canvas is transparent; the character's own art decides what shows. */
+.teach-board-presenter { position: absolute; right: 8px; bottom: 0; z-index: 4; width: clamp(140px, 20%, 230px); aspect-ratio: 1; pointer-events: none; }
+.teach-board-presenter > .illustrated-avatar { position: absolute; inset: 0; min-height: 0; background: transparent; }
+@media(max-width:800px) { .teach-board-presenter { width: 120px; } }

@@ -72,6 +72,8 @@ export interface Take {
   asrText?: string;
   /** Transcript the lesson narrates; personal details are removed before publishing. */
   text?: string;
+  /** When the learner last changed `text` by hand; a check made before it no longer applies. */
+  textEditedAt?: string;
   /** Start and end of speech inside the take, for action phases. */
   speechSpanMs?: [number, number];
   /** The take's camera performance (face and head parameters, no images) is kept on this device (take-performance-store). */
@@ -146,6 +148,21 @@ export interface LearnerRecording {
   review?: RecordingReview;
   /** Who presents the lesson: catalog IDs of the avatar and voice the learner chose. */
   presenter?: Presenter;
+  /**
+   * Advanced mode: the lesson's OLL as the learner edited it by hand. It is
+   * played and saved instead of the lesson made from the recording, while that
+   * lesson is still the one it was edited from (`basedOn`); once the recording
+   * changes, the edit is out of date and the recording's lesson is used again.
+   */
+  oll?: OllOverride;
+}
+
+export interface OllOverride {
+  /** The authoring lesson (OLL JSON) the learner wrote. */
+  lesson: unknown;
+  /** Fingerprint of the lesson made from the recording when the edit was made. */
+  basedOn: string;
+  editedAt: string;
 }
 
 export interface Presenter {
@@ -169,6 +186,7 @@ export class RecordingError extends Error {
 }
 
 const MAX_CARDS = 6;
+const MAX_CARD_TITLE = 80;
 
 export function createRecording(input: { id: string; now: string; topic: RecordingTopic; goals: string[] }): LearnerRecording {
   if (!input.topic.text.trim()) throw new RecordingError("A recording needs a topic");
@@ -242,8 +260,11 @@ export function keptTake(card: RecordingCard): Take | undefined {
 }
 
 /** What a card's board is built from, as opposed to the learner's words and pointing. */
+// What stays on the board when only the words are re-recorded: cards, arrows
+// and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
   "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide",
+  "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
 ]);
 
@@ -273,6 +294,31 @@ export function appendEvent(recording: LearnerRecording, key: string, event: Rec
   return touch(recording, now, replaceCard(recording, key, (card) => ({
     ...card,
     takes: card.takes.map((candidate) => (candidate === take ? { ...take, events: [...take.events, event] } : candidate)),
+  })));
+}
+
+/**
+ * Undo during a take: takes back the take's last `count` board actions, and
+ * with them the frozen ink (by snapshot) or ink mark (by selection) that the
+ * same step added (an arrow between two strokes adds two marks). Board content carried over from the kept take is never
+ * removed this way: only actions recorded in this take can be taken back.
+ */
+export function undoTakeEvents(
+  recording: LearnerRecording, key: string, count: number, now: string,
+  added: { inkSnapshot?: string; inkMarks?: string[] } = {},
+): LearnerRecording {
+  const take = currentTake(findCard(recording, key));
+  if (!take) throw new RecordingError(`Card ${key} is not recording`);
+  if (!Number.isInteger(count) || count < 0 || count > take.events.length) throw new RecordingError("Nothing to undo");
+  const ink = added.inkSnapshot ? (take.ink ?? []).filter((piece) => piece.snapshotId !== added.inkSnapshot) : take.ink;
+  const marks = new Set(added.inkMarks ?? []);
+  const inkMarks = marks.size ? (take.inkMarks ?? []).filter((mark) => !marks.has(mark.selection)) : take.inkMarks;
+  const next: Take = { ...take, events: take.events.slice(0, take.events.length - count) };
+  if (ink) next.ink = ink;
+  if (inkMarks) next.inkMarks = inkMarks;
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? next : candidate)),
   })));
 }
 
@@ -350,7 +396,7 @@ export function correctTranscript(recording: LearnerRecording, key: string, text
   if (!corrected) throw new RecordingError("The transcript cannot be empty");
   return touch(recording, now, replaceCard(recording, key, (card) => ({
     ...card,
-    takes: card.takes.map((candidate) => (candidate === take ? { ...take, text: corrected } : candidate)),
+    takes: card.takes.map((candidate) => (candidate === take ? (corrected === take.text ? take : { ...take, text: corrected, textEditedAt: now }) : candidate)),
   })));
 }
 
@@ -370,6 +416,34 @@ export function answerOcto(recording: LearnerRecording, key: string, answer: str
   const card = findCard(recording, key);
   if (!card.octo) throw new RecordingError(`Octo has not asked about card ${key}`);
   return touch(recording, now, replaceCard(recording, key, (existing) => ({ ...existing, octo: { ...existing.octo!, answer: answer.trim() } })));
+}
+
+/** The learner renames a card. */
+export function renameCard(recording: LearnerRecording, key: string, title: string, now: string): LearnerRecording {
+  const trimmed = title.trim();
+  if (!trimmed) throw new RecordingError("Every card needs a title");
+  if (trimmed.length > MAX_CARD_TITLE) throw new RecordingError(`A card title has at most ${MAX_CARD_TITLE} characters`);
+  findCard(recording, key);
+  return touch(recording, now, replaceCard(recording, key, (card) => ({ ...card, title: trimmed })));
+}
+
+/**
+ * Makes a card a "Your turn" exercise, or a card that teaches. Only a card with
+ * nothing recorded yet changes, and a lesson has one exercise at most.
+ */
+export function setCardKind(recording: LearnerRecording, key: string, kind: RecordingCard["kind"], now: string): LearnerRecording {
+  const card = findCard(recording, key);
+  if (card.kind === kind) return recording;
+  if (card.takes.length > 0) throw new RecordingError(`Card ${key} already has a recording`);
+  if (kind === "your_turn" && recording.cards.some((other) => other.kind === "your_turn")) throw new RecordingError("A lesson has one \"Your turn\" card at most");
+  return touch(recording, now, replaceCard(recording, key, (current) => ({ ...current, kind })));
+}
+
+/** Advanced mode: keeps (or, with null, drops) the learner's hand-edited OLL. */
+export function setOllOverride(recording: LearnerRecording, override: OllOverride | null, now: string): LearnerRecording {
+  const next: LearnerRecording = { ...recording, updatedAt: now };
+  if (override) next.oll = override; else delete next.oll;
+  return next;
 }
 
 /** The learner chooses who presents the lesson. */

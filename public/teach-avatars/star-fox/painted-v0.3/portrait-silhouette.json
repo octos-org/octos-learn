@@ -1,0 +1,18 @@
+{
+  "source": "portrait-extended.png",
+  "tool": "Built-in image_gen",
+  "generated_source": "exec-b74217d4-a57a-4075-a2ec-1c3f4c96e338.png",
+  "purpose": "Alpha-only registered silhouette for transparent lesson-board presenters. Original portrait and animated facial RGB remain unchanged.",
+  "size": [
+    704,
+    704
+  ],
+  "preparation": "scripts/prepare-presenter-silhouette.mjs: resample alpha to 704 square, saturate near-opaque alpha >= 240, fill enclosed extraction pinholes up to 64 pixels; retain soft exterior edges.",
+  "prompt": "Use case: background-extraction. Edit target: the attached square orange fox character portrait, used as an already-rigged 2D animation texture. Remove ONLY the cream/off-white paper background outside the character and in the gaps between hair strands, yielding actual transparent alpha. Preserve the exact input composition and pixel registration: square canvas, unchanged scale, position, ear tips, every hair tuft, face, eyes, mouth, neck and blue robe. No recentering, no cropping, no zoom, no extra padding, no reshaping or redrawing of the subject. Keep the full blue garment reaching the bottom edge in the exact same position. Retain white fur inside ears, pale face and pale shirt as fully opaque. Preserve fine soft antialiased fur/hair edges; no white halo. Output a PNG cutout with transparent background. We will use only its alpha channel as a silhouette mask on the original portrait, so precise alignment to the reference is essential.",
+  "materials": {
+    "portrait-silhouette.png": {
+      "sha256": "b9d557d79b3bbcada20336464d0a2b5a711b2162024f1ffba9fa443f664ceb81",
+      "bytes": 31720
+    }
+  }
+}

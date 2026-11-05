@@ -55,6 +55,18 @@ it('never loads the rejected ear-turn atlas in the enhanced fox preview',()=>{
   expect(images.some(i=>i.src.includes('ear-turn-'))).toBe(false);
 });
 
+it.each(['star-fox','red-panda','white-rabbit','moon-cat'] as const)('loads the %s board silhouette and releases it when transparency is disabled',(characterId)=>{
+  const page=render(<IllustratedAvatarStage characterId={characterId} frame={neutralFrame} active transparentBackground />);
+  expect(images).toHaveLength(6);
+  const silhouette=images.find(image=>image.src.includes('portrait-silhouette.png'));
+  expect(silhouette).toBeDefined();
+  act(()=>images.forEach(image=>image.onload!()));advance(100);
+  expect(clear).toHaveBeenCalled();
+  page.rerender(<IllustratedAvatarStage characterId={characterId} frame={neutralFrame} active />);
+  expect(silhouette!.onload).toBeNull();expect(silhouette!.src).toBe('');
+  expect(images.slice(6)).toHaveLength(5);
+});
+
 it("stops scheduling when inactive and redraws a changed paused pose", () => {
   const page = render(<IllustratedAvatarStage frame={neutralFrame} active={false} />);
   act(() => images.forEach((image) => image.onload!())); advance(100); advance(200); expect(raf.size).toBe(0);

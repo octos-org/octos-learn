@@ -22,6 +22,7 @@ import { readStoredLearnerPackage } from "./learner-package-store";
 import { presenterOfReference } from "./presenters";
 import { AvatarPicture } from "./teach-watch-page";
 import { learnerLessonTopic } from "./teaching-board-setup";
+import { LessonContents, lessonContents } from "./lesson-contents";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -123,17 +124,18 @@ export function TeachLessonPlayerPage() {
       {hasMouthTracks ? (
         <div className="teach-watch-layout">
           <section className="teach-watch-stage" aria-label={tr("这节课")}>
-            <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset} />
+            <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset}
+              overlay={<Suspense fallback={null}><LessonAvatarPreview mode="player" placement="board" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
+                clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
+                playing={speaking} preparing={narration.preparing} /></Suspense>} />
           </section>
-          <Suspense fallback={null}><LessonAvatarPreview mode="player" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
-            clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
-            playing={speaking} preparing={narration.preparing} /></Suspense>
         </div>
       ) : (
         <section className="teach-watch-stage" aria-label={tr("这节课")}>
           <LearningWhiteboard runtime={runtime} resolveAsset={lesson.resolveAsset} />
         </section>
       )}
+      <LessonContents runtime={runtime} entries={lessonContents(lesson.events)} />
       <div className="teach-watch-bar">
         {!hasMouthTracks && <AvatarPicture avatar={avatar} size={44} />}
         <button type="button" className="teach-primary" disabled={!runtime}

@@ -75,9 +75,11 @@ test("drafts save with revisions and refuse a stale device", () => {
   assert.equal(lessons.putDraft("alice", "rec-one", { base_revision: null, recording: recording(), ink: {} }).status, "conflict");
   assert.equal(lessons.putDraft("alice", "rec-one", { base_revision: 1, recording: recording(), ink: {} }).status, "unchanged");
   const changed = { ...recording(), goals: ["Find slope"] };
-  assert.deepEqual(lessons.putDraft("alice", "rec-one", { base_revision: 1, recording: changed, ink: { "ink-1": { svg: "<svg/>", width: 1, height: 1 } } }), { status: "saved", revision: 2 });
+  assert.deepEqual(lessons.putDraft("alice", "rec-one", { base_revision: 1, recording: changed, ink: { "ink-snap:rec-one-card-1-t1-n1@v1": { svg: "<svg/>", width: 1, height: 1 } } }), { status: "saved", revision: 2 });
+  // Handwriting is keyed by its OLL snapshot id; anything else is refused.
+  assert.throws(() => lessons.putDraft("alice", "rec-one", { base_revision: 2, recording: changed, ink: { "ink-1": { svg: "<svg/>", width: 1, height: 1 } } }), /Invalid handwriting/);
   assert.deepEqual(lessons.putDraft("alice", "rec-one", { base_revision: 1, recording: changed, ink: {} }), { status: "conflict", revision: 2 });
-  assert.equal(lessons.read("alice", "rec-one").ink["ink-1"].svg, "<svg/>");
+  assert.equal(lessons.read("alice", "rec-one").ink["ink-snap:rec-one-card-1-t1-n1@v1"].svg, "<svg/>");
   assert.throws(() => lessons.read("bob", "rec-one"), error => error instanceof LessonError && error.status === 404);
   assert.throws(() => lessons.putDraft("alice", "rec-one", { base_revision: 2, recording: recording("rec-two"), ink: {} }), /different lesson/);
   assert.equal(lessons.list("alice")[0].state, "draft");

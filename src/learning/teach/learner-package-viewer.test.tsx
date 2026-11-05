@@ -11,7 +11,7 @@ const state = vi.hoisted(() => ({
   source: null as string | null,
   runtime: { playing: false, completed: false, activeSpeech: "", currentBeatId: "", play: vi.fn(), pause: vi.fn(), restart: vi.fn(), startNarration: vi.fn(), completeNarration: vi.fn(), recordNarrationEnd: vi.fn() },
 }));
-vi.mock("../oll/oll-lesson-runtime", () => ({ LearningWhiteboard: () => <div data-testid="lesson-board" /> }));
+vi.mock("../oll/oll-lesson-runtime", () => ({ LearningWhiteboard: ({ overlay }: { overlay?: import("react").ReactNode }) => <div data-testid="lesson-board">{overlay}</div> }));
 vi.mock("../oll/use-oll-lesson-runtime", () => ({ useOllLessonRuntime: ({ source }: { source: string | null }) => {
   state.source = source;
   if (!source) return null;

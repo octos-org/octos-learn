@@ -8,6 +8,8 @@ export interface PaintedCharacter {
   id:PaintedCharacterId;
   name:()=>string;
   assets:Record<keyof typeof PAINTED_FOX_ASSETS,string>;
+  /** Alpha-only cutout registered to the extended portrait, for board overlays. */
+  silhouette:string;
   rig?:PaintedFaceRig;
 }
 
@@ -27,8 +29,8 @@ function assets(id:PaintedCharacterId) {
 }
 
 export const PAINTED_CHARACTERS:readonly PaintedCharacter[]=[
-  {id:'star-fox',name:()=>tr('星狐'),assets:PAINTED_FOX_ASSETS},
-  {id:'red-panda',name:()=>tr('小熊猫'),assets:assets('red-panda'),rig:{
+  {id:'star-fox',name:()=>tr('星狐'),assets:PAINTED_FOX_ASSETS,silhouette:'teach-avatars/star-fox/painted-v0.3/portrait-silhouette.png'},
+  {id:'red-panda',name:()=>tr('小熊猫'),assets:assets('red-panda'),silhouette:'teach-avatars/red-panda/painted-v0.1/portrait-silhouette.png',rig:{
     earInertia:PANDA_EAR_INERTIA,browStyle:{color:[108,53,39],width:2.5},
     motion:{ears:[{root:[134,98],tip:[66,-12],width:105},{root:[397,98],tip:[452,-12],width:105}],
       restYaw:.2,looks:[{start:2,turn:.3,hold:.75,return:.5,angle:.3},{start:9,turn:.25,hold:.65,return:.55,angle:.25}],
@@ -38,7 +40,7 @@ export const PAINTED_CHARACTERS:readonly PaintedCharacter[]=[
     brows:[{rect:[150,137,100,52],points:[[164,162],[182,156],[199,156],[218,161],[234,170]]},
       {rect:[277,137,103,52],points:[[289,169],[309,159],[329,155],[349,155],[366,158]]}],
   }},
-  {id:'white-rabbit',name:()=>tr('白兔'),assets:assets('white-rabbit'),rig:{
+  {id:'white-rabbit',name:()=>tr('白兔'),assets:assets('white-rabbit'),silhouette:'teach-avatars/white-rabbit/painted-v0.1/portrait-silhouette.png',rig:{
     earInertia:RABBIT_EAR_INERTIA,browStyle:{color:[151,103,77],width:2.2},
     motion:{ears:[{root:[190,58],tip:[32,-147],width:105},{root:[350,58],tip:[494,-147],width:105}],
       restYaw:.2,looks:[{start:3.2,turn:.5,hold:1.6,return:.85,angle:.38},{start:10,turn:.4,hold:1.2,return:.8,angle:.3}],
@@ -48,7 +50,7 @@ export const PAINTED_CHARACTERS:readonly PaintedCharacter[]=[
     brows:[{rect:[143,120,101,54],points:[[151,150],[169,140],[189,137],[207,139],[225,145]]},
       {rect:[277,120,104,54],points:[[285,145],[305,137],[326,137],[348,143],[369,153]]}],
   }},
-  {id:'moon-cat',name:()=>tr('月猫'),assets:assets('moon-cat'),rig:{
+  {id:'moon-cat',name:()=>tr('月猫'),assets:assets('moon-cat'),silhouette:'teach-avatars/moon-cat/painted-v0.1/portrait-silhouette.png',rig:{
     earInertia:CAT_EAR_INERTIA,browStyle:{color:[100,70,112],width:2.4},
     motion:{ears:[{root:[118,90],tip:[52,-35],width:110},{root:[404,90],tip:[458,-35],width:110}],
       restYaw:.28,looks:[{start:1.8,turn:.14,hold:.9,return:.35,angle:.5},{start:6.5,turn:.16,hold:1.1,return:.45,angle:.42}],

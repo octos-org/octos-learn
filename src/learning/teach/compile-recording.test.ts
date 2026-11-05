@@ -64,6 +64,35 @@ describe("compileRecording", () => {
     expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "annotates" });
   });
 
+  it("ends a card's highlights when the next card starts", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: [] }), now, [{ title: "Circle" }, { title: "Cosine" }, { title: "More" }]);
+    recording = record(recording, "card-1", "The height of P is sine.", [
+      { t: 0, type: "component.insert", panel: "unit_circle", alias: "circle", variable: "theta" },
+      { t: 2_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+      { t: 3_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+    ]);
+    recording = record(recording, "card-2", "Now look at the foot.", [
+      { t: 1_000, type: "tool.highlighter", target: { node: "circle", part: "foot" } },
+    ]);
+    recording = record(recording, "card-3", "That is all.", []);
+    const { lesson, state } = check(recording);
+    const beats = lesson.steps[0]!.beats.map((beat) => beat.actions as Array<{ do: string; target?: string; emphasis?: string; when?: string }>);
+    expect(beats[1]!.filter((action) => action.do === "emphasize")).toEqual([
+      { do: "emphasize", target: "circle#point-p", emphasis: "none", when: "before_speech" },
+      expect.objectContaining({ target: "circle#foot", emphasis: "focus" }),
+    ]);
+    expect(beats[2]!.filter((action) => action.do === "emphasize")).toEqual([{ do: "emphasize", target: "circle#foot", emphasis: "none", when: "before_speech" }]);
+    const marks = (state.nodes["l:node:circle"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string }; emphasis: string }>;
+    const last = (part: string) => marks.filter((mark) => mark.target.fragment_id?.endsWith(`:${part}`)).at(-1)?.emphasis;
+    expect([last("point-p"), last("foot")]).toEqual(["none", "none"]);
+    // Up to card 2, as the studio board shows it while card 2 is selected: its mark still shows.
+    const through = compileRecording(recording, { author, language: "en-US", throughCard: "card-2" });
+    expect(through.lesson.steps[0]!.beats.map((beat) => beat.key)).toEqual(["card-1", "card-2"]);
+    const shown = reduceCanonicalEvents(normalizeAuthoringLesson(through.lesson, { lessonId: "l", boardId: "b", baseRevision: 0, resourceContext: through.resourceContext }));
+    const shownMarks = (shown.nodes["l:node:circle"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string }; emphasis: string }>;
+    expect(shownMarks.filter((mark) => mark.target.fragment_id?.endsWith(":foot")).at(-1)?.emphasis).toBe("focus");
+  });
+
   it("plays handwriting drawn on a graph and then made neat, with the formula over the handwriting", () => {
     let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "The line" }]);
     recording = record(recording, "card-1", "The slope is 2.", [
@@ -185,6 +214,13 @@ describe("compileRecording", () => {
     const { lesson, state } = check(recording);
     expect(lesson.steps[0]!.beats[1]!.actions[0]).toMatchObject({ do: "view", target: "box", preset: "top" });
     expect(state.nodes["l:node:box"]!.view_intent).toEqual({ preset: "top" });
+    // The box turns about its own centre; its faces show only once highlighted, and the front faces the viewer (+y).
+    const box = lesson.steps[0]!.beats[0]!.actions[0] as unknown as { content: { objects: Array<{ center: object }>; highlights: Array<{ as: string; shown: string; points: Array<{ y: number; z: number }> }> } };
+    expect(box.content.objects[0]!.center).toEqual({ x: 0, y: 0, z: 0 });
+    expect(box.content.highlights.every((face) => face.shown === "when_emphasized")).toBe(true);
+    const face = (as: string) => box.content.highlights.find((candidate) => candidate.as === as)!.points;
+    expect(face("front-face").every((point) => point.y === 1.5)).toBe(true);
+    expect(face("top-face").every((point) => point.z === 1)).toBe(true);
   });
 
   it("points at a point placed on a grid in an earlier card", () => {
@@ -193,8 +229,11 @@ describe("compileRecording", () => {
       { t: 900, type: "tool.laser", target: { node: "grid", part: "point-c" } },
     ]);
     const { lesson, state } = check(recording);
-    const created = lesson.steps[0]!.beats[1]!.actions.find((action) => action.do === "write" && action.as === "grid") as { content: { points: Array<{ label: string }> } };
-    expect(created.content.points.map((point) => point.label)).toEqual(["A (1, 2)", "B (4, 8)"]);
+    // The grid appears empty, then each point when the learner placed it.
+    const card2 = lesson.steps[0]!.beats[1]!.actions as Array<{ do: string; as?: string; target?: string; content?: { points: Array<{ label?: string; visible?: boolean }> } }>;
+    const labels = (action: (typeof card2)[number]) => action.content!.points.filter((point) => point.visible !== false).map((point) => point.label);
+    expect(card2.filter((action) => action.as === "grid" || action.target === "grid").map((action) => [action.do, labels(action)]))
+      .toEqual([["write", []], ["revise", ["A (1, 2)"]], ["revise", ["A (1, 2)", "B (4, 8)"]]]);
     expect((state.nodes["l:node:grid"]!.content.points as Array<{ id: string; label: string }>).map((point) => [point.id, point.label])).toContainEqual(["l:node:grid:fragment:point-c", "C (2, 4)"]);
   });
 
@@ -263,5 +302,21 @@ describe("unwrapAngle", () => {
     expect(unwrapAngle(0, 6.27, range)).toBe(0);
     expect(unwrapAngle(6.2, 0.05, range)).toBeCloseTo(2 * Math.PI);
     expect(unwrapAngle(1.0, 1.2, range)).toBeCloseTo(1.2);
+  });
+
+  it("lets a wrapping angle turn on past a full turn, recorded as steps under half a turn within the range", async () => {
+    const { unwrapAngle, wrapDrag, segmentDrag } = await import("./studio-helpers");
+    const turn = 2 * Math.PI;
+    const range = { min: 0, max: turn, wrap: true as const };
+    // Left at 2π, the point is dragged on counterclockwise to 0.95.
+    expect(unwrapAngle(6.27, 0.08, range)).toBeCloseTo(0.08 + turn);
+    const moves = wrapDrag(segmentDrag([{ value: 6.27, at: 0 }, { value: 6.27 + 0.5, at: 200 }, { value: 0.95 + turn, at: 400 }]), range);
+    expect(moves).toHaveLength(1);
+    expect(moves[0]!.from).toBeCloseTo(6.27);
+    expect(moves[0]!.to).toBeCloseTo(0.95);
+    // Most of a turn by the slider, down from 6.0 to 0.5: two steps, both going down.
+    const long = wrapDrag([{ from: 6, to: 0.5, startAt: 0, endAt: 1000 }], range);
+    expect(long.map((move) => [+move.from.toFixed(2), +move.to.toFixed(2)])).toEqual([[6, 3.25], [3.25, 0.5]]);
+    expect(long.map((move) => move.endAt)).toEqual([500, 1000]);
   });
 });

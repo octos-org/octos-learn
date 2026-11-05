@@ -212,10 +212,32 @@ export function segmentDrag(samples: DragSample[], pauseMs = 300): DragSegment[]
  * crossing 0 jumps by a full turn. Read each sample as the nearest equivalent
  * of the previous one, kept within the variable's range.
  */
-export function unwrapAngle(previous: number, value: number, range?: { min: number; max: number }): number {
+export function unwrapAngle(previous: number, value: number, range?: { min: number; max: number; wrap?: true }): number {
   const turn = 2 * Math.PI;
   const nearest = value - turn * Math.round((value - previous) / turn);
-  return range ? Math.min(range.max, Math.max(range.min, nearest)) : nearest;
+  // A wrapping angle keeps turning past the end of its range; wrapDrag brings it back.
+  return range && !range.wrap ? Math.min(range.max, Math.max(range.min, nearest)) : nearest;
+}
+
+/** The longest move recorded as one step: under half a turn, so playback goes the same way round. */
+const MAX_WRAPPED_STEP = 0.45;
+
+/**
+ * A drag of a wrapping angle (its range's ends are the same place) read
+ * continuously, as moves within the range: each at most under half a turn,
+ * so an animation taking the shorter way round retraces the learner's hand.
+ */
+export function wrapDrag(segments: DragSegment[], range: { min: number; max: number }): DragSegment[] {
+  const period = range.max - range.min;
+  const inside = (value: number) => ((value - range.min) % period + period) % period + range.min;
+  return segments.flatMap((segment) => {
+    const steps = Math.max(1, Math.ceil(Math.abs(segment.to - segment.from) / (period * MAX_WRAPPED_STEP)));
+    return Array.from({ length: steps }, (_, index) => {
+      const at = (share: number) => segment.startAt + (segment.endAt - segment.startAt) * share;
+      const value = (share: number) => segment.from + (segment.to - segment.from) * share;
+      return { from: inside(value(index / steps)), to: inside(value((index + 1) / steps)), startAt: at(index / steps), endAt: at((index + 1) / steps) };
+    });
+  });
 }
 
 /** What the Add panel can put on the board. */

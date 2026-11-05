@@ -1,7 +1,7 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, PenLine, Play, Plus, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, Braces, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, Pencil, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 
@@ -24,10 +24,14 @@ import {
   answerOcto,
   keptTake,
   recordingComplete,
+  renameCard,
+  setCardKind,
+  setOllOverride,
   setOctoQuestion,
   setPresenter,
   setReview,
   startTake,
+  undoTakeEvents,
   type BoardTarget,
   type CardInk,
   type InkMark,
@@ -44,10 +48,13 @@ import { CheckDialog, type CheckPart, type CheckRun } from "./check-dialog";
 import { cardChecks, lessonReady } from "./lesson-check";
 import { checkReadability } from "./readability-check";
 import { AddPanel } from "./studio-add";
-import { askOcto, inkToMath, reviewLesson } from "./teach-assist";
+import { askOcto, explainAssistFailure, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
-import { useTakeCamera, type TakeCameraState } from "./use-take-camera";
+import { useTakeCamera } from "./use-take-camera";
+import { OllDrawer } from "./oll-drawer";
+import { effectiveLesson } from "./oll-override";
+import { presenterAvatar } from "./presenters";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
 import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
@@ -64,6 +71,18 @@ type NeatStage =
   | { stage: "selecting"; selected: number }
   | { stage: "reading" }
   | { stage: "confirming"; latex: string; confidence: "high" | "medium" | "low" };
+
+/**
+ * One step Undo takes back during a take, newest last: a change to the live
+ * writing, board actions (with the ink marks their taps added), or writing
+ * made neat (the formula goes and the handwriting comes back).
+ */
+type UndoStep =
+  | { kind: "ink"; steps: number }
+  | { kind: "board"; events: number; inkMarks?: string[] }
+  | { kind: "neat"; inkSnapshot: string; inkSteps: number };
+
+const StudioAvatar = lazy(() => import("./studio-avatar"));
 
 const centre = (box: BoardBox) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
 const contains = (box: BoardBox, point: { x: number; y: number }) =>
@@ -91,7 +110,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [takeStart, setTakeStart] = useState<number | null>(null);
   const boardRef = useRef<TeachBoardHandle>(null);
   const capture = useVoiceCapture();
-  const { video: cameraVideo, state: cameraState, start: startCamera, stop: stopCamera, cancel: cancelCamera } = useTakeCamera(clock);
+  const camera = useTakeCamera(clock);
   // Whether this take started with the camera on; a performance is kept only then.
   const cameraTake = useRef(false);
   const speechRef = useRef<TakeSpeech | null>(null);
@@ -107,6 +126,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stopSelecting = useRef<(() => void) | null>(null);
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
+  const undoSteps = useRef<UndoStep[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const pushUndo = (step: UndoStep) => { undoSteps.current.push(step); setCanUndo(true); };
+  const clearUndo = () => { undoSteps.current = []; setCanUndo(false); };
   const [form, setForm] = useState<InsertForm | null>(null);
   const [nextTo, setNextTo] = useState<string | null>(null);
   const snapshots = useRef(loadInkSnapshots(localStorage, profileId));
@@ -128,11 +152,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const isRecording = Boolean(recordingTake);
   // The draft is also kept with the account, a few seconds after the learner stops changing it and never mid-take.
   const changedAt = recording?.updatedAt;
+  // Why this lesson could not be kept with the account, when the service refused it.
+  const [syncProblem, setSyncProblem] = useState<string | null>(null);
+  const lessonId = recording?.id;
   useEffect(() => {
-    if (!changedAt || isRecording) return;
-    const timer = setTimeout(() => { void syncLessonDrafts(localStorage, profileId).catch(() => undefined); }, 4_000);
+    if (!changedAt || isRecording || !lessonId) return;
+    const timer = setTimeout(() => {
+      void syncLessonDrafts(localStorage, profileId)
+        .then((result) => setSyncProblem(result.failed[lessonId] ?? null))
+        // Not reachable (offline, signed out): the draft is safe on this device and syncs later.
+        .catch(() => undefined);
+    }, 4_000);
     return () => clearTimeout(timer);
-  }, [changedAt, isRecording, profileId]);
+  }, [changedAt, isRecording, profileId, lessonId]);
   const now = () => new Date(clock()).toISOString();
   const elapsed = () => Math.max(0, clock() - (takeStartedAt.current ?? clock()));
 
@@ -148,12 +180,74 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       return { lesson: null, error: (error as Error).message };
     }
   }, [recording, profileId]);
+  // The board shows the lesson as viewers see it at the end of the selected
+  // card: later cards are not on it yet, and highlights made on this card
+  // still show (the next card ends them).
+  const boardLesson = useMemo<CompiledLesson | null>(() => {
+    if (!recording || !compiled.lesson || !selected) return compiled.lesson;
+    try {
+      return compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true, throughCard: selected });
+    } catch (error) {
+      // Nothing on the board yet up to this card: an empty board, not the later cards.
+      return error instanceof EmptyLessonError ? null : compiled.lesson;
+    }
+  }, [recording, compiled.lesson, selected, profileId]);
+  // Starting a card over removes its board; when later cards build on it, the lesson would break.
+  const startOverBreaks = useMemo(() => {
+    if (!recording || !card || isRecording || !keptTake(card)) return null;
+    try {
+      compileRecording(startTake(recording, card.key, new Date().toISOString(), { fresh: true }), { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true });
+      return null;
+    } catch (error) {
+      return error instanceof EmptyLessonError ? null : (error as Error).message;
+    }
+  }, [recording, card, isRecording, profileId]);
 
-  const record = (event: RecordingEvent) => {
+  /** Records board actions of the take; together they are one step for Undo unless `undo` is false (the caller adds its own). */
+  const record = (events: RecordingEvent | RecordingEvent[], undo: false | { inkMarks?: string[] } = {}) => {
     if (!recording || !card || !isRecording) return;
     const key = card.key;
-    update((current) => appendEvent(current, key, event, now()));
+    const list = Array.isArray(events) ? events : [events];
+    update((current) => list.reduce((next, event) => appendEvent(next, key, event, now()), current));
+    if (undo) pushUndo({ kind: "board", events: list.length, ...(undo.inkMarks?.length ? { inkMarks: undo.inkMarks } : {}) });
   };
+  // Drawing, erasing and moving writing are steps for Undo too, in the order they happen.
+  const [inkVersion, setInkVersion] = useState(0);
+  useEffect(() => boardRef.current?.onInkEdit((steps) => {
+    setInkVersion((version) => version + 1);
+    if (takeStartedAt.current !== null) pushUndo({ kind: "ink", steps });
+  }), []);
+  /** Takes back the take's latest step: what was added last disappears from the board, as if it was never done. */
+  const undo = async () => {
+    const key = card?.key;
+    const step = undoSteps.current.pop();
+    setCanUndo(undoSteps.current.length > 0);
+    if (!step || !key || !isRecording) return;
+    setArrowFrom(null);
+    boardRef.current?.showPointer(null);
+    if (step.kind === "board") update((current) => undoTakeEvents(current, key, step.events, now(), { inkMarks: step.inkMarks }));
+    if (step.kind === "neat") update((current) => undoTakeEvents(current, key, 1, now(), { inkSnapshot: step.inkSnapshot }));
+    if (step.kind !== "board") {
+      await boardRef.current?.undoInk(step.kind === "ink" ? step.steps : step.inkSteps);
+      setInkVersion((version) => version + 1);
+    }
+  };
+  // ⌘Z / Ctrl+Z is Undo while recording, except while typing; caught first, so the ink editor never undoes on its own.
+  const undoRef = useRef(undo);
+  useEffect(() => { undoRef.current = undo; });
+  useEffect(() => {
+    if (!isRecording) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "z" || !(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return;
+      const typing = event.target instanceof HTMLElement && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName));
+      if (typing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void undoRef.current();
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, [isRecording]);
   const withTime = <T extends object>(event: T) => ({ t: elapsed(), ...event }) as T & { t: number };
 
   const openAdd = () => {
@@ -180,8 +274,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const key = card.key;
     setNotice(null);
     update((current) => startTake(current, key, now(), { fresh }));
+    clearUndo();
     cameraTake.current = latest.current?.presenter?.cameraMotion === "on";
-    if (cameraTake.current) startCamera(takeStartedAt.current);
+    if (cameraTake.current) camera.begin(takeStartedAt.current);
     void boardRef.current?.startInk(`${recording.id}:${key}:take-${card.takes.length + 1}`);
     // Each sentence is transcribed as soon as the learner finishes it.
     const recognition = fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
@@ -215,7 +310,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stop = async () => {
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
-    const performance = cameraTake.current ? stopCamera() : null;
+    clearUndo();
+    const performance = cameraTake.current ? camera.end() : null;
     cameraTake.current = false;
     takeStartedAt.current = null;
     setTakeStart(null);
@@ -337,8 +433,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         return;
       }
       setNeat({ stage: "confirming", latex: result.latex, confidence: result.confidence });
-    } catch {
-      setNotice(tr("这次没能整理，请再试一次。"));
+    } catch (error) {
+      // A rejected key is not the learner's handwriting: say what to fix.
+      const problem = explainAssistFailure(error);
+      setNotice(problem.startsWith(tr("出了点问题：")) ? tr("这次没能整理，请再试一次。") : problem);
       setNeat({ stage: "selecting", selected: 1 });
     }
   };
@@ -358,21 +456,28 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const marks = unassignedMarks(key).filter((mark) => contains(frozen, centre(mark.box)) && !board.hasStrokeAt(centre(mark.box)));
     const ink = await keepInk(key, take, frozen, [selection], part, marks);
     update((current) => addTakeInk(current, key, { ...ink, neat: { selection, latex, alias } }, now()));
-    record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }));
+    record(withTime({ type: "make_neat.confirmed" as const, selection, latex, alias, replacesInk: true }), false);
+    pushUndo({ kind: "neat", inkSnapshot: ink.snapshotId, inkSteps: frozen.undoSteps });
   };
 
   // Check my lesson: the screen check and Octo's review run together; what
   // each found is kept with the draft, so the cards show it until re-checked.
   const runCheck = async () => {
     const current = latest.current;
-    const lesson = current ? compileQuietly(current) : null;
+    const made = current ? compileQuietly(current) : null;
+    // The lesson that will be watched and saved: the learner's hand-edited OLL while it is current.
+    const lesson = current && made ? effectiveLesson(current, made).compiled : null;
     if (!current || !lesson) return;
     const at = now();
     setCheckRun({ screen: "running", octo: "running" });
     const finished = (part: keyof CheckRun, state: CheckPart) => setCheckRun((run) => (run ? { ...run, [part]: state } : run));
     const [screen, reviewed] = await Promise.all([
       checkReadability(lesson, resolveAsset).then((found) => { finished("screen", "done"); return found; }, () => { finished("screen", "failed"); return null; }),
-      reviewLesson(current, lesson, getLocale()).then((found) => { finished("octo", "done"); return found; }, () => { finished("octo", "failed"); return null; }),
+      reviewLesson(current, lesson, getLocale()).then((found) => { finished("octo", "done"); return found; }, (error: unknown) => {
+        const octoProblem = explainAssistFailure(error);
+        setCheckRun((run) => (run ? { ...run, octo: "failed", octoProblem } : run));
+        return null;
+      }),
     ]);
     if (!screen && !reviewed) return;
     update((latestRecording) => setReview(latestRecording, {
@@ -388,8 +493,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     chooseTool("none");
     speechRef.current?.cancel();
     speechRef.current = null;
-    cancelCamera();
+    camera.abort();
     cameraTake.current = false;
+    clearUndo();
     setLiveText("");
     setMic({ listening: null, speaking: false, transcribing: 0 });
     endNeat();
@@ -412,28 +518,41 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
-  /** A pointing tool used on a card, part, or stroke of writing; `at` is where to show the pointer when not on a card. */
-  const onTarget = (target: BoardTarget, at?: { x: number; y: number }) => {
+  /**
+   * A pointing tool used on a card, part, or stroke of writing; `at` is where
+   * to show the pointer when not on a card, `mark` the ink mark a tap on
+   * writing added. The laser points for a moment; the highlighter's mark
+   * stays (the board draws it from the recording).
+   */
+  const onTarget = (target: BoardTarget, at?: { x: number; y: number }, mark?: string) => {
     const pointer = at ? { at } : target;
+    const marks = (...selections: Array<string | undefined>) => ({ inkMarks: selections.filter((selection): selection is string => Boolean(selection)) });
     if (tool === "laser") {
-      record(withTime({ type: "tool.laser" as const, target }));
+      record(withTime({ type: "tool.laser" as const, target }), marks(mark));
       boardRef.current?.showPointer(pointer);
     }
-    if (tool === "highlighter") {
-      record(withTime({ type: "tool.highlighter" as const, target }));
-      boardRef.current?.showPointer(pointer);
-    }
+    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }), marks(mark));
     if (tool === "arrow") {
+      // An arrow joins cards: a tap on part of a card means the card.
+      const end: BoardTarget = "node" in target ? { node: target.node } : target;
       if (!arrowFrom) {
-        setArrowFrom(target);
-        boardRef.current?.showPointer(pointer, { hold: true });
+        setArrowFrom(end);
+        arrowFromMark.current = mark;
+        boardRef.current?.showPointer("node" in end ? end : pointer, { hold: true });
         return;
       }
-      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: target }));
+      if ("node" in end && "node" in arrowFrom && end.node === arrowFrom.node) {
+        setNotice(tr("箭头连接两张不同的卡片。请点另一张卡片。"));
+        return;
+      }
+      setNotice(null);
+      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: end }), marks(arrowFromMark.current, mark));
       setArrowFrom(null);
+      arrowFromMark.current = undefined;
       boardRef.current?.showPointer(null);
     }
   };
+  const arrowFromMark = useRef<string | undefined>(undefined);
   // A stroke of the take's own writing becomes a selection when the writing is frozen.
   const onStroke = (box: BoardBox) => {
     if (!card || !recordingTake) return;
@@ -441,8 +560,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const marks = latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.inkMarks ?? [];
     const selection = `sel-${key}-t${recordingTake.take}-m${marks.length + 1}`;
     update((current) => addInkMark(current, key, { selection, box }, now()));
-    onTarget({ inkSelection: selection }, centre(box));
+    onTarget({ inkSelection: selection }, centre(box), selection);
   };
+  // The highlighter's marks on writing that is still live; frozen writing shows its marks from the lesson.
+  const liveTake = card ? currentTake(card) : undefined;
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const frozen = new Set((liveTake?.ink ?? []).flatMap((ink) => ink.selections));
+    const highlighted = new Set((liveTake?.events ?? []).flatMap((event) => (event.type === "tool.highlighter" && "inkSelection" in event.target ? [event.target.inkSelection] : [])));
+    board.markInk((liveTake?.inkMarks ?? [])
+      .filter((mark) => highlighted.has(mark.selection) && !frozen.has(mark.selection) && board.hasStrokeAt(centre(mark.box)))
+      .map((mark) => mark.box));
+  }, [liveTake, inkVersion]);
 
   useEffect(() => {
     if (!isRecording) takeStartedAt.current = null;
@@ -474,10 +604,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const ready = lessonReady(checks, recording);
   const cardCheck = card ? checkOf(card.key) : undefined;
   const pointing = isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow");
-  const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
+  const row = isRecording && addOpen && isFigure(form) ? currentRowCards(boardLesson) : [];
   const hint = !isRecording ? null
     : addOpen ? null
-      : tool === "laser" || tool === "highlighter" ? tr("在白板上点一张卡片、它的一部分或你写的字。")
+      : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
+        : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
           : tool === "pen" ? tr("直接在白板上写。写在图上的会贴在那张图上。")
             : null;
@@ -487,6 +618,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const pointers: Array<[Tool, string, typeof PenLine]> = [
     ["laser", tr("激光笔"), Crosshair], ["highlighter", tr("荧光笔"), Highlighter], ["arrow", tr("箭头"), ArrowUpRight],
   ];
+  const cameraMotion = recording.presenter?.cameraMotion === "on";
+  const startOverHint = tr("后面的卡片用到了这张卡片上的东西，从头来会让它们出错。可以“重录我的话”，或者先把后面用到它的卡片从头来。");
+  const avatarPreview = (
+    <Suspense fallback={null}>
+      <StudioAvatar characterId={presenterAvatar(recording.presenter?.avatar).id} frame={camera.frame} state={camera.state} onOpen={camera.open} />
+    </Suspense>
+  );
   const dockButton = ([value, label, Icon]: [Tool | "neat", string, typeof PenLine]) => (
     <button key={value} type="button" className="teach-tool" disabled={!isRecording}
       aria-pressed={value === "neat" ? neat.stage !== "idle" : tool === value && !addOpen}
@@ -498,7 +636,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   return (
     <main className="teach-page teach-studio" data-recording={isRecording || undefined}>
       {/* The camera image is only read by the on-device face model; it is never shown, kept or sent. */}
-      <video ref={cameraVideo} className="teach-camera-feed" muted playsInline aria-hidden="true" />
+      <video ref={camera.video} className="teach-camera-feed" muted playsInline aria-hidden="true" />
       <header className="teach-studio-head">
         <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{recording.topic.text}</h1>
@@ -509,6 +647,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-secondary" disabled={!compiled.lesson || !recordingComplete(recording)} onClick={() => void runCheck()}>
               <ListChecks size={16} aria-hidden="true" />{tr("检查我的课")}
             </button>
+            <button type="button" className="teach-icon-button" aria-label={tr("高级：课程数据")} title={tr("高级：课程数据")} aria-pressed={advanced} onClick={() => setAdvanced(!advanced)}>
+              <Braces size={16} aria-hidden="true" />
+            </button>
             {ready ? (
               <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
             ) : (
@@ -517,6 +658,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           </>
         )}
       </header>
+      {syncProblem && <p role="status" className="teach-notice teach-sync-problem">{syncProblem}</p>}
 
       <ol className="teach-card-strip" aria-label={tr("卡片")}>
         {recording.cards.map((candidate, index) => {
@@ -540,7 +682,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         <section className="teach-stage" aria-label={tr("白板")}>
           <TeachBoard
             ref={boardRef}
-            compiled={compiled.lesson}
+            compiled={boardLesson}
             resolveAsset={resolveAsset}
             bottomInset={DOCK_SPACE}
             {...(!isRecording && kept && selected ? { focusCard: selected } : {})}
@@ -577,6 +719,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-tool teach-tool-add" disabled={!isRecording} aria-pressed={addOpen} onClick={() => (addOpen ? closeAdd() : openAdd())}>
               <Plus size={20} aria-hidden="true" />{tr("放入")}
             </button>
+            <span className="teach-dock-divider" aria-hidden="true" />
+            <button type="button" className="teach-tool" disabled={!isRecording || !canUndo} title={tr("撤销（⌘/Ctrl+Z）")} onClick={() => void undo()}>
+              <Undo2 size={20} aria-hidden="true" />{tr("撤销")}
+            </button>
           </div>
         </section>
 
@@ -584,14 +730,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           {card && !isRecording && (
             <div className="teach-panel-title">
               <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
-              <h2>{card.title}</h2>
+              <CardTitle key={card.key} title={card.title} onRename={(title) => update((current) => renameCard(current, card.key, title, now()))} />
               {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
               <label className="teach-place teach-camera-toggle">
                 <input type="checkbox" checked={recording.presenter?.cameraMotion === "on"}
-                  onChange={(event) => update((current) => setPresenter(current, event.target.checked ? { cameraMotion: "on", mouthMotion: "basic" } : { cameraMotion: "off" }, now()))} />
+                  onChange={(event) => {
+                    const on = event.target.checked;
+                    update((current) => setPresenter(current, on ? { cameraMotion: "on", mouthMotion: "basic" } : { cameraMotion: "off" }, now()));
+                    if (on) camera.open(); else camera.close();
+                  }} />
                 <span>{tr("用摄像头带动我的形象")}</span>
               </label>
-              {recording.presenter?.cameraMotion === "on" && <p className="academy-muted teach-camera-note">{tr("录的时候，形象会学你的表情和转头。只在这台设备上记下动作，不保存、不上传你的画面。")}</p>}
+              {cameraMotion && <p className="academy-muted teach-camera-note">{tr("你的形象会跟着你的表情和转头动，录课时这些动作会记下来。只在这台设备上识别，不保存、不上传你的画面。")}</p>}
+              {cameraMotion && avatarPreview}
             </div>
           )}
 
@@ -601,7 +752,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 <span aria-hidden="true" />{transcribing ? tr("正在整理字幕…") : tr("停止 · {{v0}}", { v0: clockText(takeClock) })}
               </button>
               {notice && <p role="status" className="teach-notice">{notice}</p>}
-              {cameraState !== "off" && <CameraStatus state={cameraState} />}
+              {cameraMotion && avatarPreview}
               <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
                 <MicStatus state={mic} level={level} />
                 <h2 className="teach-group-label">{tr("你正在说的话")}</h2>
@@ -624,9 +775,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   variables={recordingVariables(recording)}
                   valueOf={(alias) => boardRef.current?.variableValue(alias)}
                   onSave={(exercise) => {
-                    record(withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }));
-                    record(withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }));
-                    if (exercise.hint) record(withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint }));
+                    record([
+                      withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }),
+                      withTime({ type: "your_turn.check_picked" as const, expression: exercise.expression, value: exercise.target, tolerance: exercise.tolerance }),
+                      ...(exercise.hint ? [withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint })] : []),
+                    ]);
                   }}
                 />
               )}
@@ -641,6 +794,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 : tr("像给朋友讲一样讲出来。把步骤写下来，讲到哪里就指到哪里。")}</p>
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("录第 {{v0}} 张", { v0: cardIndex + 1 })}</button>
               <p className="academy-muted">{tr("录的时候你写的、放的、指的，都会和你的声音一起播放。每张卡片都可以重录。")}</p>
+              {card.takes.length === 0 && (card.kind === "your_turn" || !recording.cards.some((other) => other.kind === "your_turn")) && (
+                <button type="button" className="teach-secondary" onClick={() => update((current) => setCardKind(current, card.key, card.kind === "your_turn" ? "teach" : "your_turn", now()))}>
+                  {card.kind === "your_turn" ? tr("改回讲解卡片") : tr("把这张改成“轮到你了”练习")}
+                </button>
+              )}
               {notice && <p role="status" className="teach-notice">{notice}</p>}
             </>
           )}
@@ -659,7 +817,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
-              <button type="button" className="teach-link-button" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+              <button type="button" className="teach-link-button" disabled={Boolean(startOverBreaks)} onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+              {startOverBreaks && <p className="academy-muted teach-centered">{startOverHint}</p>}
             </>
           )}
 
@@ -688,14 +847,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 )}
                 <div className="teach-panel-row">
                   <button type="button" className="teach-secondary" onClick={() => start()}>{tr("重录我的话")}</button>
-                  <button type="button" className="teach-secondary" onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
+                  <button type="button" className="teach-secondary" disabled={Boolean(startOverBreaks)} onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
                 </div>
+                {startOverBreaks && <p className="academy-muted">{startOverHint}</p>}
               </div>
             </>
           )}
           {compiled.error && <p role="alert">{tr("这张卡片里有一处无法放上白板：{{v0}}", { v0: compiled.error })}</p>}
           {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}
         </aside>
+        {advanced && !isRecording && (
+          <OllDrawer recording={recording} compiled={compileQuietly(recording)}
+            onApply={(override) => update((current) => setOllOverride(current, override, now()))} onClose={() => setAdvanced(false)} />
+        )}
       </div>
 
       {checkRun && (
@@ -713,13 +877,6 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   );
 }
 
-function CameraStatus({ state }: { state: TakeCameraState }) {
-  const text = state === "tracking" ? tr("摄像头：形象正在跟着你")
-    : state === "lost" ? tr("摄像头：看不到你的脸，形象会先停在原来的样子")
-      : state === "failed" ? tr("摄像头不能用，这次形象只跟着配音动嘴。")
-        : tr("摄像头：正在准备…");
-  return <p role="status" className="teach-camera-status" data-state={state}>{text}</p>;
-}
 
 /** m:ss for a take's length. */
 function clockText(ms: number): string {
@@ -740,10 +897,11 @@ function TranscriptEditor({ text, label, onSave }: { text: string; label?: strin
   );
 }
 
+// A unit circle's variable is its angle, which the board calls θ.
 const READOUTS = (variable: string) => [
-  { expression: variable, label: variable },
-  { expression: `sin(${variable})`, label: `sin ${variable}` },
-  { expression: `cos(${variable})`, label: `cos ${variable}` },
+  { expression: `sin(${variable})`, label: "sin θ" },
+  { expression: `cos(${variable})`, label: "cos θ" },
+  { expression: variable, label: tr("θ 本身（弧度）") },
 ];
 
 function evaluateReadout(expression: string, value: number): number {
@@ -775,15 +933,18 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
       onSave({ variable, value: demonstrated, expression, target, tolerance: expression === variable ? 0.05 : 0.01, hint: hint.trim() });
       setSaved(true);
     }}>
-      <p className="academy-muted">{tr("先在白板上把答案摆出来，再点“就是这个答案”。")}</p>
+      <h2 className="teach-group-label">{tr("设置练习")}</h2>
+      <p className="academy-muted">{tr("① 先说出题目，再在白板上拖动单位圆下面的滑块（或圆上的点），把正确答案摆出来。")}</p>
       {variables.length > 1 && (
-        <select className="teach-input" value={variable} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
+        <select className="teach-input" value={variable} aria-label={tr("拖动哪个")} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
           {variables.map((alias) => <option key={alias} value={alias}>{alias}</option>)}
         </select>
       )}
+      <p className="academy-muted">{tr("② 摆好了，点这个按钮记下来：")}</p>
       <button type="button" className="teach-secondary" onClick={() => setDemonstrated(valueOf(variable))}>{tr("就是这个答案")}</button>
       {demonstrated !== undefined && (
         <>
+          <p className="academy-muted">{tr("③ 选看的人要做对的是哪个数，可以写一句提示，然后保存。看课的人要自己拖到这个答案，才算做对。")}</p>
           <label className="teach-label">{tr("检查哪个读数")}
             <select className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)}>
               {READOUTS(variable).map((readout) => <option key={readout.expression} value={readout.expression}>{readout.label}</option>)}
@@ -794,6 +955,34 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
           <button type="submit">{saved ? tr("已保存，可以再改") : tr("保存这道练习")}</button>
         </>
       )}
+    </form>
+  );
+}
+
+/** The card's title; the learner can rename it. */
+function CardTitle({ title, onRename }: { title: string; onRename: (title: string) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  if (draft === null) {
+    return (
+      <div className="teach-card-title">
+        <h2>{title}</h2>
+        <button type="button" className="teach-icon-button" aria-label={tr("改卡片名字")} title={tr("改卡片名字")} onClick={() => setDraft(title)}>
+          <Pencil size={14} aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+  const save = () => {
+    if (!draft.trim()) return;
+    if (draft.trim() !== title) onRename(draft);
+    setDraft(null);
+  };
+  return (
+    <form className="teach-card-title" onSubmit={(event) => { event.preventDefault(); save(); }}>
+      <input value={draft} maxLength={80} autoFocus aria-label={tr("卡片名字")} onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Escape") setDraft(null); }} />
+      <button type="submit" className="teach-secondary" disabled={!draft.trim()}>{tr("保存")}</button>
+      <button type="button" className="teach-link-button" onClick={() => setDraft(null)}>{tr("取消")}</button>
     </form>
   );
 }

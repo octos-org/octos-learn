@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  addInkMark,
+  addTakeInk,
+  setCardKind,
   appendEvent,
   cancelTake,
   correctTranscript,
@@ -11,6 +14,7 @@ import {
   recordingComplete,
   RecordingError,
   startTake,
+  undoTakeEvents,
   type LearnerRecording,
 } from "./recording";
 
@@ -63,6 +67,29 @@ describe("learner recording", () => {
     expect(() => appendEvent(slopeLesson(), "card-2", laser(0), now)).toThrow(RecordingError);
   });
 
+  it("undoes the take's latest actions with the ink they added, but not carried-over board content", () => {
+    let recording = startTake(slopeLesson(), "card-1", now);
+    recording = appendEvent(recording, "card-1", { t: 0, type: "component.insert", panel: "graph", alias: "sine", expression: "sin(x)", x: [-7, 7], y: [-2, 2] }, now);
+    recording = finishTake(recording, "card-1", now, { durationMs: 2000, asrText: "A sine graph.", speechSpanMs: [0, 2000] });
+    // Re-recording keeps the graph on the board; this take adds a formula from neat writing.
+    recording = startTake(recording, "card-1", now);
+    recording = addTakeInk(recording, "card-1", { snapshotId: "ink-snap:neat@v1", sha256: "a".repeat(64), selections: ["sel-n1"] }, now);
+    recording = appendEvent(recording, "card-1", { t: 400, type: "make_neat.confirmed", selection: "sel-n1", latex: "y=\\sin x", alias: "formula-1", replacesInk: true }, now);
+    recording = addInkMark(recording, "card-1", { selection: "sel-m1", box: { x: 0, y: 0, width: 10, height: 10 } }, now);
+    recording = appendEvent(recording, "card-1", { t: 600, type: "tool.highlighter", target: { inkSelection: "sel-m1" } }, now);
+    const take = () => currentTake(recording.cards[0]!)!;
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert", "make_neat.confirmed", "tool.highlighter"]);
+
+    recording = undoTakeEvents(recording, "card-1", 1, now, { inkMarks: ["sel-m1"] });
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert", "make_neat.confirmed"]);
+    expect(take().inkMarks).toEqual([]);
+    recording = undoTakeEvents(recording, "card-1", 1, now, { inkSnapshot: "ink-snap:neat@v1" });
+    expect(take().events.map((event) => event.type)).toEqual(["component.insert"]);
+    expect(take().ink).toEqual([]);
+    expect(() => undoTakeEvents(recording, "card-1", 2, now)).toThrow(RecordingError);
+    expect(() => undoTakeEvents(slopeLesson(), "card-1", 1, now)).toThrow(RecordingError);
+  });
+
   it("allows only one card to record at a time", () => {
     const recording = startTake(slopeLesson(), "card-1", now);
     expect(() => startTake(recording, "card-2", now)).toThrow(RecordingError);
@@ -80,14 +107,17 @@ describe("learner recording", () => {
     expect(card.ink).toEqual(ink);
   });
 
-  it("re-recording keeps the board the learner built and replaces words and pointing", () => {
+  it("re-recording the words keeps the board the learner built, arrows and highlights included, and replaces words and the laser", () => {
     let recording = startTake(slopeLesson(), "card-2", now);
     recording = appendEvent(recording, "card-2", { t: 400, type: "component.insert", panel: "coordinate_grid", alias: "grid-1", x: [-1, 6], y: [-1, 9] }, now);
     recording = appendEvent(recording, "card-2", { t: 2_100, type: "point_tool.place", node: "grid-1", point: "point-a", x: 1, y: 2, label: "A (1, 2)" }, now);
     recording = appendEvent(recording, "card-2", { t: 3_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
+    recording = appendEvent(recording, "card-2", { t: 3_500, type: "tool.highlighter", target: { node: "grid-1", part: "point-a" } }, now);
+    recording = appendEvent(recording, "card-2", { t: 4_000, type: "tool.arrow", from: { node: "card-1-formula" }, to: { node: "grid-1" } }, now);
     recording = finishTake(recording, "card-2", now, { durationMs: 5_000, asrText: "Point A." });
     recording = startTake(recording, "card-2", now);
-    expect(currentTake(recording.cards[1]!)!.events.map((event) => [event.t, event.type])).toEqual([[0, "component.insert"], [0, "point_tool.place"]]);
+    // Cards, highlights and arrows stay; the laser was a moment in the talk.
+    expect(currentTake(recording.cards[1]!)!.events.map((event) => [event.t, event.type])).toEqual([[0, "component.insert"], [0, "point_tool.place"], [0, "tool.highlighter"], [0, "tool.arrow"]]);
     recording = appendEvent(recording, "card-2", { t: 1_000, type: "tool.laser", target: { node: "grid-1", part: "point-a" } }, now);
   });
 
@@ -142,5 +172,14 @@ describe("learner recording", () => {
       recording = finishTake(recording, card.key, now, { durationMs: 1000, asrText: card.title });
     }
     expect(recordingComplete(recording)).toBe(true);
+  });
+  it("changes a card's kind only while it has nothing recorded, with one exercise per lesson", () => {
+    const planned = planCards(createRecording({ id: "rec-k", now: now, topic: { text: "Sine", type: "math_off_map" }, goals: ["g"] }), now, [{ title: "A" }, { title: "B" }]);
+    const exercise = setCardKind(planned, "card-2", "your_turn", now);
+    expect(exercise.cards.map((card) => card.kind)).toEqual(["teach", "your_turn"]);
+    expect(() => setCardKind(exercise, "card-1", "your_turn", now)).toThrow(/one/);
+    expect(setCardKind(exercise, "card-2", "teach", now).cards[1]!.kind).toBe("teach");
+    const recorded = startTake(planned, "card-1", now);
+    expect(() => setCardKind(recorded, "card-1", "your_turn", now)).toThrow(/already has a recording/);
   });
 });
