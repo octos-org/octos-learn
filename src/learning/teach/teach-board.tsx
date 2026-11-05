@@ -9,7 +9,7 @@ import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-
 import type { CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
-import { segmentDrag, unwrapAngle, type DragSample } from "./studio-helpers";
+import { segmentDrag, wrapDrag, unwrapAngle, type DragSample } from "./studio-helpers";
 import { teachingRegionLayout } from "./teaching-board-setup";
 
 
@@ -313,8 +313,11 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (event.phase === "commit") {
         const { samples } = gestureRef.current;
         gestureRef.current = null;
-        // A back-and-forth drag plays back as the moves the learner made.
-        for (const segment of segmentDrag(samples)) {
+        // A back-and-forth drag plays back as the moves the learner made; a
+        // wrapping angle may cross the end of its range on the way.
+        const declaration = boardStateRef.current?.variables?.[alias];
+        const segments = segmentDrag(samples);
+        for (const segment of declaration?.wrap ? wrapDrag(segments, declaration) : segments) {
           gesturesRef.current.onVariableGesture?.({
             variable: alias, via: event.control === "geometry_point" ? "geometry_point" : "slider",
             from: segment.from, to: segment.to,

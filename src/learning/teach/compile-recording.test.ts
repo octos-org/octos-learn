@@ -85,6 +85,12 @@ describe("compileRecording", () => {
     const marks = (state.nodes["l:node:circle"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string }; emphasis: string }>;
     const last = (part: string) => marks.filter((mark) => mark.target.fragment_id?.endsWith(`:${part}`)).at(-1)?.emphasis;
     expect([last("point-p"), last("foot")]).toEqual(["none", "none"]);
+    // Up to card 2, as the studio board shows it while card 2 is selected: its mark still shows.
+    const through = compileRecording(recording, { author, language: "en-US", throughCard: "card-2" });
+    expect(through.lesson.steps[0]!.beats.map((beat) => beat.key)).toEqual(["card-1", "card-2"]);
+    const shown = reduceCanonicalEvents(normalizeAuthoringLesson(through.lesson, { lessonId: "l", boardId: "b", baseRevision: 0, resourceContext: through.resourceContext }));
+    const shownMarks = (shown.nodes["l:node:circle"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string }; emphasis: string }>;
+    expect(shownMarks.filter((mark) => mark.target.fragment_id?.endsWith(":foot")).at(-1)?.emphasis).toBe("focus");
   });
 
   it("plays handwriting drawn on a graph and then made neat, with the formula over the handwriting", () => {
@@ -286,5 +292,21 @@ describe("unwrapAngle", () => {
     expect(unwrapAngle(0, 6.27, range)).toBe(0);
     expect(unwrapAngle(6.2, 0.05, range)).toBeCloseTo(2 * Math.PI);
     expect(unwrapAngle(1.0, 1.2, range)).toBeCloseTo(1.2);
+  });
+
+  it("lets a wrapping angle turn on past a full turn, recorded as steps under half a turn within the range", async () => {
+    const { unwrapAngle, wrapDrag, segmentDrag } = await import("./studio-helpers");
+    const turn = 2 * Math.PI;
+    const range = { min: 0, max: turn, wrap: true as const };
+    // Left at 2π, the point is dragged on counterclockwise to 0.95.
+    expect(unwrapAngle(6.27, 0.08, range)).toBeCloseTo(0.08 + turn);
+    const moves = wrapDrag(segmentDrag([{ value: 6.27, at: 0 }, { value: 6.27 + 0.5, at: 200 }, { value: 0.95 + turn, at: 400 }]), range);
+    expect(moves).toHaveLength(1);
+    expect(moves[0]!.from).toBeCloseTo(6.27);
+    expect(moves[0]!.to).toBeCloseTo(0.95);
+    // Most of a turn by the slider, down from 6.0 to 0.5: two steps, both going down.
+    const long = wrapDrag([{ from: 6, to: 0.5, startAt: 0, endAt: 1000 }], range);
+    expect(long.map((move) => [+move.from.toFixed(2), +move.to.toFixed(2)])).toEqual([[6, 3.25], [3.25, 0.5]]);
+    expect(long.map((move) => move.endAt)).toEqual([500, 1000]);
   });
 });

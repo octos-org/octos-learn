@@ -172,6 +172,18 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       return { lesson: null, error: (error as Error).message };
     }
   }, [recording, profileId]);
+  // The board shows the lesson as viewers see it at the end of the selected
+  // card: later cards are not on it yet, and highlights made on this card
+  // still show (the next card ends them).
+  const boardLesson = useMemo<CompiledLesson | null>(() => {
+    if (!recording || !compiled.lesson || !selected) return compiled.lesson;
+    try {
+      return compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale(), includeTakeInProgress: true, throughCard: selected });
+    } catch (error) {
+      // Nothing on the board yet up to this card: an empty board, not the later cards.
+      return error instanceof EmptyLessonError ? null : compiled.lesson;
+    }
+  }, [recording, compiled.lesson, selected, profileId]);
   // Starting a card over removes its board; when later cards build on it, the lesson would break.
   const startOverBreaks = useMemo(() => {
     if (!recording || !card || isRecording || !keptTake(card)) return null;
@@ -577,7 +589,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const ready = lessonReady(checks, recording);
   const cardCheck = card ? checkOf(card.key) : undefined;
   const pointing = isRecording && (tool === "laser" || tool === "highlighter" || tool === "arrow");
-  const row = isRecording && addOpen && isFigure(form) ? currentRowCards(compiled.lesson) : [];
+  const row = isRecording && addOpen && isFigure(form) ? currentRowCards(boardLesson) : [];
   const hint = !isRecording ? null
     : addOpen ? null
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
@@ -654,7 +666,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         <section className="teach-stage" aria-label={tr("白板")}>
           <TeachBoard
             ref={boardRef}
-            compiled={compiled.lesson}
+            compiled={boardLesson}
             resolveAsset={resolveAsset}
             bottomInset={DOCK_SPACE}
             {...(!isRecording && kept && selected ? { focusCard: selected } : {})}

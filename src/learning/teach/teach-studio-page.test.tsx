@@ -806,12 +806,13 @@ it("advanced mode: edited OLL is checked, kept with the draft, and can be droppe
   fireEvent.click(screen.getByRole("button", { name: "Advanced: lesson data" }));
   const drawer = within(screen.getByRole("dialog", { name: "Advanced: lesson data" }));
   const editor = drawer.getByRole("textbox", { name: "Lesson (OLL)" }) as HTMLTextAreaElement;
+  // The whole lesson, as made from the recording (the board shows it up to the selected card).
+  const made = JSON.parse(editor.value);
   fireEvent.change(editor, { target: { value: "{ broken" } });
   fireEvent.click(drawer.getByRole("button", { name: "Check and use" }));
   expect(drawer.getByRole("alert").textContent).toMatch(/can't be used: JSON/);
   expect(loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll).toBeUndefined();
 
-  const made = JSON.parse(JSON.stringify(board.compiled!.lesson));
   made.steps[0].beats[1].say = "Now the wave.";
   fireEvent.change(editor, { target: { value: JSON.stringify(made) } });
   fireEvent.click(drawer.getByRole("button", { name: "Check and use" }));

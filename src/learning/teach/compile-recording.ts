@@ -41,6 +41,11 @@ export interface CompileOptions {
   language: string;
   /** Show the take being recorded instead of the card's kept take, for the live board. */
   includeTakeInProgress?: boolean;
+  /**
+   * Stop after this card: the lesson as viewers see it at the end of that
+   * card, which is what the studio board shows while the card is selected.
+   */
+  throughCard?: string;
 }
 
 export interface CompiledLesson {
@@ -149,7 +154,7 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
 
 /** Compiles one recording; the lesson still has to pass OLL validation. */
 export function compileRecording(recording: LearnerRecording, options: CompileOptions): CompiledLesson {
-  const variables = new Map<string, { as: string; initial: number; min: number; max: number; label: string; unit: string; control: { kind: "slider"; step: number } }>();
+  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
   // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
@@ -211,7 +216,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     if (component.panel === "unit_circle") {
       const variable = component.variable;
       if (variables.has(variable)) throw new CompileError(`Variable '${variable}' is already used`);
-      variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
+      variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, wrap: true, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
       angleControlled.add(variable);
       return {
         do: "write", as: alias, kind: "geometry", role: "diagram", place: placeNext(),
@@ -267,7 +272,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const steps: AuthoringLesson["steps"] = [{ key: "teach", purpose: `${recording.topic.text}: taught by the learner`, beats: [] }];
   // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
   let highlighted: string[] = [];
+  let reachedLast = false;
   for (const card of recording.cards) {
+    if (reachedLast) break;
+    reachedLast = card.key === options.throughCard;
     const take = options.includeTakeInProgress ? currentTake(card) ?? keptTake(card) : keptTake(card);
     if (!take) continue;
     const actions: Action[] = [];
