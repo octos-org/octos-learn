@@ -103,6 +103,16 @@ function checkPerformanceTrack(raw, expected) {
 }
 
 /** Checks a package archive and returns what the service records about it. */
+
+/**
+ * A learner lesson has one step per card (its beats are runs of sentences);
+ * lessons saved before that have one step, "teach", with one beat per card.
+ */
+function cardCount(events, beats) {
+  const steps = events.flatMap(event => event?.step ? [event.step] : []);
+  return steps.length === 1 && String(steps[0].id).endsWith(":step:teach") ? beats.length : steps.length;
+}
+
 export function checkLearnerPackage(archive, lessonId) {
   if (!Buffer.isBuffer(archive) || !archive.length) fail("Empty lesson package");
   if (archive.length > PACKAGE_MAX_BYTES) fail("Lesson package too large");
@@ -214,6 +224,6 @@ export function checkLearnerPackage(archive, lessonId) {
   }
   return {
     content_sha256: manifest.contentSha256, title: manifest.title.trim(), language: manifest.language, author,
-    cards: beats.length, practice_tasks: events.flatMap(event => Array.isArray(event?.lesson?.tasks) ? event.lesson.tasks : []).length, bytes: archive.length,
+    cards: cardCount(events, beats), practice_tasks: events.flatMap(event => Array.isArray(event?.lesson?.tasks) ? event.lesson.tasks : []).length, bytes: archive.length,
   };
 }

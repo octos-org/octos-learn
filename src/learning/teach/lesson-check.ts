@@ -5,7 +5,7 @@
 
 import { tr } from "@/i18n";
 
-import type { CompiledLesson } from "./compile-recording";
+import { compiledCardActions, type CompiledLesson } from "./compile-recording";
 import type { CardReadability, ReadabilityProblem } from "./readability-check";
 import { findPersonalDetails } from "./privacy";
 import { keptTake, type LearnerRecording, type RecordingReview } from "./recording";
@@ -38,7 +38,7 @@ const PROBLEM_TEXT = (problem: ReadabilityProblem): string => ({
 
 /** Whether a card draws an arrow, so small text there usually means two cards far apart. */
 function drawsArrow(compiled: CompiledLesson | null, key: string): boolean {
-  return Boolean(compiled?.lesson.steps[0]?.beats.find((beat) => beat.key === key)?.actions.some((action) => action.do === "connect"));
+  return Boolean(compiledCardActions(compiled, key).some((action) => action.do === "connect"));
 }
 
 function screenFinding(results: CardReadability[], arrow: boolean): CheckFinding | undefined {

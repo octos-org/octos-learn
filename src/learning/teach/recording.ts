@@ -61,6 +61,25 @@ export type RecordingEvent =
   | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
   | { t: number; type: "your_turn.hint_spoken"; text: string };
 
+/** One sentence of a take, in take time; `asrText` is what recognition heard, before the learner's corrections. */
+export interface SpeechSegment {
+  startMs: number;
+  endMs: number;
+  text: string;
+  asrText?: string;
+  /** Recognition failed for this sentence; the learner can type what they said. */
+  failed?: true;
+}
+
+/** Joins spoken pieces with a space unless the text is written without spaces (Chinese, Japanese). */
+export function joinSpoken(parts: string[]): string {
+  return parts.map((part) => part.trim()).filter(Boolean).reduce((text, part) => {
+    if (!text) return part;
+    const unspaced = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}。！？，、；：]$/u.test(text) && /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(part);
+    return unspaced ? `${text}${part}` : `${text} ${part}`;
+  }, "");
+}
+
 export type TakeStatus = "recording" | "kept" | "superseded";
 
 export interface Take {
@@ -76,6 +95,13 @@ export interface Take {
   textEditedAt?: string;
   /** Start and end of speech inside the take, for action phases. */
   speechSpanMs?: [number, number];
+  /**
+   * What the learner said, sentence by sentence, with when each was said. The
+   * lesson keeps the order of these sentences and the board actions between
+   * and during them. `text` is always these sentences joined. Takes recorded
+   * before sentences were kept have none and play as one sentence.
+   */
+  segments?: SpeechSegment[];
   /** The take's camera performance (face and head parameters, no images) is kept on this device (take-performance-store). */
   camera?: true;
   events: RecordingEvent[];
@@ -347,7 +373,7 @@ export function finishTake(
   recording: LearnerRecording,
   key: string,
   now: string,
-  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; ink?: CardInk[]; camera?: boolean },
+  result: { durationMs: number; asrText: string; speechSpanMs?: [number, number]; segments?: SpeechSegment[]; ink?: CardInk[]; camera?: boolean },
 ): LearnerRecording {
   const card = findCard(recording, key);
   const take = currentTake(card);
@@ -370,6 +396,7 @@ export function finishTake(
           asrText: result.asrText,
           text: result.asrText,
           ...(result.speechSpanMs ? { speechSpanMs: result.speechSpanMs } : {}),
+          ...(result.segments?.length ? { segments: result.segments.map((segment) => ({ ...segment })) } : {}),
           ...(result.camera ? { camera: true as const } : {}),
         };
       }
@@ -392,11 +419,33 @@ export function cancelTake(recording: LearnerRecording, key: string, now: string
 export function correctTranscript(recording: LearnerRecording, key: string, text: string, now: string): LearnerRecording {
   const take = keptTake(findCard(recording, key));
   if (!take) throw new RecordingError(`Card ${key} has no recording to correct`);
+  // A take with sentences is corrected sentence by sentence, so its text stays their join.
+  if (take.segments) throw new RecordingError(`Card ${key} is corrected one sentence at a time`);
   const corrected = text.trim();
   if (!corrected) throw new RecordingError("The transcript cannot be empty");
   return touch(recording, now, replaceCard(recording, key, (card) => ({
     ...card,
     takes: card.takes.map((candidate) => (candidate === take ? (corrected === take.text ? take : { ...take, text: corrected, textEditedAt: now }) : candidate)),
+  })));
+}
+
+/**
+ * The learner fixes one sentence of the kept take. A sentence may be left
+ * empty (nothing is said there; its actions still play), but not every one.
+ */
+export function correctSentence(recording: LearnerRecording, key: string, index: number, text: string, now: string): LearnerRecording {
+  const take = keptTake(findCard(recording, key));
+  if (!take?.segments) throw new RecordingError(`Card ${key} has no sentences to correct`);
+  const segment = take.segments[index];
+  if (!segment) throw new RecordingError(`Card ${key} has no sentence ${index + 1}`);
+  const corrected = text.trim();
+  if (corrected === segment.text) return recording;
+  const segments = take.segments.map((candidate, position) => (position === index ? { ...candidate, text: corrected } : candidate));
+  const joined = joinSpoken(segments.map((candidate) => candidate.text));
+  if (!joined) throw new RecordingError("The transcript cannot be empty");
+  return touch(recording, now, replaceCard(recording, key, (card) => ({
+    ...card,
+    takes: card.takes.map((candidate) => (candidate === take ? { ...take, segments, text: joined, textEditedAt: now } : candidate)),
   })));
 }
 

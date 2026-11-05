@@ -5,6 +5,7 @@
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
 
 import {
+  joinSpoken,
   keptTake,
   currentTake,
   type BoardTarget,
@@ -19,6 +20,9 @@ import { lineAcross, lineLabel } from "./studio-helpers";
 
 type Action = AuthoringAction & Record<string, unknown>;
 type Phase = "before_speech" | "during_speech" | "after_speech";
+
+/** OLL's limit on beats in one step: a card holds at most this many runs of talk between board actions. */
+const MAX_BEATS = 12;
 type Point = { as: string; x: number; y: number; label?: string; visible?: boolean; interaction?: unknown };
 
 export class CompileError extends Error {
@@ -51,6 +55,21 @@ export interface CompileOptions {
 export interface CompiledLesson {
   lesson: AuthoringLesson;
   resourceContext: ResourceContext;
+  /**
+   * For each beat (by key), its card and when its sentences were said in the
+   * take, so the take's camera movement can follow each beat's narration.
+   */
+  beatSpeech?: Record<string, { card: string; speechSpanMs?: [number, number] }>;
+}
+
+/** The recorded cards of a compiled lesson, in order, each with its actions in play order across its beats. */
+export function compiledCards(compiled: CompiledLesson | null | undefined): Array<{ key: string; actions: AuthoringAction[] }> {
+  return (compiled?.lesson.steps ?? []).map((step) => ({ key: step.key, actions: step.beats.flatMap((beat) => beat.actions) }));
+}
+
+/** One recorded card's actions in play order, across its beats. */
+export function compiledCardActions(compiled: CompiledLesson | null | undefined, key: string): AuthoringAction[] {
+  return compiledCards(compiled).find((card) => card.key === key)?.actions ?? [];
 }
 
 const ALIAS = /^[a-z][a-z0-9-]{0,63}$/;
@@ -61,16 +80,43 @@ function requireAlias(value: string, what: string): string {
   return value;
 }
 
-function phaseOf(take: Take, t: number): Phase {
-  const span = take.speechSpanMs;
-  if (!span) return "during_speech";
-  if (t < span[0]) return "before_speech";
-  if (t > span[1]) return "after_speech";
-  return "during_speech";
+/**
+ * Where in a take something happened, as a rank along what the learner said:
+ * sentence k spans ranks 3k (before it, only for the first sentence), 3k+1
+ * (while it is said) and 3k+2 (after it, before the next one). Ranks keep the
+ * recorded order of sentences and board actions, and decide the beats.
+ */
+interface Sentences {
+  /** Start and end of each sentence, in take time, in the order said. */
+  spans: Array<[number, number]>;
+  texts: string[];
 }
 
-const PHASES = ["before_speech", "during_speech", "after_speech"] as const;
-const phaseRank = (action: Action) => PHASES.indexOf((action.when as Phase | undefined) ?? "during_speech");
+/** The take's sentences; a take kept before sentences were stored is one sentence over its speech. */
+function sentencesOf(take: Take): Sentences {
+  if (take.segments?.length) {
+    const segments = [...take.segments].sort((a, b) => a.startMs - b.startMs);
+    return { spans: segments.map((segment) => [segment.startMs, segment.endMs]), texts: segments.map((segment) => segment.text.trim()) };
+  }
+  return { spans: take.speechSpanMs ? [take.speechSpanMs] : [], texts: [take.text?.trim() ?? ""] };
+}
+
+const DURING = 1;
+const AFTER = 2;
+
+function rankOf(sentences: Sentences, t: number): number {
+  const { spans } = sentences;
+  // No speech heard at all: everything plays while the words are said.
+  if (!spans.length) return DURING;
+  if (t < spans[0]![0]) return 0;
+  for (let index = 0; index < spans.length; index += 1) {
+    const [start, end] = spans[index]!;
+    const next = spans[index + 1];
+    if (t >= start && t <= end) return 3 * index + DURING;
+    if (t > end && (!next || t < next[0])) return 3 * index + AFTER;
+  }
+  return 3 * (spans.length - 1) + AFTER;
+}
 
 /** The aliases an action refers to: its anchor, target, ends and focus. */
 function referencedAliases(action: Action): string[] {
@@ -80,25 +126,62 @@ function referencedAliases(action: Action): string[] {
 }
 
 /**
- * Playback runs a card's actions phase by phase. Something the learner made
- * before speaking (neat math replacing writing, a card placed below it) may
- * refer to ink that has no phase of its own; whatever an action refers to is
- * brought forward to that action's phase, so nothing refers ahead in time.
+ * Something the learner made before it was used (neat math replacing
+ * writing, a card placed below it) may have no time of its own, such as ink;
+ * whatever an action refers to is brought forward to that action's rank, so
+ * nothing refers ahead in time.
  */
-function bringReferencesForward(actions: Action[]): void {
-  const creators = new Map(actions.flatMap((action) => (typeof action.as === "string" ? [[action.as, action] as const] : [])));
+function bringReferencesForward(actions: Ranked[]): void {
+  const creators = new Map(actions.flatMap((entry) => (typeof entry.action.as === "string" ? [[entry.action.as, entry] as const] : [])));
   for (let changed = true, rounds = 0; changed && rounds < actions.length; rounds += 1) {
     changed = false;
-    for (const action of actions) {
-      for (const alias of referencedAliases(action)) {
+    for (const entry of actions) {
+      for (const alias of referencedAliases(entry.action)) {
         const creator = creators.get(alias);
-        if (creator && creator !== action && phaseRank(creator) > phaseRank(action)) {
-          creator.when = PHASES[phaseRank(action)];
+        if (creator && creator !== entry && creator.rank > entry.rank) {
+          creator.rank = entry.rank;
           changed = true;
         }
       }
     }
   }
+}
+
+/** An action and where it happened among the card's sentences. */
+interface Ranked { action: Action; rank: number }
+
+/**
+ * Splits a card into beats in the recorded order. Sentences with no action
+ * before or during them join the previous beat, so a beat is a run of
+ * sentences, and actions play before, during or after the run as recorded.
+ */
+function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], speech: NonNullable<CompiledLesson["beatSpeech"]>): AuthoringLesson["steps"][number]["beats"] {
+  const count = Math.max(1, sentences.texts.length);
+  const starts = [0];
+  for (let index = 1; index < count; index += 1) {
+    if (ranked.some((entry) => entry.rank === 3 * index + DURING || entry.rank === 3 * (index - 1) + AFTER)) starts.push(index);
+  }
+  if (starts.length > MAX_BEATS) {
+    throw new CompileError(`Card '${card.title}' switches between talking and the board ${starts.length} times; a card holds at most ${MAX_BEATS}`);
+  }
+  // Stable sort keeps the recorded order of actions at the same rank.
+  const ordered = [...ranked].sort((a, b) => a.rank - b.rank);
+  return starts.map((first, beat) => {
+    const last = (starts[beat + 1] ?? count) - 1;
+    const say = joinSpoken(sentences.texts.slice(first, last + 1));
+    const actions = ordered.flatMap((entry) => {
+      const sentence = Math.floor(entry.rank / 3);
+      if (sentence < first || sentence > last) return [];
+      const phase = entry.rank % 3;
+      // Inside a run, only the run's first sentence can have actions during or before it.
+      const when: Phase = phase === 0 ? "before_speech" : phase === DURING ? "during_speech" : "after_speech";
+      return [{ ...entry.action, when } as Action];
+    });
+    const key = `${card.key}-s${beat + 1}`;
+    const [from, to] = [sentences.spans[first], sentences.spans[last]];
+    speech[key] = { card: card.key, ...(from && to ? { speechSpanMs: [from[0], to[1]] as [number, number] } : {}) };
+    return { key, ...(say ? { say } : {}), actions: actions as AuthoringAction[] };
+  });
 }
 
 /** Card ink aliases: one card may hold several pieces of ink. */
@@ -276,7 +359,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     };
   };
 
-  const steps: AuthoringLesson["steps"] = [{ key: "teach", purpose: `${recording.topic.text}: taught by the learner`, beats: [] }];
+  // One step per card, one beat per run of the card's sentences between board actions.
+  const steps: AuthoringLesson["steps"] = [];
+  const beatSpeech: NonNullable<CompiledLesson["beatSpeech"]> = {};
   // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
   let highlighted: string[] = [];
   let reachedLast = false;
@@ -285,10 +370,12 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     reachedLast = card.key === options.throughCard;
     const take = options.includeTakeInProgress ? currentTake(card) ?? keptTake(card) : keptTake(card);
     if (!take) continue;
+    const sentences = sentencesOf(take);
+    // While a card is built, an action's `when` is its rank among the sentences (see rankOf).
     const actions: Action[] = [];
     for (const marked of highlighted) {
       if (hidden.has(owner(marked))) continue;
-      actions.push({ do: "emphasize", target: marked, emphasis: "none", when: "before_speech" } as Action);
+      actions.push({ do: "emphasize", target: marked, emphasis: "none", when: 0 } as unknown as Action);
     }
     highlighted = [];
     const annotations: Action[] = [];
@@ -333,7 +420,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       // played back they would give it away. While the card is still being
       // recorded the board keeps showing the demonstration.
       if (card.kind === "your_turn" && take.status !== "recording" && (event.type === "variable.drag" || event.type === "view.rotate")) continue;
-      const when = phaseOf(take, event.t);
+      const when = rankOf(sentences, event.t) as unknown as Phase;
       switch (event.type) {
         case "component.insert": {
           const action = insert(event, card.title);
@@ -452,7 +539,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     for (const { ink, neat } of keptNeat) {
       const written = actions.findIndex((action) => action.do === "write" && action.as === ink);
       const alias = requireAlias(neat.alias, "Formula");
-      actions.splice(written + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true), ...(actions[written]?.when ? { when: actions[written]!.when } : {}) } as Action);
+      actions.splice(written + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true), ...(actions[written]?.when !== undefined ? { when: actions[written]!.when } : {}) } as Action);
       hidden.add(ink);
       if (lastNode === ink) lastNode = alias;
       focus = focus.map((id) => (id === ink ? alias : id));
@@ -478,17 +565,19 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // End on one readable card: what the learner touched last, else what they last showed.
     if (!focus.length || focus.some((id) => hidden.has(id))) focus = lastFocus.filter((id) => !hidden.has(id));
     if (focus.length) {
-      actions.push({ do: "focus", targets: focus, intent: "learner_card_end", when: "after_speech" } as Action);
+      actions.push({ do: "focus", targets: focus, intent: "learner_card_end", when: 3 * (Math.max(1, sentences.texts.length) - 1) + AFTER } as unknown as Action);
       lastFocus = focus;
     }
-    bringReferencesForward(actions);
+    // Writing has no time of its own yet: it plays while the card's first sentence is said.
+    const ranked: Ranked[] = actions.map(({ when, ...action }) => ({ action: action as Action, rank: typeof when === "number" ? when : DURING }));
+    bringReferencesForward(ranked);
 
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);
-    steps[0]!.beats.push({ key: card.key, ...(take.text?.trim() ? { say: take.text.trim() } : {}), actions: actions as AuthoringAction[] });
+    steps.push({ key: card.key, purpose: card.title, beats: cardBeats(card, sentences, ranked, beatSpeech) });
   }
-  if (!steps[0]!.beats.length) throw new EmptyLessonError();
+  if (!steps.length) throw new EmptyLessonError();
 
   const lesson: AuthoringLesson = {
     dsl: "octos.lesson",
@@ -502,10 +591,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       goals: recording.goals.length ? recording.goals : [recording.topic.text],
       ...(variables.size ? { variables: [...variables.values()] } : {}),
       ...(tasks.length ? { tasks } : {}),
-      adaptation: { strategies: ["learner-taught", "one-card-per-beat"] },
+      adaptation: { strategies: ["learner-taught", "one-card-per-step"] },
     },
     steps,
     close: { summary: recording.goals[0] ?? recording.topic.text, focus: lastFocus },
   };
-  return { lesson, resourceContext: { ink_snapshots: snapshots } };
+  return { lesson, resourceContext: { ink_snapshots: snapshots }, beatSpeech };
 }

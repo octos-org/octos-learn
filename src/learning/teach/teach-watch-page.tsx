@@ -19,7 +19,7 @@ import { openHistoryApi } from "../history/history-api";
 import { LearningWhiteboard } from "../oll/oll-lesson-runtime";
 import { useOllLessonRuntime, type OllLessonTopicDefinition } from "../oll/use-oll-lesson-runtime";
 import { useOllNarrationTts } from "../oll/use-oll-narration-tts";
-import { compileRecording } from "./compile-recording";
+import { compileRecording, type CompiledLesson } from "./compile-recording";
 import { syncLessonDrafts } from "./draft-sync";
 import { listLessons, saveLessonPackage } from "./learner-lessons-api";
 import { LEARNER_PACKAGE_EXTENSION, lessonNarration, readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
@@ -37,25 +37,34 @@ import { LessonContents, lessonContents } from "./lesson-contents";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
+import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
 
 /**
- * The stored camera performance of each camera take, by the card's narration
- * beat. A take whose movement is missing on this device (for example a draft
+ * The stored camera performance of each camera take, by narration beat: each
+ * of the card's beats gets the movement made while its sentences were said.
+ * A take whose movement is missing on this device (for example a draft
  * recorded on another device) is presented with mouth motion only.
  */
 async function cardPerformances(profileId: string, recordingId: string, takes: Array<{ cardKey: string; take: number; speechSpanMs?: [number, number] }>,
-  events: CanonicalEvent[]): Promise<CardPerformances> {
+  events: CanonicalEvent[], beatSpeech: CompiledLesson["beatSpeech"]): Promise<CardPerformances> {
   const beats = lessonNarration(events);
   const found: CardPerformances = {};
   for (const take of takes) {
-    const beat = beats.find((line) => line.beatId.endsWith(`:beat:${take.cardKey}`));
-    if (!beat) continue;
+    const spoken = beats.flatMap((line) => {
+      const key = line.beatId.slice(line.beatId.lastIndexOf(":beat:") + ":beat:".length);
+      // A hand-edited lesson in the older shape names the beat after its card.
+      if (key === take.cardKey) return [{ beatId: line.beatId, speechSpanMs: take.speechSpanMs }];
+      const speech = beatSpeech?.[key];
+      return speech?.card === take.cardKey ? [{ beatId: line.beatId, speechSpanMs: speech.speechSpanMs ?? take.speechSpanMs }] : [];
+    });
+    if (!spoken.length) continue;
     const track = await readTakePerformance({ profileId, recordingId, cardKey: take.cardKey, take: take.take }).catch(() => null);
-    if (track) found[beat.beatId] = { track, ...(take.speechSpanMs ? { speechSpanMs: take.speechSpanMs } : {}) };
+    if (!track) continue;
+    for (const { beatId, speechSpanMs } of spoken) found[beatId] = { track, ...(speechSpanMs ? { speechSpanMs } : {}) };
   }
   return found;
 }
@@ -108,7 +117,7 @@ export function TeachWatchPage() {
       });
       const source = events.map((event) => JSON.stringify(event)).join("\n");
       const topics: OllLessonTopicDefinition[] = [learnerLessonTopic(events, recording.topic.text, compiled.lesson.lesson.language)];
-      return { compiled, override, events, source, topics, language: compiled.lesson.lesson.language, cards: compiled.lesson.steps[0]?.beats.length ?? 0 };
+      return { compiled, override, events, source, topics, language: compiled.lesson.lesson.language, cards: lessonCards(events) };
     } catch {
       return null;
     }
@@ -191,7 +200,7 @@ export function TeachWatchPage() {
     try {
       let stored = pack.status === "ready" ? pack.stored : undefined;
       if (!stored) {
-        const performances = includePerformance ? await cardPerformances(profileId, recording.id, cameraTakes, lesson.events) : undefined;
+        const performances = includePerformance ? await cardPerformances(profileId, recording.id, cameraTakes, lesson.events, lesson.compiled.beatSpeech) : undefined;
         if (controller.signal.aborted || makeWork.current !== controller) return;
         const { archive, manifest } = await makeLearnerPackage({
           lessonId: recording.id, title: recording.topic.text, language: lesson.language, events: lesson.events, snapshots,
@@ -245,7 +254,7 @@ export function TeachWatchPage() {
   const narrationBeatId = runtime?.currentBeatId, narrationText = runtime?.activeSpeech ?? "";
   // Before the lesson is saved, its narration is made while it plays, and the presenter follows it the same way.
   const livePerformances = useCallback(async (): Promise<CardPerformances> => (recording && lesson && recording.presenter?.cameraMotion === "on" && cameraTakes.length
-    ? cardPerformances(profileId, recording.id, cameraTakes, lesson.events) : {}), [recording, lesson, cameraTakes, profileId]);
+    ? cardPerformances(profileId, recording.id, cameraTakes, lesson.events, lesson.compiled.beatSpeech) : {}), [recording, lesson, cameraTakes, profileId]);
   const live = useLiveNarrationAvatar({
     enabled: showAvatar && !packaged && pack.status !== "loading" && audio === "on" && voiceAvailable && sound,
     events: lesson?.events ?? null, voices, language: lesson?.language, performances: livePerformances,
@@ -289,13 +298,13 @@ export function TeachWatchPage() {
   }
 
   const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
-  const card = !runtime ? 0 : runtime.completed ? lesson?.cards ?? 0 : Math.min(lesson?.cards ?? 0, runtime.beatIndex + 1);
+  const card = !runtime ? 0 : runtime.completed ? lesson?.cards.length ?? 0 : Math.min(lesson?.cards.length ?? 0, cardIndexOfBeat(lesson?.cards ?? [], runtime.currentBeatId) + 1);
   return (
     <main className="teach-page teach-studio teach-watch">
       <header className="teach-studio-head">
         <Link to={`/teach/${recording.id}`} className="teach-back">{tr("← 回去改课")}</Link>
         <h1>{recording.topic.text}</h1>
-        {lesson && <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: lesson.cards })}</span>}
+        {lesson && <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: lesson.cards.length })}</span>}
       </header>
       {!lesson ? (
         <p role="alert" className="teach-notice">{tr("这节课还有卡片没录好，录完就能看了。")}</p>

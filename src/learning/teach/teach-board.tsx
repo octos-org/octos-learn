@@ -6,7 +6,7 @@ import { buildInteractionClusters } from "../oll/interaction-clusters";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
-import type { CompiledLesson } from "./compile-recording";
+import { compiledCardActions, type CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
 import { segmentDrag, wrapDrag, unwrapAngle, type DragSample } from "./studio-helpers";
@@ -92,8 +92,7 @@ function canonicalTarget(id: string): CanonicalTarget {
 
 /** The board IDs a recorded card ends on, as its final focus names them. */
 function cardEndTargets(compiled: CompiledLesson, key: string): string[] {
-  const beat = compiled.lesson.steps[0]?.beats.find((candidate) => candidate.key === key);
-  const focus = [...(beat?.actions ?? [])].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
+  const focus = [...compiledCardActions(compiled, key)].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
   return (focus?.targets ?? []).map((target) => boardIdOf({ node: target.split("#")[0]! }));
 }
 

@@ -30,6 +30,15 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-live-captions { display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: #fffef9; border: 1px solid rgba(26, 35, 80, .12); }
 .teach-live-captions h2 { margin: 0; }
 .teach-live-captions p { margin: 0; min-height: 3em; max-height: 9em; overflow-y: auto; font-size: 16px; line-height: 1.5; }
+/* One box per sentence the learner said, newest at the bottom. */
+.teach-sentences { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.teach-live-captions .teach-sentences { max-height: 14em; overflow-y: auto; }
+.teach-sentence { padding: 6px 10px; border: 1px solid rgba(26, 35, 80, .14); border-radius: 10px; background: #fff; font-size: 16px; line-height: 1.5; }
+.teach-sentence[data-state="transcribing"] { color: #5b6b73; font-style: italic; }
+.teach-sentence[data-state="failed"] { color: #8a4b0f; border-color: rgba(194, 120, 3, .45); background: #fffaf0; }
+.teach-sentence:has(> textarea) { padding: 0; border: 0; background: none; }
+.teach-sentence > textarea { width: 100%; min-height: 0; resize: vertical; }
+.teach-sentences-edit { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .teach-neat-preview { overflow-x: auto; padding: 8px 12px; border-radius: 12px; background: #fffef9; }
 .teach-drafts { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .teach-drafts a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 16px; border: 1px solid rgba(40, 65, 67, 0.18); border-radius: 14px; color: #1b2457; background: #fffef9; text-decoration: none; font-size: 16px; }

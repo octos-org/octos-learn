@@ -100,7 +100,7 @@ it("re-times the camera takes kept on this device into the package, only when th
   expect(takes.read).toHaveBeenCalledWith({ profileId: "learner-1", recordingId: "merge-save", cardKey: "card-1", take: 1 });
   const performances = saving.make.mock.calls[0]![0].performances as Record<string, { track: unknown; speechSpanMs?: unknown }>;
   expect(Object.keys(performances)).toHaveLength(1);
-  expect(Object.keys(performances)[0]).toMatch(/:beat:card-1$/);
+  expect(Object.keys(performances)[0]).toMatch(/:step:card-1:beat:card-1-s1$/);
   expect(Object.values(performances)[0]!.track).toBe(track);
   expect(saving.make.mock.calls[0]![0]).toMatchObject({ includeLipSync: true });
 });

@@ -3093,5 +3093,9 @@
   "提前试用仍在完善的新功能。开关仅保存在当前浏览器，开启后立即生效。": "Try new features that are still being refined. Changes apply immediately and are saved only in this browser.",
   "用摄像头识别手势，在学习白板上写字、画图。开启后，白板工具栏会显示“隔空书写”入口。": "Use camera hand tracking to write and draw on the learning whiteboard. Enabling this adds Air writing to the whiteboard toolbar.",
   "点击白板上的入口后才会启动摄像头；手势识别在本机完成，不会因此给老师发送画面。目前仅支持学习白板，暂不支持讲课录制。": "The camera starts only when you click Air writing on the whiteboard. Hand tracking runs on your device and does not send camera images to your teacher. Available on the learning whiteboard; lesson recording is not supported yet.",
-  "无法保存开关，请检查浏览器是否允许本地存储后重试。": "Could not save this setting. Check that your browser allows local storage and try again."
+  "无法保存开关，请检查浏览器是否允许本地存储后重试。": "Could not save this setting. Check that your browser allows local storage and try again.",
+  "正在听写…": "Writing it down…",
+  "这句没听清，停止后可以补上。": "Didn't catch this one. You can fill it in after you stop.",
+  "第 {{v0}} 句": "Sentence {{v0}}",
+  "这句没听清，在这里写下你说的话。": "Didn't catch this one. Type what you said here."
 }
