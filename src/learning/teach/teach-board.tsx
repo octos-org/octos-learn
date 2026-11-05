@@ -22,6 +22,8 @@ export interface FrozenInk {
   width: number;
   height: number;
   annotates?: CardInk["annotates"];
+  /** When each stroke was drawn (ms since the epoch), in the snapshot's stroke order, when every one was timed. */
+  strokeDrawnAt?: number[];
 }
 
 /** A box on the board, in board coordinates. */
@@ -396,7 +398,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         const snapshot = await ink.captureSelectionSnapshot();
         const { bounds } = snapshot;
         const annotates = annotationFor(mounted.elements.viewport, bounds);
-        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+          ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}) };
       } finally {
         await ink.destroy();
       }
@@ -437,7 +440,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const { bounds } = snapshot;
       const annotates = annotationFor(mounted.elements.viewport, bounds);
       const undoSteps = await quietInk(ink, inkQuietRef, inkRevisionRef, () => ink.deleteSelection());
-      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}), undoSteps };
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+        ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}), undoSteps };
     },
     onInkEdit(listener) {
       inkEditsRef.current.add(listener);

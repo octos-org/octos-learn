@@ -134,6 +134,14 @@ export interface CardInk {
   annotates?: { node: string; x: number; y: number; width: number; height: number };
   /** The neat math the learner confirmed for this ink, shown in its place. */
   neat?: { selection: string; latex: string; alias: string };
+  /** The take the ink was written in. */
+  take?: number;
+  /**
+   * When each stroke was written, in take time and in the snapshot's stroke
+   * order, so the lesson shows the writing stroke by stroke as it was written.
+   * Absent for ink written before strokes were timed.
+   */
+  strokeTimesMs?: number[];
 }
 
 /** Octo's question after a card, and the learner's answer; private, never part of the lesson. */

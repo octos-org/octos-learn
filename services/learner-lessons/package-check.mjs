@@ -105,12 +105,14 @@ function checkPerformanceTrack(raw, expected) {
 /** Checks a package archive and returns what the service records about it. */
 
 /**
- * A learner lesson has one step per card (its beats are runs of sentences);
- * lessons saved before that have one step, "teach", with one beat per card.
+ * A learner lesson has one step per card (its beats are runs of sentences),
+ * continued in steps "<card>-part2", … when a card has more beats than a step
+ * holds; lessons saved before that have one step, "teach", with a beat per card.
  */
 function cardCount(events, beats) {
   const steps = events.flatMap(event => event?.step ? [event.step] : []);
-  return steps.length === 1 && String(steps[0].id).endsWith(":step:teach") ? beats.length : steps.length;
+  if (steps.length === 1 && String(steps[0].id).endsWith(":step:teach")) return beats.length;
+  return new Set(steps.map(step => String(step.id).split(":step:").at(-1).split("-part")[0])).size;
 }
 
 export function checkLearnerPackage(archive, lessonId) {

@@ -3,7 +3,7 @@ import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents,
 import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
-import { compileRecording, CompileError } from "./compile-recording";
+import { compileRecording, compiledCards, CompileError } from "./compile-recording";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
@@ -209,14 +209,67 @@ describe("compileRecording", () => {
     ]);
   });
 
-  it("refuses a card that switches between talking and the board more often than a lesson step allows", () => {
-    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "Grid" }]);
+  it("continues a card that switches between talking and the board more often than a lesson step holds", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "Grid" }, { title: "Next" }]);
     const segments = Array.from({ length: 14 }, (_, index) => ({ startMs: index * 1_000, endMs: index * 1_000 + 500, text: `Point ${index}.` }));
     recording = record(recording, "card-1", "", [
       { t: 100, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 20], y: [-1, 20] },
       ...segments.slice(1).map((segment, index) => ({ t: segment.startMs + 100, type: "point_tool.place" as const, node: "grid", point: `p-${index}`, x: index, y: index, label: `P${index}` })),
     ], { asrText: "x", speechSpanMs: [0, 13_500], segments });
-    expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow(/at most 12/);
+    recording = record(recording, "card-2", "Done.", [{ t: 100, type: "tool.laser", target: { node: "grid" } }]);
+    const compiled = check(recording);
+    expect(compiled.lesson.steps.map((step) => [step.key, step.beats.length])).toEqual([["card-1", 12], ["card-1-part2", 2], ["card-2", 1]]);
+    expect(compiledCards(compiled).map((card) => card.key)).toEqual(["card-1", "card-2"]);
+  });
+
+  it("writes a card's handwriting stroke by stroke where it was written among the words", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "Rise over run" }]);
+    // Strokes 1–2 written while sentence 1 is said, stroke 3 in the pause, 4–5 during sentence 2.
+    recording = record(recording, "card-1", "", [], {
+      asrText: "Rise is six. Run is three.", speechSpanMs: [0, 3_000],
+      segments: [{ startMs: 0, endMs: 1_000, text: "Rise is six." }, { startMs: 2_000, endMs: 3_000, text: "Run is three." }],
+      ink: [{ snapshotId: "ink-snap:card1@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [200, 600, 1_500, 2_100, 2_400] }],
+    });
+    const { lesson } = check(recording);
+    const beats = lesson.steps[0]!.beats.map((beat) => [beat.say, beat.actions.map((action) => {
+      const shown = (action as { content?: { shown_strokes?: number } }).content?.shown_strokes;
+      return `${action.when}:${action.do}${shown ? `:${shown}` : ""}`;
+    })]);
+    expect(beats).toEqual([
+      ["Rise is six.", ["during_speech:write:2", "after_speech:revise:3"]],
+      ["Run is three.", ["during_speech:revise:5", "after_speech:focus"]],
+    ]);
+  });
+
+  it("never shows a stroke before every stroke drawn ahead of it, and leaves untimed writing whole", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "A" }]);
+    // Stroke 2 (by order) was drawn last, after sentence 2 started: strokes 2 and 3 wait for it.
+    recording = record(recording, "card-1", "", [], {
+      asrText: "One. Two.", speechSpanMs: [0, 3_000],
+      segments: [{ startMs: 0, endMs: 1_000, text: "One." }, { startMs: 2_000, endMs: 3_000, text: "Two." }],
+      ink: [
+        { snapshotId: "ink-snap:a@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [200, 2_500, 300] },
+        { snapshotId: "ink-snap:b@v1", sha256: SHA, selections: [] },
+      ],
+    });
+    const actions = compiledCards(check(recording)).at(0)!.actions as Array<{ do: string; as?: string; target?: string; content?: { shown_strokes?: number } }>;
+    expect(actions.filter((action) => action.as === "ink-card-1" || action.target === "ink-card-1").map((action) => [action.do, action.content?.shown_strokes]))
+      .toEqual([["write", 1], ["revise", 3]]);
+    expect(actions.find((action) => action.as === "ink-card-1-2")!.content!.shown_strokes).toBeUndefined();
+  });
+
+  it("writes handwriting on a component stroke by stroke, never before the component", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Slope", type: "math_off_map" }, goals: ["Read slope"] }), now, [{ title: "A" }]);
+    recording = record(recording, "card-1", "", [
+      { t: 1_500, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 6], y: [-1, 9] },
+    ], {
+      asrText: "One. Two.", speechSpanMs: [0, 3_000],
+      segments: [{ startMs: 0, endMs: 1_000, text: "One." }, { startMs: 2_000, endMs: 3_000, text: "Two." }],
+      ink: [{ snapshotId: "ink-snap:circle@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [1_600, 2_200],
+        annotates: { node: "grid", x: 0.3, y: 0.5, width: 0.1, height: 0.1 } }],
+    });
+    const beats = check(recording).lesson.steps[0]!.beats.map((beat) => beat.actions.map((action) => `${action.when}:${action.do}`));
+    expect(beats).toEqual([["after_speech:write", "after_speech:write"], ["during_speech:revise", "after_speech:focus"]]);
   });
 
   it("ends every card on a single target the learner touched last", () => {

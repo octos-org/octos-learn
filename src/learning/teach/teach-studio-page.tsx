@@ -312,6 +312,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stop = async () => {
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
+    const startedAt = takeStartedAt.current;
     clearUndo();
     const performance = cameraTake.current ? camera.end() : null;
     cameraTake.current = false;
@@ -338,7 +339,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const board = boardRef.current;
     const marks = unassignedMarks(key).filter((mark) => board?.hasStrokeAt(centre(mark.box)));
     const frozen = await board?.freezeInk();
-    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [], undefined, marks)] : [];
+    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [], undefined, marks, startedAt)] : [];
     // The face and head parameters stay on this device with the take.
     let cameraKept = false;
     if (performance) {
@@ -357,7 +358,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
    * Stores frozen ink on this device and describes it for the card. Marks on
    * its strokes become selections, with their place in the writing as regions.
    */
-  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number, marks: InkMark[] = []): Promise<CardInk> => {
+  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number, marks: InkMark[] = [],
+    startedAt: number | null = takeStartedAt.current): Promise<CardInk> => {
     const snapshotId = `ink-snap:${recording!.id}-${key}-t${take}${part ? `-n${part}` : ""}@v1`;
     const inside = marks.filter((mark) => contains(frozen, centre(mark.box)));
     const regions = Object.fromEntries(inside.map((mark) => [mark.selection, {
@@ -370,6 +372,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     return {
       snapshotId, sha256: await inkChecksum(frozen.svg), selections: [...selections, ...inside.map((mark) => mark.selection)],
       ...(frozen.annotates ? { annotates: frozen.annotates } : {}),
+      take,
+      // Stroke times in take time, so the lesson writes each stroke where it was written among the words.
+      ...(frozen.strokeDrawnAt && startedAt !== null ? { strokeTimesMs: frozen.strokeDrawnAt.map((at) => Math.max(0, Math.round(at - startedAt))) } : {}),
     };
   };
   /** The take's marks not yet part of a frozen piece of writing. */

@@ -21,8 +21,11 @@ import { lineAcross, lineLabel } from "./studio-helpers";
 type Action = AuthoringAction & Record<string, unknown>;
 type Phase = "before_speech" | "during_speech" | "after_speech";
 
-/** OLL's limit on beats in one step: a card holds at most this many runs of talk between board actions. */
+/** OLL's limit on beats in one step; a card with more continues in further steps of its own. */
 const MAX_BEATS = 12;
+
+/** The key of a card's later steps, when it needs more beats than one step holds. */
+export const CARD_PART_SEPARATOR = "-part";
 type Point = { as: string; x: number; y: number; label?: string; visible?: boolean; interaction?: unknown };
 
 export class CompileError extends Error {
@@ -64,7 +67,15 @@ export interface CompiledLesson {
 
 /** The recorded cards of a compiled lesson, in order, each with its actions in play order across its beats. */
 export function compiledCards(compiled: CompiledLesson | null | undefined): Array<{ key: string; actions: AuthoringAction[] }> {
-  return (compiled?.lesson.steps ?? []).map((step) => ({ key: step.key, actions: step.beats.flatMap((beat) => beat.actions) }));
+  const cards: Array<{ key: string; actions: AuthoringAction[] }> = [];
+  for (const step of compiled?.lesson.steps ?? []) {
+    const key = step.key.split(CARD_PART_SEPARATOR)[0]!;
+    const actions = step.beats.flatMap((beat) => beat.actions);
+    // A card's later steps continue it.
+    if (cards.at(-1)?.key === key) cards.at(-1)!.actions.push(...actions);
+    else cards.push({ key, actions });
+  }
+  return cards;
 }
 
 /** One recorded card's actions in play order, across its beats. */
@@ -147,6 +158,24 @@ function bringReferencesForward(actions: Ranked[]): void {
   }
 }
 
+/**
+ * When a piece of writing shows, in stages: the rank at which each stage
+ * happened and how many strokes (in the snapshot's order) show from then on.
+ * A stroke shows only once every stroke before it was written, so moving a
+ * stroke (which can reorder strokes) never shows writing early.
+ */
+function inkStages(times: number[], sentences: Sentences): Array<{ rank: number; shown: number }> {
+  const stages: Array<{ rank: number; shown: number }> = [];
+  let reached = -1;
+  times.forEach((t, index) => {
+    reached = Math.max(reached, rankOf(sentences, t));
+    const last = stages.at(-1);
+    if (last?.rank === reached) last.shown = index + 1;
+    else stages.push({ rank: reached, shown: index + 1 });
+  });
+  return stages;
+}
+
 /** An action and where it happened among the card's sentences. */
 interface Ranked { action: Action; rank: number }
 
@@ -160,9 +189,6 @@ function cardBeats(card: RecordingCard, sentences: Sentences, ranked: Ranked[], 
   const starts = [0];
   for (let index = 1; index < count; index += 1) {
     if (ranked.some((entry) => entry.rank === 3 * index + DURING || entry.rank === 3 * (index - 1) + AFTER)) starts.push(index);
-  }
-  if (starts.length > MAX_BEATS) {
-    throw new CompileError(`Card '${card.title}' switches between talking and the board ${starts.length} times; a card holds at most ${MAX_BEATS}`);
   }
   // Stable sort keeps the recorded order of actions at the same rank.
   const ordered = [...ranked].sort((a, b) => a.rank - b.rank);
@@ -378,7 +404,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       actions.push({ do: "emphasize", target: marked, emphasis: "none", when: 0 } as unknown as Action);
     }
     highlighted = [];
-    const annotations: Action[] = [];
+    // Writing on a component, with the stages it was written in (when timed).
+    const annotations: Array<{ action: Action; stages?: Array<{ rank: number; shown: number }> }> = [];
     let focus: string[] = [];
 
     // Neat math confirmed in an earlier take stays in its ink's place; one
@@ -405,11 +432,22 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         alt: `Handwriting: ${card.title}`,
         ...(selections.length ? { selections } : {}),
       };
+      // Writing timed in this take shows stroke by stroke where it was written among the words.
+      const stages = ink.take === take.take && ink.strokeTimesMs?.length ? inkStages(ink.strokeTimesMs, sentences) : undefined;
+      const staged = stages && stages.length > 1 ? stages : undefined;
       if (ink.annotates) {
         const { node, ...position } = ink.annotates;
-        annotations.push({ do: "write", as: alias, kind: "ink", role: "annotation", content: { ...content, annotation: position }, place: { relation: "annotates", anchor: node } } as Action);
+        annotations.push({
+          action: { do: "write", as: alias, kind: "ink", role: "annotation", content: { ...content, annotation: position }, place: { relation: "annotates", anchor: node } } as Action,
+          ...(staged ? { stages: staged } : stages ? { stages } : {}),
+        });
       } else {
-        actions.push({ do: "write", as: alias, kind: "ink", role: "note", content, place: placeNext() } as Action);
+        const [first, ...more] = staged ?? [];
+        actions.push({ do: "write", as: alias, kind: "ink", role: "note", content: first ? { ...content, shown_strokes: first.shown } : content,
+          place: placeNext(), ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action);
+        for (const stage of more) {
+          actions.push({ do: "revise", target: alias, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: stage.rank } as unknown as Action);
+        }
         lastNode = alias;
         focus = [alias];
       }
@@ -529,10 +567,22 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
 
 
     // Ink drawn on a component appears once that component is on the board.
-    for (const annotation of annotations) {
+    // Timed writing on it appears stroke by stroke, never before the component.
+    for (const { action: annotation, stages } of annotations) {
       const anchor = (annotation.place as { anchor: string }).anchor;
       const created = actions.findIndex((action) => action.do === "write" && action.as === anchor);
-      actions.splice(created + 1, 0, created < 0 ? annotation : { ...annotation, when: actions[created]!.when } as Action);
+      const anchorRank = created < 0 ? undefined : actions[created]!.when as unknown as number | undefined;
+      if (!stages) {
+        actions.splice(created + 1, 0, created < 0 ? annotation : { ...annotation, when: anchorRank } as unknown as Action);
+        continue;
+      }
+      const rankAt = (rank: number) => Math.max(rank, anchorRank ?? DURING);
+      const [first, ...more] = stages;
+      const content = annotation.content as Record<string, unknown>;
+      actions.splice(created + 1, 0, { ...annotation, ...(more.length ? { content: { ...content, shown_strokes: first!.shown } } : {}), when: rankAt(first!.rank) } as unknown as Action);
+      for (const stage of more) {
+        actions.push({ do: "revise", target: annotation.as, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: rankAt(stage.rank) } as unknown as Action);
+      }
     }
 
     // Neat math kept from an earlier take replaces its ink as soon as the ink is written.
@@ -575,7 +625,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);
-    steps.push({ key: card.key, purpose: card.title, beats: cardBeats(card, sentences, ranked, beatSpeech) });
+    const beats = cardBeats(card, sentences, ranked, beatSpeech);
+    for (let part = 0; part * MAX_BEATS < beats.length; part += 1) {
+      steps.push({ key: part ? `${card.key}${CARD_PART_SEPARATOR}${part + 1}` : card.key, purpose: card.title, beats: beats.slice(part * MAX_BEATS, (part + 1) * MAX_BEATS) });
+    }
   }
   if (!steps.length) throw new EmptyLessonError();
 

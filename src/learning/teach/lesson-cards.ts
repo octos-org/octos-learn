@@ -28,12 +28,19 @@ export function lessonCards(events: CanonicalEvent[]): LessonCard[] {
     const step = steps[0]!;
     return step.beats.map((beat) => ({ key: keyAfter(beat.id, ":beat:"), stepId: step.id, beatIds: [beat.id], said: beat.narration?.text.trim() ?? "" }));
   }
-  return steps.map((step) => ({
-    key: keyAfter(step.id, ":step:"),
-    stepId: step.id,
-    beatIds: step.beats.map((beat) => beat.id),
-    said: joinSpoken(step.beats.map((beat) => beat.narration?.text ?? "")),
-  }));
+  // A card with more beats than one step holds continues in steps "<card>-part2", "<card>-part3", ….
+  const cards: Array<LessonCard & { said: string }> = [];
+  for (const step of steps) {
+    const key = keyAfter(step.id, ":step:").split("-part")[0]!;
+    const beatIds = step.beats.map((beat) => beat.id);
+    const said = joinSpoken(step.beats.map((beat) => beat.narration?.text ?? ""));
+    const previous = cards.at(-1);
+    if (previous?.key === key) {
+      previous.beatIds.push(...beatIds);
+      previous.said = joinSpoken([previous.said, said]);
+    } else cards.push({ key, stepId: step.id, beatIds, said });
+  }
+  return cards;
 }
 
 /** The card a beat belongs to, by index; -1 when the beat is not part of any card. */

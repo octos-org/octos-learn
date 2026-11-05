@@ -53,3 +53,13 @@ it("stays on a card through all its sentences, and plays a card from its first",
   fireEvent.click(screen.getByRole("button", { name: /Card 3/ }));
   expect(playBeat).toHaveBeenCalledWith("l:step:card-3:beat:card-3-s1");
 });
+
+it("counts a card that continues in further steps once", () => {
+  const continued = [
+    { step: { id: "l:step:card-1", beats: [{ id: "l:step:card-1:beat:card-1-s1", narration: { text: "One." } }] } },
+    { step: { id: "l:step:card-1-part2", beats: [{ id: "l:step:card-1-part2:beat:card-1-s13", narration: { text: "Thirteen." } }] } },
+    { step: { id: "l:step:card-2", beats: [{ id: "l:step:card-2:beat:card-2-s1" }] } },
+  ] as unknown as CanonicalEvent[];
+  const entries = lessonContents(continued);
+  expect(entries.map((entry) => [entry.label, entry.beatIds.length])).toEqual([["One. Thirteen.", 2], ["Card 2", 1]]);
+});
