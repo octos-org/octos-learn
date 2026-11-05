@@ -7,7 +7,7 @@
 import { tr } from "@/i18n";
 import {
   ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, MessageSquare, MousePointer2, MoveHorizontal,
-  PenLine, Play, Sparkles, TrendingUp, type LucideIcon,
+  Merge, PenLine, Play, Sparkles, TrendingUp, type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Link } from "react-router-dom";
@@ -55,6 +55,18 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
     const timer = setTimeout(() => setProblem(null), 6_000);
     return () => clearTimeout(timer);
   }, [problem]);
+  // A mouse wheel scrolls the strip sideways (it only scrolls up and down by itself).
+  useEffect(() => {
+    const strip = track.current;
+    if (!strip) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || strip.scrollWidth <= strip.clientWidth) return;
+      event.preventDefault();
+      strip.scrollLeft += event.deltaY;
+    };
+    strip.addEventListener("wheel", onWheel, { passive: false });
+    return () => strip.removeEventListener("wheel", onWheel);
+  }, [folded]);
   // Keyboard moves keep the moved block focused.
   useEffect(() => {
     const id = focusAfter.current;
@@ -80,9 +92,7 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
         applied = true;
         return next;
       } catch (error) {
-        setProblem(error instanceof SequenceError && error.reason === "join_blocked"
-          ? tr("这两句中间还有动作，先把动作拖走再合并。")
-          : error instanceof SequenceError && error.reason === "order"
+        setProblem(error instanceof SequenceError && error.reason === "order"
             ? tr("不能放在那里：动作要在它用到的东西之后，先写的笔画也要先出现。")
             : tr("这个改动做不了。"));
         return current;
@@ -176,7 +186,7 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
           ? <p role="alert" className="teach-sequence-note" data-problem>{problem}</p>
           : <p className="teach-sequence-note">{editing
             ? tr("按回车：从光标处分成两句。在句首按退格：和前一句合并。")
-            : tr("拖动动作换位置；点你说的话可以修改。")}</p>)}
+            : tr("拖动动作换位置；点你说的话可以修改；被停顿分开的一句话可以点合并按钮合回去。")}</p>)}
       </header>
       {!folded && (
         <ol ref={track} className="teach-sequence-track">
@@ -214,8 +224,16 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
                       {item.text || <span className="academy-muted">{tr("这句没听清，点这里写下你说的话。")}</span>}
                     </button>
                   )}
-                  {from && editing?.index !== item.index && (
-                    <Link className="teach-sequence-play" to={from} aria-label={tr("从这句开始看")} title={tr("从这句开始看")}><Play size={14} aria-hidden="true" /></Link>
+                  {editing?.index !== item.index && (
+                    <span className="teach-sequence-block-tools">
+                      {from && <Link className="teach-sequence-tool" to={from} aria-label={tr("从这句开始看")} title={tr("从这句开始看")}><Play size={14} aria-hidden="true" /></Link>}
+                      {item.index > 0 && (
+                        <button type="button" className="teach-sequence-tool" aria-label={tr("和前一句合并成一句")} title={tr("和前一句合并成一句")}
+                          onClick={() => apply((current) => joinWithPrevious(current, card.key, item.index, now()))}>
+                          <Merge size={14} aria-hidden="true" />
+                        </button>
+                      )}
+                    </span>
                   )}
                 </div>
               </li>

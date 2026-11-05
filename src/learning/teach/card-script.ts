@@ -125,8 +125,8 @@ function replaceTake(recording: LearnerRecording, key: string, now: string, chan
 
 /** Why the sequence could not be changed that way. */
 export class SequenceError extends RecordingError {
-  readonly reason: "order" | "join_blocked" | "nothing";
-  constructor(reason: "order" | "join_blocked" | "nothing") {
+  readonly reason: "order" | "nothing";
+  constructor(reason: "order" | "nothing") {
     super(reason);
     this.name = "SequenceError";
     this.reason = reason;
@@ -199,15 +199,13 @@ export function splitSentence(recording: LearnerRecording, key: string, index: n
   });
 }
 
-/** Joins a sentence with the one before it; refused while an action plays between them. */
+/**
+ * Joins a sentence with the one before it, for a sentence that speech
+ * recognition cut in two at a pause. Actions made in that pause are then made
+ * while the joined sentence is said, so they play as it starts.
+ */
 export function joinWithPrevious(recording: LearnerRecording, key: string, index: number, now: string): LearnerRecording {
-  const card = recording.cards.find((candidate) => candidate.key === key);
-  const sequence = card && cardSequence(card);
-  if (!sequence || index < 1) throw new SequenceError("nothing");
-  const from = sequence.findIndex((item) => item.id === `sentence:${index - 1}`);
-  const to = sequence.findIndex((item) => item.id === `sentence:${index}`);
-  // Actions made while the later sentence was said come just before it: they too stand between the two.
-  if (sequence.slice(from + 1, to).some((item) => item.kind === "action")) throw new SequenceError("join_blocked");
+  if (index < 1) throw new SequenceError("nothing");
   return replaceTake(recording, key, now, (take) => {
     const segments = [...take.segments!].sort((a, b) => a.startMs - b.startMs);
     const [first, second] = [segments[index - 1]!, segments[index]!];

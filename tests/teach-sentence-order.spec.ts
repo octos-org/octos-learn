@@ -234,3 +234,42 @@ test("the order strip: drag an action, split and join sentences, move with the k
   // The lesson starts at sentence 2, not at the beginning.
   expect(firstWords.startsWith("现在放第二个点")).toBe(true);
 });
+
+test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a pause joins back with its button", async ({ page }) => {
+  await installTestAccount(page);
+  const long = { ...recording, id: "rec-long", cards: [{ ...recording.cards[0]!, takes: [{ ...recording.cards[0]!.takes[0]!,
+    segments: Array.from({ length: 14 }, (_, index) => ({ startMs: index * 1_000, endMs: index * 1_000 + 600, text: `这是第 ${index + 1} 段话，用来把顺序条撑满。` })),
+    speechSpanMs: [0, 13_600] }] }, { key: "card-2", title: "下一张", kind: "teach", takes: [] }] };
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+      sessionStorage.setItem("seeded", "1");
+    }
+  }, long);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${long.id}`);
+  const track = page.locator(".teach-sequence-track");
+  const box = (await track.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 400);
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeGreaterThan(100);
+
+  // Sentences 1 and 2 were one sentence with a pause; point Alpha was placed in the pause after sentence 2.
+  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  const sentences = () => strip.locator("[data-sentence]").count();
+  expect(await sentences()).toBe(14);
+  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await expect.poll(sentences).toBe(13);
+  await expect(strip.locator("[data-item='sentence:0']")).toContainText("这是第 1 段话，用来把顺序条撑满。这是第 2 段话");
+  // Joined across the point placed between the sentences.
+  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await expect.poll(sentences).toBe(12);
+  await expect(strip.getByRole("alert")).toHaveCount(0);
+
+  // Only the first card is recorded: it can be watched already.
+  await page.getByRole("link", { name: "看我的课" }).click();
+  await expect(page.getByText("还有 1 张卡片没录，现在先看录好的 1 张")).toBeVisible();
+  await expect(page.getByRole("button", { name: "播放我的课" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "保存到我的课" })).toBeDisabled();
+});

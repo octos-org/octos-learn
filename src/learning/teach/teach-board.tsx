@@ -258,6 +258,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const tappedRef = useRef<{ target: BoardTarget; canonical: CanonicalTarget } | null>(null);
   const pointerRef = useRef<{ canonical?: CanonicalTarget; at?: { x: number; y: number }; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const onTargetRef = useRef(onTarget);
+  // The writing tool the learner picked, kept for ink that is still loading.
+  const penRef = useRef<"draw" | "erase" | "off">("off");
   const onStrokeRef = useRef(onStroke);
   useEffect(() => {
     onTargetRef.current = onTarget;
@@ -373,7 +375,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         storageKey: `octos-learn:teach-ink:${documentId}`, documentId, locale: getLocale(),
       });
       await ink.ready;
-      ink.setMode("navigate");
+      // A pen picked while the ink was still loading applies now.
+      ink.setMode(penRef.current === "off" ? "navigate" : penRef.current);
       inkRevisionRef.current = ink.state.content_revision;
       // Each js-draw command is one change and one undo step.
       ink.subscribe((state) => {
@@ -385,6 +388,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       inkRef.current = ink;
     },
     setPen(mode) {
+      penRef.current = mode;
       inkRef.current?.setMode(mode === "off" ? "navigate" : mode);
     },
     async freezeInk() {

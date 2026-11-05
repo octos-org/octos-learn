@@ -679,10 +679,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-icon-button" aria-label={tr("高级：课程数据")} title={tr("高级：课程数据")} aria-pressed={advanced} onClick={() => setAdvanced(!advanced)}>
               <Braces size={16} aria-hidden="true" />
             </button>
-            {ready ? (
-              <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
+            {/* What is recorded can be watched at any time; saving waits for every card and the check. */}
+            {recording.cards.some((entry) => keptTake(entry)) ? (
+              <Link className={ready ? "teach-primary" : "teach-secondary"} to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
             ) : (
-              <button type="button" className="teach-primary" disabled title={tr("检查通过后就能看你的课了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
+              <button type="button" className="teach-primary" disabled title={tr("录好第一张卡片就能看了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
             )}
           </>
         )}

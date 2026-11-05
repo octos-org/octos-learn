@@ -67,8 +67,8 @@ describe("card sequence", () => {
     expect(names(split)).toEqual(["Put on a coordinate grid", "“Here is a grid.”", "Point at it", "“Point B.”", "“It”", "“goes up.”"]);
     expect(split.cards[0]!.takes[0]!.text).toBe("Here is a grid. Point B. It goes up.");
     expect(names(joinWithPrevious(split, "card-1", 3, now)).at(-1)).toBe("“It goes up.”");
-    // The laser stands between "Here is a grid." and "Point B.": they stay apart.
-    expect(() => joinWithPrevious(split, "card-1", 1, now)).toThrow(SequenceError);
+    // Joining across an action made in the pause: the action then plays as the joined sentence starts.
+    expect(names(joinWithPrevious(split, "card-1", 1, now)).slice(0, 3)).toEqual(["Put on a coordinate grid", "Point at it", "“Here is a grid. Point B.”"]);
     // An action made while a sentence was said stays with the part where it happened.
     expect(names(splitSentence(card([grid]), "card-1", 0, "Here is".length, now)).slice(0, 3)).toEqual(["“Here is”", "Put on a coordinate grid", "“a grid.”"]);
   });

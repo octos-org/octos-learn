@@ -28,7 +28,7 @@ import { cardChecks, lessonReady } from "./lesson-check";
 import { makeLearnerPackage, type CardPerformances } from "./make-learner-package";
 import { findPersonalDetails } from "./privacy";
 import { inkSnapshotResolver, loadInkSnapshots } from "./ink-snapshot-store";
-import { keptTake, recordingComplete, setPresenter, type Presenter } from "./recording";
+import { keptTake, setPresenter, type Presenter } from "./recording";
 import { readTakePerformance } from "./take-performance-store";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { useLiveNarrationAvatar } from "./live-narration-avatar";
@@ -111,7 +111,8 @@ export function TeachWatchPage() {
   const resolveAsset = useMemo(() => inkSnapshotResolver(snapshots), [snapshots]);
 
   const lesson = useMemo(() => {
-    if (!recording || !recordingComplete(recording)) return null;
+    // The cards recorded so far can be watched before the rest are recorded.
+    if (!recording || !recording.cards.some((entry) => keptTake(entry))) return null;
     try {
       // The learner's hand-edited OLL (advanced mode) while it is current, else the lesson made from the recording.
       const { compiled, override } = effectiveLesson(recording, compileRecording(recording, { author: learnerAuthor(profileId, recording.presenter), language: getLocale() }));
@@ -300,6 +301,8 @@ export function TeachWatchPage() {
     );
   }
 
+  // Cards not recorded yet are left out of what plays.
+  const unrecorded = recording.cards.filter((entry) => !keptTake(entry)).length;
   const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
   const card = !runtime ? 0 : runtime.completed ? lesson?.cards.length ?? 0 : Math.min(lesson?.cards.length ?? 0, cardIndexOfBeat(lesson?.cards ?? [], runtime.currentBeatId) + 1);
   return (
@@ -310,9 +313,12 @@ export function TeachWatchPage() {
         {lesson && <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: lesson.cards.length })}</span>}
       </header>
       {!lesson ? (
-        <p role="alert" className="teach-notice">{tr("这节课还有卡片没录好，录完就能看了。")}</p>
+        <p role="alert" className="teach-notice">{tr("还没有录好的卡片，录好第一张就能看了。")}</p>
       ) : (
         <>
+          {unrecorded > 0 && (
+            <p role="status" className="teach-notice">{tr("还有 {{v0}} 张卡片没录，现在先看录好的 {{v1}} 张。全部录完、检查通过后就能保存。", { v0: unrecorded, v1: lesson.cards.length })}</p>
+          )}
           {choosing && (
             <section className="teach-presenter" aria-label={tr("谁来讲你的课")}>
               <fieldset>
@@ -398,7 +404,8 @@ export function TeachWatchPage() {
               </>
             ) : (
               <>
-                <p className="academy-muted">{!checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能保存。")
+                <p className="academy-muted">{unrecorded > 0 ? tr("全部卡片录完、检查通过后就能保存。")
+                  : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能保存。")
                   : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
                     : pack.status === "ready" ? tr("声音已经做好了，保存到“我的课”就完成了。")
                       : audio !== "on" ? tr("保存这节课需要连接语音合成，用来给每张卡片做声音。")

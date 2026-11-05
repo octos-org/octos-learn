@@ -24,11 +24,11 @@ function renderWatch(id: string) {
   render(<MemoryRouter initialEntries={[`/teach/${id}/watch`]}><Routes><Route path="/teach/:id/watch" element={<TeachWatchPage />} /></Routes></MemoryRouter>);
 }
 
-it("asks for the remaining cards before a lesson can be watched", () => {
+it("asks for a first recorded card before a lesson can be watched", () => {
   const now = "2026-11-01T12:00:00.000Z";
   saveRecordingDraft(localStorage, "learner-1", planCards(createRecording({ id: "rec-1", now, topic: { text: "Slope", type: "math_off_map" }, goals: [] }), now, [{ title: "One" }]));
   renderWatch("rec-1");
-  expect(screen.getByRole("alert").textContent).toBe("Some cards aren't recorded yet. Record them and you can watch your lesson.");
+  expect(screen.getByRole("alert").textContent).toBe("No card is recorded yet. Record the first one to watch it.");
   expect(screen.getByRole("link", { name: "← Back to editing" }).getAttribute("href")).toBe("/teach/rec-1");
 });
 
