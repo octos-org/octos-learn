@@ -36,8 +36,12 @@ import {
   type CardInk,
   type InkMark,
   type LearnerRecording,
+  type RecordingCard,
   type RecordingEvent,
+  type Take,
 } from "./recording";
+import { SequenceBar } from "./sequence-bar";
+import { cardSequence } from "./card-script";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { syncLessonDrafts } from "./draft-sync";
 import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
@@ -49,12 +53,14 @@ import { cardChecks, lessonReady } from "./lesson-check";
 import { checkReadability } from "./readability-check";
 import { AddPanel } from "./studio-add";
 import { askOcto, explainAssistFailure, inkToMath, reviewLesson } from "./teach-assist";
-import { TakeSpeech, type Transcribe } from "./take-speech";
+import { TakeSpeech, type LiveSentence, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
 import { useTakeCamera } from "./use-take-camera";
 import { OllDrawer } from "./oll-drawer";
 import { effectiveLesson } from "./oll-override";
 import { presenterAvatar } from "./presenters";
+import { AvatarPicture, PresenterPicker } from "./presenter-picker";
+import { presenterVoiceNote, useSpeechService } from "./speech-service";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
 import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
@@ -115,7 +121,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const cameraTake = useRef(false);
   const speechRef = useRef<TakeSpeech | null>(null);
   const [transcribing, setTranscribing] = useState(false);
-  const [liveText, setLiveText] = useState("");
+  const [liveSentences, setLiveSentences] = useState<LiveSentence[]>([]);
   // How the microphone is doing during a take: on or not, hearing speech, and sentences being turned into text.
   const [mic, setMic] = useState<MicState>({ listening: null, speaking: false, transcribing: 0 });
   const [level] = useState(() => new InputLevel());
@@ -127,6 +133,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  // Who presents the lesson: chosen before recording, changeable any time it is not recording.
+  const speech = useSpeechService();
+  const [choosingPresenter, setChoosingPresenter] = useState(false);
   const undoSteps = useRef<UndoStep[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const pushUndo = (step: UndoStep) => { undoSteps.current.push(step); setCanUndo(true); };
@@ -284,12 +293,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       if (!(await recognition)) throw new Error("Speech recognition is not connected");
       return transcribeCloudSpeech(wav, signal, { language: getLocale() });
     };
-    setLiveText("");
+    setLiveSentences([]);
     setMic({ listening: null, speaking: false, transcribing: 0 });
     level.reset();
     const speech = new TakeSpeech(elapsed, transcribe, (update) => {
       if (speechRef.current !== speech) return;
-      setLiveText(update.text);
+      setLiveSentences(update.sentences);
       setMic((state) => ({ ...state, transcribing: update.transcribing }));
     });
     speechRef.current = speech;
@@ -310,6 +319,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stop = async () => {
     if (!recording || !card || !recordingTake) return;
     const duration = Math.max(1, elapsed());
+    const startedAt = takeStartedAt.current;
     clearUndo();
     const performance = cameraTake.current ? camera.end() : null;
     cameraTake.current = false;
@@ -323,7 +333,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     // Words still being spoken when Stop is pressed are kept.
     await capture.stop({ submitSpeech: true });
     speechRef.current = null;
-    let spoken: Awaited<ReturnType<TakeSpeech["finish"]>> = { text: "", failed: 0 };
+    let spoken: Awaited<ReturnType<TakeSpeech["finish"]>> = { text: "", segments: [], failed: 0 };
     if (speech) {
       spoken = await speech.finish();
       const connected = await fetchCloudAsrStatus().then((status) => status.available).catch(() => false);
@@ -331,12 +341,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       else if (spoken.failed) setNotice(tr("有 {{v0}} 段话没听清。请在下面补上。", { v0: spoken.failed }));
       else if (!spoken.speechSpanMs && listening.current) setNotice(tr("这次没有听到你说话。看看麦克风有没有打开，或者在下面输入你说的话。"));
     }
-    setLiveText("");
+    setLiveSentences([]);
     // Strokes the learner pointed at that are still there become selections of the frozen writing.
     const board = boardRef.current;
     const marks = unassignedMarks(key).filter((mark) => board?.hasStrokeAt(centre(mark.box)));
     const frozen = await board?.freezeInk();
-    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [], undefined, marks)] : [];
+    const ink: CardInk[] = frozen ? [await keepInk(key, recordingTake.take, frozen, [], undefined, marks, startedAt)] : [];
     // The face and head parameters stay on this device with the take.
     let cameraKept = false;
     if (performance) {
@@ -345,7 +355,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     }
     // The learner corrects what recognition heard, or types it, below.
     update((current) => finishTake(current, key, now(), {
-      durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], ink, camera: cameraKept,
+      durationMs: duration, asrText: spoken.text, speechSpanMs: spoken.speechSpanMs ?? [0, duration], segments: spoken.segments, ink, camera: cameraKept,
     }));
     setTranscribing(false);
     if (card.kind === "teach") void askOctoAbout(key);
@@ -355,7 +365,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
    * Stores frozen ink on this device and describes it for the card. Marks on
    * its strokes become selections, with their place in the writing as regions.
    */
-  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number, marks: InkMark[] = []): Promise<CardInk> => {
+  const keepInk = async (key: string, take: number, frozen: FrozenInk, selections: string[], part?: number, marks: InkMark[] = [],
+    startedAt: number | null = takeStartedAt.current): Promise<CardInk> => {
     const snapshotId = `ink-snap:${recording!.id}-${key}-t${take}${part ? `-n${part}` : ""}@v1`;
     const inside = marks.filter((mark) => contains(frozen, centre(mark.box)));
     const regions = Object.fromEntries(inside.map((mark) => [mark.selection, {
@@ -368,6 +379,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     return {
       snapshotId, sha256: await inkChecksum(frozen.svg), selections: [...selections, ...inside.map((mark) => mark.selection)],
       ...(frozen.annotates ? { annotates: frozen.annotates } : {}),
+      take,
+      // Stroke times in take time, so the lesson writes each stroke where it was written among the words.
+      ...(frozen.strokeDrawnAt && startedAt !== null ? { strokeTimesMs: frozen.strokeDrawnAt.map((at) => Math.max(0, Math.round(at - startedAt))) } : {}),
     };
   };
   /** The take's marks not yet part of a frozen piece of writing. */
@@ -390,6 +404,26 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       setOcto((state) => ({ pending: without(state.pending, key), failed: new Set(state.failed).add(key) }));
     }
   };
+  /**
+   * Whether the lesson can still play a recording after a change to a card's
+   * script: it must compile, and no board action may have to play earlier
+   * than where the learner put it because something before it uses it.
+   */
+  const scriptCheck = (before: LearnerRecording, after: LearnerRecording): string | null => {
+    const options = { author: learnerAuthor(profileId, after.presenter), language: getLocale() };
+    let made: CompiledLesson;
+    try { made = compileRecording(after, options); } catch { return tr("不能放在那里：动作要在它用到的东西之后。"); }
+    let was = Number.POSITIVE_INFINITY;
+    try { was = compileRecording(before, options).forwarded ?? 0; } catch { /* The recording could not play before either. */ }
+    return (made.forwarded ?? 0) > was ? tr("不能放在那里：动作要在它用到的东西之后。") : null;
+  };
+  /** The watch page from the beat that says a card's sentence. */
+  const watchFrom = (key: string) => (sentence: number) => {
+    const made = compiled.lesson;
+    const beat = Object.entries(made?.beatSpeech ?? {}).find(([, speech]) => speech.card === key && speech.sentences && speech.sentences[0] <= sentence && sentence <= speech.sentences[1]);
+    return beat && recording ? `/teach/${recording.id}/watch?from=${encodeURIComponent(beat[0])}` : undefined;
+  };
+
   const compileQuietly = (current: LearnerRecording) => {
     try {
       return compileRecording(current, { author: learnerAuthor(profileId, current.presenter), language: getLocale() });
@@ -496,7 +530,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     camera.abort();
     cameraTake.current = false;
     clearUndo();
-    setLiveText("");
+    setLiveSentences([]);
     setMic({ listening: null, speaking: false, transcribing: 0 });
     endNeat();
     void capture.stop();
@@ -638,7 +672,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       {/* The camera image is only read by the on-device face model; it is never shown, kept or sent. */}
       <video ref={camera.video} className="teach-camera-feed" muted playsInline aria-hidden="true" />
       <header className="teach-studio-head">
-        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{recording.topic.text}</h1>
         {isRecording ? (
           <span className="teach-rec-badge" role="status"><span aria-hidden="true" />{tr("正在录第 {{v0}} 张 · {{v1}}", { v0: cardIndex + 1, v1: clockText(takeClock) })}</span>
@@ -650,10 +684,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-icon-button" aria-label={tr("高级：课程数据")} title={tr("高级：课程数据")} aria-pressed={advanced} onClick={() => setAdvanced(!advanced)}>
               <Braces size={16} aria-hidden="true" />
             </button>
-            {ready ? (
-              <Link className="teach-primary" to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
+            {/* What is recorded can be watched at any time; saving waits for every card and the check. */}
+            {recording.cards.some((entry) => keptTake(entry)) ? (
+              <Link className={ready ? "teach-primary" : "teach-secondary"} to={`/teach/${recording.id}/watch`}><Play size={16} aria-hidden="true" />{tr("看我的课")}</Link>
             ) : (
-              <button type="button" className="teach-primary" disabled title={tr("检查通过后就能看你的课了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
+              <button type="button" className="teach-primary" disabled title={tr("录好第一张卡片就能看了")}><Play size={16} aria-hidden="true" />{tr("看我的课")}</button>
             )}
           </>
         )}
@@ -663,8 +698,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       <ol className="teach-card-strip" aria-label={tr("卡片")}>
         {recording.cards.map((candidate, index) => {
           const recordingThis = Boolean(currentTake(candidate));
-          const flagged = checkOf(candidate.key)?.status === "fix";
-          const state = recordingThis ? "recording" : flagged ? "fix" : keptTake(candidate) ? "recorded" : "empty";
+          // A take without words plays silently: flagged at once, not only after the check.
+          const keptHere = keptTake(candidate);
+          const flagged = checkOf(candidate.key)?.status === "fix" || Boolean(keptHere && !recordingThis && !keptHere.text?.trim());
+          const state = recordingThis ? "recording" : flagged ? "fix" : keptHere ? "recorded" : "empty";
           const status = { recording: tr("正在录"), fix: tr("要改一下"), recorded: tr("已录好"), empty: tr("还没录") }[state];
           return (
             <li key={candidate.key}>
@@ -731,7 +768,23 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <div className="teach-panel-title">
               <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
               <CardTitle key={card.key} title={card.title} onRename={(title) => update((current) => renameCard(current, card.key, title, now()))} />
-              {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
+              {kept && cardCheck?.status !== "fix" && (kept.text?.trim()
+                ? <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>
+                : <span className="teach-recorded" data-missing="">{tr("! 没有识别出你说的话 · 在下面补上，或重录我的话")}</span>)}
+              <div className="teach-presenter-summary">
+                <AvatarPicture avatar={presenterAvatar(recording.presenter?.avatar)} size={40} />
+                <span>
+                  <span className="teach-group-label">{tr("谁来讲这节课")}</span>
+                  <span>{tr("{{v0}} · {{v1}}", { v0: presenterAvatar(recording.presenter?.avatar).name(), v1: presenterAvatar(recording.presenter?.avatar).manner() })}</span>
+                </span>
+                <button type="button" className="teach-secondary" aria-expanded={choosingPresenter} onClick={() => setChoosingPresenter(!choosingPresenter)}>
+                  {choosingPresenter ? tr("收起") : tr("换形象")}
+                </button>
+              </div>
+              {choosingPresenter && (
+                <PresenterPicker compact presenter={recording.presenter} note={presenterVoiceNote(speech.audio, speech.resource)}
+                  onChoose={(presenter) => update((current) => setPresenter(current, presenter, now()))} />
+              )}
               <label className="teach-place teach-camera-toggle">
                 <input type="checkbox" checked={recording.presenter?.cameraMotion === "on"}
                   onChange={(event) => {
@@ -756,7 +809,15 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               <section className="teach-live-captions" aria-label={tr("你正在说的话")}>
                 <MicStatus state={mic} level={level} />
                 <h2 className="teach-group-label">{tr("你正在说的话")}</h2>
-                <p aria-live="polite">{liveText || <span className="academy-muted">{tr("开始说吧，你说的话会出现在这里。")}</span>}</p>
+                {liveSentences.length ? (
+                  <ol className="teach-sentences" aria-live="polite">
+                    {liveSentences.map((sentence, index) => (
+                      <li key={index} className="teach-sentence" data-state={sentence.state}>
+                        {sentence.state === "text" ? sentence.text : sentence.state === "transcribing" ? tr("正在听写…") : tr("这句没听清，停止后可以补上。")}
+                      </li>
+                    ))}
+                  </ol>
+                ) : <p className="academy-muted">{tr("开始说吧，你说的话会出现在这里。")}</p>}
               </section>
               {neat.stage === "selecting" && (
                 <div className="teach-step" role="group" aria-label={tr("选要整理的手写")}>
@@ -809,12 +870,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                 <div className="teach-fix-title">{tr("这张卡片要改的地方")}</div>
                 {cardCheck.findings.map((finding, index) => <p key={`${finding.source}-${index}`}>{finding.message}</p>)}
               </div>
-              <TranscriptEditor
-                key={`${card.key}-${kept.take}`}
-                text={kept.text ?? ""}
-                label={tr("你的话（课会用这些话来讲，可以直接改）")}
-                onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))}
-              />
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now}
+                label={tr("你的话（课会用这些话来讲，可以直接改）")} />
               <button type="button" className="teach-record" onClick={() => start()}><span aria-hidden="true" />{tr("重录我的话")}</button>
               <p className="academy-muted teach-centered">{tr("白板上的东西会留着，只重新录你说的话和指的地方。")}</p>
               <button type="button" className="teach-link-button" disabled={Boolean(startOverBreaks)} onClick={() => start(true)}>{tr("这张卡片从头来")}</button>
@@ -833,11 +890,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
                   onAnswer={(answer) => update((current) => answerOcto(current, card.key, answer, now()))}
                 />
               )}
-              <TranscriptEditor
-                key={`${card.key}-${kept.take}`}
-                text={kept.text ?? ""}
-                onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))}
-              />
+              <WordsEditor key={`${card.key}-${kept.take}`} card={card} take={kept} update={update} now={now} />
               {notice && <p role="status" className="teach-notice">{notice}</p>}
               <div className="teach-panel-end teach-panel-actions">
                 {nextCard ? (
@@ -862,6 +915,11 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         )}
       </div>
 
+      {/* The order of the selected card's words and actions, under the board. */}
+      {card && kept && !isRecording && cardSequence(card) && (
+        <SequenceBar key={`${card.key}-${kept.take}`} card={card} cardNumber={cardIndex + 1} update={update} now={now} check={scriptCheck} watchFrom={watchFrom(card.key)} />
+      )}
+
       {checkRun && (
         <CheckDialog
           run={checkRun}
@@ -882,6 +940,21 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
 function clockText(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/**
+ * What the learner said on a card, to correct before the lesson narrates it:
+ * one box per sentence when the take kept its sentences, else one box.
+ */
+function WordsEditor({ card, take, label, update, now }: {
+  card: RecordingCard; take: Take; label?: string;
+  update: (change: (current: LearnerRecording) => LearnerRecording) => void; now: () => string;
+}) {
+  if (!take.segments) {
+    return <TranscriptEditor text={take.text ?? ""} {...(label ? { label } : {})} onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))} />;
+  }
+  // Sentences and their order with the actions are edited in the strip under the board.
+  return <p className="academy-muted">{tr("你说的话和做的动作在白板下面，上下两行对齐，可以拖动和修改。")}</p>;
 }
 
 function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {
@@ -986,3 +1059,4 @@ function CardTitle({ title, onRename }: { title: string; onRename: (title: strin
     </form>
   );
 }
+

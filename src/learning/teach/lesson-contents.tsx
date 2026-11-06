@@ -2,9 +2,10 @@ import type { CanonicalEvent } from "octos-lesson-language";
 
 import { tr } from "@/i18n";
 import type { OllLessonRuntimeController } from "../oll/use-oll-lesson-runtime";
+import { lessonCards } from "./lesson-cards";
 
-/** One card of a learner lesson, as the contents list names it. */
-export interface ContentsEntry { beatId: string; label: string }
+/** One card of a learner lesson, as the contents list names it; it plays from its first beat. */
+export interface ContentsEntry { beatId: string; beatIds: string[]; label: string }
 
 const SNIPPET = 28;
 
@@ -13,11 +14,10 @@ const SNIPPET = 28;
  * knows it (the learner's own draft), else by the first words said on it.
  */
 export function lessonContents(events: CanonicalEvent[], titleOf?: (cardKey: string) => string | undefined): ContentsEntry[] {
-  return events.flatMap((event) => event.step?.beats ?? []).map((beat, index) => {
-    const key = beat.id.split(":beat:").at(-1) ?? "";
-    const said = beat.narration?.text.trim() ?? "";
-    const label = titleOf?.(key) || (said.length > SNIPPET ? `${said.slice(0, SNIPPET)}…` : said) || tr("卡片 {{v0}}", { v0: index + 1 });
-    return { beatId: beat.id, label };
+  return lessonCards(events).flatMap((card, index) => {
+    const said = card.said;
+    const label = titleOf?.(card.key) || (said.length > SNIPPET ? `${said.slice(0, SNIPPET)}…` : said) || tr("卡片 {{v0}}", { v0: index + 1 });
+    return card.beatIds.length ? [{ beatId: card.beatIds[0]!, beatIds: card.beatIds, label }] : [];
   });
 }
 
@@ -32,7 +32,8 @@ export function LessonContents({ runtime, entries, onJump }: {
   onJump?: () => void;
 }) {
   if (!runtime || entries.length < 2) return null;
-  const at = runtime.completed ? entries.length : Math.max(0, runtime.beatIndex);
+  const current = runtime.currentBeatId ? entries.findIndex((entry) => entry.beatIds.includes(runtime.currentBeatId!)) : -1;
+  const at = runtime.completed ? entries.length : Math.max(0, current);
   const stateOf = (index: number) => (index < at ? "done" : index === at && !runtime.completed ? "current" : "next");
   return (
     <nav className="teach-contents" aria-label={tr("课程目录")}>

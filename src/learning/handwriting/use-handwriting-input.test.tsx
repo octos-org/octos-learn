@@ -76,3 +76,18 @@ it("pauses on resizing and playback, then requires explicit restart", async () =
 it("does not install a camera input when the experimental feature is off", () => {
   const s = setup(false); expect(s.ownerRef.current).toBeNull(); s.result.current.start(); expect(captures).toHaveLength(0);
 });
+
+it("flushes an active stroke when disabled and requires an explicit camera start when re-enabled", async () => {
+  const s = setup(); await s.begin();
+  expect(s.result.current.state.gesture?.penDown).toBe(true);
+  const capture = captures[0]!;
+  s.rerender({ ...s.props, enabled: false });
+  expect(capture.stop).toHaveBeenCalled();
+  expect(s.ink.saveNow).toHaveBeenCalled();
+  expect(s.ownerRef.current).toBeNull();
+  s.rerender(s.props);
+  expect(s.result.current.state.status).toBe("off");
+  expect(captures).toHaveLength(1);
+  await s.start();
+  expect(captures).toHaveLength(2);
+});

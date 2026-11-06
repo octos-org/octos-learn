@@ -2,19 +2,22 @@ import type { CanonicalEvent } from "octos-lesson-language";
 import type { RegionLayoutConstraint } from "octos-lesson-language/web-runtime";
 
 import { teachingReadingScale } from "../oll/board-chrome-insets";
+import { lessonCards } from "./lesson-cards";
 
 /**
- * Each node's creation card (Beat), so the teaching layout treats every card
+ * Each node's creation card, so the teaching layout treats every recorded card
  * as a step: a card that adds a graph or grid starts a row; a card that only
- * writes or explains continues the current row.
+ * writes or explains continues the current row. A card may span several beats.
  */
 export function nodeSections(events: CanonicalEvent[]): Record<string, string> {
   const sections: Record<string, string> = {};
+  const cards = lessonCards(events);
+  const cardOf = new Map(cards.flatMap((card) => card.beatIds.map((beatId) => [beatId, card.beatIds.length === 1 && card.stepId.endsWith(":step:teach") ? beatId : card.stepId] as const)));
   for (const event of events) {
     for (const beat of event.step?.beats ?? []) {
       for (const actions of Object.values(beat.stage ?? {})) {
         for (const action of actions as Array<{ node?: { id?: string } }>) {
-          if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = String(beat.id ?? event.step!.id);
+          if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = cardOf.get(beat.id) ?? String(beat.id ?? event.step!.id);
         }
       }
     }

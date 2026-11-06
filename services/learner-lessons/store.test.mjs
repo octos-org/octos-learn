@@ -14,6 +14,13 @@ afterEach(() => { lessons.close(); history.close(); });
 
 test("a package is kept only when every file matches its manifest", () => {
   assert.equal(checkLearnerPackage(makePackage(), "rec-one").cards, 2);
+  // Now a card is a step, and its beats are runs of sentences.
+  assert.equal(checkLearnerPackage(makePackage({ steps: [
+    { id: "l:step:card-1", beats: [{ id: "b1", narration: { text: "Hi" } }, { id: "b3" }] },
+    { id: "l:step:card-2", beats: [{ id: "b2" }] },
+    { id: "l:step:card-3", beats: [{ id: "b4" }] },
+    { id: "l:step:card-3-part2", beats: [{ id: "b5" }] },
+  ] }), "rec-one").cards, 3);
   assert.equal(checkLearnerPackage(makePackage({ tasks: 2 }), "rec-one").practice_tasks, 2);
   const refuse = (archive, pattern) => assert.throws(() => checkLearnerPackage(archive, "rec-one"), error => error instanceof LearnerPackageError && pattern.test(error.message));
   refuse(makePackage({ lessonId: "rec-two" }), /different lesson/);

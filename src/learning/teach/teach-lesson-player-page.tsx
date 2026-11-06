@@ -20,7 +20,8 @@ import { fetchLessonPackage } from "./learner-lessons-api";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage } from "./learner-package-store";
 import { presenterOfReference } from "./presenters";
-import { AvatarPicture } from "./teach-watch-page";
+import { AvatarPicture } from "./presenter-picker";
+import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import { LessonContents, lessonContents } from "./lesson-contents";
 import "./teach.css";
@@ -51,7 +52,8 @@ export function TeachLessonPlayerPage() {
   }, [id]);
   const lesson = loaded.status === "ready" ? loaded.lesson : undefined;
   const topics = useMemo(() => (lesson ? [learnerLessonTopic(lesson.events, lesson.manifest.title, lesson.manifest.language)] : undefined), [lesson]);
-  const cards = lesson?.events.flatMap((event) => event.step?.beats ?? []).length ?? 0;
+  const lessonCardList = useMemo(() => (lesson ? lessonCards(lesson.events) : []), [lesson]);
+  const cards = lessonCardList.length;
 
   const [sound, setSound] = useState(true);
   const runtime = useOllLessonRuntime({
@@ -106,18 +108,18 @@ export function TeachLessonPlayerPage() {
         <div className="course-launcher-inner">
           <AcademyHeader />
           {loaded.status === "loading" ? <p role="status">{tr("正在打开这节课…")}</p> : <p role="alert">{tr("找不到这节课。它可能已经删除，或者还没有保存。")}</p>}
-          <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+          <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         </div>
       </main>
     );
   }
 
-  const card = !runtime ? 0 : runtime.completed ? cards : Math.min(cards, runtime.beatIndex + 1);
+  const card = !runtime ? 0 : runtime.completed ? cards : Math.min(cards, cardIndexOfBeat(lessonCardList, runtime.currentBeatId) + 1);
   const avatar = presenterOfReference(lesson.manifest.author.avatar_ref);
   return (
     <main className="teach-page teach-studio teach-watch">
       <header className="teach-studio-head">
-        <Link to="/teach/lessons" className="teach-back">{tr("← 我的课")}</Link>
+        <Link to="/teach" className="teach-back">{tr("← 我的课")}</Link>
         <h1>{lesson.manifest.title}</h1>
         <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: cards })}</span>
       </header>

@@ -10,12 +10,16 @@ export function mouthTrack(audio, durationMs = 900) {
     keys: [{ timeMs: 0, channels: { jawOpen: 0 } }, { timeMs: 400, channels: { jawOpen: 0.6 } }, { timeMs: durationMs, channels: { jawOpen: 0 } }] };
 }
 
-/** A package laid out exactly as the app's buildLearnerPackage writes one; `mouth` makes the v2 package with lip-sync. */
-export function makePackage({ lessonId = "rec-one", extra = {}, tamper, tasks = 1, mouth = false, mouthTrack: track } = {}) {
+/**
+ * A package laid out exactly as the app's buildLearnerPackage writes one; `mouth` makes the v2 package with lip-sync.
+ * `steps` is the lesson's cards: by default two cards saved the older way (one "teach" step, a beat per card).
+ */
+export function makePackage({ lessonId = "rec-one", extra = {}, tamper, tasks = 1, mouth = false, mouthTrack: track,
+  steps = [{ id: "l:step:teach", beats: [{ id: "b1", narration: { text: "Hi" } }, { id: "b2" }] }] } = {}) {
   const lesson = [
     JSON.stringify({ lesson: { author: { learner_ref: AUTHOR.learner_ref, presented_by: { avatar_ref: AUTHOR.avatar_ref, voice_ref: AUTHOR.voice_ref } },
       tasks: Array.from({ length: tasks }, (_, index) => ({ as: `task-${index}` })) } }),
-    JSON.stringify({ step: { id: "s1", beats: [{ id: "b1", narration: { text: "Hi" } }, { id: "b2" }] } }),
+    ...steps.map(step => JSON.stringify({ step })),
   ].join("\n");
   const audio = Buffer.from("ID3 fake mp3");
   const entries = { "lesson.canonical.jsonl": Buffer.from(lesson), "narration/1.mp3": audio };

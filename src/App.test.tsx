@@ -45,6 +45,13 @@ vi.mock("./settings/settings-page", () => ({
   AdminSettingsPage: () => <div>settings-page</div>,
 }));
 
+vi.mock("./learning/teach/teach-lessons-page", () => ({
+  TeachLessonsPage: () => <div>teach-library</div>,
+}));
+vi.mock("./learning/teach/teach-plan-page", () => ({
+  TeachPlanPage: () => <div>teach-new-lesson</div>,
+}));
+
 function LocationProbe() {
   const location = useLocation();
   return (
@@ -64,6 +71,21 @@ function renderRoute(path: string) {
 }
 
 describe("Octos Learn routes", () => {
+  it("opens the course library directly at /teach", () => {
+    renderRoute("/teach");
+    expect(screen.getByText("teach-library")).toBeTruthy();
+  });
+
+  it("redirects the old course list address to the same library", async () => {
+    renderRoute("/teach/lessons");
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe("/teach"));
+    expect(screen.getByText("teach-library")).toBeTruthy();
+  });
+
+  it("opens lesson planning separately at /teach/new", () => {
+    renderRoute("/teach/new");
+    expect(screen.getByText("teach-new-lesson")).toBeTruthy();
+  });
   it("opens the shared course launcher at the product root", async () => {
     renderRoute("/");
     expect(await screen.findByText("course-launcher")).toBeTruthy();

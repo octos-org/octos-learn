@@ -114,6 +114,10 @@ vi.mock("./take-performance-store", () => ({ saveTakePerformance: async (key: un
 import { appendEvent, createRecording, finishTake, keptTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { TeachStudioPage } from "./teach-studio-page";
+import { PRESENTER_GREETINGS } from "./presenter-greetings";
+
+/** A recorded card's actions in play order, across its beats. */
+const cardActions = (compiled: CompiledLesson | null | undefined, index: number) => compiled!.lesson.steps[index]!.beats.flatMap((beat) => beat.actions);
 
 let time = 0;
 
@@ -186,12 +190,12 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   const take = keptTake(draft!.cards[0]!)!;
   expect(take.durationMs).toBe(8_000);
   expect(take.events.map((event) => [event.t, event.type])).toEqual([[400, "component.insert"], [2_100, "point_tool.place"], [4_000, "tool.laser"]]);
-  expect(board.compiled?.lesson.steps[0]!.beats[0]!.actions.map((action) => action.do)).toEqual(["write", "revise", "point", "focus"]);
+  expect(cardActions(board.compiled, 0).map((action) => action.do)).toEqual(["write", "revise", "point", "focus"]);
 
   fireEvent.change(screen.getByRole("textbox", { name: "What you said on this card" }), { target: { value: "Point A is at 1 comma 2." } });
   fireEvent.click(screen.getByRole("button", { name: "Save captions" }));
   expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)?.text).toBe("Point A is at 1 comma 2.");
-  expect(board.compiled?.lesson.steps[0]!.beats[0]!.say).toBe("Point A is at 1 comma 2.");
+  expect(board.compiled?.lesson.steps[0]!.beats.map((beat) => beat.say).join(" ")).toBe("Point A is at 1 comma 2.");
 });
 
 it("records the learner's face movement with a take only when they turn the camera on", async () => {
@@ -231,6 +235,36 @@ it("records the learner's face movement with a take only when they turn the came
   fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
   expect(camera.closes).toBe(1);
   expect(screen.queryByRole("region", { name: "Your character" })).toBeNull();
+});
+
+it("lets the learner change the character before recording, and the character greets them", async () => {
+  renderStudio();
+  expect(await screen.findByText("Star Fox · curious and adventurous")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Change character" }));
+  const picker = screen.getByRole("region", { name: "Who presents your lesson" });
+  fireEvent.click(within(picker).getByRole("radio", { name: /^Red Panda/ }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ avatar: "red-panda" });
+  expect(screen.getByText("Red Panda · warm and patient")).toBeTruthy();
+  // It says one of its own lines.
+  await waitFor(() => expect(PRESENTER_GREETINGS["red-panda"].en.some((line) => within(picker).queryByText(line))).toBe(true));
+
+  // The camera preview draws the chosen character.
+  fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
+  expect((await screen.findByRole("region", { name: "Your character" })).dataset.character).toBe("red-panda");
+  // While recording, the choice is locked.
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  expect(screen.queryByRole("button", { name: "Change character" })).toBeNull();
+});
+
+it("flags a card at once when its take has no recognized words, instead of marking it recorded", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  time = 9_000;
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  expect(await screen.findByText("! No words recognized · add them below, or re-record your words")).toBeTruthy();
+  const strip = screen.getByRole("list", { name: "Cards" });
+  expect(within(strip).getAllByRole("button")[0]!.dataset.state).toBe("fix");
+  expect(screen.queryByText(/^✓ Recorded/)).toBeNull();
 });
 
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {
@@ -298,14 +332,32 @@ it("turns what the learner says into the card's captions, timed from the take st
   expect(await screen.findByText("Here is a grid.")).toBeTruthy();
   time = 4_500; voice.onSpeechStart!();
   time = 7_000; voice.onUtterance!(new Blob(["b"]));
-  expect(await screen.findByText("Here is a grid. Point A is at one two.")).toBeTruthy();
+  // Each sentence has its own box.
+  expect(await screen.findByText("Point A is at one two.")).toBeTruthy();
+  expect(screen.getByText("Here is a grid.").tagName).toBe("LI");
   time = 8_000;
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Re-record my words" })).toBeTruthy());
   const take = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
   expect(take.text).toBe("Here is a grid. Point A is at one two.");
   expect(take.speechSpanMs).toEqual([600, 6_000]);
-  expect((screen.getByRole("textbox", { name: "What you said on this card" }) as HTMLTextAreaElement).value).toBe("Here is a grid. Point A is at one two.");
+  expect(take.segments).toEqual([
+    { startMs: 600, endMs: 3_000, text: "Here is a grid.", asrText: "Here is a grid." },
+    { startMs: 3_500, endMs: 6_000, text: "Point A is at one two.", asrText: "Point A is at one two." },
+  ]);
+  // The words are edited in the strip under the board: one block per sentence.
+  const strip = within(screen.getByRole("region", { name: "Card 1: words and actions" }));
+  expect(strip.getByRole("button", { name: /^Sentence 1: Here is a grid\./ })).toBeTruthy();
+
+  // Correcting one sentence keeps the others and the card's words in step.
+  fireEvent.click(strip.getByRole("button", { name: /^Sentence 2: / }));
+  const box = strip.getByRole("textbox", { name: "Sentence 2" });
+  fireEvent.change(box, { target: { value: "Point A is at 1, 2." } });
+  fireEvent.blur(box);
+  const corrected = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
+  expect(corrected.segments!.map((segment) => segment.text)).toEqual(["Here is a grid.", "Point A is at 1, 2."]);
+  expect(corrected.text).toBe("Here is a grid. Point A is at 1, 2.");
+  expect(corrected.textEditedAt).toBeTruthy();
 });
 
 it("asks the learner to type the words when recognition is not connected", async () => {
@@ -367,7 +419,7 @@ it("points at one stroke of the learner's writing, live and in the lesson", asyn
   const ink = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.ink![0]!;
   expect(ink.selections).toEqual(["sel-card-1-t1-m1"]);
   expect(JSON.parse(localStorage.getItem("octos-learn:learner-ink:v1:learner-1")!)[ink.snapshotId].regions).toEqual({ "sel-card-1-t1-m1": { x: 0.4, y: 0.25, width: 0.2, height: 0.5 } });
-  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "point"))
+  await waitFor(() => expect(cardActions(board.compiled, 0).filter((action) => action.do === "point"))
     .toEqual([expect.objectContaining({ target: expect.stringMatching(/^ink-card-1#/) })]));
 });
 
@@ -392,7 +444,7 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   act(() => board.onSceneGesture!({ node: "box-1", yaw: 0.05, pitch: 1.45 }));
   fireEvent.click(screen.getByRole("button", { name: /Pen/ }));
   expect(board.onVariableGesture).toBeUndefined();
-  const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
+  const actions = cardActions(board.compiled, 0);
   expect(actions.find((action) => action.do === "animate")).toMatchObject({ variable: "theta", value: 1.2, duration_intent: "normal" });
   expect(actions.find((action) => action.do === "view")).toMatchObject({ target: "box-1", preset: "top" });
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes[0]!;
@@ -429,7 +481,7 @@ it("draws the line through two placed points on their grid; an arrow joins two c
   expect(screen.getByText("Now tap where the arrow points.")).toBeTruthy();
   act(() => board.onTarget!({ node: "grid-1", part: "line-1" }));
   expect(screen.getByText("An arrow joins two different cards. Tap another card.")).toBeTruthy();
-  const actions = board.compiled!.lesson.steps[0]!.beats[0]!.actions;
+  const actions = cardActions(board.compiled, 0);
   // No new card: the grid itself shows the line, from edge to edge.
   expect(actions.filter((action) => action.do === "write").map((action) => (action as { kind?: string }).kind)).toEqual(["geometry"]);
   // The grid's last state in the card: the line is added after the points.
@@ -566,7 +618,7 @@ it("makes circled handwriting neat, and the formula takes its place on the board
   time = 3_000;
   fireEvent.click(screen.getByRole("button", { name: "Use this" }));
   // Still recording, the formula is already on the board in the writing's place.
-  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write" && action.kind === "math"))
+  await waitFor(() => expect(cardActions(board.compiled, 0).find((action) => action.do === "write" && action.kind === "math"))
     .toMatchObject({ content: { fragments: [{ latex: "\\dfrac{8-2}{4-1}=2" }] }, place: { relation: "replaces", anchor: "ink-card-1" }, source: { selection: "sel-card-1-t1-n1", confirmed_by: "learner" } }));
   expect(screen.getByRole("button", { name: /^Stop/ })).toBeTruthy();
   expect(board.compiled!.resourceContext.ink_snapshots?.[0]?.snapshot_id).toBe("ink-snap:rec-1-card-1-t1-n1@v1");
@@ -582,7 +634,7 @@ it("makes circled handwriting neat, and the formula takes its place on the board
   fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await waitFor(() => expect(keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!.take).toBe(2));
-  await waitFor(() => expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.map((action) => [action.do, (action as { as?: string }).as]))
+  await waitFor(() => expect(cardActions(board.compiled, 0).map((action) => [action.do, (action as { as?: string }).as]))
     .toEqual(expect.arrayContaining([["write", "ink-card-1"], ["write", "formula-1"]])));
 });
 
@@ -593,7 +645,7 @@ it("re-recording keeps the card's board, and starting over clears it", async () 
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
-  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.some((action) => action.do === "write" && action.kind === "geometry")).toBe(true);
+  expect(cardActions(board.compiled, 0).some((action) => action.do === "write" && action.kind === "geometry")).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Discard this take" }));
   fireEvent.click(screen.getByRole("button", { name: "Start this card over" }));
   expect(board.compiled).toBeNull();
@@ -650,6 +702,10 @@ it("Check my lesson runs the screen check and Octo's review as one, and opens th
   // Re-recording the card clears its findings until the next check.
   time = 99_000;
   fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
+  voice.transcripts = ["The rise is two."];
+  await waitFor(() => expect(voice.onUtterance).toBeTruthy());
+  time = 102_000;
+  act(() => voice.onUtterance!(new Blob(["wav"])));
   time = 104_000;
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await screen.findByRole("button", { name: "Re-record my words" });
@@ -675,7 +731,7 @@ it("puts a new graph next to a card of the current row, picked in the list or ta
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[1]!.takes.at(-1)!;
   expect(take.events.at(-1)).toMatchObject({ type: "component.insert", panel: "graph", nextTo: "grid-1" });
-  expect(board.compiled!.lesson.steps[0]!.beats[1]!.actions[0]).toMatchObject({ place: { relation: "right_of", anchor: "grid-1" }, role: "supporting_visual" });
+  expect(cardActions(board.compiled, 1)[0]).toMatchObject({ place: { relation: "right_of", anchor: "grid-1" }, role: "supporting_visual" });
 });
 
 const takeEvents = () => loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!.events.map((event) => event.type);
@@ -694,11 +750,11 @@ it("undoes the take's steps newest first: a graph, writing, a grid — and only 
   addKind("Graph");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   expect(takeEvents()).toEqual(["component.insert", "component.insert"]);
-  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "write")).toHaveLength(2);
+  expect(cardActions(board.compiled, 0).filter((action) => action.do === "write")).toHaveLength(2);
 
   fireEvent.click(undoButton());
   expect(takeEvents()).toEqual(["component.insert"]);
-  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.filter((action) => action.do === "write")).toHaveLength(1);
+  expect(cardActions(board.compiled, 0).filter((action) => action.do === "write")).toHaveLength(1);
   expect(board.inkUndos).toEqual([]);
   // ⌘Z / Ctrl+Z does the same: next comes the stroke, then the grid.
   fireEvent.keyDown(window, { key: "z", ctrlKey: true });
@@ -751,7 +807,7 @@ it("the highlighter's mark stays, unlike the laser's brief dot", async () => {
   act(() => board.onTarget!({ node: "grid-1" }));
   // No laser dot: the lesson itself shows the highlight, now and in playback.
   expect(board.pointers.slice(pointersBefore).filter(Boolean)).toEqual([]);
-  expect(board.compiled!.lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "emphasize")).toMatchObject({ target: "grid-1", emphasis: "focus" });
+  expect(cardActions(board.compiled, 0).find((action) => action.do === "emphasize")).toMatchObject({ target: "grid-1", emphasis: "focus" });
 
   // On live writing, the board marks the stroke until the writing is frozen into the lesson.
   board.strokes = [{ x: 150, y: 100 }];
@@ -815,11 +871,11 @@ it("advanced mode: edited OLL is checked, kept with the draft, and can be droppe
   expect(drawer.getByRole("alert").textContent).toMatch(/can't be used: JSON/);
   expect(loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll).toBeUndefined();
 
-  made.steps[0].beats[1].say = "Now the wave.";
+  made.steps[1].beats[0].say = "Now the wave.";
   fireEvent.change(editor, { target: { value: JSON.stringify(made) } });
   fireEvent.click(drawer.getByRole("button", { name: "Check and use" }));
   const kept = loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll;
-  expect((kept?.lesson as typeof made).steps[0].beats[1].say).toBe("Now the wave.");
+  expect((kept?.lesson as typeof made).steps[1].beats[0].say).toBe("Now the wave.");
   expect(drawer.getByText(/use your edited OLL/)).toBeTruthy();
   fireEvent.click(drawer.getByRole("button", { name: "Back to the recording's version" }));
   expect(loadRecordingDrafts(localStorage, "learner-1").find((draft) => draft.id === "rec-2")!.oll).toBeUndefined();

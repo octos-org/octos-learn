@@ -4,7 +4,7 @@
 // the current row; it only appends, so earlier rows are never a choice.
 
 import { tr } from "@/i18n";
-import type { CompiledLesson } from "./compile-recording";
+import { compiledCards, type CompiledLesson } from "./compile-recording";
 
 const FIGURES = new Set(["plot", "geometry", "scene3d", "image"]);
 
@@ -36,8 +36,8 @@ function label(action: Write): string {
 export function currentRowCards(compiled: CompiledLesson | null): RowCard[] {
   let row: RowCard[] = [];
   const hidden = new Set<string>();
-  (compiled?.lesson.steps[0]?.beats ?? []).forEach((beat, index) => {
-    for (const action of beat.actions as Write[]) {
+  compiledCards(compiled).forEach((card, index) => {
+    for (const action of card.actions as Write[]) {
       if (action.do === "hide" && action.target) hidden.add(action.target);
       if (action.do !== "write" || !action.as) continue;
       if (action.place?.relation === "replaces" && action.place.anchor) hidden.add(action.place.anchor);

@@ -1,0 +1,389 @@
+{
+  "schema": "octos.presenter-greetings.v1",
+  "clips": [
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "嗨！我是星狐，这节课就交给我来讲吧！",
+      "file": "star-fox/zh-3c77603a9a77.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "出发！我们一起去星图上探险！",
+      "file": "star-fox/zh-027d0c07b514.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "每个问题后面都藏着一颗星星，我们去找它！",
+      "file": "star-fox/zh-9e7cf4439b34.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "我已经等不及要讲你的课啦！",
+      "file": "star-fox/zh-be4b90349a90.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "好奇心就是我的指南针，走吧！",
+      "file": "star-fox/zh-ebcc0ff85dd0.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "zh",
+      "text": "准备好了吗？三、二、一，出发！",
+      "file": "star-fox/zh-ec212f253666.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "Hi! I'm Star Fox. Let me present your lesson!",
+      "file": "star-fox/en-24af2dc2b0f1.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "Let's go exploring the star map together!",
+      "file": "star-fox/en-3a0734346f20.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "Every question hides a star. Let's go find it!",
+      "file": "star-fox/en-ab946372b55d.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "I can't wait to teach your lesson!",
+      "file": "star-fox/en-16ac244d1c05.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "Curiosity is my compass. Let's go!",
+      "file": "star-fox/en-eaaf7fa8c054.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "star-fox",
+      "locale": "en",
+      "text": "Ready? Three, two, one, go!",
+      "file": "star-fox/en-e475a8cae3b7.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_linjiananhai_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "你好呀，我是小熊猫。别着急，我们一步一步来。",
+      "file": "red-panda/zh-dd0257144f8c.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "你的课，我会认真讲好的。",
+      "file": "red-panda/zh-b45ecbbe8988.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "慢慢讲，讲清楚，就是最好的课。",
+      "file": "red-panda/zh-0225f1408ec0.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "听的人哪里不懂，我就耐心再讲一遍。",
+      "file": "red-panda/zh-909b5a92a5d9.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "有我在，放心吧。",
+      "file": "red-panda/zh-09ce5a96ac63.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "zh",
+      "text": "今天也一起加油哦。",
+      "file": "red-panda/zh-ffe4026cd382.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "Hello, I'm Red Panda. No rush. We'll go step by step.",
+      "file": "red-panda/en-9a059a34d631.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "I'll take good care of your lesson.",
+      "file": "red-panda/en-99e79a285dc8.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "Slow and clear makes the best lesson.",
+      "file": "red-panda/en-ff96c72e3877.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "If anyone gets stuck, I'll patiently explain it again.",
+      "file": "red-panda/en-5282f1dd44df.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "Don't worry, I've got you.",
+      "file": "red-panda/en-7d96e8d614b0.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "red-panda",
+      "locale": "en",
+      "text": "Let's do our best together today.",
+      "file": "red-panda/en-cd2ec4db1cce.mp3",
+      "provider": "volcano",
+      "voice": "zh_male_wennuanahu_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "哈喽哈喽！我是白兔，选我选我！",
+      "file": "white-rabbit/zh-cdc7d2c91cb6.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "我脑袋里装满了好点子，快来看！",
+      "file": "white-rabbit/zh-8b0889c44a0e.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "蹦一下，就到下一张卡片啦！",
+      "file": "white-rabbit/zh-71b9ab5ecf06.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "我讲课又快又清楚，不信你听！",
+      "file": "white-rabbit/zh-0a2811e147ab.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "哇，这个主题好有意思！",
+      "file": "white-rabbit/zh-41f341019280.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "zh",
+      "text": "耳朵竖起来，要开始啦！",
+      "file": "white-rabbit/zh-2fbb4a65be55.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "Hi hi! I'm White Rabbit. Pick me, pick me!",
+      "file": "white-rabbit/en-efc0b07fe14d.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "My head is full of great ideas. Come and see!",
+      "file": "white-rabbit/en-17c167d066f5.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "One hop, and we're on the next card!",
+      "file": "white-rabbit/en-77a30f29cc29.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "I'm quick and clear. Just listen!",
+      "file": "white-rabbit/en-701ad100fefd.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "Wow, this topic is so cool!",
+      "file": "white-rabbit/en-0401f82c9a95.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "white-rabbit",
+      "locale": "en",
+      "text": "Ears up! Here we go!",
+      "file": "white-rabbit/en-fa014540c1fe.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_tianmeiyueyue_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "晚上好……啊不，你好。我是月猫。",
+      "file": "moon-cat/zh-f84b4a5d6821.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "我们安静地，把这节课讲成一个小故事吧。",
+      "file": "moon-cat/zh-053b5f4db454.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "月亮慢慢地走，我们也慢慢地讲。",
+      "file": "moon-cat/zh-dbf6b0cbaeab.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "闭上眼睛想一想，答案会像星星一样亮起来。",
+      "file": "moon-cat/zh-01d698e58d24.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "每个想法，都值得好好听完。",
+      "file": "moon-cat/zh-2aaddffcaab3.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "zh",
+      "text": "让我用月光，把你的课照亮。",
+      "file": "moon-cat/zh-49e389dd1183.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "Good evening... oh, I mean hello. I'm Moon Cat.",
+      "file": "moon-cat/en-15cb8191a303.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "Let's tell this lesson quietly, like a little story.",
+      "file": "moon-cat/en-f804819ab08b.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "The moon moves slowly, and so will we.",
+      "file": "moon-cat/en-8e6fba33d2c4.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "Close your eyes and think. The answer will light up like a star.",
+      "file": "moon-cat/en-1ec21643490b.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "Every idea deserves to be heard all the way through.",
+      "file": "moon-cat/en-a5433afb0481.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    },
+    {
+      "avatar": "moon-cat",
+      "locale": "en",
+      "text": "Let me light up your lesson with moonlight.",
+      "file": "moon-cat/en-8959b84386b5.mp3",
+      "provider": "volcano",
+      "voice": "zh_female_shaoergushi_uranus_bigtts"
+    }
+  ]
+}
