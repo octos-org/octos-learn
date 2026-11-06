@@ -38,7 +38,15 @@ export type ComponentInsert = ComponentPlacement & (
       linkedVariable?: string }
   | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
   | { panel: "unit_circle"; alias: string; variable: string; title?: string }
-  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string });
+  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string }
+  /** Words on the board: said (from the learner's own captions) or typed. */
+  | { panel: "text"; alias: string; text: string; title?: string }
+  /** A short note with a meaning: a conclusion, something to be careful about, a summary or a definition. */
+  | { panel: "note"; alias: string; text: string; role: NoteRole; title?: string }
+  /** A table; cells can be left empty and filled while talking (table.fill). */
+  | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string });
+
+export type NoteRole = "conclusion" | "warning" | "summary" | "definition";
 
 export type ComponentPanel = ComponentInsert["panel"];
 
@@ -57,6 +65,8 @@ export type RecordingEvent =
   | { t: number; type: "line_tool.draw"; node: string; from: string; to: string; alias: string }
   | { t: number; type: "make_point.confirmed"; selection: string; node: string; point: string; x: number; y: number; label: string }
   | { t: number; type: "ink.hide"; node: string }
+  /** Words put into one cell of a table on the board (row and column count from 0, rows below the header). */
+  | { t: number; type: "table.fill"; node: string; row: number; column: number; text: string }
   | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
   | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
   | { t: number; type: "your_turn.hint_spoken"; text: string };
@@ -305,7 +315,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 // What stays on the board when only the words are re-recorded: cards, arrows
 // and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
-  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide",
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill",
   "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
 ]);

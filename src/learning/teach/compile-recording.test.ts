@@ -497,3 +497,33 @@ describe("a worked solution grows in one card where it was written", () => {
     expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "below" });
   });
 });
+
+describe("words on the board: text, notes and tables", () => {
+  it("writes a text card, a note with its meaning, and a table whose cells are filled while talking", () => {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "States of matter", type: "other" }, goals: ["Tell solids, liquids and gases apart"] }),
+      now, [{ title: "Three states" }],
+    );
+    recording = record(recording, "card-1", "Matter comes in three states. Ice is a solid. Water is a liquid.", [
+      { t: 500, type: "component.insert", panel: "text", alias: "text-1", text: " Matter comes in three states. " },
+      { t: 1_500, type: "component.insert", panel: "table", alias: "table-1", columns: ["State", "Example"], rows: [["Solid", ""], ["Liquid", ""]] },
+      { t: 4_000, type: "table.fill", node: "table-1", row: 0, column: 1, text: "Ice" },
+      { t: 6_000, type: "table.fill", node: "table-1", row: 1, column: 1, text: "Water" },
+      { t: 8_000, type: "component.insert", panel: "note", alias: "note-1", role: "conclusion", text: "Heat changes the state." },
+    ]);
+    const { state } = check(recording);
+    expect(state.nodes["l:node:text-1"]).toMatchObject({ kind: "text", content: { text: "Matter comes in three states." } });
+    expect(state.nodes["l:node:text-1"]!.content.title).toBeUndefined();
+    expect(state.nodes["l:node:note-1"]).toMatchObject({ kind: "note", role: "conclusion", content: { title: "Conclusion", text: "Heat changes the state." } });
+    expect(state.nodes["l:node:table-1"]!.content).toEqual({ title: "Three states", columns: ["State", "Example"], rows: [["Solid", "Ice"], ["Liquid", "Water"]] });
+  });
+
+  it("refuses to fill a cell that is not in the table", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Tables", type: "other" }, goals: [] }), now, [{ title: "One" }]);
+    recording = record(recording, "card-1", "A table.", [
+      { t: 500, type: "component.insert", panel: "table", alias: "table-1", columns: ["A"], rows: [["x"]] },
+      { t: 900, type: "table.fill", node: "table-1", row: 3, column: 0, text: "y" },
+    ]);
+    expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow(CompileError);
+  });
+});

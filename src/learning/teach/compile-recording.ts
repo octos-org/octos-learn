@@ -11,6 +11,7 @@ import {
   type CardInk,
   type ComponentInsert,
   type LearnerRecording,
+  type NoteRole,
   type RecordingCard,
   type RecordingEvent,
   type Take,
@@ -310,6 +311,15 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
   } as Action;
 }
 
+const NOTE_HEADINGS: Record<"zh" | "en", Record<NoteRole, string>> = {
+  zh: { conclusion: "结论", warning: "注意", summary: "小结", definition: "定义" },
+  en: { conclusion: "Conclusion", warning: "Be careful", summary: "Summary", definition: "Definition" },
+};
+/** What a note is, as its heading in the lesson's language (lessons are recorded in Chinese or English). */
+function noteHeading(role: NoteRole, language: string): string {
+  return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
+}
+
 /** Space between handwriting that continues a card and neat math for part of it, in board units. */
 const NEAT_GAP = 12;
 
@@ -322,6 +332,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
   const scenes = new Set<string>();
+  // Each table's content as filled so far, so filling a cell revises the whole table.
+  const tables = new Map<string, { title: string; columns: string[]; rows: string[][] }>();
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
   const inkOfSelection = new Map<string, string>(); // selection id -> ink alias
   const hidden = new Set<string>();
@@ -408,6 +420,21 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           ],
         },
       } as Action;
+    }
+    if (component.panel === "text" || component.panel === "note") {
+      // Words keep only a title the learner gave them: the card's title would repeat what is said.
+      // A note is headed by what kind of note it is, in the lesson's language.
+      const heading = component.title?.trim() || (component.panel === "note" ? noteHeading(component.role, options.language) : "");
+      const named = heading ? { title: heading } : {};
+      return {
+        do: "write", as: alias, kind: component.panel, role: component.panel === "note" ? component.role : "observation", place: placeNext(),
+        content: { ...named, text: component.text.trim() },
+      } as Action;
+    }
+    if (component.panel === "table") {
+      const table = { ...title, columns: component.columns.map((column) => column.trim()), rows: component.rows.map((row) => row.map((cell) => cell.trim())) };
+      tables.set(alias, table);
+      return { do: "write", as: alias, kind: "table", role: "observation", place: placeNext(), content: structuredClone(table) } as Action;
     }
     scenes.add(alias);
     return {
@@ -529,6 +556,15 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           actions.push({ ...action, ...beside, when } as Action);
           lastNode = event.alias;
           focus = [event.alias];
+          break;
+        }
+        case "table.fill": {
+          const table = tables.get(event.node);
+          const row = table?.rows[event.row];
+          if (!table || !row || event.column < 0 || event.column >= table.columns.length) throw new CompileError(`'${event.node}' has no cell at row ${event.row + 1}, column ${event.column + 1}`);
+          row[event.column] = event.text.trim();
+          actions.push({ do: "revise", target: event.node, content: structuredClone(table), reason: "the learner filled a cell", when } as Action);
+          focus = [event.node];
           break;
         }
         case "point_tool.place":

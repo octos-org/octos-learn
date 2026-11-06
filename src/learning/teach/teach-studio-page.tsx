@@ -51,7 +51,7 @@ import { currentRowCards } from "./board-rows";
 import { CheckDialog, type CheckPart, type CheckRun } from "./check-dialog";
 import { cardChecks, lessonReady } from "./lesson-check";
 import { checkReadability } from "./readability-check";
-import { AddPanel } from "./studio-add";
+import { AddPanel, CellEditor } from "./studio-add";
 import { askOcto, explainAssistFailure, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type LiveSentence, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
@@ -63,7 +63,7 @@ import { AvatarPicture, PresenterPicker } from "./presenter-picker";
 import { presenterVoiceNote, useSpeechService } from "./speech-service";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
-import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
+import { TeachBoard, type TableCell, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
 import "./teach.css";
 
 type Tool = "none" | "pen" | "eraser" | "laser" | "highlighter" | "arrow";
@@ -122,6 +122,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const speechRef = useRef<TakeSpeech | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [liveSentences, setLiveSentences] = useState<LiveSentence[]>([]);
+  // The last sentence heard in this take, which the learner can put on the board as words.
+  const said = [...liveSentences].reverse().find((sentence): sentence is Extract<LiveSentence, { state: "text" }> => sentence.state === "text")?.text;
+  // A cell of a table on the board being filled in.
+  const [cellEdit, setCellEdit] = useState<TableCell | null>(null);
   // How the microphone is doing during a take: on or not, hearing speech, and sentences being turned into text.
   const [mic, setMic] = useState<MicState>({ listening: null, speaking: false, transcribing: 0 });
   const [level] = useState(() => new InputLevel());
@@ -282,6 +286,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     setTakeStart(takeStartedAt.current);
     const key = card.key;
     setNotice(null);
+    setCellEdit(null);
     update((current) => startTake(current, key, now(), { fresh }));
     clearUndo();
     cameraTake.current = latest.current?.presenter?.cameraMotion === "on";
@@ -554,6 +559,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
+  // Whether the lesson has a table whose cells can be filled while talking.
+  const hasTable = recording?.cards.some((entry) => entry.takes.some((take) => take.events.some((event) => event.type === "component.insert" && event.panel === "table"))) ?? false;
   // The card the writing being written will continue, so the hint can say so.
   const [continuing, setContinuing] = useState<string | null>(null);
   /**
@@ -648,6 +655,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
         : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
+          : tool === "none" && isRecording && hasTable ? tr("点白板上表格里的格子，就能把你说的话填进去。")
           : tool === "pen" ? (continuing ? tr("写在上一行下面：会接着写在虚线框住的卡片里，放在你写的位置。") : tr("直接在白板上写。写在图上的会贴在那张图上；写在手写或算式下面的会接着写在那张卡片里。"))
             : null;
   const tools: Array<[Tool | "neat", string, typeof PenLine]> = [
@@ -734,6 +742,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
             arrowFrom={isRecording && tool === "arrow" ? arrowFrom : null}
+            onTableCell={isRecording && tool === "none" && !addOpen ? setCellEdit : undefined}
             onContinuing={setContinuing}
           />
           {isRecording && addOpen && (
@@ -748,7 +757,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); closeAdd(); }}
               onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); closeAdd(); }}
               onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); closeAdd(); }}
+              {...(said ? { said } : {})}
             />
+          )}
+          {isRecording && cellEdit && !addOpen && (
+            <CellEditor key={`${cellEdit.node}:${cellEdit.row}:${cellEdit.column}`} cell={cellEdit} {...(said ? { said } : {})} onCancel={() => setCellEdit(null)}
+              onFill={(text) => { record(withTime({ type: "table.fill" as const, node: cellEdit.node, row: cellEdit.row, column: cellEdit.column, text })); setCellEdit(null); }} />
           )}
           {hint && <p className="teach-dock-hint" role="status">{hint}</p>}
           <div className="teach-dock" role="toolbar" aria-label={tr("录课工具")} aria-disabled={!isRecording || undefined}>

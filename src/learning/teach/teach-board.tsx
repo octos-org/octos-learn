@@ -28,6 +28,9 @@ export interface FrozenInk {
   strokeDrawnAt?: number[];
 }
 
+/** A cell of a table on the board: row and column count from 0, rows below the headings. */
+export interface TableCell { node: string; row: number; column: number; text: string }
+
 /** A box on the board, in board coordinates. */
 export interface BoardBox { x: number; y: number; width: number; height: number }
 
@@ -284,7 +287,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   arrowFrom?: BoardTarget | null;
   /** The card the take's writing will continue as it is written (null when it is a card of its own). */
   onContinuing?: (node: string | null) => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing }, ref) {
+  /** While set, tapping a cell of a table on the board reports it, to fill it in. */
+  onTableCell?: (cell: TableCell) => void;
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -310,6 +315,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const onTargetRef = useRef(onTarget);
   const onContinuingRef = useRef(onContinuing);
   useEffect(() => { onContinuingRef.current = onContinuing; }, [onContinuing]);
+  const onTableCellRef = useRef(onTableCell);
+  useEffect(() => { onTableCellRef.current = onTableCell; }, [onTableCell]);
   // The card the live writing would continue, outlined while it is written.
   const continuingRef = useRef<string | null>(null);
   const showContinuing = (node: string | null) => {
@@ -340,6 +347,13 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     mountedRef.current = mounted;
     const handleClick = (event: MouseEvent) => {
+      // A cell of a table (not its headings), to fill in.
+      const cell = (event.target as Element | null)?.closest?.<HTMLElement>("[data-oll-target-kind='table-cell']");
+      const found = cell && onTableCellRef.current ? /:node:([^:]+):table:row:(\d+):column:(\d+)$/.exec(cell.dataset.ollTargetId ?? "") : null;
+      if (found) {
+        onTableCellRef.current!({ node: found[1]!, row: Number(found[2]), column: Number(found[3]), text: cell!.textContent?.trim() ?? "" });
+        return;
+      }
       if (!onTargetRef.current) return;
       // The take's own writing is not on a card yet: a tap on a stroke points at that stroke.
       const box = viewport.getBoundingClientRect();

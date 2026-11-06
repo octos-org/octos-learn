@@ -267,6 +267,29 @@ it("flags a card at once when its take has no recognized words, instead of marki
   expect(screen.queryByText(/^✓ Recorded/)).toBeNull();
 });
 
+it("puts what the learner just said on the board as words, or as a note of a chosen kind", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  await waitFor(() => expect(voice.onUtterance).toBeTruthy());
+  voice.transcripts = ["Matter comes in three states."];
+  time = 2_000;
+  act(() => voice.onUtterance!(new Blob(["wav"])));
+  await screen.findByText("Matter comes in three states.");
+  addKind("Text");
+  fireEvent.click(screen.getByRole("button", { name: /^Use what I just said: “Matter comes in three/ }));
+  expect((screen.getByRole("textbox", { name: "Words to write" }) as HTMLTextAreaElement).value).toBe("Matter comes in three states.");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  addKind("Note");
+  fireEvent.click(screen.getByRole("radio", { name: "Careful" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "What the note says" }), { target: { value: "Steam is hot." } });
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!;
+  expect(take.events.map((event) => ("panel" in event ? event : null))).toMatchObject([
+    { panel: "text", text: "Matter comes in three states." },
+    { panel: "note", role: "warning", text: "Steam is hot." },
+  ]);
+});
+
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));

@@ -3,11 +3,11 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { Box, Circle, Grid3x3, LineChart, Spline, Square } from "lucide-react";
+import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Spline, Square, StickyNote, Table2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
-import type { ComponentInsert, LearnerRecording } from "./recording";
+import type { ComponentInsert, LearnerRecording, NoteRole } from "./recording";
 import { gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables, type InsertForm } from "./studio-helpers";
 
 
@@ -16,8 +16,10 @@ function numberField(value: string): number | undefined {
   return value.trim() !== "" && Number.isFinite(number) ? number : undefined;
 }
 
-export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onInsert, onPoint, onLine }: {
+export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onInsert, onPoint, onLine, said }: {
   recording: LearnerRecording;
+  /** The last sentence the learner said in this take, to put on the board as words. */
+  said?: string;
   grids: string[];
   /** Cards of the current row a figure can go next to. */
   row: RowCard[];
@@ -30,6 +32,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
   const kinds: Array<[InsertForm, string, typeof LineChart]> = [
+    ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2],
     ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box],
     ...(grids.length ? [["point", tr("放一个点"), Square] as [InsertForm, string, typeof LineChart]] : []),
     ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["line", tr("过两点画直线"), Spline] as [InsertForm, string, typeof LineChart]] : []),
@@ -69,6 +72,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
           onInsert={(component) => onInsert(nextTo && isFigure(form) ? { ...component, nextTo } : component)}
           onPoint={onPoint}
           onLine={onLine}
+          {...(said ? { said } : {})}
         />
       )}
     </div>
@@ -76,9 +80,10 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
 }
 
 function InsertPanel({
-  form, recording, grids, placement, onInsert, onPoint, onLine,
+  form, recording, grids, placement, onInsert, onPoint, onLine, said,
 }: {
   form: InsertForm;
+  said?: string;
   /** "Put it next to…", shown before the button of a form that adds a figure. */
   placement: ReactNode;
   recording: LearnerRecording;
@@ -173,6 +178,8 @@ function InsertPanel({
     );
   }
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
+  if (form === "text" || form === "note") return <WordsForm kind={form} recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
+  if (form === "table") return <TableForm recording={recording} onInsert={onInsert} />;
   const [x, y] = [numberField(point.x), numberField(point.y)];
   const label = point.node ? nextPointLabel(recording, point.node) : undefined;
   const gridRange = gridRanges(recording).get(point.node);
@@ -243,3 +250,109 @@ function LineForm({ recording, onLine }: {
   );
 }
 
+
+const NOTE_ROLES: Array<[NoteRole, () => string]> = [
+  ["conclusion", () => tr("结论")], ["warning", () => tr("注意")], ["summary", () => tr("小结")], ["definition", () => tr("定义")],
+];
+
+/** Words for the board: what the learner just said, or typed; a note also says what kind of note it is. */
+function WordsForm({ kind, recording, said, onInsert }: {
+  kind: "text" | "note";
+  recording: LearnerRecording;
+  said?: string;
+  onInsert: (component: ComponentInsert) => void;
+}) {
+  const [text, setText] = useState("");
+  const [role, setRole] = useState<NoteRole>("conclusion");
+  const words = text.trim();
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (!words) return;
+      onInsert(kind === "note"
+        ? { panel: "note", alias: nextComponentAlias(recording, "note"), role, text: words }
+        : { panel: "text", alias: nextComponentAlias(recording, "text"), text: words });
+    }}>
+      {kind === "note" && (
+        <div className="teach-note-roles" role="radiogroup" aria-label={tr("这条提示是")}>
+          {NOTE_ROLES.map(([value, label]) => (
+            <button key={value} type="button" role="radio" aria-checked={role === value} data-role={value} onClick={() => setRole(value)}>{label()}</button>
+          ))}
+        </div>
+      )}
+      <label className="teach-label">{kind === "note" ? tr("提示的内容") : tr("要写的话")}
+        <textarea className="teach-input" rows={3} value={text} maxLength={400} onChange={(event) => setText(event.target.value)} />
+      </label>
+      {said && <button type="button" className="teach-secondary" onClick={() => setText(said)}>{tr("用我刚说的话：“{{v0}}”", { v0: said.length > 24 ? `${said.slice(0, 24)}…` : said })}</button>}
+      <button type="submit" disabled={!words}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+const MAX_COLUMNS = 5;
+const MAX_ROWS = 6;
+
+/** A table: its headings and any cells known now; empty cells are filled later by tapping them while talking. */
+function TableForm({ recording, onInsert }: { recording: LearnerRecording; onInsert: (component: ComponentInsert) => void }) {
+  const [columns, setColumns] = useState<string[]>(["", ""]);
+  const [rows, setRows] = useState<string[][]>([["", ""], ["", ""]]);
+  const resize = (columnCount: number, rowCount: number) => {
+    setColumns((current) => Array.from({ length: columnCount }, (_, index) => current[index] ?? ""));
+    setRows((current) => Array.from({ length: rowCount }, (_, row) => Array.from({ length: columnCount }, (__, column) => current[row]?.[column] ?? "")));
+  };
+  const ready = columns.every((column) => column.trim());
+  const stepper = (label: string, value: number, min: number, max: number, set: (next: number) => void) => (
+    <div className="teach-stepper" role="group" aria-label={label}>
+      <span>{label}</span>
+      <button type="button" className="teach-secondary" aria-label={tr("少一个")} disabled={value <= min} onClick={() => set(value - 1)}>−</button>
+      <output>{value}</output>
+      <button type="button" className="teach-secondary" aria-label={tr("多一个")} disabled={value >= max} onClick={() => set(value + 1)}>+</button>
+    </div>
+  );
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (ready) onInsert({ panel: "table", alias: nextComponentAlias(recording, "table"), columns, rows });
+    }}>
+      <div className="teach-table-size">
+        {stepper(tr("列"), columns.length, 1, MAX_COLUMNS, (next) => resize(next, rows.length))}
+        {stepper(tr("行"), rows.length, 1, MAX_ROWS, (next) => resize(columns.length, next))}
+      </div>
+      <table className="teach-table-form">
+        <thead><tr>{columns.map((column, index) => (
+          <th key={index}><input className="teach-input" aria-label={tr("第 {{v0}} 列的标题", { v0: index + 1 })} placeholder={tr("标题")} value={column}
+            onChange={(event) => setColumns(columns.map((value, at) => (at === index ? event.target.value : value)))} /></th>
+        ))}</tr></thead>
+        <tbody>{rows.map((row, rowIndex) => (
+          <tr key={rowIndex}>{row.map((cell, columnIndex) => (
+            <td key={columnIndex}><input className="teach-input" aria-label={tr("第 {{v0}} 行第 {{v1}} 列", { v0: rowIndex + 1, v1: columnIndex + 1 })} value={cell}
+              onChange={(event) => setRows(rows.map((values, at) => (at === rowIndex ? values.map((value, column) => (column === columnIndex ? event.target.value : value)) : values)))} /></td>
+          ))}</tr>
+        ))}</tbody>
+      </table>
+      <p className="academy-muted">{tr("格子可以先空着，讲到的时候点白板上的格子再填。")}</p>
+      <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+/** Fills one cell of a table on the board, with what the learner just said or typed. */
+export function CellEditor({ cell, said, onFill, onCancel }: {
+  cell: { row: number; column: number; text: string };
+  said?: string;
+  onFill: (text: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState(cell.text);
+  return (
+    <form className="teach-add teach-cell-editor" role="dialog" aria-label={tr("填表格")} onSubmit={(event) => { event.preventDefault(); onFill(text.trim()); }}>
+      <div className="teach-group-label">{tr("第 {{v0}} 行第 {{v1}} 列", { v0: cell.row + 1, v1: cell.column + 1 })}</div>
+      <input className="teach-input" aria-label={tr("格子里写什么")} value={text} maxLength={120} autoFocus onChange={(event) => setText(event.target.value)} />
+      {said && <button type="button" className="teach-secondary" onClick={() => setText(said)}>{tr("用我刚说的话：“{{v0}}”", { v0: said.length > 24 ? `${said.slice(0, 24)}…` : said })}</button>}
+      <div className="teach-actions">
+        <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
+        <button type="submit">{tr("填好了")}</button>
+      </div>
+    </form>
+  );
+}

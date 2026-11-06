@@ -361,3 +361,16 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-tracks-column[data-drop] .teach-tracks-actions { outline-color: #0f766e; }
 .teach-tracks-slot[data-before-marker]::before, .teach-tracks-actions[data-drop-end]::after { content: ""; flex: none; align-self: stretch; width: 4px; margin: 2px; border-radius: 2px; background: #1b2457; }
 .teach-tracks-slot[data-before-marker]::before { position: absolute; top: 0; bottom: 0; left: -6px; margin: 0; }
+
+/* Words on the board: the kind of note, the table's size and cells, filling a cell while talking. */
+.teach-note-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.teach-step .teach-note-roles button { min-height: 36px; padding: 0 14px; border-color: rgba(40, 65, 67, 0.22); color: #3d5a63; background: #fffef9; font-size: 14px; }
+.teach-step .teach-note-roles button[aria-checked="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-table-size { display: flex; flex-wrap: wrap; gap: 16px; }
+.teach-stepper { display: inline-flex; align-items: center; gap: 8px; color: #2f4a52; font-size: 14px; }
+.teach-step .teach-stepper button { width: 36px; min-height: 36px; justify-content: center; padding: 0; }
+.teach-stepper output { min-width: 1.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.teach-table-form { width: 100%; border-collapse: separate; border-spacing: 4px; }
+.teach-table-form .teach-input { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 8px; font-size: 14px; }
+.teach-table-form th .teach-input { font-weight: 600; }
+.teach-cell-editor { display: grid; gap: 10px; }
