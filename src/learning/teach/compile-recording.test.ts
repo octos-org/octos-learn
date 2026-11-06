@@ -3,7 +3,7 @@ import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents,
 import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
-import { compileRecording, compiledCards, CompileError } from "./compile-recording";
+import { compileRecording, compiledCards, CompileError, sliderStep } from "./compile-recording";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
@@ -592,5 +592,28 @@ describe("Your turn beyond dragging: answer a number, turn a 3D shape", () => {
     })]);
     const answered = check(practice([{ t: 2_000, type: "your_turn.view_set", node: "box-1", yaw: 0, pitch: 1.5 }, { t: 3_000, type: "your_turn.answer_set", answer: "3/4", simplest: true }]));
     expect(answered.lesson.lesson.tasks![0]!.completion).toEqual({ kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" });
+  });
+});
+
+describe("graphs with sliders", () => {
+  it("makes each letter the learner chose a slider the curve reads, and dragging it animates the curve", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Vertex form", type: "math_off_map" }, goals: ["Move a parabola"] }), now, [{ title: "Move it" }]);
+    recording = record(recording, "card-1", "Change h and k to move the parabola.", [
+      { t: 500, type: "component.insert", panel: "graph", alias: "graph-1", expression: "(x-h)^2+k", x: [-6, 6], y: [-6, 10],
+        parameters: [{ letter: "h", variable: "h", initial: 0, min: -4, max: 4 }, { letter: "k", variable: "k_2", initial: 1, min: -3, max: 5 }] },
+      { t: 4_000, type: "variable.drag", variable: "h", via: "slider", from: 0, to: 2, durationMs: 900 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([
+      { as: "h", initial: 0, min: -4, max: 4, label: "h", control: { kind: "slider", step: 0.1 } },
+      { as: "k_2", initial: 1, min: -3, max: 5, label: "k", control: { kind: "slider", step: 0.1 } },
+    ]);
+    const curve = (state.nodes["l:node:graph-1"]!.content as { curves: Array<{ expression: string; label: string }> }).curves[0]!;
+    expect(curve).toMatchObject({ expression: "(x-h)^2+k_2", label: "y = (x-h)^2+k" });
+    expect(state.variables!.h!.value).toBe(2);
+  });
+
+  it("picks slider steps of 1, 2 or 5 times a power of ten", () => {
+    expect([sliderStep(-5, 5), sliderStep(0, 1), sliderStep(0, 300), sliderStep(-2, 2)]).toEqual([0.1, 0.01, 5, 0.05]);
   });
 });

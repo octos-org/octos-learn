@@ -3212,5 +3212,13 @@
   "② 转好了，点这个按钮记下来：": "② When it is turned right, tap this to keep it:",
   "就是这个角度": "This is the view",
   "看的人要自己把它转到差不多这个方向，才算做对。": "Viewers have to turn it to about this direction themselves to get it right.",
-  "第 {{v0}} 张的长方体": "Box on card {{v0}}"
+  "第 {{v0}} 张的长方体": "Box on card {{v0}}",
+  "不认识：{{v0}}。字母只用一个，比如 a、k、m。": "Not recognised: {{v0}}. Use single letters, like a, k or m.",
+  "滑块：讲课时拖动它们，图像跟着变": "Sliders: drag them while you talk and the graph follows",
+  "滑块 {{v0}}": "Slider {{v0}}",
+  "开始是": "Starts at",
+  "从": "from",
+  "到": "to",
+  "开始的数要在范围里，“从”要比“到”小。": "The start must be within the range, and “from” smaller than “to”.",
+  "① 先说出题目，再在白板上拖动滑块 {{v0}}，把正确答案摆出来。": "① Say the question, then drag slider {{v0}} on the board to the right answer."
 }

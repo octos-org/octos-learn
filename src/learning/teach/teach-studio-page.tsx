@@ -44,7 +44,7 @@ import { SequenceBar } from "./sequence-bar";
 import { cardSequence } from "./card-script";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { syncLessonDrafts } from "./draft-sync";
-import { isFigure, learnerAuthor, nextComponentAlias, recordingVariables, type InsertForm } from "./studio-helpers";
+import { isFigure, learnerAuthor, nextComponentAlias, recordingVariableInfo, type InsertForm } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { NeatFormulaPanel, OctoQuestionPanel } from "./assist-panels";
 import { currentRowCards } from "./board-rows";
@@ -861,7 +861,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               )}
               {card?.kind === "your_turn" && (
                 <YourTurnPanel
-                  variables={recordingVariables(recording)}
+                  variables={recordingVariableInfo(recording)}
                   scenes={recordingScenes(recording)}
                   valueOf={(alias) => boardRef.current?.variableValue(alias)}
                   viewOf={(node) => latestView(recording, card.key, node)}
@@ -1008,12 +1008,18 @@ function TranscriptEditor({ text, label, onSave }: { text: string; label?: strin
   );
 }
 
-// A unit circle's variable is its angle, which the board calls θ.
-const READOUTS = (variable: string) => [
-  { expression: `sin(${variable})`, label: "sin θ" },
-  { expression: `cos(${variable})`, label: "cos θ" },
-  { expression: variable, label: tr("θ 本身（弧度）") },
-];
+// A unit circle's variable is its angle, which the board calls θ; a graph's slider is read as itself.
+const READOUTS = (variable: VariableInfo) => (variable.angle ? [
+  { expression: `sin(${variable.variable})`, label: "sin θ" },
+  { expression: `cos(${variable.variable})`, label: "cos θ" },
+  { expression: variable.variable, label: tr("θ 本身（弧度）") },
+] : [{ expression: variable.variable, label: variable.label }]);
+type VariableInfo = ReturnType<typeof recordingVariableInfo>[number];
+
+/** How close to the learner's value a viewer must drag a graph's slider: within 2% of it, and at least 0.02 near zero. */
+function sliderTolerance(_info: VariableInfo, value: number): number {
+  return Math.max(0.01, Math.abs(value) < 1 ? 0.02 : Math.abs(value) * 0.02);
+}
 
 function evaluateReadout(expression: string, value: number): number {
   if (expression.startsWith("sin(")) return Math.sin(value);
@@ -1028,7 +1034,7 @@ type PracticeKind = "drag" | "answer" | "view";
  * shows, type a number, or turn a 3D shape to the view the learner shows.
  */
 function YourTurnPanel({ variables, scenes, valueOf, viewOf, onSave, onSaveAnswer, onSaveView }: {
-  variables: string[];
+  variables: VariableInfo[];
   scenes: Array<{ alias: string; label: string }>;
   valueOf: (alias: string) => number | undefined;
   /** How the learner last turned a 3D scene in this take. */
@@ -1059,13 +1065,15 @@ function YourTurnPanel({ variables, scenes, valueOf, viewOf, onSave, onSaveAnswe
 
 /** The viewer drags a lesson variable until a reading reaches the answer the learner put on the board. */
 function DragPractice({ variables, valueOf, onSave }: {
-  variables: string[];
+  variables: VariableInfo[];
   valueOf: (alias: string) => number | undefined;
   onSave: (exercise: { variable: string; value: number; expression: string; target: number; tolerance: number; hint: string }) => void;
 }) {
-  const [variable, setVariable] = useState(variables[0] ?? "");
+  const [chosen, setChosen] = useState(variables[0]!.variable);
+  const info = variables.find((candidate) => candidate.variable === chosen) ?? variables[0]!;
+  const variable = info.variable;
   const [demonstrated, setDemonstrated] = useState<number>();
-  const [expression, setExpression] = useState(variable ? `sin(${variable})` : "");
+  const [expression, setExpression] = useState(READOUTS(info)[0]!.expression);
   const [hint, setHint] = useState("");
   const [saved, setSaved] = useState(false);
   const target = demonstrated === undefined ? undefined : Math.round(evaluateReadout(expression, demonstrated) * 100) / 100;
@@ -1073,13 +1081,16 @@ function DragPractice({ variables, valueOf, onSave }: {
     <form className="teach-step" aria-label={tr("设置“轮到你了”练习")} onSubmit={(event) => {
       event.preventDefault();
       if (demonstrated === undefined || target === undefined) return;
-      onSave({ variable, value: demonstrated, expression, target, tolerance: expression === variable ? 0.05 : 0.01, hint: hint.trim() });
+      onSave({ variable, value: demonstrated, expression, target, tolerance: !info.angle ? sliderTolerance(info, demonstrated) : expression === variable ? 0.05 : 0.01, hint: hint.trim() });
       setSaved(true);
     }}>
-      <p className="academy-muted">{tr("① 先说出题目，再在白板上拖动单位圆下面的滑块（或圆上的点），把正确答案摆出来。")}</p>
+      <p className="academy-muted">{info.angle ? tr("① 先说出题目，再在白板上拖动单位圆下面的滑块（或圆上的点），把正确答案摆出来。") : tr("① 先说出题目，再在白板上拖动滑块 {{v0}}，把正确答案摆出来。", { v0: info.label })}</p>
       {variables.length > 1 && (
-        <select className="teach-input" value={variable} aria-label={tr("拖动哪个")} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
-          {variables.map((alias) => <option key={alias} value={alias}>{alias}</option>)}
+        <select className="teach-input" value={variable} aria-label={tr("拖动哪个")} onChange={(event) => {
+          const next = variables.find((candidate) => candidate.variable === event.target.value)!;
+          setChosen(next.variable); setExpression(READOUTS(next)[0]!.expression); setDemonstrated(undefined);
+        }}>
+          {variables.map((candidate) => <option key={candidate.variable} value={candidate.variable}>{candidate.angle ? "θ" : candidate.label}</option>)}
         </select>
       )}
       <p className="academy-muted">{tr("② 摆好了，点这个按钮记下来：")}</p>
@@ -1089,7 +1100,7 @@ function DragPractice({ variables, valueOf, onSave }: {
           <p className="academy-muted">{tr("③ 选看的人要做对的是哪个数，可以写一句提示，然后保存。看课的人要自己拖到这个答案，才算做对。")}</p>
           <label className="teach-label">{tr("检查哪个读数")}
             <select className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)}>
-              {READOUTS(variable).map((readout) => <option key={readout.expression} value={readout.expression}>{readout.label}</option>)}
+              {READOUTS(info).map((readout) => <option key={readout.expression} value={readout.expression}>{readout.label}</option>)}
             </select>
           </label>
           <p className="academy-muted">{tr("观看的人要让它等于 {{v0}}", { v0: target })}</p>

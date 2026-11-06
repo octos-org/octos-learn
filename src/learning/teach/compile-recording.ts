@@ -338,6 +338,14 @@ function noteHeading(role: NoteRole, language: string): string {
   return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
 }
 
+/** A slider's step: about a hundredth of its range, rounded to 1, 2 or 5 times a power of ten. */
+export function sliderStep(min: number, max: number): number {
+  const raw = (max - min) / 100;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((factor) => factor * power).find((candidate) => candidate >= raw)!;
+  return Number(step.toPrecision(3));
+}
+
 /** How close (in radians) the viewer must turn a 3D scene to the direction a "Your turn" asks for. */
 const VIEW_TOLERANCE = 0.3;
 
@@ -346,7 +354,7 @@ const NEAT_GAP = 12;
 
 /** Compiles one recording; the lesson still has to pass OLL validation. */
 export function compileRecording(recording: LearnerRecording, options: CompileOptions): CompiledLesson {
-  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit: string; control: { kind: "slider"; step: number } }>();
+  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit?: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
   // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
@@ -389,10 +397,21 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // A component the learner did not name carries the card's title.
     const title = { title: component.title?.trim() || cardTitle };
     if (component.panel === "graph") {
+      // Letters the learner made sliders read lesson variables; the curve's label keeps the letters.
+      let expression = component.expression;
+      for (const parameter of component.parameters ?? []) {
+        if (variables.has(parameter.variable)) throw new CompileError(`Variable '${parameter.variable}' is already used`);
+        if (!(parameter.min < parameter.max) || parameter.initial < parameter.min || parameter.initial > parameter.max) {
+          throw new CompileError(`The slider ${parameter.letter} needs a range from a smaller to a larger number that holds its starting value`);
+        }
+        variables.set(parameter.variable, { as: parameter.variable, initial: parameter.initial, min: parameter.min, max: parameter.max,
+          label: parameter.letter, control: { kind: "slider", step: sliderStep(parameter.min, parameter.max) } });
+        expression = expression.replace(new RegExp(`(?<![A-Za-z0-9_])${parameter.letter}(?![A-Za-z0-9_])`, "g"), parameter.variable);
+      }
       const content: Record<string, unknown> = {
         ...title,
         axes: { x: { min: component.x[0], max: component.x[1] }, y: { min: component.y[0], max: component.y[1] } },
-        curves: [{ as: "curve", expression: component.expression, label: `y = ${component.expression}` }],
+        curves: [{ as: "curve", expression, label: `y = ${component.expression}` }],
       };
       if (component.linkedVariable) {
         if (!variables.has(component.linkedVariable)) throw new CompileError(`Graph is linked to unknown variable '${component.linkedVariable}'`);

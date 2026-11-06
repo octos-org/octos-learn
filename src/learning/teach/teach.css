@@ -378,3 +378,5 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-diagram-boxes li { display: flex; gap: 6px; align-items: center; }
 .teach-diagram-boxes .teach-input { flex: 1; min-width: 0; }
 .teach-step .teach-diagram-boxes .teach-secondary { min-height: 36px; padding: 0 10px; font-size: 13px; }
+.teach-sliders-form { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.teach-slider-letter { align-self: end; min-width: 1.2em; padding-bottom: 8px; color: #1b2457; font: italic 600 18px/1 "Cormorant Garamond", Georgia, serif; }

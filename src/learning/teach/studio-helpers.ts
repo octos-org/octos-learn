@@ -43,17 +43,45 @@ export function nextPointLabel(recording: LearnerRecording, node: string): { poi
   }
 }
 
-/** Lesson variables a component introduced (unit circles), in insertion order. */
+/** Lesson variables components introduced (unit circles' angles, graphs' sliders), in insertion order. */
 export function recordingVariables(recording: LearnerRecording): string[] {
-  const variables: string[] = [];
-  {
-    {
-      for (const event of boardEvents(recording)) {
-        if (event.type === "component.insert" && event.panel === "unit_circle" && !variables.includes(event.variable)) variables.push(event.variable);
-      }
-    }
+  return recordingVariableInfo(recording).map((variable) => variable.variable);
+}
+
+/** Each lesson variable with what it is called on the board, and whether it is a unit circle's angle. */
+export function recordingVariableInfo(recording: LearnerRecording): Array<{ variable: string; label: string; angle: boolean }> {
+  const variables: Array<{ variable: string; label: string; angle: boolean }> = [];
+  const add = (variable: string, label: string, angle: boolean) => { if (!variables.some((known) => known.variable === variable)) variables.push({ variable, label, angle }); };
+  for (const event of boardEvents(recording)) {
+    if (event.type !== "component.insert") continue;
+    if (event.panel === "unit_circle") add(event.variable, "θ", true);
+    if (event.panel === "graph") for (const parameter of event.parameters ?? []) add(parameter.variable, parameter.letter, false);
   }
   return variables;
+}
+
+/** Names the expression language keeps for itself. */
+const EXPRESSION_WORDS = new Set(["abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "ln", "log", "round", "sin", "sqrt", "tan", "pi", "e", "x"]);
+
+/**
+ * The letters of a graph's expression that can be sliders (any single letter
+ * but x and e), and any other names the expression does not know.
+ */
+export function graphParameterLetters(expression: string): { letters: string[]; unknown: string[] } {
+  const letters: string[] = [], unknown: string[] = [];
+  for (const name of expression.toLowerCase().match(/[a-z][a-z0-9_]*/g) ?? []) {
+    if (EXPRESSION_WORDS.has(name)) continue;
+    const list = name.length === 1 ? letters : unknown;
+    if (!list.includes(name)) list.push(name);
+  }
+  return { letters, unknown };
+}
+
+/** A lesson variable name for a graph's slider letter: the letter itself, or letter_2, letter_3… when taken. */
+export function nextParameterVariable(recording: LearnerRecording, letter: string, taken: string[] = []): string {
+  const used = new Set([...recordingVariables(recording), ...taken]);
+  if (!used.has(letter)) return letter;
+  for (let index = 2; ; index += 1) if (!used.has(`${letter}_${index}`)) return `${letter}_${index}`;
 }
 
 const VARIABLE_NAMES = ["theta", "phi", "alpha", "beta", "gamma"];

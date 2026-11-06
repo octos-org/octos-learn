@@ -34,6 +34,8 @@ export interface ComponentPlacement { nextTo?: string }
 
 export type ComponentInsert = ComponentPlacement & (
   | { panel: "graph"; alias: string; expression: string; x: [number, number]; y: [number, number]; title?: string;
+      /** Letters of the expression the learner made sliders (a in y = a*x), each a lesson variable. */
+      parameters?: GraphParameter[];
       /** Shows the point (v, f(v)) for a lesson variable v, so the graph follows a slider or dragged point. */
       linkedVariable?: string }
   | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
@@ -47,6 +49,9 @@ export type ComponentInsert = ComponentPlacement & (
   | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
+
+/** A letter of a graph's expression shown as a slider: the lesson variable it reads and the slider's range. */
+export interface GraphParameter { letter: string; variable: string; initial: number; min: number; max: number }
 
 export type NoteRole = "conclusion" | "warning" | "summary" | "definition";
 

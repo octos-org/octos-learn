@@ -7,8 +7,8 @@ import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Plus, Repeat, Splin
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
-import type { ComponentInsert, LearnerRecording, NoteRole } from "./recording";
-import { gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextPointLabel, nextVariable, recordingVariables, type InsertForm } from "./studio-helpers";
+import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole } from "./recording";
+import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, type InsertForm } from "./studio-helpers";
 
 
 function numberField(value: string): number | undefined {
@@ -96,8 +96,11 @@ function InsertPanel({
   const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
   const [size, setSize] = useState({ x: "4", y: "3", z: "2" });
   const [point, setPoint] = useState({ node: grids.at(-1) ?? "", x: "", y: "" });
-  const variables = recordingVariables(recording);
+  // A graph can follow a unit circle's angle (not another graph's slider).
+  const variables = recordingVariableInfo(recording).filter((variable) => variable.angle).map((variable) => variable.variable);
   const [linked, setLinked] = useState("");
+  // Each letter of the graph's expression is a slider, with where it starts and its range.
+  const [sliders, setSliders] = useState<Record<string, { initial: string; min: string; max: string }>>({});
   const axes = (): { x: [number, number]; y: [number, number] } | undefined => {
     const [xMin, xMax, yMin, yMax] = [range.xMin, range.xMax, range.yMin, range.yMax].map(numberField);
     if ([xMin, xMax, yMin, yMax].some((value) => value === undefined) || xMin! >= xMax! || yMin! >= yMax!) return undefined;
@@ -115,12 +118,44 @@ function InsertPanel({
 
   if (form === "graph") {
     const ready = axes();
+    const { letters, unknown } = graphParameterLetters(expression);
+    const taken: string[] = [];
+    const parameters: Array<GraphParameter | undefined> = letters.map((letter) => {
+      const values = sliders[letter] ?? { initial: "1", min: "-5", max: "5" };
+      const [initial, min, max] = [values.initial, values.min, values.max].map(numberField);
+      if (initial === undefined || min === undefined || max === undefined || !(min < max) || initial < min || initial > max) return undefined;
+      const variable = nextParameterVariable(recording, letter, taken);
+      taken.push(variable);
+      return { letter, variable, initial, min, max };
+    });
+    const slidersReady = parameters.every(Boolean);
+    const canInsert = Boolean(ready && expression.trim() && !unknown.length && slidersReady);
     return (
       <form className="teach-step" onSubmit={(event) => {
         event.preventDefault();
-        if (ready && expression.trim()) onInsert({ panel: "graph", alias: nextComponentAlias(recording, "graph"), expression: expression.trim(), ...ready, ...(linked ? { linkedVariable: linked } : {}) });
+        if (canInsert && ready) onInsert({ panel: "graph", alias: nextComponentAlias(recording, "graph"), expression: expression.trim(), ...ready, ...(linked ? { linkedVariable: linked } : {}),
+          ...(parameters.length ? { parameters: parameters as GraphParameter[] } : {}) });
       }}>
         <label className="teach-label">{tr("函数 y =")}<input className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)} /></label>
+        {unknown.length > 0 && <p role="status" className="teach-notice">{tr("不认识：{{v0}}。字母只用一个，比如 a、k、m。", { v0: unknown.join("、") })}</p>}
+        {letters.length > 0 && (
+          <fieldset className="teach-sliders-form">
+            <legend className="teach-group-label">{tr("滑块：讲课时拖动它们，图像跟着变")}</legend>
+            {letters.map((letter, index) => {
+              const values = sliders[letter] ?? { initial: "1", min: "-5", max: "5" };
+              const set = (field: "initial" | "min" | "max", value: string) => setSliders({ ...sliders, [letter]: { ...values, [field]: value } });
+              return (
+                <div key={letter} className="teach-range" role="group" aria-label={tr("滑块 {{v0}}", { v0: letter })}>
+                  <strong className="teach-slider-letter">{letter}</strong>
+                  <label>{tr("开始是")}<input className="teach-input" inputMode="decimal" value={values.initial} onChange={(event) => set("initial", event.target.value)} /></label>
+                  <label>{tr("从")}<input className="teach-input" inputMode="decimal" value={values.min} onChange={(event) => set("min", event.target.value)} /></label>
+                  <label>{tr("到")}<input className="teach-input" inputMode="decimal" value={values.max} onChange={(event) => set("max", event.target.value)} /></label>
+                  {!parameters[index] && <span className="teach-notice">{tr("开始的数要在范围里，“从”要比“到”小。")}</span>}
+                </div>
+              );
+            })}
+          </fieldset>
+        )}
         {rangeFields}
         {variables.length > 0 && (
           <label className="teach-label">{tr("和单位圆的角度联动")}
@@ -134,7 +169,7 @@ function InsertPanel({
           </label>
         )}
         {placement}
-        <button type="submit" disabled={!ready || !expression.trim()}>{tr("放到白板上")}</button>
+        <button type="submit" disabled={!canInsert}>{tr("放到白板上")}</button>
       </form>
     );
   }
