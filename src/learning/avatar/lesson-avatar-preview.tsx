@@ -6,6 +6,7 @@ import { lipSyncFrame, type LipSyncTrack } from "./lip-sync";
 import { performanceFrame, presenterFrame, type LessonPerformanceTrack } from "./lesson-performance";
 import { paintedCharacter, type PaintedCharacterId } from "./painted-characters";
 import { REACTION_MS, reactionNow, withReaction, type ReactionMoment } from "./presenter-reaction";
+import { ReactionBurst } from "./reaction-burst";
 import "./lesson-avatar-preview.css";
 
 const performance_now = () => globalThis.performance.now();
@@ -49,11 +50,15 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
   const character = paintedCharacter(characterId);
   // Keep drawing while a reaction shows, even when nothing is being said.
   const [reacting, setReacting] = useState(false);
+  // The reaction showing now, for the burst around the character.
+  const [burst, setBurst] = useState<ReactionMoment | null>(null);
   useEffect(() => {
     if (!reaction) return;
     const check = () => {
       const moment = reactionNow(reaction);
-      setReacting(Boolean(moment && performance_now() - moment.at < REACTION_MS));
+      const showing = Boolean(moment && performance_now() - moment.at < REACTION_MS);
+      setReacting(showing);
+      setBurst((current) => (showing ? (current?.at === moment!.at ? current : moment) : null));
     };
     const timer = setInterval(check, 200);
     return () => clearInterval(timer);
@@ -65,6 +70,7 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
   if (placement === "board") {
     if (failed) return null;
     return <aside className="teach-board-presenter" data-learning-board-occlusion="" aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
+      {burst && <ReactionBurst moment={burst} />}
       <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30} transparentBackground
         active={(playing && Boolean(track && clock)) || reacting} onMetrics={ignoreMetrics} onError={onGraphicsError} />
       <p role="status" className="teach-visually-hidden">{status}</p>
