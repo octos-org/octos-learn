@@ -289,7 +289,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   onContinuing?: (node: string | null) => void;
   /** While set, tapping a cell of a table on the board reports it, to fill it in. */
   onTableCell?: (cell: TableCell) => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell }, ref) {
+  /** While set, tapping a diagram on the board reports it, to add a box. */
+  onDiagram?: (node: string) => void;
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell, onDiagram }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -317,6 +319,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   useEffect(() => { onContinuingRef.current = onContinuing; }, [onContinuing]);
   const onTableCellRef = useRef(onTableCell);
   useEffect(() => { onTableCellRef.current = onTableCell; }, [onTableCell]);
+  const onDiagramRef = useRef(onDiagram);
+  useEffect(() => { onDiagramRef.current = onDiagram; }, [onDiagram]);
   // The card the live writing would continue, outlined while it is written.
   const continuingRef = useRef<string | null>(null);
   const showContinuing = (node: string | null) => {
@@ -352,6 +356,13 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const found = cell && onTableCellRef.current ? /:node:([^:]+):table:row:(\d+):column:(\d+)$/.exec(cell.dataset.ollTargetId ?? "") : null;
       if (found) {
         onTableCellRef.current!({ node: found[1]!, row: Number(found[2]), column: Number(found[3]), text: cell!.textContent?.trim() ?? "" });
+        return;
+      }
+      // A diagram, to add a box to.
+      const diagram = onDiagramRef.current ? (event.target as Element | null)?.closest?.<HTMLElement>(".board-node.kind-diagram[data-id]") : null;
+      const diagramTarget = diagram ? boardTargetFromId(diagram.dataset.id) : undefined;
+      if (diagramTarget) {
+        onDiagramRef.current!(diagramTarget.node);
         return;
       }
       if (!onTargetRef.current) return;

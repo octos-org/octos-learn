@@ -374,3 +374,7 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-table-form .teach-input { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 8px; font-size: 14px; }
 .teach-table-form th .teach-input { font-weight: 600; }
 .teach-cell-editor { display: grid; gap: 10px; }
+.teach-diagram-boxes { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.teach-diagram-boxes li { display: flex; gap: 6px; align-items: center; }
+.teach-diagram-boxes .teach-input { flex: 1; min-width: 0; }
+.teach-step .teach-diagram-boxes .teach-secondary { min-height: 36px; padding: 0 10px; font-size: 13px; }

@@ -51,7 +51,7 @@ import { currentRowCards } from "./board-rows";
 import { CheckDialog, type CheckPart, type CheckRun } from "./check-dialog";
 import { cardChecks, lessonReady } from "./lesson-check";
 import { checkReadability } from "./readability-check";
-import { AddPanel, CellEditor } from "./studio-add";
+import { AddPanel, CellEditor, DiagramEditor } from "./studio-add";
 import { askOcto, explainAssistFailure, inkToMath, reviewLesson } from "./teach-assist";
 import { TakeSpeech, type LiveSentence, type Transcribe } from "./take-speech";
 import { saveTakePerformance } from "./take-performance-store";
@@ -126,6 +126,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const said = [...liveSentences].reverse().find((sentence): sentence is Extract<LiveSentence, { state: "text" }> => sentence.state === "text")?.text;
   // A cell of a table on the board being filled in.
   const [cellEdit, setCellEdit] = useState<TableCell | null>(null);
+  // A diagram on the board getting one more box.
+  const [diagramEdit, setDiagramEdit] = useState<string | null>(null);
   // How the microphone is doing during a take: on or not, hearing speech, and sentences being turned into text.
   const [mic, setMic] = useState<MicState>({ listening: null, speaking: false, transcribing: 0 });
   const [level] = useState(() => new InputLevel());
@@ -287,6 +289,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const key = card.key;
     setNotice(null);
     setCellEdit(null);
+    setDiagramEdit(null);
     update((current) => startTake(current, key, now(), { fresh }));
     clearUndo();
     cameraTake.current = latest.current?.presenter?.cameraMotion === "on";
@@ -560,7 +563,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
   // Whether the lesson has a table whose cells can be filled while talking.
-  const hasTable = recording?.cards.some((entry) => entry.takes.some((take) => take.events.some((event) => event.type === "component.insert" && event.panel === "table"))) ?? false;
+  const hasTable = recording?.cards.some((entry) => entry.takes.some((take) => take.events.some((event) => event.type === "component.insert" && (event.panel === "table" || event.panel === "diagram")))) ?? false;
   // The card the writing being written will continue, so the hint can say so.
   const [continuing, setContinuing] = useState<string | null>(null);
   /**
@@ -655,7 +658,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
         : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
-          : tool === "none" && isRecording && hasTable ? tr("点白板上表格里的格子，就能把你说的话填进去。")
+          : tool === "none" && isRecording && hasTable ? tr("点表格里的格子可以填写，点图示可以再加一步。")
           : tool === "pen" ? (continuing ? tr("写在上一行下面：会接着写在虚线框住的卡片里，放在你写的位置。") : tr("直接在白板上写。写在图上的会贴在那张图上；写在手写或算式下面的会接着写在那张卡片里。"))
             : null;
   const tools: Array<[Tool | "neat", string, typeof PenLine]> = [
@@ -742,7 +745,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
             arrowFrom={isRecording && tool === "arrow" ? arrowFrom : null}
-            onTableCell={isRecording && tool === "none" && !addOpen ? setCellEdit : undefined}
+            onTableCell={isRecording && tool === "none" && !addOpen ? (cell) => { setDiagramEdit(null); setCellEdit(cell); } : undefined}
+            onDiagram={isRecording && tool === "none" && !addOpen ? (node) => { setCellEdit(null); setDiagramEdit(node); } : undefined}
             onContinuing={setContinuing}
           />
           {isRecording && addOpen && (
@@ -763,6 +767,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
           {isRecording && cellEdit && !addOpen && (
             <CellEditor key={`${cellEdit.node}:${cellEdit.row}:${cellEdit.column}`} cell={cellEdit} {...(said ? { said } : {})} onCancel={() => setCellEdit(null)}
               onFill={(text) => { record(withTime({ type: "table.fill" as const, node: cellEdit.node, row: cellEdit.row, column: cellEdit.column, text })); setCellEdit(null); }} />
+          )}
+          {isRecording && diagramEdit && !addOpen && (
+            <DiagramEditor key={diagramEdit} boxes={diagramBoxes(recording, diagramEdit)} {...(said ? { said } : {})} onCancel={() => setDiagramEdit(null)}
+              onAdd={(box) => { record(withTime({ type: "diagram.add" as const, node: diagramEdit, ...box })); setDiagramEdit(null); }} />
           )}
           {hint && <p className="teach-dock-hint" role="status">{hint}</p>}
           <div className="teach-dock" role="toolbar" aria-label={tr("录课工具")} aria-disabled={!isRecording || undefined}>
@@ -1080,3 +1088,17 @@ function CardTitle({ title, onRename }: { title: string; onRename: (title: strin
   );
 }
 
+
+/** How many boxes a diagram of the recording has, counting those added while talking. */
+function diagramBoxes(recording: LearnerRecording, node: string): number {
+  let boxes = 0;
+  for (const card of recording.cards) {
+    // The take being recorded carries the card's board over from the kept one.
+    const take = currentTake(card) ?? keptTake(card);
+    for (const event of take?.events ?? []) {
+      if (event.type === "component.insert" && event.panel === "diagram" && event.alias === node) boxes = event.boxes.length;
+      if (event.type === "diagram.add" && event.node === node) boxes += 1;
+    }
+  }
+  return boxes;
+}

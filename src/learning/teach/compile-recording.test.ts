@@ -527,3 +527,32 @@ describe("words on the board: text, notes and tables", () => {
     expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow(CompileError);
   });
 });
+
+describe("diagrams of steps and cycles", () => {
+  it("joins the boxes in order, closes a cycle back to the first box, and grows while talking", () => {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "The water cycle", type: "other" }, goals: ["Follow water round the cycle"] }),
+      now, [{ title: "Round and round" }],
+    );
+    recording = record(recording, "card-1", "Water evaporates, forms clouds and falls as rain.", [
+      { t: 500, type: "component.insert", panel: "diagram", alias: "diagram-1", shape: "cycle", boxes: ["Sea", "Water vapour", "Clouds"] },
+      { t: 6_000, type: "diagram.add", node: "diagram-1", label: "Rain", link: "falls" },
+      { t: 7_000, type: "tool.highlighter", target: { node: "diagram-1", part: "box-4" } },
+    ]);
+    const { state } = check(recording);
+    const content = state.nodes["l:node:diagram-1"]!.content as { title: string; elements: Array<{ label: string }>; edges: Array<{ id: string; from: string; to: string; label?: string }> };
+    expect(content.title).toBe("Round and round");
+    expect(content.elements.map((element) => element.label)).toEqual(["Sea", "Water vapour", "Clouds", "Rain"]);
+    const box = (n: number) => `l:node:diagram-1:fragment:box-${n}`;
+    expect(content.edges.map((edge) => [edge.from, edge.to, edge.label ?? ""])).toEqual([
+      [box(1), box(2), ""], [box(2), box(3), ""], [box(3), box(4), "falls"], [box(4), box(1), ""],
+    ]);
+
+    let steps = planCards(createRecording({ id: "rec", now, topic: { text: "Steps", type: "other" }, goals: [] }), now, [{ title: "How" }]);
+    steps = record(steps, "card-1", "First this, then that.", [
+      { t: 500, type: "component.insert", panel: "diagram", alias: "diagram-1", shape: "steps", boxes: ["Mix", "Heat"] },
+    ]);
+    const stepEdges = (check(steps).state.nodes["l:node:diagram-1"]!.content as { edges: unknown[] }).edges;
+    expect(stepEdges).toHaveLength(1);
+  });
+});

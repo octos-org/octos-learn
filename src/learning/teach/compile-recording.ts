@@ -311,6 +311,24 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
   } as Action;
 }
 
+/** A diagram of boxes joined by arrows; each box after the first may carry words on the arrow into it. */
+interface Diagram { shape: "steps" | "cycle"; title: string; boxes: Array<{ label: string; link?: string }> }
+/** The most boxes OLL lays out as steps (and the studio offers for a cycle). */
+export const MAX_DIAGRAM_BOXES = 8;
+
+/**
+ * OLL diagram content: boxes box-1…, arrows link-2… into each box after the
+ * first; a cycle's last arrow (link-close) goes from the newest box back to the first.
+ */
+function diagramContent(diagram: Diagram): Record<string, unknown> {
+  const elements = diagram.boxes.map((box, index) => ({ as: `box-${index + 1}`, label: box.label }));
+  const edges: Array<Record<string, unknown>> = diagram.boxes.slice(1).map((box, index) => ({
+    as: `link-${index + 2}`, from: `box-${index + 1}`, to: `box-${index + 2}`, ...(box.link ? { label: box.link } : {}),
+  }));
+  if (diagram.shape === "cycle" && diagram.boxes.length > 2) edges.push({ as: "link-close", from: `box-${diagram.boxes.length}`, to: "box-1" });
+  return { title: diagram.title, elements, edges };
+}
+
 const NOTE_HEADINGS: Record<"zh" | "en", Record<NoteRole, string>> = {
   zh: { conclusion: "结论", warning: "注意", summary: "小结", definition: "定义" },
   en: { conclusion: "Conclusion", warning: "Be careful", summary: "Summary", definition: "Definition" },
@@ -332,6 +350,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
   const scenes = new Set<string>();
+  // Each diagram's boxes so far, so adding a box revises the whole diagram.
+  const diagrams = new Map<string, Diagram>();
   // Each table's content as filled so far, so filling a cell revises the whole table.
   const tables = new Map<string, { title: string; columns: string[]; rows: string[][] }>();
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
@@ -430,6 +450,12 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         do: "write", as: alias, kind: component.panel, role: component.panel === "note" ? component.role : "observation", place: placeNext(),
         content: { ...named, text: component.text.trim() },
       } as Action;
+    }
+    if (component.panel === "diagram") {
+      const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
+      for (const box of component.boxes) diagram.boxes.push({ label: box.trim() });
+      diagrams.set(alias, diagram);
+      return { do: "write", as: alias, kind: "diagram", role: "diagram", place: placeNext(), content: diagramContent(diagram) } as Action;
     }
     if (component.panel === "table") {
       const table = { ...title, columns: component.columns.map((column) => column.trim()), rows: component.rows.map((row) => row.map((cell) => cell.trim())) };
@@ -556,6 +582,15 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           actions.push({ ...action, ...beside, when } as Action);
           lastNode = event.alias;
           focus = [event.alias];
+          break;
+        }
+        case "diagram.add": {
+          const diagram = diagrams.get(event.node);
+          if (!diagram) throw new CompileError(`'${event.node}' is not a diagram of steps or a cycle`);
+          if (diagram.boxes.length >= MAX_DIAGRAM_BOXES) throw new CompileError(`'${event.node}' already has ${MAX_DIAGRAM_BOXES} boxes`);
+          diagram.boxes.push({ label: event.label.trim(), ...(event.link?.trim() ? { link: event.link.trim() } : {}) });
+          actions.push({ do: "revise", target: event.node, content: diagramContent(diagram), reason: "the learner added a box", when } as Action);
+          focus = [event.node];
           break;
         }
         case "table.fill": {

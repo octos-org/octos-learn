@@ -44,7 +44,9 @@ export type ComponentInsert = ComponentPlacement & (
   /** A short note with a meaning: a conclusion, something to be careful about, a summary or a definition. */
   | { panel: "note"; alias: string; text: string; role: NoteRole; title?: string }
   /** A table; cells can be left empty and filled while talking (table.fill). */
-  | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string });
+  | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string }
+  /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
+  | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
 export type NoteRole = "conclusion" | "warning" | "summary" | "definition";
 
@@ -67,6 +69,8 @@ export type RecordingEvent =
   | { t: number; type: "ink.hide"; node: string }
   /** Words put into one cell of a table on the board (row and column count from 0, rows below the header). */
   | { t: number; type: "table.fill"; node: string; row: number; column: number; text: string }
+  /** One more box at the end of a diagram's steps or cycle, with words on the arrow into it if any. */
+  | { t: number; type: "diagram.add"; node: string; label: string; link?: string }
   | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
   | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
   | { t: number; type: "your_turn.hint_spoken"; text: string };
@@ -315,7 +319,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 // What stays on the board when only the words are re-recorded: cards, arrows
 // and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
-  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill",
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add",
   "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
 ]);

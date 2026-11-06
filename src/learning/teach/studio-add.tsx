@@ -3,7 +3,7 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Spline, Square, StickyNote, Table2 } from "lucide-react";
+import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
@@ -32,7 +32,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
   const kinds: Array<[InsertForm, string, typeof LineChart]> = [
-    ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2],
+    ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow],
     ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box],
     ...(grids.length ? [["point", tr("放一个点"), Square] as [InsertForm, string, typeof LineChart]] : []),
     ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["line", tr("过两点画直线"), Spline] as [InsertForm, string, typeof LineChart]] : []),
@@ -180,6 +180,7 @@ function InsertPanel({
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
   if (form === "text" || form === "note") return <WordsForm kind={form} recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
   if (form === "table") return <TableForm recording={recording} onInsert={onInsert} />;
+  if (form === "diagram") return <DiagramForm recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
   const [x, y] = [numberField(point.x), numberField(point.y)];
   const label = point.node ? nextPointLabel(recording, point.node) : undefined;
   const gridRange = gridRanges(recording).get(point.node);
@@ -352,6 +353,71 @@ export function CellEditor({ cell, said, onFill, onCancel }: {
       <div className="teach-actions">
         <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
         <button type="submit">{tr("填好了")}</button>
+      </div>
+    </form>
+  );
+}
+
+const MAX_BOXES = 8;
+const sayLabel = (said: string) => tr("用我刚说的话：“{{v0}}”", { v0: said.length > 24 ? `${said.slice(0, 24)}…` : said });
+
+/** Boxes joined by arrows: steps in order, or a cycle back to the first box. More boxes can be added while talking. */
+function DiagramForm({ recording, said, onInsert }: { recording: LearnerRecording; said?: string; onInsert: (component: ComponentInsert) => void }) {
+  const [shape, setShape] = useState<"steps" | "cycle">("steps");
+  const [boxes, setBoxes] = useState<string[]>(["", ""]);
+  const filled = boxes.map((box) => box.trim()).filter(Boolean);
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (filled.length) onInsert({ panel: "diagram", alias: nextComponentAlias(recording, "diagram"), shape, boxes: filled });
+    }}>
+      <div className="teach-note-roles" role="radiogroup" aria-label={tr("图示的样子")}>
+        <button type="button" role="radio" aria-checked={shape === "steps"} onClick={() => setShape("steps")}><Workflow size={16} aria-hidden="true" />{tr("一步一步")}</button>
+        <button type="button" role="radio" aria-checked={shape === "cycle"} onClick={() => setShape("cycle")}><Repeat size={16} aria-hidden="true" />{tr("转一圈")}</button>
+      </div>
+      <ol className="teach-diagram-boxes">
+        {boxes.map((box, index) => (
+          <li key={index}>
+            <input className="teach-input" aria-label={tr("第 {{v0}} 个框", { v0: index + 1 })} value={box} maxLength={60}
+              onChange={(event) => setBoxes(boxes.map((value, at) => (at === index ? event.target.value : value)))} />
+            {said && !box.trim() && <button type="button" className="teach-secondary" onClick={() => setBoxes(boxes.map((value, at) => (at === index ? said : value)))}>{tr("用刚说的")}</button>}
+          </li>
+        ))}
+      </ol>
+      <button type="button" className="teach-secondary" disabled={boxes.length >= MAX_BOXES} onClick={() => setBoxes([...boxes, ""])}><Plus size={16} aria-hidden="true" />{tr("加一个框")}</button>
+      <p className="academy-muted">{tr("可以先放一两个框，讲到的时候点白板上的图示再加。")}</p>
+      <button type="submit" disabled={!filled.length}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+/** One more box at the end of a diagram on the board, with words on the arrow into it if any. */
+export function DiagramEditor({ boxes, said, onAdd, onCancel }: {
+  /** How many boxes the diagram has now. */
+  boxes: number;
+  said?: string;
+  onAdd: (box: { label: string; link?: string }) => void;
+  onCancel: () => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [link, setLink] = useState("");
+  const full = boxes >= MAX_BOXES;
+  return (
+    <form className="teach-add teach-cell-editor" role="dialog" aria-label={tr("给图示加一步")} onSubmit={(event) => {
+      event.preventDefault();
+      if (label.trim() && !full) onAdd({ label: label.trim(), ...(link.trim() ? { link: link.trim() } : {}) });
+    }}>
+      <div className="teach-group-label">{tr("第 {{v0}} 个框", { v0: boxes + 1 })}</div>
+      {full ? <p className="academy-muted">{tr("这个图示已经有 {{v0}} 个框了。", { v0: MAX_BOXES })}</p> : (
+        <>
+          <input className="teach-input" aria-label={tr("框里写什么")} value={label} maxLength={60} autoFocus onChange={(event) => setLabel(event.target.value)} />
+          {said && <button type="button" className="teach-secondary" onClick={() => setLabel(said)}>{sayLabel(said)}</button>}
+          <input className="teach-input" aria-label={tr("箭头上写什么（可以不写）")} placeholder={tr("箭头上写什么（可以不写）")} value={link} maxLength={30} onChange={(event) => setLink(event.target.value)} />
+        </>
+      )}
+      <div className="teach-actions">
+        <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
+        {!full && <button type="submit" disabled={!label.trim()}>{tr("加上")}</button>}
       </div>
     </form>
   );

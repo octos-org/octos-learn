@@ -34,10 +34,12 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
     case "component.insert":
       return { action: "insert", label: {
         graph: tr("放上函数图"), coordinate_grid: tr("放上坐标网格"), unit_circle: tr("放上单位圆"), solid_3d: tr("放上长方体"),
-        text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"),
+        text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"), diagram: tr("放上图示"),
       }[event.panel] };
     case "table.fill":
       return { action: "insert", label: tr("填表格") };
+    case "diagram.add":
+      return { action: "insert", label: tr("加一步：{{v0}}", { v0: event.label }) };
     case "point_tool.place":
     case "make_point.confirmed":
       return { action: "point", label: tr("标出点 {{v0}}", { v0: event.label }) };

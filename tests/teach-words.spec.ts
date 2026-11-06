@@ -38,7 +38,7 @@ test("a card of words: a text card, a table filled cell by cell while talking, a
   await page.getByRole("button", { name: "放到白板上" }).click();
   const table = page.locator(".teach-studio .board-node.kind-table");
   await expect(table).toContainText("固体");
-  await expect(page.getByText("点白板上表格里的格子，就能把你说的话填进去。")).toBeVisible();
+  await expect(page.getByText("点表格里的格子可以填写，点图示可以再加一步。")).toBeVisible();
 
   // Fill the first example while talking.
   await table.locator("td").nth(1).click();
@@ -63,4 +63,48 @@ test("a card of words: a text card, a table filled cell by cell while talking, a
   expect(events).toEqual(["text", "table", "table.fill", "note"]);
   await expect(table.locator("td").nth(1)).toHaveText("冰");
   if (process.env.WORDS_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.WORDS_SHOT });
+});
+
+test("a cycle diagram grows a box at a time while talking", async ({ page }) => {
+  await installTestAccount(page);
+  const draft = {
+    schema: "octos.learner-recording.v1", id: "rec-cycle", createdAt: now, updatedAt: now,
+    topic: { text: "水的循环", type: "other" }, goals: ["说出水的循环"],
+    cards: [{ key: "card-1", title: "转一圈", kind: "teach", takes: [] }],
+  };
+  await page.addInitScript((value) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([value]));
+  }, draft);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${draft.id}`);
+  await page.getByRole("button", { name: "录第 1 张" }).click();
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "图示" }).click();
+  await page.getByRole("radio", { name: "转一圈" }).click();
+  await page.getByRole("textbox", { name: "第 1 个框" }).fill("海洋");
+  await page.getByRole("textbox", { name: "第 2 个框" }).fill("水蒸气");
+  await page.getByRole("button", { name: "加一个框" }).click();
+  await page.getByRole("textbox", { name: "第 3 个框" }).fill("云");
+  await page.getByRole("button", { name: "放到白板上" }).click();
+  const diagram = page.locator(".teach-studio .board-node.kind-diagram");
+  await expect(diagram).toContainText("云");
+
+  // Tap the diagram to add the next box, with words on its arrow.
+  await diagram.click();
+  await expect(page.getByRole("dialog", { name: "给图示加一步" })).toContainText("第 4 个框");
+  await page.getByRole("textbox", { name: "框里写什么" }).fill("下雨");
+  await page.getByRole("textbox", { name: "箭头上写什么（可以不写）" }).fill("落下");
+  await page.getByRole("button", { name: "加上" }).click();
+  await expect(diagram).toContainText("下雨");
+  await expect(diagram).toContainText("落下");
+  // Four boxes joined in a ring: four arrows, each ending at a box.
+  await expect(diagram.locator("line.diagram-edge[marker-end]")).toHaveCount(4);
+  await expect(diagram.locator("rect.diagram-node")).toHaveCount(4);
+  await page.getByRole("button", { name: /^停止/ }).click();
+  await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
+  const events = await page.evaluate(() => JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!)[0].cards[0].takes.at(-1).events);
+  expect(events.map((event: { type: string }) => event.type)).toEqual(["component.insert", "diagram.add"]);
+  expect(events[1]).toMatchObject({ node: "diagram-1", label: "下雨", link: "落下" });
+  if (process.env.CYCLE_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.CYCLE_SHOT });
 });

@@ -241,7 +241,7 @@ export function wrapDrag(segments: DragSegment[], range: { min: number; max: num
 }
 
 /** What the Add panel can put on the board. */
-export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table";
+export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram";
 const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d"]);
 
 /** Whether a kind of component is a figure, which starts a row unless it is put next to a card. */
