@@ -403,3 +403,4 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-practice-kinds button { display: grid; justify-items: center; gap: 4px; min-height: 56px; padding: 6px 4px; border: 0; border-radius: 10px; color: #3d5a63; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
 .teach-practice-kinds button[aria-checked="true"] { color: #1b2457; background: #fffef9; box-shadow: 0 1px 4px rgba(20, 26, 64, 0.16); font-weight: 600; }
 .teach-your-turn { display: grid; gap: 10px; }
+.teach-solid-group { display: grid; gap: 4px; }

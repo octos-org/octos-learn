@@ -8,7 +8,7 @@ import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
-import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole, Solid } from "./recording";
+import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole, Solid, SolidShape } from "./recording";
 import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, type InsertForm } from "./studio-helpers";
 
 
@@ -105,10 +105,7 @@ function InsertPanel({
 }) {
   const [expression, setExpression] = useState("2*x");
   const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
-  const [size, setSize] = useState({ x: "4", y: "3", z: "2" });
-  const [shape, setShape] = useState<Solid["shape"]>("box");
-  const [round, setRound] = useState({ radius: "2", height: "4" });
-  const [cut, setCut] = useState(false);
+
   const [point, setPoint] = useState({ node: grids.at(-1) ?? "", x: "", y: "" });
   // A graph can follow a unit circle's angle (not another graph's slider).
   const variables = recordingVariableInfo(recording).filter((variable) => variable.angle).map((variable) => variable.variable);
@@ -206,44 +203,7 @@ function InsertPanel({
       </form>
     );
   }
-  if (form === "solid_3d") {
-    const values = [size.x, size.y, size.z].map(numberField);
-    const [radius, height] = [round.radius, round.height].map(numberField);
-    const solid: Solid | undefined = shape === "box"
-      ? (values.every((value) => value !== undefined && value > 0) ? { shape, size: { x: values[0]!, y: values[1]!, z: values[2]! } } : undefined)
-      : shape === "sphere" ? (radius !== undefined && radius > 0 ? { shape, radius } : undefined)
-        : radius !== undefined && radius > 0 && height !== undefined && height > 0 ? { shape, radius, height } : undefined;
-    return (
-      <form className="teach-step" onSubmit={(event) => {
-        event.preventDefault();
-        if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
-          ...(cut ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}) });
-      }}>
-        <div className="teach-note-roles" role="radiogroup" aria-label={tr("哪种立体")}>
-          {(["box", "cylinder", "cone", "sphere"] as const).map((value) => (
-            <button key={value} type="button" role="radio" aria-checked={shape === value} onClick={() => setShape(value)}>{solidName(value)}</button>
-          ))}
-        </div>
-        {shape === "box" ? (
-          <div className="teach-range" role="group" aria-label={tr("长方体尺寸")}>
-            {(["x", "y", "z"] as const).map((axis) => (
-              <label key={axis}>{{ x: tr("长"), y: tr("宽"), z: tr("高") }[axis]}
-                <input className="teach-input" inputMode="decimal" value={size[axis]} onChange={(event) => setSize({ ...size, [axis]: event.target.value })} />
-              </label>
-            ))}
-          </div>
-        ) : (
-          <div className="teach-range" role="group" aria-label={tr("{{v0}}的尺寸", { v0: solidName(shape) })}>
-            <label>{tr("半径")}<input className="teach-input" inputMode="decimal" value={round.radius} onChange={(event) => setRound({ ...round, radius: event.target.value })} /></label>
-            {shape !== "sphere" && <label>{tr("高")}<input className="teach-input" inputMode="decimal" value={round.height} onChange={(event) => setRound({ ...round, height: event.target.value })} /></label>}
-          </div>
-        )}
-        <label className="teach-place"><input type="checkbox" checked={cut} onChange={(event) => setCut(event.target.checked)} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
-        {placement}
-        <button type="submit" disabled={!solid}>{tr("放到白板上")}</button>
-      </form>
-    );
-  }
+  if (form === "solid_3d") return <SolidForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
   if (form === "segment") return <LineForm recording={recording} segment onLine={(line) => onShape({ type: "geometry.segment", node: line.node, from: line.from, to: line.to, alias: nextComponentAlias(recording, "segment") })} />;
   if (form === "circle") return <CircleForm recording={recording} onShape={onShape} />;
@@ -585,6 +545,76 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
       <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("边数做成滑块：讲课时拖动，看周长越来越接近圆周")}</span></label>
       {placement}
       <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
+    </form>
+  );
+}
+
+/** The solids offered, in groups, with the sizes each needs. Cube is a box with equal edges. */
+type SolidChoice = SolidShape | "cube";
+const SOLID_GROUPS: Array<[() => string, SolidChoice[]]> = [
+  [() => tr("常见的立体"), ["box", "cube", "cylinder", "cone", "sphere", "hemisphere", "frustum", "torus"]],
+  [() => tr("棱柱和棱锥"), ["prism", "pyramid"]],
+  [() => tr("正多面体"), ["tetrahedron", "octahedron", "dodecahedron", "icosahedron"]],
+];
+type SizeField = "x" | "y" | "z" | "edge" | "radius" | "height" | "topRadius" | "tube" | "sides";
+const FIELDS: Record<SolidChoice, SizeField[]> = {
+  box: ["x", "y", "z"], cube: ["edge"], cylinder: ["radius", "height"], cone: ["radius", "height"], sphere: ["radius"], hemisphere: ["radius"],
+  frustum: ["radius", "topRadius", "height"], torus: ["radius", "tube"], prism: ["sides", "radius", "height"], pyramid: ["sides", "radius", "height"],
+  tetrahedron: ["radius"], octahedron: ["radius"], dodecahedron: ["radius"], icosahedron: ["radius"],
+};
+const FIELD_LABELS: Record<SizeField, () => string> = {
+  x: () => tr("长"), y: () => tr("宽"), z: () => tr("高"), edge: () => tr("棱长"), radius: () => tr("半径"), height: () => tr("高"),
+  topRadius: () => tr("上底半径"), tube: () => tr("管的半径"), sides: () => tr("底面边数（3 到 12）"),
+};
+const DEFAULT_SIZES: Record<SizeField, string> = { x: "4", y: "3", z: "2", edge: "3", radius: "2", height: "4", topRadius: "1", tube: "0.6", sides: "6" };
+
+/** A 3D solid: which one, its sizes, and optionally a cutting plane on a slider. */
+function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
+  const [choice, setChoice] = useState<SolidChoice>("box");
+  const [sizes, setSizes] = useState<Record<SizeField, string>>(DEFAULT_SIZES);
+  const [cut, setCut] = useState(false);
+  const value = (field: SizeField) => numberField(sizes[field]);
+  const positive = (field: SizeField) => { const number = value(field); return number !== undefined && number > 0 ? number : undefined; };
+  const solid = ((): Solid | undefined => {
+    const radius = positive("radius"), height = positive("height");
+    switch (choice) {
+      case "box": { const [x, y, z] = [positive("x"), positive("y"), positive("z")]; return x && y && z ? { shape: "box", size: { x, y, z } } : undefined; }
+      case "cube": { const edge = positive("edge"); return edge ? { shape: "box", size: { x: edge, y: edge, z: edge } } : undefined; }
+      case "cylinder": case "cone": return radius && height ? { shape: choice, radius, height } : undefined;
+      case "prism": case "pyramid": { const sides = value("sides"); return radius && height && sides && Number.isInteger(sides) && sides >= 3 && sides <= 12 ? { shape: choice, sides, radius, height } : undefined; }
+      case "frustum": { const topRadius = positive("topRadius"); return radius && height && topRadius ? { shape: "frustum", radius, topRadius, height } : undefined; }
+      case "torus": { const tube = positive("tube"); return radius && tube && tube < radius ? { shape: "torus", radius, tube } : undefined; }
+      default: return radius ? { shape: choice, radius } : undefined;
+    }
+  })();
+  const named = (option: SolidChoice) => (option === "cube" ? tr("正方体") : solidName(option));
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
+        ...(cut ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}) });
+    }}>
+      {SOLID_GROUPS.map(([group, options]) => (
+        <div key={options[0]} className="teach-solid-group">
+          <span className="teach-group-label">{group()}</span>
+          <div className="teach-note-roles" role="radiogroup" aria-label={group()}>
+            {options.map((option) => (
+              <button key={option} type="button" role="radio" aria-checked={choice === option} onClick={() => setChoice(option)}>{named(option)}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="teach-range" role="group" aria-label={tr("{{v0}}的尺寸", { v0: named(choice) })}>
+        {FIELDS[choice].map((field) => (
+          <label key={field}>{FIELD_LABELS[field]()}
+            <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
+          </label>
+        ))}
+      </div>
+      {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
+      <label className="teach-place"><input type="checkbox" checked={cut} onChange={(event) => setCut(event.target.checked)} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
+      {placement}
+      <button type="submit" disabled={!solid}>{tr("放到白板上")}</button>
     </form>
   );
 }

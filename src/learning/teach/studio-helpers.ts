@@ -2,7 +2,7 @@ import type { LessonAuthor } from "octos-lesson-language";
 import { tr } from "@/i18n";
 
 import { presenterAvatar } from "./presenters";
-import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent } from "./recording";
+import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent, type SolidShape } from "./recording";
 
 /** The events of the take each card shows now, in card order. */
 function boardEvents(recording: LearnerRecording): RecordingEvent[] {
@@ -44,9 +44,17 @@ export function nextPointLabel(recording: LearnerRecording, node: string): { poi
   }
 }
 
-/** A 3D solid's name, for the learner. */
-export function solidName(shape: "box" | "cylinder" | "cone" | "sphere"): string {
-  return { box: tr("长方体"), cylinder: tr("圆柱"), cone: tr("圆锥"), sphere: tr("球") }[shape];
+const POLYGON_SIDES = ["", "", "", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+
+/** A 3D solid's name, for the learner; a prism or pyramid named by its number of sides when known. */
+export function solidName(shape: SolidShape, sides?: number): string {
+  if ((shape === "prism" || shape === "pyramid") && sides && sides >= 3 && sides <= 12) {
+    return shape === "prism" ? tr("{{v0}}棱柱", { v0: POLYGON_SIDES[sides] }) : tr("{{v0}}棱锥", { v0: POLYGON_SIDES[sides] });
+  }
+  return {
+    box: tr("长方体"), cylinder: tr("圆柱"), cone: tr("圆锥"), sphere: tr("球"), hemisphere: tr("半球"), prism: tr("棱柱"), pyramid: tr("棱锥"),
+    frustum: tr("圆台"), torus: tr("圆环"), tetrahedron: tr("正四面体"), octahedron: tr("正八面体"), dodecahedron: tr("正十二面体"), icosahedron: tr("正二十面体"),
+  }[shape];
 }
 
 /** Lesson variables components introduced (unit circles' angles, graphs' sliders), in insertion order. */

@@ -731,3 +731,22 @@ describe("presenter reactions", () => {
     expect(lesson.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions))).toContainEqual(expect.objectContaining({ do: "expression", expression: "celebrating" }));
   });
 });
+
+describe("more solids", () => {
+  it("compiles every solid, with a cut that spans it", () => {
+    const solids = [
+      { shape: "prism", sides: 6, radius: 2, height: 3 }, { shape: "pyramid", sides: 4, radius: 2, height: 3 },
+      { shape: "frustum", radius: 2, topRadius: 1, height: 3 }, { shape: "hemisphere", radius: 2 }, { shape: "torus", radius: 2, tube: 0.6 },
+      { shape: "tetrahedron", radius: 2 }, { shape: "octahedron", radius: 2 }, { shape: "dodecahedron", radius: 2 }, { shape: "icosahedron", radius: 2 },
+      { shape: "box", size: { x: 3, y: 3, z: 3 } },
+    ] as const;
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Solids", type: "math_off_map" }, goals: [] }), now, [{ title: "All of them" }]);
+    recording = record(recording, "card-1", "Look.", solids.map((solid, index) => (
+      { t: 100 + index, type: "component.insert", panel: "solid_3d", alias: `solid-${index + 1}`, ...solid, cut: { variable: `cut_${index + 1}` } } as RecordingEvent)));
+    const { lesson, state } = check(recording);
+    const hemisphere = lesson.lesson.variables!.find((variable) => variable.as === "cut_4")!;
+    expect([hemisphere.min, hemisphere.max, hemisphere.initial]).toEqual([0, 2, 1]);
+    expect((state.nodes["l:node:solid-1"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "prism", sides: 6 });
+    expect((state.nodes["l:node:solid-3"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "frustum", top_radius: 1 });
+  });
+});

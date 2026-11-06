@@ -92,3 +92,38 @@ test("a regular polygon's sides on a slider, and a circle round a point of a gri
   expect(events.find((event: { type: string }) => event.type === "geometry.circle")).toMatchObject({ radius: 3 });
   if (process.env.SOLID_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.SOLID_SHOT });
 });
+
+test("more solids: a hexagonal prism with a cut and an icosahedron, from the Solid form", async ({ page }) => {
+  await installTestAccount(page);
+  const draft = {
+    schema: "octos.learner-recording.v1", id: "rec-more", createdAt: now, updatedAt: now,
+    topic: { text: "立体图形", type: "math_off_map" }, goals: ["认识立体"],
+    cards: [{ key: "card-1", title: "棱柱", kind: "teach", takes: [] }],
+  };
+  await page.addInitScript(({ value, key }) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem(key, JSON.stringify([value]));
+  }, { value: draft, key: RECORDINGS });
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${draft.id}`);
+  await page.getByRole("button", { name: "录第 1 张" }).click();
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "立体" }).click();
+  await page.getByRole("radio", { name: "棱柱" }).click();
+  await expect(page.getByRole("textbox", { name: "底面边数（3 到 12）" })).toHaveValue("6");
+  await page.getByRole("checkbox", { name: /^切一刀/ }).check();
+  await page.getByRole("button", { name: "放到白板上" }).click();
+  const prism = page.locator(".teach-studio .board-node.kind-scene3d").first();
+  await expect(prism).toContainText("底面是正六边形的棱柱");
+  await expect(prism.locator(".scene3d-intersection")).toHaveCount(1);
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "立体" }).click();
+  await page.getByRole("radio", { name: "正二十面体" }).click();
+  await page.getByRole("button", { name: "放到白板上" }).click();
+  const icosahedron = page.locator(".teach-studio .board-node.kind-scene3d").last();
+  await expect(icosahedron).toContainText("正二十面体");
+  // About half of its 20 faces face the viewer.
+  const faces = await icosahedron.locator(".scene3d-facet").count();
+  expect(faces).toBeGreaterThanOrEqual(8);
+  expect(faces).toBeLessThanOrEqual(12);
+});

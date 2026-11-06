@@ -1247,7 +1247,7 @@ function ViewPractice({ scenes, viewOf, onSave }: {
 /** The 3D scenes of the recording, by alias, labelled by the card they were put on. */
 function recordingScenes(recording: LearnerRecording): Array<{ alias: string; label: string }> {
   return recording.cards.flatMap((card, index) => (keptTake(card) ?? currentTake(card))?.events.flatMap((event) => (
-    event.type === "component.insert" && event.panel === "solid_3d" ? [{ alias: event.alias, label: tr("第 {{v0}} 张的{{v1}}", { v0: index + 1, v1: solidName(event.shape) }) }] : [])) ?? []);
+    event.type === "component.insert" && event.panel === "solid_3d" ? [{ alias: event.alias, label: tr("第 {{v0}} 张的{{v1}}", { v0: index + 1, v1: solidName(event.shape, "sides" in event ? event.sides : undefined) }) }] : [])) ?? []);
 }
 
 /** How the learner last turned a 3D scene in the card's take being recorded. */

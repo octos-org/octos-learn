@@ -13,7 +13,7 @@ import {
   type LearnerRecording,
   type NoteRole,
   type Solid,
-  solidHeight,
+  solidZRange,
   type RecordingCard,
   type RecordingEvent,
   type Take,
@@ -348,16 +348,38 @@ function noteHeading(role: NoteRole, language: string): string {
   return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
 }
 
+/** A solid as an OLL scene3d object, centred on the origin. */
+function solidObject(solid: Solid): Record<string, unknown> {
+  const base = { as: "solid", kind: solid.shape, center: { x: 0, y: 0, z: 0 } };
+  switch (solid.shape) {
+    case "box": return { ...base, size: solid.size };
+    case "cylinder": case "cone": return { ...base, radius: solid.radius, height: solid.height };
+    case "prism": case "pyramid": return { ...base, sides: solid.sides, radius: solid.radius, height: solid.height };
+    case "frustum": return { ...base, radius: solid.radius, top_radius: solid.topRadius, height: solid.height };
+    case "torus": return { ...base, radius: solid.radius, tube: solid.tube };
+    default: return { ...base, radius: solid.radius };
+  }
+}
+
+const POLYGON_ZH = ["", "", "", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+
 /** A 3D solid in words, in the lesson's language, shown under the scene (and instead of it if it cannot be drawn). */
 function solidDescription(solid: Solid, language: string): string {
-  if (language.toLowerCase().startsWith("zh")) {
-    if (solid.shape === "box") return `长 ${solid.size.x}、宽 ${solid.size.y}、高 ${solid.size.z} 的长方体。`;
-    if (solid.shape === "sphere") return `半径 ${solid.radius} 的球。`;
-    return `半径 ${solid.radius}、高 ${solid.height} 的${solid.shape === "cone" ? "圆锥" : "圆柱"}。`;
+  const zh = language.toLowerCase().startsWith("zh");
+  switch (solid.shape) {
+    case "box": return zh ? `长 ${solid.size.x}、宽 ${solid.size.y}、高 ${solid.size.z} 的长方体。` : `A box ${solid.size.x} by ${solid.size.y} by ${solid.size.z}.`;
+    case "sphere": return zh ? `半径 ${solid.radius} 的球。` : `A sphere of radius ${solid.radius}.`;
+    case "hemisphere": return zh ? `半径 ${solid.radius} 的半球。` : `A hemisphere of radius ${solid.radius}.`;
+    case "cylinder": case "cone": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的${solid.shape === "cone" ? "圆锥" : "圆柱"}。` : `A ${solid.shape} of radius ${solid.radius} and height ${solid.height}.`;
+    case "prism": case "pyramid": return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${solid.shape === "prism" ? "棱柱" : "棱锥"}，高 ${solid.height}。`
+      : `A ${solid.sides}-sided ${solid.shape} of height ${solid.height}.`;
+    case "frustum": return zh ? `下底半径 ${solid.radius}、上底半径 ${solid.topRadius}、高 ${solid.height} 的圆台。` : `A frustum of radii ${solid.radius} and ${solid.topRadius}, height ${solid.height}.`;
+    case "torus": return zh ? `环半径 ${solid.radius}、管半径 ${solid.tube} 的圆环。` : `A torus of ring radius ${solid.radius} and tube radius ${solid.tube}.`;
+    default: {
+      const names = { tetrahedron: ["正四面体", "tetrahedron"], octahedron: ["正八面体", "octahedron"], dodecahedron: ["正十二面体", "dodecahedron"], icosahedron: ["正二十面体", "icosahedron"] }[solid.shape];
+      return zh ? `${names[0]}。` : `A regular ${names[1]}.`;
+    }
   }
-  if (solid.shape === "box") return `A box ${solid.size.x} by ${solid.size.y} by ${solid.size.z}.`;
-  if (solid.shape === "sphere") return `A sphere of radius ${solid.radius}.`;
-  return `A ${solid.shape} of radius ${solid.radius} and height ${solid.height}.`;
 }
 
 /** The cutting plane's slider, in the lesson's language. */
@@ -539,9 +561,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     scenes.add(alias);
     const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
-    const object = solid.shape === "box" ? { as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: solid.size }
-      : solid.shape === "sphere" ? { as: "solid", kind: "sphere", center: { x: 0, y: 0, z: 0 }, radius: solid.radius }
-        : { as: "solid", kind: solid.shape, center: { x: 0, y: 0, z: 0 }, radius: solid.radius, height: solid.height };
+    const object = solidObject(solid);
     const content: Record<string, unknown> = {
       ...title,
       fallback: solidDescription(solid, options.language),
@@ -552,11 +572,12 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     };
     if (solid.cut) {
       // A cutting plane across the solid, moved by a slider from its bottom to its top.
-      const half = solidHeight(solid) / 2;
+      const [bottom, top] = solidZRange(solid);
+      const middle = Number(((bottom + top) / 2).toFixed(6));
       if (variables.has(solid.cut.variable)) throw new CompileError(`Variable '${solid.cut.variable}' is already used`);
-      variables.set(solid.cut.variable, { as: solid.cut.variable, initial: 0, min: -half, max: half, label: cutLabel(options.language),
-        control: { kind: "slider", step: sliderStep(-half, half) } });
-      content.sections = [{ as: "cut", axis: "z", value: 0, targets: ["solid"], display: "plane_and_intersection", color: "orange" }];
+      variables.set(solid.cut.variable, { as: solid.cut.variable, initial: middle, min: Number(bottom.toFixed(6)), max: Number(top.toFixed(6)), label: cutLabel(options.language),
+        control: { kind: "slider", step: sliderStep(bottom, top) } });
+      content.sections = [{ as: "cut", axis: "z", value: middle, targets: ["solid"], display: "plane_and_intersection", color: "orange" }];
       content.bindings = [{ target: "cut.value", expression: solid.cut.variable }];
     }
     return { do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(), content } as Action;

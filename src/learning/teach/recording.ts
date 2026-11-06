@@ -54,15 +54,33 @@ export type ComponentInsert = ComponentPlacement & (
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
-/** A 3D solid, centred on the origin, its height along z. */
+/** A 3D solid, centred on the origin, its height along z (a hemisphere's flat face on the origin). */
 export type Solid =
   | { shape: "box"; size: { x: number; y: number; z: number } }
   | { shape: "cylinder" | "cone"; radius: number; height: number }
-  | { shape: "sphere"; radius: number };
+  | { shape: "prism" | "pyramid"; sides: number; radius: number; height: number }
+  | { shape: "frustum"; radius: number; topRadius: number; height: number }
+  | { shape: "torus"; radius: number; tube: number }
+  | { shape: "sphere" | "hemisphere" | "tetrahedron" | "octahedron" | "dodecahedron" | "icosahedron"; radius: number };
 
-/** How tall a solid is (along z), to bound a cutting plane. */
-export function solidHeight(solid: Solid): number {
-  return solid.shape === "box" ? solid.size.z : solid.shape === "sphere" ? 2 * solid.radius : solid.height;
+export type SolidShape = Solid["shape"];
+
+/** How high a regular polyhedron of circumradius 1 reaches above (and below) its centre. */
+const POLYHEDRON_REACH: Record<string, number> = { tetrahedron: 1 / Math.sqrt(3), octahedron: 1, dodecahedron: 0.7947, icosahedron: 0.8507 };
+
+/** Where a solid is along z, from its bottom to its top, to bound a cutting plane. */
+export function solidZRange(solid: Solid): [number, number] {
+  switch (solid.shape) {
+    case "box": return [-solid.size.z / 2, solid.size.z / 2];
+    case "sphere": return [-solid.radius, solid.radius];
+    case "hemisphere": return [0, solid.radius];
+    case "torus": return [-solid.tube, solid.tube];
+    case "tetrahedron": case "octahedron": case "dodecahedron": case "icosahedron": {
+      const reach = solid.radius * POLYHEDRON_REACH[solid.shape]!;
+      return [-reach, reach];
+    }
+    default: return [-solid.height / 2, solid.height / 2];
+  }
 }
 
 /** How the presenter can react while the learner talks. */
