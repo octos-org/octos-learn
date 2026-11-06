@@ -82,10 +82,12 @@ Branch `claude/growing-card` (octos-learn PR #125) with OLL PR #30; not merged y
 | A1 growing card | Done | Writing on or under a handwriting/math card continues it at the drawn offset and size (OLL 0011 `continues`, `drawn_size`, player 0.9.0); neat math lines its "=" up; arrow and continuation previews while recording |
 | A2 words | Done | Text (typed or the last sentence said), notes (conclusion / careful / summary / definition, headed in the lesson language), tables with cells filled by tapping while talking |
 | A3 diagrams | Done | Steps and cycles, boxes added by tapping while talking, words on arrows; OLL draws arrows and lays a cycle on a ring |
-| A4 2D math | Partly | Graph letters become sliders (`y = a*x + b`, `(x-h)^2+k`); curves added to a graph while talking. Not yet: geometry tray (circle, segment, angle, regular polygon), implicit curves, guides |
+| A4 2D math | Done | Graph letters become sliders (`y = a*x + b`, `(x-h)^2+k`); while talking, a graph takes more curves, guide lines (`x = 2`, `y = 3`) and equations (`x^2 + y^2 = 4`, implicit curves); circles and segments on a grid; a regular polygon in a circle with its sides on a slider |
 | A5 3D | Done | Box, cylinder, cone, sphere; a cutting plane on a slider shows the cross-section |
-| A6 marks | Partly | Highlight meanings (important / also look / careful / done); words on arrows. Not yet: groups, presenter reactions (needs the playback character to read `teacher.expression`), other placements |
+| A6 marks | Done, two items deferred | Highlight meanings (important / also look / careful / done); words on arrows; presenter reactions (😊 🤔 🎉) shown on the character in playback. Deferred: groups (OLL frames a group only when no other card sits inside it, and learner cards flow in reading order, so frames would often not show; needs an OLL layout change that keeps members together) and the placements above/inside (little gain over "next to" and the growing card) |
 | A7 Your turn | Done | Drag to an answer (unit circle or any slider), type a number (numeric answer by the card), turn a 3D shape to a view |
+
+Phase A is done apart from the two deferred A6 items; see Phase A acceptance for what remains to check with real lessons (the ten guide lessons on target devices).
 
 Known limits found on the way:
 - A graph that follows a unit circle's angle cannot take more curves: OLL cannot revise a card's bindings. Lifting it needs an OLL rule that allows a revise with unchanged bindings.
