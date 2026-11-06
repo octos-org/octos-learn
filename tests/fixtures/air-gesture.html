@@ -32,6 +32,20 @@ window.handRaw=async function(x,y,score,count=4){
  const landmarks=points.map(p=>({x:p.x+1-x-center.x,y:p.y+y-center.y}));
  for(let i=0;i<count;i++){time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,processingMs:1,pipelineMs:1});await new Promise(resolve=>requestAnimationFrame(resolve));}
 };
+window.handAtAngle=async function(yaw,pitch,closed,noisyWorld=false){
+ const points=makeHandwritingLandmarks({x:0,y:0},.8,'pinch').map(p=>({...p,z:0}));
+ if(closed){points[4]={x:.008,y:.06,z:.003};points[3]={x:.04,y:.09,z:.008};}
+ const rotated=points.map(p=>{
+  const x=p.x*Math.cos(yaw)+p.z*Math.sin(yaw), z=-p.x*Math.sin(yaw)+p.z*Math.cos(yaw);
+  return {x,y:p.y*Math.cos(pitch)-z*Math.sin(pitch),z:p.y*Math.sin(pitch)+z*Math.cos(pitch)};
+ });
+ const aspect=4/3;
+ const landmarks=rotated.map(p=>({x:.5+p.x/aspect,y:.5+p.y,z:p.z/aspect}));
+ const center=handPalmCenter(landmarks);
+ for(const p of landmarks){p.x+=.5-center.x;p.y+=.5-center.y;}
+ const worldLandmarks=rotated.map((p,i)=>({x:p.x*.4,y:p.y*.4,z:p.z*.4+(closed&&noisyWorld&&(i===3||i===4)?.06:0)}));
+ for(let i=0;i<5;i++){time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,worldLandmarks,imageWidth:640,imageHeight:480,processingMs:1,pipelineMs:1});await new Promise(resolve=>requestAnimationFrame(resolve));}
+};
 window.hand=async function(x,y,closed,count=4){
  const viewport=document.querySelector('.learning-oll-board');
  const rect=viewport.getBoundingClientRect();

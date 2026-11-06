@@ -173,3 +173,16 @@ test("portrait layout leaves tools and practice targets reachable", async ({ pag
   }
   await page.screenshot({ path: testInfo.outputPath('portrait-practice.png') });
 });
+
+
+test("pad pinches are accepted from different hand orientations despite one noisy depth estimate", async ({ page }) => {
+  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
+  for (const [yaw, pitch] of [[0, 0], [Math.PI / 3, 0], [Math.PI / 2, Math.PI / 6], [-Math.PI / 3, -Math.PI / 4]]) {
+    for (const closed of [false, true, false]) {
+      await page.evaluate(async args => {
+        await (window as unknown as { handAtAngle: (yaw: number, pitch: number, closed: boolean, noisyWorld: boolean) => Promise<void> }).handAtAngle(...args);
+      }, [yaw!, pitch!, closed, true] as const);
+      await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-phase', closed ? 'drawing' : 'ready');
+    }
+  }
+});

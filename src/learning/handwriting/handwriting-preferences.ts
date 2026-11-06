@@ -3,13 +3,14 @@ import { HANDWRITING_CAMERA_REGION, type HandwritingCameraRegion } from "./handw
 export interface HandwritingPinchThresholds { down: number; up: number }
 export interface HandwritingPreferences {
   version: 1;
+  pinchMetric: 2;
   pinch: HandwritingPinchThresholds;
   region: HandwritingCameraRegion;
   tutorialDone: boolean;
 }
 export const HANDWRITING_PREFERENCES_KEY = "octos-learn-air-gesture-preferences-v1";
 export const DEFAULT_HANDWRITING_PREFERENCES: HandwritingPreferences = {
-  version: 1, pinch: { down: 0.28, up: 0.42 }, region: { ...HANDWRITING_CAMERA_REGION }, tutorialDone: false,
+  version: 1, pinchMetric: 2, pinch: { down: 0.28, up: 0.42 }, region: { ...HANDWRITING_CAMERA_REGION }, tutorialDone: false,
 };
 export function validPinchThresholds(value: unknown): value is HandwritingPinchThresholds {
   const p = value as HandwritingPinchThresholds | null;
@@ -26,7 +27,7 @@ export function loadHandwritingPreferences(): HandwritingPreferences {
   try {
     const p = JSON.parse(localStorage.getItem(HANDWRITING_PREFERENCES_KEY) ?? "null");
     if (p?.version === 1 && validPinchThresholds(p.pinch) && validHandwritingRegion(p.region)) {
-      return { version: 1, pinch: p.pinch, region: p.region, tutorialDone: p.tutorialDone === true };
+      return { version: 1, pinchMetric: 2, pinch: p.pinchMetric === 2 ? p.pinch : { ...DEFAULT_HANDWRITING_PREFERENCES.pinch }, region: p.region, tutorialDone: p.tutorialDone === true };
     }
   } catch { /* Unavailable storage or older settings use the initial configuration. */ }
   return structuredClone(DEFAULT_HANDWRITING_PREFERENCES);

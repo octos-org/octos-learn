@@ -51,4 +51,15 @@ describe("personal hand setup", () => {
       expect(loadHandwritingPreferences()).toEqual(DEFAULT_HANDWRITING_PREFERENCES);
     }
   });
+  it("replaces old distance thresholds when the contact measurement changes", () => {
+    const old = { ...DEFAULT_HANDWRITING_PREFERENCES, pinchMetric: undefined,
+      pinch: { down: 0.03, up: 0.08 }, tutorialDone: true, region: { left: 0.2, top: 0.2, right: 0.8, bottom: 0.8 } };
+    localStorage.setItem(HANDWRITING_PREFERENCES_KEY, JSON.stringify(old));
+    const migrated = loadHandwritingPreferences();
+    expect(migrated.pinch).toEqual(DEFAULT_HANDWRITING_PREFERENCES.pinch);
+    expect(migrated.pinchMetric).toBe(2);
+    expect(migrated.region).toEqual(old.region);
+    expect(migrated.tutorialDone).toBe(true);
+  });
+
 });

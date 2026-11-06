@@ -39,7 +39,7 @@ describe("palm targeting with a thumb-index clutch", () => {
   });
   it("keeps a brief ambiguous opening in the same stroke", () => {
     const c = new HandwritingPointerController({ mode: "palm-pinch" }); begin(c);
-    expect(c.update(frame(264, 0.35), viewport).phase).toBe("holding");
+    expect(c.update(frame(264, 0.39), viewport).phase).toBe("holding");
     const update = c.update(frame(297, 0.1), viewport);
     expect(update.penDown).toBe(true); expect(update.transition).toBeNull();
   });
@@ -59,9 +59,21 @@ describe("palm targeting with a thumb-index clutch", () => {
 
   it("ends a long ambiguous opening without accepting further ink", () => {
     const c = new HandwritingPointerController({ mode: "palm-pinch" }); begin(c);
-    const actions = [264, 400, 530, 660, 730].flatMap(t => c.update(frame(t, 0.35), viewport).actions);
+    const actions = [264, 400, 530, 660, 730].flatMap(t => c.update(frame(t, 0.39), viewport).actions);
     expect(actions.map(a => a.type)).toEqual(["up"]);
     expect(actions[0]!.reason).toBe("lost");
+  });
+
+  it("tolerates a loose held pinch and requires sustained actual opening to release", () => {
+    const c = new HandwritingPointerController({ mode: "palm-pinch" }); begin(c);
+    for (const t of [264, 297, 330, 363]) {
+      const update = c.update(frame(t, 0.33), viewport);
+      expect(update.penDown).toBe(true); expect(update.phase).toBe("drawing");
+    }
+    c.update(frame(396, 0.39), viewport);
+    // One fully open observation after an ambiguous pose must not release.
+    expect(c.update(frame(429, 0.75), viewport).transition).toBeNull();
+    expect(c.update(frame(462, 0.1), viewport).penDown).toBe(true);
   });
 
 });
