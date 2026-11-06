@@ -3262,5 +3262,8 @@
   "形象的反应": "The presenter's reaction",
   "形象鼓励一下": "Presenter encourages",
   "形象提醒小心": "Presenter says careful",
-  "形象庆祝": "Presenter celebrates"
+  "形象庆祝": "Presenter celebrates",
+  "看的人拖动滑块（或圆上的点），拖到你摆出的答案。": "Viewers drag a slider (or the point on the circle) to the answer you showed.",
+  "看的人在框里填一个数：整数、小数、分数都可以。": "Viewers type a number: whole, decimal or fraction.",
+  "看的人转动立体，转到你选的那个角度。": "Viewers turn the shape to the view you chose."
 }

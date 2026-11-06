@@ -1,6 +1,6 @@
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { ArrowUpRight, Braces, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, Pencil, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
+import { ArrowUpRight, Braces, Crosshair, Eraser, Hash, Highlighter, ListChecks, MousePointer2, MoveHorizontal, PenLine, Pencil, Play, Plus, Rotate3d, Sparkles, Undo2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { isSimplestFraction, normalizeAuthoringLesson, parseNumericAnswer, reduceCanonicalEvents, scene3dViewTargetScore } from "octos-lesson-language";
@@ -1090,18 +1090,23 @@ function YourTurnPanel({ variables, scenes, valueOf, viewOf, onSave, onSaveAnswe
   onSaveAnswer: (exercise: { answer: string; unit: string; simplest: boolean; hint: string }) => void;
   onSaveView: (exercise: { node: string; yaw: number; pitch: number; hint: string }) => void;
 }) {
-  const kinds: Array<[PracticeKind, string]> = [
-    ...(variables.length ? [["drag", tr("拖到答案")] as [PracticeKind, string]] : []),
-    ["answer", tr("填一个数")],
-    ...(scenes.length ? [["view", tr("转到某个角度")] as [PracticeKind, string]] : []),
+  const kinds: Array<[PracticeKind, string, typeof Hash, string]> = [
+    ...(variables.length ? [["drag", tr("拖到答案"), MoveHorizontal, tr("看的人拖动滑块（或圆上的点），拖到你摆出的答案。")] as [PracticeKind, string, typeof Hash, string]] : []),
+    ["answer", tr("填一个数"), Hash, tr("看的人在框里填一个数：整数、小数、分数都可以。")],
+    ...(scenes.length ? [["view", tr("转到某个角度"), Rotate3d, tr("看的人转动立体，转到你选的那个角度。")] as [PracticeKind, string, typeof Hash, string]] : []),
   ];
   const [kind, setKind] = useState<PracticeKind>(kinds[0]![0]);
   return (
     <div className="teach-your-turn">
       <h2 className="teach-group-label">{tr("设置练习")}</h2>
-      <div className="teach-note-roles" role="radiogroup" aria-label={tr("练习的样子")}>
-        {kinds.map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={kind === value} onClick={() => setKind(value)}>{label}</button>)}
+      <div className="teach-practice-kinds" role="radiogroup" aria-label={tr("练习的样子")}>
+        {kinds.map(([value, label, Icon]) => (
+          <button key={value} type="button" role="radio" aria-checked={kind === value} onClick={() => setKind(value)}>
+            <Icon size={18} aria-hidden="true" />{label}
+          </button>
+        ))}
       </div>
+      <p className="academy-muted">{kinds.find(([value]) => value === kind)?.[3]}</p>
       {kind === "drag" && <DragPractice variables={variables} valueOf={valueOf} onSave={onSave} />}
       {kind === "answer" && <AnswerPractice onSave={onSaveAnswer} />}
       {kind === "view" && <ViewPractice scenes={scenes} viewOf={viewOf} onSave={onSaveView} />}

@@ -387,3 +387,8 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-dock-options .teach-input { width: 220px; min-height: 36px; padding: 4px 10px; font-size: 14px; }
 .teach-reactions { display: flex; gap: 2px; }
 .teach-tool.teach-reaction { width: 44px; font-size: 22px; }
+/* The kinds of "Your turn" practice: a segmented control, one choice lit. */
+.teach-practice-kinds { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #eef1ec; }
+.teach-practice-kinds button { display: grid; justify-items: center; gap: 4px; min-height: 56px; padding: 6px 4px; border: 0; border-radius: 10px; color: #3d5a63; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.teach-practice-kinds button[aria-checked="true"] { color: #1b2457; background: #fffef9; box-shadow: 0 1px 4px rgba(20, 26, 64, 0.16); font-weight: 600; }
+.teach-your-turn { display: grid; gap: 10px; }
