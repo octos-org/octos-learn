@@ -10,8 +10,10 @@ import { AcademyHeader } from "../academy/academy-header";
 import { openHistoryApi } from "../history/history-api";
 import { TOPIC_NAME_CATALOGS, topicNameLabels } from "../map/taxonomy-labels";
 import { defaultCardTitles } from "./card-templates";
-import { createRecording, planCards, type LearnerRecording } from "./recording";
+import { createRecording, planCards, setPresenter, type LearnerRecording, type Presenter } from "./recording";
 import { saveRecordingDraft } from "./recording-store";
+import { PresenterPicker } from "./presenter-picker";
+import { useSpeechService } from "./speech-service";
 import { searchStarTopics, topicFromChoice, type TopicChoice } from "./topic-choice";
 import "./teach.css";
 import "./teach-pages.css";
@@ -23,7 +25,7 @@ interface PlannedCard {
   kind: "teach" | "your_turn";
 }
 
-type Step = "topic" | "goal" | "cards" | "ready";
+type Step = "topic" | "cards" | "presenter" | "ready";
 
 function newRecordingId(): string {
   return `rec-${crypto.randomUUID()}`;
@@ -42,6 +44,9 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
   const [cards, setCards] = useState<PlannedCard[]>(() => defaultCardTitles().map((title) => ({ title, kind: "teach" })));
   const [saveFailed, setSaveFailed] = useState(false);
   const [planned, setPlanned] = useState<LearnerRecording>();
+  // Who presents the lesson; the studio can change it later.
+  const [presenter, setPresenterChoice] = useState<Presenter>({});
+  const speech = useSpeechService();
 
   useEffect(() => {
     const token = getToken();
@@ -62,7 +67,7 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
 
   const chooseFree = (isMath: boolean) => {
     setChoice({ kind: "free", text: query, isMath });
-    setStep("goal");
+    setFreeTopic(false);
   };
 
   const updateCard = (index: number, title: string) => {
@@ -75,11 +80,11 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
   const start = () => {
     if (!choice || !cardsValid) return;
     const now = new Date().toISOString();
-    const recording = planCards(
+    const recording = setPresenter(planCards(
       createRecording({ id: newRecordingId(), now, topic: topicFromChoice(choice), goals: [goal] }),
       now,
       cards,
-    );
+    ), presenter, now);
     const profileId = getSelectedProfileId() ?? "local";
     if (!saveRecordingDraft(localStorage, profileId, recording)) {
       setSaveFailed(true);
@@ -100,8 +105,8 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
           <Link to="/teach" className="teach-plan-back"><ArrowLeft size={16} aria-hidden="true" />{tr("我的课")}</Link>
           <header className="academy-records-head teach-plan-head"><div><h1 id="teach-plan-title" className="academy-title">{tr("讲一节新课")}</h1><p>{tr("先想好要讲什么，再开始录制。")}</p></div></header>
           <ol className="teach-plan-steps" aria-label={tr("规划进度")}>
-            {[{ id: "topic", label: tr("主题") }, { id: "goal", label: tr("目标") }, { id: "cards", label: tr("卡片") }].map((item, index) => {
-              const current = step === "topic" ? 0 : step === "goal" ? 1 : 2;
+            {[{ id: "topic", label: tr("主题和目标") }, { id: "cards", label: tr("卡片") }, { id: "presenter", label: tr("形象和声音") }].map((item, index) => {
+              const current = step === "topic" ? 0 : step === "cards" ? 1 : 2;
               return <li key={item.id} aria-current={index === current ? "step" : undefined} data-complete={index < current || undefined}><span>{index < current ? <Check size={15} aria-hidden="true" /> : index + 1}</span>{item.label}</li>;
             })}
           </ol>
@@ -109,6 +114,12 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
           <section className="teach-step" aria-labelledby="teach-topic-title">
             <h2 id="teach-topic-title">{tr("你想讲什么？")}</h2>
             <p className="academy-muted">{tr("什么主题都可以，星图上的知识点或你喜欢的任何东西。")}</p>
+            {choice ? (
+              <div className="teach-chosen-topic">
+                <span>{topicFromChoice(choice).text}</span>
+                <button type="button" className="teach-secondary" onClick={() => { setChoice(undefined); setFreeTopic(false); }}>{tr("换一个主题")}</button>
+              </div>
+            ) : <>
             <input
               className="teach-input"
               value={query}
@@ -124,7 +135,6 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
                       type="button"
                       onClick={() => {
                         setChoice({ kind: "star", ...candidate });
-                        setStep("goal");
                       }}
                     >
                       <span>{candidate.name}</span>
@@ -146,23 +156,22 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
                 <button type="button" onClick={() => chooseFree(false)}>{tr("不是数学")}</button>
               </div>
             )}
-          </section>
-        )}
-
-        {step === "goal" && choice && (
-          <section className="teach-step" aria-labelledby="teach-goal-title">
-            <h2 id="teach-goal-title">{tr("小章鱼想知道：听完你的课，我会学会什么？")}</h2>
-            <textarea
-              className="teach-input"
-              value={goal}
-              onChange={(event) => setGoal(event.target.value)}
-              aria-label={tr("听完能学会什么")}
-              placeholder={tr("例如：用任意两个点求出斜率")}
-            />
-            <div className="teach-actions">
-              <button type="button" className="teach-secondary" onClick={() => setStep("topic")}>{tr("上一步")}</button>
-              <button type="button" disabled={!goal.trim()} onClick={() => setStep("cards")}>{tr("下一步")}</button>
-            </div>
+            </>}
+            {choice && (
+              <>
+                <h2 id="teach-goal-title">{tr("小章鱼想知道：听完你的课，我会学会什么？")}</h2>
+                <textarea
+                  className="teach-input"
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value)}
+                  aria-label={tr("听完能学会什么")}
+                  placeholder={tr("例如：用任意两个点求出斜率")}
+                />
+                <div className="teach-actions">
+                  <button type="button" disabled={!goal.trim()} onClick={() => setStep("cards")}>{tr("下一步")}</button>
+                </div>
+              </>
+            )}
           </section>
         )}
 
@@ -197,7 +206,20 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
               )}
             </div>
             <div className="teach-actions">
-              <button type="button" className="teach-secondary" onClick={() => setStep("goal")}>{tr("上一步")}</button>
+              <button type="button" className="teach-secondary" onClick={() => setStep("topic")}>{tr("上一步")}</button>
+              <button type="button" disabled={!cardsValid} onClick={() => setStep("presenter")}>{tr("下一步")}</button>
+            </div>
+          </section>
+        )}
+
+        {step === "presenter" && (
+          <section className="teach-step" aria-labelledby="teach-presenter-title">
+            <h2 id="teach-presenter-title">{tr("谁来讲你的课？")}</h2>
+            <p className="academy-muted">{tr("你的课会由这个形象和声音来讲，不会用你自己的样子和声音。录课时也可以再换。")}</p>
+            <PresenterPicker presenter={presenter} resource={speech.resource} audio={speech.audio}
+              onChoose={(choice) => setPresenterChoice((current) => ({ ...current, ...choice }))} />
+            <div className="teach-actions">
+              <button type="button" className="teach-secondary" onClick={() => setStep("cards")}>{tr("上一步")}</button>
               <button type="button" disabled={!cardsValid} onClick={start}>{tr("开始录课")}</button>
             </div>
             {saveFailed && <p role="alert">{tr("这台设备暂时保存不了，请稍后再试。")}</p>}

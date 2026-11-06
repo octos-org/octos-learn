@@ -35,6 +35,10 @@ it("plans a lesson on a free topic and saves the draft for the learner", async (
   expect(screen.getAllByRole("textbox").map((input) => (input as HTMLInputElement).value))
     .toEqual(["The problem", "My method", "Try it", "Why it works"]);
   fireEvent.click(screen.getByRole("button", { name: /Your turn/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  // Last step: who presents the lesson.
+  expect(screen.getByRole("heading", { name: "Who presents your lesson?" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /White Rabbit/ }));
   fireEvent.click(screen.getByRole("button", { name: "Start recording" }));
   await waitFor(() => expect(onPlanned).toHaveBeenCalledOnce());
   const [draft] = loadRecordingDrafts(localStorage, "learner-1");
@@ -43,6 +47,23 @@ it("plans a lesson on a free topic and saves the draft for the learner", async (
   expect(draft?.cards.map((card) => [card.key, card.kind])).toEqual([
     ["card-1", "teach"], ["card-2", "teach"], ["card-3", "teach"], ["card-4", "teach"], ["card-5", "your_turn"],
   ]);
+  expect(draft?.presenter).toEqual({ avatar: "white-rabbit" });
+});
+
+it("asks for the topic and the goal on one page, and the topic can be changed there", () => {
+  renderPage();
+  expect(screen.queryByRole("textbox", { name: "What the viewer will learn" })).toBeNull();
+  fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Dinosaur teeth" } });
+  fireEvent.click(screen.getByRole("button", { name: /teach what I typed|Teach this/ }));
+  fireEvent.click(screen.getByRole("button", { name: "No, not math" }));
+  expect(screen.getByText("Dinosaur teeth")).toBeTruthy();
+  const next = screen.getByRole("button", { name: "Next" }) as HTMLButtonElement;
+  expect(next.disabled).toBe(true);
+  fireEvent.change(screen.getByRole("textbox", { name: "What the viewer will learn" }), { target: { value: "Facts" } });
+  expect(next.disabled).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Change topic" }));
+  expect((screen.getByRole("textbox", { name: "Topic" }) as HTMLInputElement).value).toBe("Dinosaur teeth");
+  expect(screen.getByRole("list", { name: "Lesson planning progress" }).textContent).toMatch(/Topic & goal.*Cards.*Character & voice/);
 });
 
 it("suggests stars from the star map and marks lit ones", async () => {

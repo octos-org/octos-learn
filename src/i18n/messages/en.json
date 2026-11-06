@@ -3148,5 +3148,10 @@
   "{{v0}} · {{v1}}": "{{v0}} · {{v1}}",
   "设置中的声音": "Voice from settings",
   "选的声音现在用不了": "Chosen voice unavailable",
-  "换形象和声音": "Change character & voice"
+  "换形象和声音": "Change character & voice",
+  "主题和目标": "Topic & goal",
+  "形象和声音": "Character & voice",
+  "换一个主题": "Change topic",
+  "谁来讲你的课？": "Who presents your lesson?",
+  "你的课会由这个形象和声音来讲，不会用你自己的样子和声音。录课时也可以再换。": "Your lesson is presented by this character and voice, never your own face or voice. You can change them while recording, too."
 }
