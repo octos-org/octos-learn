@@ -63,6 +63,7 @@ export function recordingVariableInfo(recording: LearnerRecording): Array<{ vari
     if (event.panel === "unit_circle") add(event.variable, "θ", true);
     if (event.panel === "graph") for (const parameter of event.parameters ?? []) add(parameter.variable, parameter.letter, false);
     if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
+    if (event.panel === "polygon" && event.slider) add(event.slider.variable, tr("边数"), false);
   }
   return variables;
 }
@@ -276,8 +277,8 @@ export function wrapDrag(segments: DragSegment[], range: { min: number; max: num
 }
 
 /** What the Add panel can put on the board. */
-export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram";
-const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d"]);
+export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram" | "polygon" | "circle" | "segment";
+const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d", "polygon"]);
 
 /** Whether a kind of component is a figure, which starts a row unless it is put next to a card. */
 export function isFigure(form: InsertForm | null): boolean {

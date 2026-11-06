@@ -315,6 +315,11 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
 
 /** A diagram of boxes joined by arrows; each box after the first may carry words on the arrow into it. */
 interface Diagram { shape: "steps" | "cycle"; title: string; boxes: Array<{ label: string; link?: string }> }
+/** The most sides the studio offers a regular polygon (OLL allows 384). */
+export const MAX_POLYGON_SIDES = 48;
+const polygonLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "正多边形" : "regular polygon");
+const sidesLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "边数" : "sides");
+
 /** The most curves the studio puts on one graph. */
 export const MAX_CURVES = 4;
 /** The most boxes OLL lays out as steps (and the studio offers for a cycle). */
@@ -378,6 +383,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit?: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
+  // Segments between two points of a grid, and circles round one of its points.
+  const geometrySegments = new Map<string, Array<Record<string, unknown>>>();
+  const geometryCircles = new Map<string, Array<Record<string, unknown>>>();
   // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
   const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
@@ -498,6 +506,25 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         content: { ...named, text: component.text.trim() },
       } as Action;
     }
+    if (component.panel === "polygon") {
+      // A regular polygon in a circle of radius 1, showing its perimeter against the circle's;
+      // its number of sides may be a slider the learner drags while talking.
+      const sides = Math.round(component.sides);
+      if (!(sides >= 3 && sides <= MAX_POLYGON_SIDES)) throw new CompileError(`A regular polygon has 3 to ${MAX_POLYGON_SIDES} sides`);
+      const content: Record<string, unknown> = {
+        ...title,
+        axes: { x: { min: -1.3, max: 1.3, label: "x" }, y: { min: -1.3, max: 1.3, label: "y" }, equal_scale: true },
+        points: [{ as: "origin", x: 0, y: 0, label: "O" }],
+        circles: [{ as: "circle", center: "origin", radius: 1, label: "r = 1" }],
+        regular_polygons: [{ as: "polygon", center: "origin", radius: 1, sides, relation: "inscribed", show_measurements: true, label: polygonLabel(options.language) }],
+      };
+      if (component.slider) {
+        if (variables.has(component.slider.variable)) throw new CompileError(`Variable '${component.slider.variable}' is already used`);
+        variables.set(component.slider.variable, { as: component.slider.variable, initial: sides, min: 3, max: MAX_POLYGON_SIDES, label: sidesLabel(options.language), control: { kind: "slider", step: 1 } });
+        content.bindings = [{ target: "polygon.sides", expression: component.slider.variable }];
+      }
+      return { do: "write", as: alias, kind: "geometry", role: "diagram", content, place: placeNext() } as Action;
+    }
     if (component.panel === "diagram") {
       const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
       for (const box of component.boxes) diagram.boxes.push({ label: box.trim() });
@@ -538,11 +565,14 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const gridContent = (alias: string): Record<string, unknown> => {
     const lines = geometryLines.get(alias) ?? [];
     const points = [...geometryPoints.get(alias)!, ...lines.flatMap((line) => line.ends)];
+    const segments = [...lines.map((line) => line.segment), ...(geometrySegments.get(alias) ?? [])];
+    const circles = geometryCircles.get(alias) ?? [];
     return {
       ...geometryContent.get(alias),
       // Copies: points and lines added in later cards must not appear in earlier ones.
       points: points.length ? points.map((point) => ({ ...point })) : [{ as: "origin", x: 0, y: 0, visible: false }],
-      ...(lines.length ? { segments: lines.map((line) => ({ ...line.segment })) } : {}),
+      ...(segments.length ? { segments: segments.map((segment) => ({ ...segment })) } : {}),
+      ...(circles.length ? { circles: circles.map((circle) => ({ ...circle })) } : {}),
     };
   };
 
@@ -640,6 +670,25 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           actions.push({ ...action, ...beside, when } as Action);
           lastNode = event.alias;
           focus = [event.alias];
+          break;
+        }
+        case "geometry.circle":
+        case "geometry.segment": {
+          const points = geometryPoints.get(event.node);
+          if (!points) throw new CompileError(`'${event.node}' is not a coordinate grid`);
+          const named = (point: string) => points.find((candidate) => candidate.as === point) ?? (() => { throw new CompileError(`'${event.node}' has no point '${point}'`); })();
+          const alias = requireAlias(event.alias, event.type === "geometry.circle" ? "Circle" : "Segment");
+          if (event.type === "geometry.circle") {
+            if (!(event.radius > 0)) throw new CompileError("A circle needs a radius above 0");
+            const center = named(event.center);
+            geometryCircles.set(event.node, [...(geometryCircles.get(event.node) ?? []), { as: alias, center: center.as, radius: event.radius, label: `r = ${event.radius}` }]);
+          } else {
+            const a = named(event.from), b = named(event.to);
+            if (a.x === b.x && a.y === b.y) throw new CompileError("A segment needs two different points");
+            geometrySegments.set(event.node, [...(geometrySegments.get(event.node) ?? []), { as: alias, from: a.as, to: b.as, label: `${a.label?.split(" ")[0] ?? a.as}${b.label?.split(" ")[0] ?? b.as}`, style: "solid" }]);
+          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: event.type === "geometry.circle" ? "the learner drew a circle" : "the learner joined two points", when } as Action);
+          focus = [event.node];
           break;
         }
         case "graph.add_curve": {

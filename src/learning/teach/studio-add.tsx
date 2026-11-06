@@ -3,7 +3,7 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow } from "lucide-react";
+import { Box, Circle, CircleDot, Grid3x3, Hexagon, LineChart, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
@@ -16,7 +16,12 @@ function numberField(value: string): number | undefined {
   return value.trim() !== "" && Number.isFinite(number) ? number : undefined;
 }
 
-export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onInsert, onPoint, onLine, said }: {
+/** A circle or a segment drawn on a coordinate grid. */
+export type GridShape = { type: "geometry.circle"; node: string; center: string; radius: number; alias: string }
+  | { type: "geometry.segment"; node: string; from: string; to: string; alias: string };
+
+export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onInsert, onPoint, onLine, onShape, said }: {
+  onShape: (shape: GridShape) => void;
   recording: LearnerRecording;
   /** The last sentence the learner said in this take, to put on the board as words. */
   said?: string;
@@ -36,6 +41,9 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
     ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("立体"), Box],
     ...(grids.length ? [["point", tr("放一个点"), Square] as [InsertForm, string, typeof LineChart]] : []),
     ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["line", tr("过两点画直线"), Spline] as [InsertForm, string, typeof LineChart]] : []),
+    ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["segment", tr("连线段"), Minus] as [InsertForm, string, typeof LineChart]] : []),
+    ...([...gridPoints(recording).values()].some((points) => points.length >= 1) ? [["circle", tr("画圆"), CircleDot] as [InsertForm, string, typeof LineChart]] : []),
+    ["polygon", tr("正多边形"), Hexagon],
   ];
   const placement = (
     <fieldset className="teach-next-to">
@@ -72,6 +80,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
           onInsert={(component) => onInsert(nextTo && isFigure(form) ? { ...component, nextTo } : component)}
           onPoint={onPoint}
           onLine={onLine}
+          onShape={onShape}
           {...(said ? { said } : {})}
         />
       )}
@@ -80,10 +89,11 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
 }
 
 function InsertPanel({
-  form, recording, grids, placement, onInsert, onPoint, onLine, said,
+  form, recording, grids, placement, onInsert, onPoint, onLine, onShape, said,
 }: {
   form: InsertForm;
   said?: string;
+  onShape: (shape: GridShape) => void;
   /** "Put it next to…", shown before the button of a form that adds a figure. */
   placement: ReactNode;
   recording: LearnerRecording;
@@ -234,6 +244,9 @@ function InsertPanel({
     );
   }
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
+  if (form === "segment") return <LineForm recording={recording} segment onLine={(line) => onShape({ type: "geometry.segment", node: line.node, from: line.from, to: line.to, alias: nextComponentAlias(recording, "segment") })} />;
+  if (form === "circle") return <CircleForm recording={recording} onShape={onShape} />;
+  if (form === "polygon") return <PolygonForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "text" || form === "note") return <WordsForm kind={form} recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
   if (form === "table") return <TableForm recording={recording} onInsert={onInsert} />;
   if (form === "diagram") return <DiagramForm recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
@@ -267,8 +280,10 @@ function InsertPanel({
   );
 }
 
-function LineForm({ recording, onLine }: {
+function LineForm({ recording, onLine, segment = false }: {
   recording: LearnerRecording;
+  /** Join the two points with a segment instead of a line across the grid. */
+  segment?: boolean;
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
   const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 2);
@@ -296,11 +311,11 @@ function LineForm({ recording, onLine }: {
           </select>
         </label>
       )}
-      <div className="teach-range" role="group" aria-label={tr("直线经过的两点")}>
+      <div className="teach-range" role="group" aria-label={segment ? tr("线段的两个端点") : tr("直线经过的两点")}>
         {choose(first, setFirst)}
         {choose(second, setSecond)}
       </div>
-      {ready && <p className="academy-muted">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
+      {ready && !segment && <p className="academy-muted">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
       {a && b && !ready && <p role="alert">{tr("请选两个不同的点。")}</p>}
       <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
     </form>
@@ -512,6 +527,59 @@ export function DiagramEditor({ boxes, said, onAdd, onCancel }: {
         <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
         {!full && <button type="submit" disabled={!label.trim()}>{tr("加上")}</button>}
       </div>
+    </form>
+  );
+}
+
+/** A circle on a coordinate grid, round one of its points. */
+function CircleForm({ recording, onShape }: { recording: LearnerRecording; onShape: (shape: GridShape) => void }) {
+  const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 1);
+  const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
+  const points = gridPoints(recording).get(grid) ?? [];
+  const [center, setCenter] = useState(points[0]?.point ?? "");
+  const [radius, setRadius] = useState("2");
+  const value = numberField(radius);
+  const ready = Boolean(points.some((point) => point.point === center) && value !== undefined && value > 0);
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (ready) onShape({ type: "geometry.circle", node: grid, center, radius: value!, alias: nextComponentAlias(recording, "circle") });
+    }}>
+      {all.length > 1 && (
+        <label className="teach-label">{tr("用哪个网格的点")}
+          <select className="teach-input" value={grid} onChange={(event) => setGrid(event.target.value)}>
+            {all.map(([alias]) => <option key={alias} value={alias}>{alias}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="teach-range">
+        <label>{tr("圆心")}
+          <select className="teach-input" value={center} onChange={(event) => setCenter(event.target.value)}>
+            {points.map((point) => <option key={point.point} value={point.point}>{point.label}</option>)}
+          </select>
+        </label>
+        <label>{tr("半径")}<input className="teach-input" inputMode="decimal" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
+      </div>
+      <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
+    </form>
+  );
+}
+
+/** A regular polygon in a circle, its perimeter shown; its number of sides may be a slider. */
+function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
+  const [sides, setSides] = useState("6");
+  const [slider, setSlider] = useState(true);
+  const value = numberField(sides);
+  const ready = value !== undefined && Number.isInteger(value) && value >= 3 && value <= 48;
+  return (
+    <form className="teach-step" onSubmit={(event) => {
+      event.preventDefault();
+      if (ready) onInsert({ panel: "polygon", alias: nextComponentAlias(recording, "polygon"), sides: value!, ...(slider ? { slider: { variable: nextParameterVariable(recording, "sides") } } : {}) });
+    }}>
+      <label className="teach-label">{tr("几条边（3 到 48）")}<input className="teach-input" inputMode="numeric" value={sides} onChange={(event) => setSides(event.target.value)} /></label>
+      <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("边数做成滑块：讲课时拖动，看周长越来越接近圆周")}</span></label>
+      {placement}
+      <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
     </form>
   );
 }

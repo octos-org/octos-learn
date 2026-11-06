@@ -49,6 +49,8 @@ export type ComponentInsert = ComponentPlacement & (
   | { panel: "note"; alias: string; text: string; role: NoteRole; title?: string }
   /** A table; cells can be left empty and filled while talking (table.fill). */
   | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string }
+  /** A regular polygon inscribed in a circle, with its perimeter; its number of sides may be a slider. */
+  | { panel: "polygon"; alias: string; sides: number; slider?: { variable: string }; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
@@ -92,6 +94,10 @@ export type RecordingEvent =
   | { t: number; type: "ink.hide"; node: string }
   /** Words put into one cell of a table on the board (row and column count from 0, rows below the header). */
   | { t: number; type: "table.fill"; node: string; row: number; column: number; text: string }
+  /** A circle on a coordinate grid, around one of its points. */
+  | { t: number; type: "geometry.circle"; node: string; center: string; radius: number; alias: string }
+  /** A segment on a coordinate grid between two of its points. */
+  | { t: number; type: "geometry.segment"; node: string; from: string; to: string; alias: string }
   /** One more curve on a graph, to compare with the ones already there. */
   | { t: number; type: "graph.add_curve"; node: string; expression: string }
   /** One more box at the end of a diagram's steps or cycle, with words on the arrow into it if any. */
@@ -348,7 +354,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 // What stays on the board when only the words are re-recorded: cards, arrows
 // and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
-  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add", "graph.add_curve",
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add", "graph.add_curve", "geometry.circle", "geometry.segment",
   "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken", "your_turn.answer_set", "your_turn.view_set",
 ]);

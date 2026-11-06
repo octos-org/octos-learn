@@ -34,10 +34,14 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
     case "component.insert":
       return { action: "insert", label: {
         graph: tr("放上函数图"), coordinate_grid: tr("放上坐标网格"), unit_circle: tr("放上单位圆"), solid_3d: tr("放上立体"),
-        text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"), diagram: tr("放上图示"),
+        text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"), diagram: tr("放上图示"), polygon: tr("放上正多边形"),
       }[event.panel] };
     case "table.fill":
       return { action: "insert", label: tr("填表格") };
+    case "geometry.circle":
+      return { action: "line", label: tr("画一个圆") };
+    case "geometry.segment":
+      return { action: "line", label: tr("连一条线段") };
     case "graph.add_curve":
       return { action: "insert", label: tr("再画一条：y = {{v0}}", { v0: event.expression }) };
     case "diagram.add":

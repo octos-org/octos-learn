@@ -3245,5 +3245,16 @@
   "画上": "Draw it",
   "点表格里的格子可以填写，点图示可以再加一步，点函数图可以再画一条。": "Tap a table cell to fill it in, a diagram to add a step, or a graph to add a curve.",
   "这张图没有 {{v0}}。": "This graph has no {{v0}}.",
-  "可以用这张图的滑块：{{v0}}": "You can use this graph's sliders: {{v0}}"
+  "可以用这张图的滑块：{{v0}}": "You can use this graph's sliders: {{v0}}",
+  "放上正多边形": "Put a regular polygon",
+  "画一个圆": "Draw a circle",
+  "连一条线段": "Join a segment",
+  "连线段": "Segment",
+  "画圆": "Circle",
+  "正多边形": "Regular polygon",
+  "线段的两个端点": "The segment's two ends",
+  "圆心": "Centre",
+  "几条边（3 到 48）": "Number of sides (3 to 48)",
+  "边数做成滑块：讲课时拖动，看周长越来越接近圆周": "Make the number of sides a slider: drag it while you talk to watch the perimeter close in on the circle's",
+  "边数": "Sides"
 }

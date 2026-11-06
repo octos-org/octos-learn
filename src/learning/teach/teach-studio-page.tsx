@@ -769,6 +769,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); closeAdd(); }}
               onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); closeAdd(); }}
               onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); closeAdd(); }}
+              onShape={(shape) => { record(withTime(shape)); closeAdd(); }}
               {...(said ? { said } : {})}
             />
           )}

@@ -677,3 +677,31 @@ describe("adding curves to a graph while talking", () => {
     expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow("follows an angle");
   });
 });
+
+describe("geometry on a grid, and regular polygons", () => {
+  it("draws a circle round a point and a segment between two points of a grid", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Circles", type: "math_off_map" }, goals: [] }), now, [{ title: "Radius" }]);
+    recording = record(recording, "card-1", "Every point on the circle is 3 from the centre.", [
+      { t: 100, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-5, 5], y: [-5, 5] },
+      { t: 300, type: "point_tool.place", node: "grid", point: "point-a", x: 0, y: 0, label: "A (0, 0)" },
+      { t: 500, type: "point_tool.place", node: "grid", point: "point-b", x: 3, y: 0, label: "B (3, 0)" },
+      { t: 800, type: "geometry.circle", node: "grid", center: "point-a", radius: 3, alias: "circle-1" },
+      { t: 1_200, type: "geometry.segment", node: "grid", from: "point-a", to: "point-b", alias: "segment-1" },
+    ]);
+    const content = check(recording).state.nodes["l:node:grid"]!.content as { circles: Array<Record<string, unknown>>; segments: Array<Record<string, unknown>> };
+    expect(content.circles[0]).toMatchObject({ radius: 3, label: "r = 3" });
+    expect(content.segments[0]).toMatchObject({ label: "AB", style: "solid" });
+  });
+
+  it("puts a regular polygon in a circle, its number of sides on a slider", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Pi", type: "math_off_map" }, goals: [] }), now, [{ title: "More sides" }]);
+    recording = record(recording, "card-1", "With more sides the perimeter gets close to the circle's.", [
+      { t: 100, type: "component.insert", panel: "polygon", alias: "polygon-1", sides: 6, slider: { variable: "sides" } },
+      { t: 900, type: "variable.drag", variable: "sides", via: "slider", from: 6, to: 24, durationMs: 1_500 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([{ as: "sides", initial: 6, min: 3, max: 48, label: "sides", control: { kind: "slider", step: 1 } }]);
+    const polygon = (state.nodes["l:node:polygon-1"]!.content as { regular_polygons: Array<Record<string, unknown>> }).regular_polygons[0]!;
+    expect(polygon).toMatchObject({ relation: "inscribed", sides: 24, show_measurements: true });
+  });
+});
