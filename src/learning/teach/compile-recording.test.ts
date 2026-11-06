@@ -461,3 +461,39 @@ describe("unwrapAngle", () => {
     expect(long.map((move) => move.endAt)).toEqual([500, 1000]);
   });
 });
+
+describe("a worked solution grows in one card where it was written", () => {
+  /** 3x + 5 = 20 made neat; −5 and 3x = 15 written under it; x = 5 written and made neat under that. */
+  function equation(continuesAnchor = "problem"): LearnerRecording {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "Solve 3x + 5 = 20", type: "math_off_map" }, goals: ["Solve it"] }),
+      now, [{ title: "The problem" }, { title: "Take away 5" }, { title: "Divide by 3" }],
+    );
+    recording = record(recording, "card-1", "Here is the problem.", [
+      { t: 2_000, type: "make_neat.confirmed", selection: "sel-c1", latex: "3x+5=20", alias: "problem", replacesInk: true },
+    ], { ink: [{ snapshotId: "ink-snap:c1@v1", sha256: SHA, selections: ["sel-c1"], drawnSize: { width: 300, height: 70 } }] });
+    recording = record(recording, "card-2", "Take five away from both sides.", [], {
+      ink: [{ snapshotId: "ink-snap:c2@v1", sha256: SHA, selections: [], drawnSize: { width: 260, height: 110 }, continues: { node: continuesAnchor, x: 10, y: 90 } }],
+    });
+    recording = record(recording, "card-3", "Divide by three.", [
+      { t: 3_000, type: "make_neat.confirmed", selection: "sel-c3", latex: "x=5", alias: "answer", replacesInk: true },
+    ], { ink: [{ snapshotId: "ink-snap:c3@v1", sha256: SHA, selections: ["sel-c3"], drawnSize: { width: 120, height: 60 }, continues: { node: "ink-card-2", x: 60, y: 120 } }] });
+    return recording;
+  }
+
+  it("continues the card at the offset it was written, at its drawn size, and lines up the neat '='", () => {
+    const { state, lesson } = check(equation());
+    expect(state.nodes["l:node:ink-card-2"]!.placement).toEqual({ relation: "continues", anchor: "l:node:problem", offset: { x: 10, y: 90 } });
+    expect(state.nodes["l:node:ink-card-2"]!.content).toMatchObject({ drawn_size: { width: 260, height: 110 } });
+    expect(state.nodes["l:node:ink-card-3"]!.placement).toMatchObject({ relation: "continues", anchor: "l:node:ink-card-2", offset: { x: 60, y: 120 } });
+    expect(state.nodes["l:node:answer"]!.placement).toEqual({ relation: "replaces", anchor: "l:node:ink-card-3", align: "equals" });
+    // The first card's own handwriting was not a continuation: its neat math simply replaces it.
+    expect(state.nodes["l:node:problem"]!.placement).toEqual({ relation: "replaces", anchor: "l:node:ink-card-1" });
+    expect(lesson.lesson.author).toBeDefined();
+  });
+
+  it("writes a card of its own when the card it continued is no longer in the lesson", () => {
+    const { state } = check(equation("gone"));
+    expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "below" });
+  });
+});

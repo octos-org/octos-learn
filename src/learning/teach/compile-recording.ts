@@ -291,14 +291,27 @@ function boxFaces(size: { x: number; y: number; z: number }) {
 }
 
 /** Neat math the learner confirmed for a piece of their ink, in its place or below it. */
-function neatWrite(alias: string, latex: string, ink: string, selection: string, replacesInk: boolean): Action {
+/**
+ * Neat math for a learner's handwriting: in the writing's place, or below it.
+ * Writing that continued a card is a line of that card's working, so its neat
+ * math lines its "=" up with the line above; neat math for part of such
+ * writing continues it, just under it.
+ */
+function neatWrite(alias: string, latex: string, ink: string, selection: string, replacesInk: boolean,
+  continued?: { drawnHeight: number }): Action {
+  const place = replacesInk ? { relation: "replaces", anchor: ink, ...(continued ? { align: "equals" } : {}) }
+    : continued ? { relation: "continues", anchor: ink, offset: { x: 0, y: Math.round(continued.drawnHeight + NEAT_GAP) }, align: "equals" }
+      : { relation: "below", anchor: ink };
   return {
     do: "write", as: alias, kind: "math", role: "derivation",
     content: { fragments: [{ as: "formula", latex }] },
-    place: replacesInk ? { relation: "replaces", anchor: ink } : { relation: "below", anchor: ink },
+    place,
     source: { selection, confirmed_by: "learner" },
   } as Action;
 }
+
+/** Space between handwriting that continues a card and neat math for part of it, in board units. */
+const NEAT_GAP = 12;
 
 /** Compiles one recording; the lesson still has to pass OLL validation. */
 export function compileRecording(recording: LearnerRecording, options: CompileOptions): CompiledLesson {
@@ -312,6 +325,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
   const inkOfSelection = new Map<string, string>(); // selection id -> ink alias
   const hidden = new Set<string>();
+  // Cards written so far (in earlier cards' steps or this card's actions), which writing may continue.
+  const written = new Set<string>();
+  // Handwriting that continues a card, with the height it was written at.
+  const continuedInk = new Map<string, { drawnHeight: number }>();
   const snapshots: NonNullable<ResourceContext["ink_snapshots"]> = [];
   const tasks: NonNullable<AuthoringLesson["lesson"]["tasks"]> = [];
   let lastNode: string | undefined;
@@ -470,6 +487,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       // Writing timed in this take shows stroke by stroke where it was written among the words.
       const stages = ink.take === take.take && ink.strokeTimesMs?.length ? inkStages(ink.strokeTimesMs, sentences) : undefined;
       const staged = stages && stages.length > 1 ? stages : undefined;
+      // Shown at the size it was written, not squeezed into a standard card.
+      if (ink.drawnSize && !ink.annotates) content.drawn_size = { width: ink.drawnSize.width, height: ink.drawnSize.height };
+      // Written under an earlier card's handwriting or math, it is the next line of that card, where it was written.
+      const continues = ink.continues && !ink.annotates && written.has(ink.continues.node) && !hidden.has(ink.continues.node) ? ink.continues : undefined;
+      if (continues) continuedInk.set(alias, { drawnHeight: ink.drawnSize?.height ?? 0 });
       if (ink.annotates) {
         const { node, ...position } = ink.annotates;
         annotations.push({
@@ -479,8 +501,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         });
       } else {
         const [first, ...more] = staged ?? [];
+        const place = continues ? { relation: "continues", anchor: continues.node, offset: { x: continues.x, y: continues.y } } : placeNext();
         actions.push(from(stages && `ink:${ink.snapshotId}:0`, { do: "write", as: alias, kind: "ink", role: "note", content: first ? { ...content, shown_strokes: first.shown } : content,
-          place: placeNext(), ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action));
+          place, ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action));
         let shown = first?.shown ?? 0;
         for (const stage of more) {
           actions.push(from(`ink:${ink.snapshotId}:${shown}`, { do: "revise", target: alias, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: stage.rank } as unknown as Action));
@@ -549,7 +572,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           const ink = inkOfSelection.get(event.selection);
           if (!ink) throw new CompileError(`Selection '${event.selection}' is not part of this lesson's ink`);
           const alias = requireAlias(event.alias, "Formula");
-          actions.push({ ...neatWrite(alias, event.latex, ink, event.selection, event.replacesInk), when } as Action);
+          actions.push({ ...neatWrite(alias, event.latex, ink, event.selection, event.replacesInk, continuedInk.get(ink)), when } as Action);
           if (event.replacesInk) hidden.add(ink);
           lastNode = alias;
           focus = [alias];
@@ -629,9 +652,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
 
     // Neat math kept from an earlier take replaces its ink as soon as the ink is written.
     for (const { ink, neat } of keptNeat) {
-      const written = actions.findIndex((action) => action.do === "write" && action.as === ink);
+      const inkAt = actions.findIndex((action) => action.do === "write" && action.as === ink);
       const alias = requireAlias(neat.alias, "Formula");
-      actions.splice(written + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true), ...(actions[written]?.when !== undefined ? { when: actions[written]!.when } : {}) } as Action);
+      actions.splice(inkAt + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true, continuedInk.get(ink)), ...(actions[inkAt]?.when !== undefined ? { when: actions[inkAt]!.when } : {}) } as Action);
       hidden.add(ink);
       if (lastNode === ink) lastNode = alias;
       focus = focus.map((id) => (id === ink ? alias : id));
@@ -670,6 +693,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);
+    for (const action of actions) if (action.do === "write") written.add(action.as);
     const beats = cardBeats(card, sentences, ranked, beatSpeech);
     for (let part = 0; part * MAX_BEATS < beats.length; part += 1) {
       steps.push({ key: part ? `${card.key}${CARD_PART_SEPARATOR}${part + 1}` : card.key, purpose: card.title, beats: beats.slice(part * MAX_BEATS, (part + 1) * MAX_BEATS) });

@@ -379,6 +379,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     return {
       snapshotId, sha256: await inkChecksum(frozen.svg), selections: [...selections, ...inside.map((mark) => mark.selection)],
       ...(frozen.annotates ? { annotates: frozen.annotates } : {}),
+      ...(frozen.continues ? { continues: frozen.continues } : {}),
+      drawnSize: { width: Math.round(frozen.width), height: Math.round(frozen.height) },
       take,
       // Stroke times in take time, so the lesson writes each stroke where it was written among the words.
       ...(frozen.strokeDrawnAt && startedAt !== null ? { strokeTimesMs: frozen.strokeDrawnAt.map((at) => Math.max(0, Math.round(at - startedAt))) } : {}),

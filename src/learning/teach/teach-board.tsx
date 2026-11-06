@@ -22,6 +22,8 @@ export interface FrozenInk {
   width: number;
   height: number;
   annotates?: CardInk["annotates"];
+  /** Written on or just below a handwriting or math card: it continues that card, where it was written. */
+  continues?: CardInk["continues"];
   /** When each stroke was drawn (ms since the epoch), in the snapshot's stroke order, when every one was timed. */
   strokeDrawnAt?: number[];
 }
@@ -179,6 +181,50 @@ function annotationFor(viewport: HTMLElement, ink: { x: number; y: number; width
     };
   }
   return undefined;
+}
+
+/** Cards writing can continue: handwriting and math (OLL placement `continues`). */
+const CONTINUABLE = new Set(["ink", "math"]);
+/** How far below a card new writing still continues it, and how far to either side. */
+const CONTINUE_BELOW = 160;
+const CONTINUE_SIDE = 80;
+
+/**
+ * Writing that starts on or just below a handwriting or math card (and is not
+ * drawn on a figure) continues that card: it stays where it was written, as
+ * the next line of the same working. Of several such cards, the one whose
+ * bottom is nearest above the writing is the line it follows. The offset is in
+ * board coordinates from the card's top-left, which is what the layout uses
+ * to place it again.
+ */
+function continuationFor(viewport: HTMLElement, ink: { x: number; y: number; width: number; height: number }): CardInk["continues"] {
+  if (!(ink.width > 0 && ink.height > 0)) return undefined;
+  let best: { node: string; card: { x: number; y: number; height: number }; gap: number } | undefined;
+  for (const element of viewport.querySelectorAll<HTMLElement>(".board-node[data-id]")) {
+    if (!CONTINUABLE.has(element.dataset.kind ?? "") || element.classList.contains("annotation")) continue;
+    const card = {
+      x: parseFloat(element.style.left), y: parseFloat(element.style.top),
+      width: parseFloat(element.style.width), height: parseFloat(element.style.height),
+    };
+    if (![card.x, card.y, card.width, card.height].every(Number.isFinite) || card.width <= 0 || card.height <= 0) continue;
+    const overlapX = Math.min(card.x + card.width + CONTINUE_SIDE, ink.x + ink.width) - Math.max(card.x - CONTINUE_SIDE, ink.x);
+    if (overlapX < Math.min(ink.width, card.width) * 0.3) continue;
+    const gap = ink.y - (card.y + card.height);
+    if (ink.y < card.y - 24 || gap > CONTINUE_BELOW) continue;
+    const target = boardTargetFromId(element.dataset.id);
+    if (!target) continue;
+    const distance = Math.max(0, gap);
+    if (!best || distance < best.gap || (distance === best.gap && card.y > best.card.y)) best = { node: target.node, card, gap: distance };
+  }
+  return best ? { node: best.node, x: Math.round(ink.x - best.card.x), y: Math.round(ink.y - best.card.y) } : undefined;
+}
+
+/** Where frozen writing goes: on a figure (annotation), continuing a card, or a card of its own. */
+function placeFrozen(viewport: HTMLElement, bounds: { x: number; y: number; width: number; height: number }): Pick<FrozenInk, "annotates" | "continues"> {
+  const annotates = annotationFor(viewport, bounds);
+  if (annotates) return { annotates };
+  const continues = continuationFor(viewport, bounds);
+  return continues ? { continues } : {};
 }
 
 /** One move of a finished drag of a lesson variable (unit circle point or slider). */
@@ -401,8 +447,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         ink.selectAll();
         const snapshot = await ink.captureSelectionSnapshot();
         const { bounds } = snapshot;
-        const annotates = annotationFor(mounted.elements.viewport, bounds);
-        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...placeFrozen(mounted.elements.viewport, bounds),
           ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}) };
       } finally {
         await ink.destroy();
@@ -442,9 +487,9 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (!ink || !mounted || !ink.state.selected_count) return null;
       const snapshot = await ink.captureSelectionSnapshot();
       const { bounds } = snapshot;
-      const annotates = annotationFor(mounted.elements.viewport, bounds);
+      const placed = placeFrozen(mounted.elements.viewport, bounds);
       const undoSteps = await quietInk(ink, inkQuietRef, inkRevisionRef, () => ink.deleteSelection());
-      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...placed,
         ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}), undoSteps };
     },
     onInkEdit(listener) {

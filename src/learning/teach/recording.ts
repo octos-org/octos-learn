@@ -132,6 +132,13 @@ export interface CardInk {
   sha256: string;
   selections: string[];
   annotates?: { node: string; x: number; y: number; width: number; height: number };
+  /**
+   * Written on or just below a handwriting or math card of an earlier card:
+   * it continues that card at this offset (board units from its top-left).
+   */
+  continues?: { node: string; x: number; y: number };
+  /** The size it was written at, in board units; the lesson shows it at this size. */
+  drawnSize?: { width: number; height: number };
   /** The neat math the learner confirmed for this ink, shown in its place. */
   neat?: { selection: string; latex: string; alias: string };
   /** The take the ink was written in. */
