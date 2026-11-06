@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { setLocale } from "@/i18n";
-import { cardSequence, joinWithPrevious, moveAction, SequenceError, splitSentence } from "./card-script";
+import { cardSequence, cardTracks, joinWithPrevious, moveAction, SequenceError, splitSentence } from "./card-script";
 import { compileRecording } from "./compile-recording";
 import { appendEvent, createRecording, finishTake, planCards, startTake, type CardInk, type LearnerRecording, type RecordingEvent } from "./recording";
 
@@ -71,5 +71,24 @@ describe("card sequence", () => {
     expect(names(joinWithPrevious(split, "card-1", 1, now)).slice(0, 3)).toEqual(["Put on a coordinate grid", "Point at it", "“Here is a grid. Point B.”"]);
     // An action made while a sentence was said stays with the part where it happened.
     expect(names(splitSentence(card([grid]), "card-1", 0, "Here is".length, now)).slice(0, 3)).toEqual(["“Here is”", "Put on a coordinate grid", "“a grid.”"]);
+  });
+});
+
+describe("card tracks", () => {
+  it("puts each action under the sentence it plays with, or between two sentences", () => {
+    const recording = card([{ ...laser, t: 0 }, grid, pointA, laser], [{ snapshotId: "ink-snap:w@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [1_200, 4_500] }]);
+    // Speech starts at 0, so nothing plays before it: a laser at 0 is said with the first sentence.
+    const columns = cardTracks(recording.cards[0]!)!.map((column) => [column.place, column.sentence?.text ?? null, column.actions.map((action) => action.label)]);
+    expect(columns).toEqual([
+      ["during", "Here is a grid.", ["Point at it", "Put on a coordinate grid"]],
+      ["after", null, ["Writing (1 stroke)", "Mark point A"]],
+      ["during", "Point B.", ["Point at it"]],
+      ["during", "It goes up.", ["Writing (1 stroke)"]],
+    ]);
+  });
+
+  it("keeps a column for a sentence with nothing done while it is said", () => {
+    const columns = cardTracks(card([]).cards[0]!)!;
+    expect(columns.map((column) => [column.place, column.actions.length])).toEqual([["during", 0], ["during", 0], ["during", 0]]);
   });
 });

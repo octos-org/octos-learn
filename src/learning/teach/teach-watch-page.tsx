@@ -4,7 +4,7 @@
 
 import { getLocale, tr } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
-import { Download, PackageCheck, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Check, Download, PackageCheck, Pause, Play, RotateCcw, UserRound, UserRoundX, Volume2, VolumeX, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
@@ -277,6 +277,17 @@ export function TeachWatchPage() {
     holdAwards("teach-watch", playing);
     return () => holdAwards("teach-watch", false);
   }, [playing]);
+  // The save panel closes on Escape and on a press outside it.
+  const [saveOpen, setSaveOpen] = useState(false);
+  const saveMenu = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!saveOpen) return;
+    const press = (event: PointerEvent) => { if (!saveMenu.current?.contains(event.target as Node)) setSaveOpen(false); };
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape") setSaveOpen(false); };
+    document.addEventListener("pointerdown", press);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", press); document.removeEventListener("keydown", key); };
+  }, [saveOpen]);
   const narration = useOllNarrationTts({
     language: lesson?.language,
     enabled: narrated,
@@ -304,6 +315,8 @@ export function TeachWatchPage() {
 
   // Cards not recorded yet are left out of what plays.
   const unrecorded = recording.cards.filter((entry) => !keptTake(entry)).length;
+  const isSaved = pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256;
+  const canSave = unrecorded === 0 && checked && !privateTitles.length && (pack.status === "ready" || (audio === "on" && voiceAvailable));
   const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
   const card = !runtime ? 0 : runtime.completed ? lesson?.cards.length ?? 0 : Math.min(lesson?.cards.length ?? 0, cardIndexOfBeat(lesson?.cards ?? [], runtime.currentBeatId) + 1);
   return (
@@ -312,14 +325,61 @@ export function TeachWatchPage() {
         <Link to={`/teach/${recording.id}`} className="teach-back">{tr("← 回去改课")}</Link>
         <h1>{recording.topic.text}</h1>
         {lesson && <span className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: Math.max(1, card), v1: lesson.cards.length })}</span>}
+        {lesson && unrecorded > 0 && <span className="teach-watch-chip" title={tr("还有 {{v0}} 张卡片没录，现在先看录好的 {{v1}} 张。全部录完、检查通过后就能保存。", { v0: unrecorded, v1: lesson.cards.length })}>
+          {tr("还有 {{v0}} 张没录", { v0: unrecorded })}</span>}
+        {lesson && (
+          <div className="teach-save" ref={saveMenu}>
+            <button type="button" className={canSave && !isSaved ? "teach-primary" : "teach-secondary"} aria-expanded={saveOpen} aria-haspopup="dialog" onClick={() => setSaveOpen(!saveOpen)}>
+              {isSaved ? <Check size={16} aria-hidden="true" /> : <PackageCheck size={16} aria-hidden="true" />}
+              {making ? (making.total ? tr("正在保存 {{v0}}/{{v1}}", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…"))
+                : isSaved ? tr("已保存") : tr("保存这节课")}
+            </button>
+            {saveOpen && (
+              <section className="teach-save-panel" role="dialog" aria-label={tr("保存这节课")}>
+                <header>
+                  <h2>{tr("保存这节课")}</h2>
+                  <button type="button" className="teach-icon-button" aria-label={tr("关闭")} onClick={() => setSaveOpen(false)}><X size={18} aria-hidden="true" /></button>
+                </header>
+                {making ? (
+                  <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…")}</p>
+                ) : isSaved ? (
+                  <p role="status">{tr("这节课已经保存在“我的课”里，只有你能看到。声音已经做好，不联网也能播放。")}</p>
+                ) : (
+                  <p className="teach-save-status" data-blocked={!canSave || undefined}>{unrecorded > 0 ? tr("全部卡片录完、检查通过后就能保存。")
+                    : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能保存。")
+                    : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
+                      : pack.status === "ready" ? tr("声音已经做好了，保存到“我的课”就完成了。")
+                        : audio !== "on" ? tr("保存这节课需要连接语音合成，用来给每张卡片做声音。")
+                          : pack.status === "outdated" ? tr("课改过了，保存时会重新做一遍声音。") : tr("会用你选的声音把每张卡片讲一遍，再保存到“我的课”，以后不联网也能播放。")}</p>
+                )}
+                {makeFailed && <p role="alert">{makeFailed}</p>}
+                <fieldset className="teach-save-options">
+                  <legend className="teach-group-label">{tr("课里一起保存")}</legend>
+                  <label className="teach-save-option"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} />
+                    <span>{tr("保存基础嘴型（预览）")}{includeLipSync && <small>{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</small>}</span></label>
+                  {cameraTakes.length > 0 && <label className="teach-save-option"><input type="checkbox" checked={includePerformance} disabled={Boolean(making) || !includeLipSync}
+                    onChange={(event) => choosePresenter({ cameraMotion: event.target.checked ? "on" : "off" })} />
+                    <span>{tr("带上我录课时的表情和转头")}<small>{includeLipSync
+                      ? tr("{{v0}} 张卡片录了摄像头动作。课里只放表情和头部动作的数字，按配音重新对齐；不会放你的画面或声音。", { v0: cameraTakes.length })
+                      : tr("要带上表情和转头，请先勾选保存基础嘴型。")}</small></span></label>}
+                </fieldset>
+                <div className="teach-save-actions">
+                  {isSaved ? <Link to="/teach" className="teach-secondary">{tr("去“我的课”")}</Link> : (
+                    <button type="button" className="teach-primary" disabled={!canSave || Boolean(making)} onClick={() => void saveLesson()}>
+                      <PackageCheck size={16} aria-hidden="true" />{tr("保存到我的课")}
+                    </button>
+                  )}
+                  {pack.status === "ready" && <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
       </header>
       {!lesson ? (
         <p role="alert" className="teach-notice">{tr("还没有录好的卡片，录好第一张就能看了。")}</p>
       ) : (
         <>
-          {unrecorded > 0 && (
-            <p role="status" className="teach-notice">{tr("还有 {{v0}} 张卡片没录，现在先看录好的 {{v1}} 张。全部录完、检查通过后就能保存。", { v0: unrecorded, v1: lesson.cards.length })}</p>
-          )}
           {choosing && (
             <section className="teach-presenter" aria-label={tr("谁来讲你的课")}>
               <fieldset>
@@ -379,6 +439,11 @@ export function TeachWatchPage() {
             <button type="button" className="teach-icon-button" aria-label={tr("从头开始")} disabled={!runtime} onClick={() => runtime?.restart()}>
               <RotateCcw size={18} aria-hidden="true" />
             </button>
+            {avatarPossible && (
+              <button type="button" className="teach-icon-button" aria-pressed={showAvatar} aria-label={tr("显示动态头像预览")} title={tr("显示动态头像预览")} onClick={() => setShowAvatar(!showAvatar)}>
+                {showAvatar ? <UserRound size={18} aria-hidden="true" /> : <UserRoundX size={18} aria-hidden="true" />}
+              </button>
+            )}
             {audio === "on" && (
               <button type="button" className="teach-icon-button" aria-pressed={!sound} aria-label={sound ? tr("关掉声音") : tr("打开声音")} onClick={() => setSound(!sound)}>
                 {sound ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
@@ -388,39 +453,6 @@ export function TeachWatchPage() {
           </div>
           {/* The playing card's words and actions, the current ones lit, to check the recording. */}
           <WatchSequence recording={recording} compiled={lesson.compiled} cards={lesson.cards} runtime={runtime} onJump={() => { if (narrated) unlockAudio(); }} />
-          <section className="teach-package" aria-label={tr("保存这节课")}>
-            {avatarPossible && <label className="teach-place"><input type="checkbox" checked={showAvatar} onChange={(event) => setShowAvatar(event.target.checked)} /><span>{tr("显示动态头像预览")}</span></label>}
-            <label className="teach-place"><input type="checkbox" checked={includeLipSync} disabled={Boolean(making)} onChange={(event) => choosePresenter({ mouthMotion: event.target.checked ? "basic" : "off" })} /><span>{tr("保存基础嘴型（预览）")}</span></label>
-            {includeLipSync && <p className="academy-muted">{tr("会随配音保存简单的嘴部动作，每张卡片的配音最多 60 秒。下载课包后，可在动态头像试验室逐卡试听；精细发音嘴型仍需后续完善。")}</p>}
-            {cameraTakes.length > 0 && <label className="teach-place"><input type="checkbox" checked={includePerformance} disabled={Boolean(making) || !includeLipSync}
-              onChange={(event) => choosePresenter({ cameraMotion: event.target.checked ? "on" : "off" })} /><span>{tr("带上我录课时的表情和转头")}</span></label>}
-            {cameraTakes.length > 0 && <p className="academy-muted">{includeLipSync
-              ? tr("{{v0}} 张卡片录了摄像头动作。课里只放表情和头部动作的数字，按配音重新对齐；不会放你的画面或声音。", { v0: cameraTakes.length })
-              : tr("要带上表情和转头，请先勾选保存基础嘴型。")}</p>}
-            {making ? (
-              <p role="status">{making.total ? tr("正在为第 {{v0}} 张卡片做声音（共 {{v1}} 张）…", { v0: Math.min(making.done + 1, making.total), v1: making.total }) : tr("正在保存…")}</p>
-            ) : pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256 ? (
-              <>
-                <p role="status">{tr("这节课已经保存在“我的课”里，只有你能看到。声音已经做好，不联网也能播放。")}</p>
-                <Link to="/teach" className="teach-secondary">{tr("去“我的课”")}</Link>
-                <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>
-              </>
-            ) : (
-              <>
-                <p className="academy-muted">{unrecorded > 0 ? tr("全部卡片录完、检查通过后就能保存。")
-                  : !checked ? tr("先在编辑页“检查我的课”，没有要改的地方后就能保存。")
-                  : privateTitles.length ? tr("题目或卡片标题里有个人信息（“{{v0}}”），先回去改掉。", { v0: privateTitles[0]!.quote })
-                    : pack.status === "ready" ? tr("声音已经做好了，保存到“我的课”就完成了。")
-                      : audio !== "on" ? tr("保存这节课需要连接语音合成，用来给每张卡片做声音。")
-                        : pack.status === "outdated" ? tr("课改过了，保存时会重新做一遍声音。") : tr("会用你选的声音把每张卡片讲一遍，再保存到“我的课”，以后不联网也能播放。")}</p>
-                <button type="button" className="teach-primary" disabled={!checked || privateTitles.length > 0 || (pack.status !== "ready" && (audio !== "on" || !voiceAvailable))} onClick={() => void saveLesson()}>
-                  <PackageCheck size={16} aria-hidden="true" />{tr("保存到我的课")}
-                </button>
-                {pack.status === "ready" && <button type="button" className="teach-secondary" onClick={download}><Download size={16} aria-hidden="true" />{tr("下载课程包")}</button>}
-              </>
-            )}
-            {makeFailed && <p role="alert">{makeFailed}</p>}
-          </section>
           {audio === "unavailable" && !packaged && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
           {!packaged && audio !== "checking" && !voiceAvailable && <p role="status" className="teach-notice">{tr("之前选择的声音在当前语音服务中不可用。请重新选择声音，或明确选择“使用设置中的声音”。")}</p>}
           {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}

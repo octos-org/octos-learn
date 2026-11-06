@@ -269,9 +269,15 @@ test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a p
 
   // Only the first card is recorded: it can be watched already.
   await page.getByRole("link", { name: "看我的课" }).click();
-  await expect(page.getByText("还有 1 张卡片没录，现在先看录好的 1 张")).toBeVisible();
+  await expect(page.getByText("还有 1 张没录")).toBeVisible();
   await expect(page.getByRole("button", { name: "播放我的课" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "保存到我的课" })).toBeDisabled();
+  // Saving waits in the panel under the top-right button, with the reason it cannot save yet.
+  await page.getByRole("button", { name: "保存这节课" }).click();
+  const panel = page.getByRole("dialog", { name: "保存这节课" });
+  await expect(panel.getByText("全部卡片录完、检查通过后就能保存。")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "保存到我的课" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
 });
 
 test("while watching, the playing card's strip lights the sentence being said and the action just done", async ({ page }) => {
@@ -282,8 +288,10 @@ test("while watching, the playing card's strip lights the sentence being said an
   }, recording);
   await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
   await page.goto(`/teach/${recording.id}/watch`);
-  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
   await expect(strip.locator("[data-item]")).toHaveCount(7);
+  // Two tracks: the grid is put on while sentence 1 is said, so it sits in sentence 1's column.
+  await expect(strip.locator(".teach-tracks-column").first().locator("[data-item]")).toHaveText(["这是一个坐标网格。", "放上坐标网格"]);
   const sound = page.getByRole("button", { name: "关掉声音" });
   if (await sound.isVisible().catch(() => false)) await sound.click();
   await page.getByRole("button", { name: "播放我的课" }).click();

@@ -3129,6 +3129,15 @@
   "录好第一张卡片就能看了": "Record the first card to watch it",
   "和前一句合并成一句": "Join with the sentence before",
   "拖动动作换位置；点你说的话可以修改；被停顿分开的一句话可以点合并按钮合回去。": "Drag an action to move it. Click your words to change them. Use the join button to put a sentence cut at a pause back together.",
-  "正在讲的话和刚做的动作会亮起来。点一句话，从那里开始看。": "The words being said and the action just done light up. Click a sentence to watch from there.",
-  "第 {{v0}} 句：{{v1}}。从这句开始看": "Sentence {{v0}}: {{v1}}. Watch from here"
+  "第 {{v0}} 句：{{v1}}。从这句开始看": "Sentence {{v0}}: {{v1}}. Watch from here",
+  "第 {{v0}} 张：说的话和动作": "Card {{v0}}: words and actions",
+  "上下对齐的会同时发生。点一句话，从那里开始看。": "Things lined up above each other happen together. Click a sentence to watch from there.",
+  "说": "Say",
+  "做": "Do",
+  "说第 {{v0}} 句时做的": "Done while saying sentence {{v0}}",
+  "开口之前做的": "Done before speaking",
+  "两句话之间做的": "Done between sentences",
+  "还有 {{v0}} 张没录": "{{v0}} not recorded yet",
+  "正在保存 {{v0}}/{{v1}}": "Saving {{v0}}/{{v1}}",
+  "课里一起保存": "Save with the lesson"
 }

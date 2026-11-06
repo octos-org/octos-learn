@@ -51,9 +51,15 @@ function open() {
     <Route path="/teach/:id/watch" element={<TeachWatchPage />} />
   </Routes></MemoryRouter>);
 }
+/** Saving and its options are in the panel under the top-right button. */
+async function openSavePanel() {
+  fireEvent.click(await screen.findByRole("button", { name: "Save this lesson" }));
+  return screen.findByRole("dialog", { name: "Save this lesson" });
+}
 
 it("keeps M6 draft sync, account save and achievement refresh after adding optional mouth preparation", async () => {
   open();
+  await openSavePanel();
   const button = await screen.findByRole("button", { name: "Save to My lessons" });
   await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
   fireEvent.click(button);
@@ -69,6 +75,7 @@ it("does not upload a package completed after the learner changes the presenter"
   let finish!: (value: ReturnType<typeof built>) => void;
   saving.make.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
   open();
+  await openSavePanel();
   const button = await screen.findByRole("button", { name: "Save to My lessons" });
   await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
   fireEvent.click(button);
@@ -92,7 +99,8 @@ it("re-times the camera takes kept on this device into the package, only when th
   const track = { schema: "octos.avatar-performance.v1", durationMs: 1000, frames: [] };
   takes.read.mockResolvedValue(track);
   open();
-  expect(await screen.findByRole("checkbox", { name: "Include my expressions and head turns from recording" })).toHaveProperty("checked", true);
+  await openSavePanel();
+  expect(await screen.findByRole("checkbox", { name: /^Include my expressions and head turns from recording/ })).toHaveProperty("checked", true);
   const button = await screen.findByRole("button", { name: "Save to My lessons" });
   await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
   fireEvent.click(button);

@@ -7,7 +7,7 @@
 
 import { tr } from "@/i18n";
 
-import { inkStages, sentencesOf } from "./compile-recording";
+import { AFTER, DURING, inkStages, rankOf, sentencesOf } from "./compile-recording";
 import {
   joinSpoken,
   keptTake,
@@ -108,6 +108,49 @@ function timedSequence(card: RecordingCard, take: Take): Timed[] {
 export function cardSequence(card: RecordingCard): SequenceItem[] | undefined {
   const take = sequenceTake(card);
   return take ? timedSequence(card, take).map((entry) => entry.item) : undefined;
+}
+
+type SentenceItem = Extract<SequenceItem, { kind: "sentence" }>;
+type ActionItem = Extract<SequenceItem, { kind: "action" }>;
+
+/**
+ * One column of a card's two tracks (words above, actions below): a sentence
+ * with the actions that play while it is said, or the actions that play
+ * between sentences (before the first, or after one and before the next).
+ */
+export interface TrackColumn {
+  place: "before" | "during" | "after";
+  /** The sentence said, for a "during" column. */
+  sentence?: SentenceItem;
+  actions: ActionItem[];
+}
+
+/**
+ * The card as two tracks, in the columns it plays in: what is done while a
+ * sentence is said sits under that sentence. Columns follow the sentences,
+ * not seconds, since the lesson's voice is made again and its sentences last
+ * as long as the voice takes. Undefined when the take did not keep its sentences.
+ */
+export function cardTracks(card: RecordingCard): TrackColumn[] | undefined {
+  const take = sequenceTake(card);
+  if (!take) return undefined;
+  const sentences = sentencesOf(take);
+  const columns = new Map<number, TrackColumn>();
+  const at = (rank: number) => {
+    let column = columns.get(rank);
+    if (!column) {
+      column = { place: rank % 3 === DURING ? "during" : rank % 3 === AFTER ? "after" : "before", actions: [] };
+      columns.set(rank, column);
+    }
+    return column;
+  };
+  // Every sentence has its column, actions or not.
+  sentences.texts.forEach((_, index) => at(3 * index + DURING));
+  for (const { item, key } of timedSequence(card, take)) {
+    if (item.kind === "sentence") at(3 * item.index + DURING).sentence = item;
+    else at(rankOf(sentences, key)).actions.push(item);
+  }
+  return [...columns.entries()].sort(([a], [b]) => a - b).map(([, column]) => column);
 }
 
 function replaceTake(recording: LearnerRecording, key: string, now: string, change: (take: Take, card: RecordingCard) => { take: Take; card?: Partial<RecordingCard> }): LearnerRecording {

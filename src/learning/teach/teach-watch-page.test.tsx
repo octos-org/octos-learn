@@ -49,7 +49,8 @@ it("lets the learner choose the avatar and voice that present the lesson, kept w
   fireEvent.click(chooser.getByRole("button", { name: "Moon Cat" }));
   fireEvent.click(await chooser.findByRole("radio", { name: "Boy next door" }));
   expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toEqual({ avatar: "moon-cat", voice: "zh_male_linjiananhai_uranus_bigtts" });
-  fireEvent.click(screen.getByRole("checkbox", { name: "Save basic mouth motion (preview)" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save this lesson" }));
+  fireEvent.click(within(screen.getByRole("dialog", { name: "Save this lesson" })).getByRole("checkbox", { name: /^Save basic mouth motion \(preview\)/ }));
   expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter?.mouthMotion).toBe("basic");
 });
 
