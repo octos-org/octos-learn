@@ -1,6 +1,6 @@
 # Learner lessons: expressiveness plan
 
-Status: proposal, 2026-11-06. Phase 2 of the teaching-mode plan (accounts, consent, class/family sharing) is postponed; this plan comes first.
+Status: approved 2026-11-06 (decisions in section 9). Phase 2 of the teaching-mode plan (accounts, consent, class/family sharing) is postponed; this plan comes first.
 
 ## 1. Goal
 
@@ -9,7 +9,7 @@ A child should be able to teach what they actually want to teach, the way they w
 Two gaps stand in the way:
 
 1. **The studio does not use what OLL already offers.** About half of OLL's content kinds, actions and task types cannot be produced by recording.
-2. **OLL itself is narrow.** It is strongest in algebra, functions, trigonometry and 3D; it has little for the K–8 math most US learners teach (number lines, fractions, data), and only list-like diagrams for science and ELA.
+2. **OLL itself is narrow.** It is strongest in algebra, functions, trigonometry and 3D; it has little for the K–8 math most US learners teach (number lines, fractions, data), and only list-like diagrams for physics, chemistry and biology.
 
 Order of work: first bring the studio up to **everything OLL can already express** (no OLL contract changes), then **extend OLL** where real lessons need it, highest-value first.
 
@@ -67,8 +67,8 @@ Order of work: first bring the studio up to **everything OLL can already express
 
 | Item | State |
 |---|---|
-| OLL PR alan0x/octos-lesson-language#29 (ink stroke by stroke, words-only beats, continuous pace) | Open, 407/407 tests |
-| App PR octos-org/octos-learn#123 (recorded order, order strip, 3-step setup, character voices, wordless-card flag) | Open, 1902/1902 unit, 6/6 Playwright |
+| OLL PR alan0x/octos-lesson-language#29 (ink stroke by stroke, words-only beats, continuous pace) | Merged 2026-11-06 (`52de423`) |
+| App PR octos-org/octos-learn#123 (recorded order, order strip, 3-step setup, character voices, wordless-card flag) | Merged 2026-11-06 (`655a9723`) |
 | Re-record the lessons that have no captions or no sentence timing | User |
 | Verify the new Gemini key with one model feature (Octo's question or Check) | Next model call |
 | Course Playwright specs need `learn.pitun.cc` reachable (TLS fails through the local proxy) or `OCTOS_TEST_COURSE_CACHE` | Environment |
@@ -91,7 +91,7 @@ Ordered by how much each unlocks for real lessons. Each item lists the studio in
 - **Note card**: a short conclusion/tip with a role (`conclusion`, `warning`, `summary`), shown in its role's style.
 - **Table card**: pick rows × columns, tap a cell to type or say; cells can be math.
 - OLL: `write` `text` / `note` / `table`; `revise` to fill a cell during a later sentence.
-- Accept: lesson 5 (water cycle) and an ELA lesson (e.g. "what makes a complete sentence") recordable without drawing.
+- Accept: lesson 5 (water cycle) and a chemistry lesson (e.g. "states of matter" as a table) recordable without drawing.
 
 ### A3. Diagrams
 
@@ -132,26 +132,30 @@ Ordered by how much each unlocks for real lessons. Each item lists the studio in
 ### Phase A acceptance
 
 - A coverage matrix (OLL feature × studio) with every row in 2.2 either supported or explicitly deferred with a reason.
-- Ten guide lessons recorded end to end (the five existing + water cycle without drawing, food chain, ELA sentence, vertex form, cylinder volume), each with a Playwright recording-to-playback test.
+- Ten guide lessons recorded end to end (the five existing + water cycle without drawing, food chain (biology), states of matter (chemistry), force and acceleration with a slider graph (physics), cylinder volume), each with a Playwright recording-to-playback test.
 - Kids' usability pass: each new tool reachable in ≤ 2 taps from the dock, works by touch and pen, keyboard-accessible, captions always on.
 
 ## 5. Phase B — extend OLL where lessons need it
 
-Each extension: an OLL decision record, schema + reducer + web runtime + headless golden, capability flag and execution-version gate, then the studio tool. AI lessons gain them too, but only after the speed gate passes. Ordered by expected value for US K–12 learners.
+Each extension: an OLL decision record, schema + reducer + web runtime + headless golden, capability flag and execution-version gate, then the studio tool. AI lessons gain them too, but only after the speed gate passes (E5).
 
-| # | Extension | Why | Sketch |
+Priority (E1, E2): **physics, chemistry and biology first**, then grades 3–8 math.
+
+| # | Extension | Subjects | Sketch |
 |---|---|---|---|
-| B1 | **Number line** | K–8 core: integers, fractions, inequalities, jumps | `number_line` node: range, ticks, labelled points, jumps (arcs with labels), open/closed intervals; points bindable to variables (today the example `learner-context-number-line-v2` fakes one with a `diagram`) |
-| B2 | **Fraction and area models** | Grades 3–6 fractions, multiplication | `fraction_model`: bar/circle/area partitions, shaded parts, compare two; `array`/area model for multiplication |
-| B3 | **Data charts** | Statistics strand; science data | `chart`: bar, line, dot plot, pictograph, tally from a small data table; values editable during the lesson (`revise`) |
-| B4 | **More task kinds** | Practice beyond numbers | `choice` (pick one/many), `order` (put steps in order), `match` (pairs), `label` (drag labels onto image regions or diagram boxes); all checked by the runtime, no scripts |
-| B5 | **Picture library + free labels** | Science, geography, ELA | Curated, licence-clean picture set with predefined regions (`image` + `regions` already exist); add free-positioned labels/arrows on a picture; no learner uploads until Phase 2 |
-| B6 | **Free-layout diagram** | Concept maps, cycles drawn as cycles, force diagrams | Diagram elements with relative positions (grid cells), not just a sequence; edges with labels and arrowheads |
-| B7 | **Timeline** | History, story order, science processes | `timeline`: events with dates or order, eras as bands |
-| B8 | **Geometry constructions and transformations** | Grades 6–10 geometry | Polygons by vertices, perpendicular/parallel through a point, translate/rotate/reflect with a slider, measured lengths/angles |
-| B9 | **Units and measuring tools** | Measurement strand | Ruler/protractor overlays that read a value onto the board |
+| B1 | **Picture library + labels** | Biology first (cells, organs, plants, life cycles); also physics/chemistry apparatus | Curated, licence-clean pictures with predefined regions (`image` + `regions` already exist); add labels and leader lines placed on a region; no learner uploads (E3) |
+| B2 | **More task kinds** | All | `label` (drag labels onto picture regions or diagram boxes), `choice` (one/many), `order` (put steps in order), `match` (pairs); all checked by the runtime, no scripts |
+| B3 | **Free-layout diagram** | Food webs, energy flow, cycles drawn as cycles, particle diagrams | Diagram elements with relative positions (grid cells), not only a sequence; edges with labels and arrowheads; element icons from the picture library |
+| B4 | **Vectors and forces** | Physics (free-body diagrams, velocity, fields) | `vectors` on an object or point: direction, magnitude, label, component projections; magnitudes bindable to sliders; net force shown on request |
+| B5 | **Chemistry notation and particle models** | Chemistry | Chemical equations (`\ce{}` in `math`, subscripts/states/arrows), a balance check task; particle models (atoms as circles, bonds, states of matter arrangement); periodic-table element tiles |
+| B6 | **Data charts** | Experiments in all three sciences; statistics | `chart`: bar, line, scatter, dot plot from a small data table; values editable during the lesson (`revise`); line of best fit |
+| B7 | **Circuits** | Physics (electricity) | Schematic symbols (cell, bulb, switch, resistor, ammeter, voltmeter) laid out on a grid; switch state bindable to a variable to show current/bulb on |
+| B8 | **Units and measuring tools** | Physics/chemistry measurement | Ruler, protractor, measuring cylinder, thermometer readouts that put a value on the board |
+| B9 | **Number line** | Grades 3–8 math | `number_line` node: range, ticks, labelled points, jumps, open/closed intervals; points bindable to variables (today the example `learner-context-number-line-v2` fakes one with a `diagram`) |
+| B10 | **Fraction and area models** | Grades 3–6 math | `fraction_model`: bar/circle/area partitions, shaded parts, compare two; area model for multiplication |
+| B11 | **Timeline, geometry constructions** | Later | Timelines (processes, history of science); polygons by vertices, perpendicular/parallel, transformations |
 
-Recommended order: B1 → B4 (choice/order) → B2 → B3 → B5 → B6 → B7 → B8 → B9, revisited after Phase A shows what kids actually reach for.
+Order: B1 → B2 (label first) → B3 → B4 → B5 → B6 → B7 → B8, then B9 → B10 → B11; revisited after Phase A shows what kids actually reach for.
 
 ## 6. Sequencing
 
@@ -160,7 +164,7 @@ Phase 0 (merge, re-record, key check)
   └─▶ A1 growing card ─▶ A2 text/notes/tables ─▶ A3 diagrams ─▶ A7 your turn
                          └─▶ A4 2D math ─▶ A5 3D ─▶ A6 pointing/group/presenter
                                                       └─▶ Phase A acceptance
-                                                            └─▶ B1 … B9 (one at a time, OLL first, then studio)
+                                                            └─▶ B1 … B11 (one at a time, OLL first, then studio)
 ```
 
 A2–A3 come early because they open non-math subjects at once; A4–A5 deepen math. A7 is pulled forward as soon as A2 lands (answer entry needs only a card).
@@ -183,12 +187,12 @@ A2–A3 come early because they open non-math subjects at once; A4–A5 deepen m
 | Picture library licensing | Build from public-domain/CC0 sets or commissioned art; record the source per picture |
 | Scope creep | Phase A is strictly "what OLL already has"; anything else waits for a Phase B decision record |
 
-## 9. Decisions needed
+## 9. Decisions (2026-11-06)
 
-| # | Question | Recommendation |
+| # | Question | Decision |
 |---|---|---|
-| E1 | Which subjects beyond math first? | Science (cycles, processes, labelled pictures), then ELA; social studies with timelines later |
-| E2 | Grade focus for Phase B math | Grades 3–8 first (number lines, fractions, data), since most learner-teachers are in that range |
+| E1 | Which subjects beyond math first? | **Physics, chemistry and biology** |
+| E2 | Grade focus for Phase B math | Grades 3–8 first (number lines, fractions, data) |
 | E3 | Pictures | Curated library only until accounts/consent exist; no uploads, no camera photos |
 | E4 | Text input for young kids | Speak-to-text from the learner's own captions by default; keyboard as alternative |
 | E5 | Should AI lessons adopt Phase B kinds at the same time? | Only after each passes the speed gate, as a separate change |
