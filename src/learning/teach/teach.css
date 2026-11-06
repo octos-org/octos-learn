@@ -19,6 +19,11 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 
 /* Studio: card strip, board and controls. */
 .teach-board[data-pointing="true"] { cursor: crosshair; }
+/* Live previews while recording: the arrow being drawn, and the card the writing will continue. */
+.teach-arrow-preview { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
+.teach-arrow-preview line { stroke: #6e8d86; stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; }
+.teach-board .board-node.teach-arrow-candidate { outline: 3px dashed rgba(110, 141, 134, 0.75); outline-offset: 4px; }
+.teach-board .board-node.teach-continuing { outline: 3px dashed rgba(201, 154, 62, 0.8); outline-offset: 6px; }
 .teach-step button.teach-record, .teach-controls button.teach-record { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; color: #fff; background: #c2410c; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .teach-range { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
 .teach-range label, .teach-label { display: grid; gap: 4px; color: #3d5a63; font-size: 13px; }
@@ -83,7 +88,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tool:disabled { cursor: default; }
 .teach-tool-add { width: 72px; }
 .teach-dock-divider { width: 1px; height: 36px; background: rgba(40, 65, 67, 0.15); }
-.teach-dock-hint { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; }
+.teach-dock-hint { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; }
 
 .teach-add { position: absolute; right: 20px; bottom: 92px; z-index: 5; display: grid; gap: 12px; width: 400px; max-height: calc(100% - 120px); overflow: auto; box-sizing: border-box; padding: 18px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 18px; background: #fff; box-shadow: 0 18px 40px rgba(31, 45, 51, 0.18); }
 .teach-add-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -314,16 +319,16 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 
 /* Watch page tracks: words above, actions below; what plays together is in one column. */
 .teach-tracks { display: flex; padding: 2px 0 10px; }
-.teach-tracks-labels { display: grid; grid-template-rows: 56px 40px; gap: 6px; flex: none; padding: 0 4px 0 12px; color: #5b6b73; font-size: 12px; font-weight: 600; }
+.teach-tracks-labels { display: grid; grid-template-rows: 34px 34px; gap: 4px; flex: none; padding: 0 4px 0 12px; color: #5b6b73; font-size: 12px; font-weight: 600; }
 .teach-tracks-labels > span { display: flex; align-items: center; gap: 4px; }
 .teach-tracks-scroll { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(40, 65, 67, .35) transparent; }
 .teach-tracks-columns { display: flex; gap: 4px; width: max-content; margin: 0; padding: 0 12px 4px 4px; list-style: none; }
-.teach-tracks-column { display: grid; grid-template-rows: 56px 40px; gap: 6px; padding: 0 3px; border-radius: 12px; }
+.teach-tracks-column { display: grid; grid-template-rows: 34px 34px; gap: 4px; padding: 0 3px; border-radius: 12px; }
 .teach-tracks-column[data-now] { background: rgba(27, 36, 87, .06); }
-.teach-tracks-column[data-place="during"] { min-width: 140px; max-width: 360px; }
+.teach-tracks-column[data-place="during"] { min-width: 96px; max-width: 240px; }
 .teach-tracks-speech { display: flex; min-width: 0; }
-.teach-tracks-sentence { display: flex; align-items: center; flex: 1; min-width: 0; padding: 6px 12px; border: 1px solid rgba(40, 65, 67, .28); border-radius: 12px; background: #fff; color: #1f2d33; font: inherit; font-size: 14px; line-height: 1.35; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(40, 65, 67, .08); }
-.teach-tracks-words { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.teach-tracks-sentence { display: flex; align-items: center; flex: 1; min-width: 0; padding: 0 10px; border: 1px solid rgba(40, 65, 67, .28); border-radius: 999px; background: #fff; color: #1f2d33; font: inherit; font-size: 14px; line-height: 1.35; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(40, 65, 67, .08); }
+.teach-tracks-words { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .teach-tracks-sentence:hover { border-color: rgba(27, 36, 87, .55); }
 .teach-tracks-sentence:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
 .teach-tracks-sentence[data-lit] { border-color: #1b2457; background: #fff7d6; box-shadow: 0 0 0 3px rgba(27, 36, 87, .18); }
@@ -338,12 +343,23 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tracks-action[data-lit] > svg { color: #fff; }
 @media (prefers-reduced-motion: no-preference) { .teach-tracks-sentence, .teach-tracks-action, .teach-tracks-column { transition: background-color .2s, box-shadow .2s, border-color .2s; } }
 
-/* Studio tracks: the sentence is edited in place and actions are dragged between columns. */
-.teach-studio .teach-tracks-labels, .teach-studio .teach-tracks-column { grid-template-rows: 68px 40px; }
-div.teach-tracks-sentence { position: relative; align-items: flex-start; padding: 6px 12px 24px; cursor: default; }
-div.teach-tracks-sentence[data-editing] { width: 280px; }
-div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
-.teach-tracks-column[data-place="during"]:has([data-editing]) { max-width: none; }
+/* Studio tracks: one line each, words and actions the same height; a tap opens a popover above the block. */
+.teach-studio .teach-tracks { padding-bottom: 6px; }
+.teach-studio .teach-tracks-labels, .teach-studio .teach-tracks-column { grid-template-rows: 34px 34px; gap: 4px; }
+.teach-studio .teach-tracks-column[data-place="during"] { min-width: 96px; max-width: 220px; }
+.teach-studio .teach-tracks-sentence { padding: 0 10px; border-radius: 999px; font-size: 13px; }
+.teach-studio .teach-tracks-sentence .teach-tracks-words { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.teach-studio .teach-tracks-sentence[data-open] { border-color: #1b2457; box-shadow: 0 0 0 3px rgba(27, 36, 87, .16); }
+.teach-studio .teach-tracks-action { min-height: 30px; }
+.teach-block-popover { position: fixed; z-index: 60; display: grid; gap: 8px; width: min(360px, calc(100vw - 16px)); box-sizing: border-box; padding: 12px; border: 1px solid rgba(40, 65, 67, .18); border-radius: 14px; background: #fffef9; box-shadow: 0 12px 32px rgba(20, 26, 64, .2); }
+.teach-block-popover .teach-sequence-text { min-height: 4.5em; }
+.teach-block-popover .academy-muted { margin: 0; font-size: 12px; }
+.teach-popover-title { display: flex; align-items: center; gap: 6px; margin: 0; color: #1b2457; font-weight: 600; }
+.teach-popover-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.teach-popover-actions > * { display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 0 12px; border: 1px solid rgba(40, 65, 67, .22); border-radius: 999px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
+.teach-popover-actions > .teach-primary { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-popover-actions > .teach-danger { border-color: rgba(154, 52, 18, .35); color: #9a3412; }
+.teach-popover-actions > *:hover { border-color: rgba(27, 36, 87, .5); }
 .teach-tracks-column[data-empty] { min-width: 20px; }
 .teach-tracks-slot { position: relative; display: flex; flex: none; }
 .teach-tracks-action[role="button"] { cursor: grab; touch-action: none; user-select: none; }
@@ -356,3 +372,35 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-tracks-column[data-drop] .teach-tracks-actions { outline-color: #0f766e; }
 .teach-tracks-slot[data-before-marker]::before, .teach-tracks-actions[data-drop-end]::after { content: ""; flex: none; align-self: stretch; width: 4px; margin: 2px; border-radius: 2px; background: #1b2457; }
 .teach-tracks-slot[data-before-marker]::before { position: absolute; top: 0; bottom: 0; left: -6px; margin: 0; }
+
+/* Words on the board: the kind of note, the table's size and cells, filling a cell while talking. */
+.teach-note-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.teach-step .teach-note-roles button { min-height: 36px; padding: 0 14px; border-color: rgba(40, 65, 67, 0.22); color: #3d5a63; background: #fffef9; font-size: 14px; }
+.teach-step .teach-note-roles button[aria-checked="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-table-size { display: flex; flex-wrap: wrap; gap: 16px; }
+.teach-stepper { display: inline-flex; align-items: center; gap: 8px; color: #2f4a52; font-size: 14px; }
+.teach-step .teach-stepper button { width: 36px; min-height: 36px; justify-content: center; padding: 0; }
+.teach-stepper output { min-width: 1.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.teach-table-form { width: 100%; border-collapse: separate; border-spacing: 4px; }
+.teach-table-form .teach-input { width: 100%; min-width: 0; box-sizing: border-box; padding: 6px 8px; font-size: 14px; }
+.teach-table-form th .teach-input { font-weight: 600; }
+.teach-cell-editor { display: grid; gap: 10px; }
+.teach-diagram-boxes { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.teach-diagram-boxes li { display: flex; gap: 6px; align-items: center; }
+.teach-diagram-boxes .teach-input { flex: 1; min-width: 0; }
+.teach-step .teach-diagram-boxes .teach-secondary { min-height: 36px; padding: 0 10px; font-size: 13px; }
+.teach-sliders-form { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.teach-slider-letter { align-self: end; min-width: 1.2em; padding-bottom: 8px; color: #1b2457; font: italic 600 18px/1 "Cormorant Garamond", Georgia, serif; }
+/* Options of the tool in hand, just above the dock: what a highlight means, the words on an arrow. */
+.teach-dock-options { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; padding: 6px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 14px; background: #fffef9; box-shadow: 0 8px 20px rgba(20, 26, 64, 0.12); }
+.teach-dock-options button { min-height: 36px; padding: 0 12px; border: 1px solid rgba(40, 65, 67, 0.2); border-radius: 999px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 14px; cursor: pointer; }
+.teach-dock-options button[aria-checked="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-dock-options .teach-input { width: 220px; min-height: 36px; padding: 4px 10px; font-size: 14px; }
+.teach-reactions { display: flex; gap: 2px; }
+.teach-tool.teach-reaction { width: 44px; font-size: 22px; }
+/* The kinds of "Your turn" practice: a segmented control, one choice lit. */
+.teach-practice-kinds { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #eef1ec; }
+.teach-practice-kinds button { display: grid; justify-items: center; gap: 4px; min-height: 56px; padding: 6px 4px; border: 0; border-radius: 10px; color: #3d5a63; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.teach-practice-kinds button[aria-checked="true"] { color: #1b2457; background: #fffef9; box-shadow: 0 1px 4px rgba(20, 26, 64, 0.16); font-weight: 600; }
+.teach-your-turn { display: grid; gap: 10px; }
+.teach-solid-group { display: grid; gap: 4px; }

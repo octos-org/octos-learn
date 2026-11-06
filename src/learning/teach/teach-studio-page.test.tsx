@@ -267,6 +267,29 @@ it("flags a card at once when its take has no recognized words, instead of marki
   expect(screen.queryByText(/^✓ Recorded/)).toBeNull();
 });
 
+it("puts what the learner just said on the board as words, or as a note of a chosen kind", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  await waitFor(() => expect(voice.onUtterance).toBeTruthy());
+  voice.transcripts = ["Matter comes in three states."];
+  time = 2_000;
+  act(() => voice.onUtterance!(new Blob(["wav"])));
+  await screen.findByText("Matter comes in three states.");
+  addKind("Text");
+  fireEvent.click(screen.getByRole("button", { name: /^Use what I just said: “Matter comes in three/ }));
+  expect((screen.getByRole("textbox", { name: "Words to write" }) as HTMLTextAreaElement).value).toBe("Matter comes in three states.");
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  addKind("Note");
+  fireEvent.click(screen.getByRole("radio", { name: "Careful" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "What the note says" }), { target: { value: "Steam is hot." } });
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  const take = loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!.takes.at(-1)!;
+  expect(take.events.map((event) => ("panel" in event ? event : null))).toMatchObject([
+    { panel: "text", text: "Matter comes in three states." },
+    { panel: "note", role: "warning", text: "Steam is hot." },
+  ]);
+});
+
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
@@ -351,9 +374,10 @@ it("turns what the learner says into the card's captions, timed from the take st
 
   // Correcting one sentence keeps the others and the card's words in step.
   fireEvent.click(strip.getByRole("button", { name: /^Sentence 2: / }));
-  const box = strip.getByRole("textbox", { name: "Sentence 2" });
-  fireEvent.change(box, { target: { value: "Point A is at 1, 2." } });
-  fireEvent.blur(box);
+  // It opens in a popover above the block.
+  const popover = within(screen.getByRole("dialog", { name: "Sentence 2" }));
+  fireEvent.change(popover.getByRole("textbox", { name: "Sentence 2" }), { target: { value: "Point A is at 1, 2." } });
+  fireEvent.click(popover.getByRole("button", { name: "Done" }));
   const corrected = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
   expect(corrected.segments!.map((segment) => segment.text)).toEqual(["Here is a grid.", "Point A is at 1, 2."]);
   expect(corrected.text).toBe("Here is a grid. Point A is at 1, 2.");
@@ -435,7 +459,7 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   addKind("Unit circle");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  addKind("Box");
+  addKind("Solid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   expect(board.onVariableGesture).toBeTypeOf("function");
   time = 4_000;
@@ -528,6 +552,37 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
     completion: { kind: "expression_target", expression: "sin(theta)", value: -1, tolerance: 0.01 },
     allowed_operations: [{ kind: "variable_change", variable: "theta", controls: ["slider", "geometry_point"] }],
     hints: ["Where is the point lowest?"],
+  });
+});
+
+it("sets up a Your turn question answered with a number, checked as the viewer would type it", async () => {
+  localStorage.clear();
+  const recording = planCards(
+    createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Fractions", type: "math_off_map" }, goals: ["Simplify"] }),
+    "2026-10-31T12:00:00.000Z",
+    [{ title: "Halves" }, { title: "Your turn", kind: "your_turn" }],
+  );
+  saveRecordingDraft(localStorage, "learner-1", recording);
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /2 · Your turn/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Text");
+  fireEvent.change(screen.getByRole("textbox", { name: "Words to write" }), { target: { value: "Simplify 6/8" } });
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  // No unit circle: dragging is not offered; typing a number is.
+  expect(screen.queryByRole("radio", { name: "Drag to the answer" })).toBeNull();
+  expect(screen.getByRole("radio", { name: "Type a number" }).getAttribute("aria-checked")).toBe("true");
+  const answer = screen.getByRole("textbox", { name: "Correct answer" });
+  fireEvent.change(answer, { target: { value: "three quarters" } });
+  expect(screen.getByText(/Write a whole number, a decimal, a fraction/)).toBeTruthy();
+  fireEvent.change(answer, { target: { value: "6/8" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Must be in simplest form" }));
+  expect(screen.getByText("If the answer must be in simplest form, write it in simplest form here too.")).toBeTruthy();
+  fireEvent.change(answer, { target: { value: "3/4" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save this exercise" }));
+  expect(board.compiled!.lesson.lesson.tasks?.[0]).toMatchObject({
+    anchor: "text-1", allowed_operations: [{ kind: "answer_entry" }],
+    completion: { kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" },
   });
 });
 

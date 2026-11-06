@@ -11,6 +11,7 @@ import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package
 import { presenterOfReference } from "./presenters";
 import { nodeSections } from "./teaching-board-setup";
 import { LessonContents, lessonContents } from "./lesson-contents";
+import { usePresenterReaction } from "../avatar/presenter-reaction";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -43,6 +44,8 @@ export default function LearnerPackageViewer() {
     source: pack?.source ?? null, storageKey: `octos-learn:package-watch:${profileId}:${pack?.manifest.contentSha256 ?? "none"}`,
     narrationTiming: sound ? "external" : "estimated", topics,
   });
+  // The presenter shows the learner's reactions as the lesson plays them.
+  const reaction = usePresenterReaction(runtime?.currentOperation);
   const runtimeRef = useRef(runtime);
   useEffect(() => { runtimeRef.current = runtime; }, [runtime]);
   const start = useCallback((beatId: string) => runtimeRef.current?.startNarration(beatId), []);
@@ -86,7 +89,7 @@ export default function LearnerPackageViewer() {
     </div>
     {pack ? <>
       <div className="teach-watch-layout"><section className="teach-watch-stage" aria-label={tr("你的课")}><LearningWhiteboard embedded runtime={runtime} resolveAsset={pack.resolveAsset}
-        overlay={hasMouth && showAvatar ? <Suspense fallback={null}><LessonAvatarPreview placement="board" characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth} performance={moves}
+        overlay={hasMouth && showAvatar ? <Suspense fallback={null}><LessonAvatarPreview reaction={reaction} placement="board" characterId={presenterOfReference(pack.manifest.author.avatar_ref).id} track={mouth} performance={moves}
           clock={media && media.beatId === narrationBeatId && media.packageHash === pack.manifest.contentSha256 ? media.clock : null}
           playing={speaking && sound} preparing={narration.preparing} /></Suspense> : null} /></section>
       </div>

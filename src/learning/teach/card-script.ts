@@ -20,7 +20,7 @@ import {
 } from "./recording";
 
 /** What an action does, for its icon. */
-export type ActionKind = "insert" | "point" | "line" | "laser" | "highlight" | "arrow" | "drag" | "rotate" | "neat" | "hide" | "write";
+export type ActionKind = "insert" | "point" | "line" | "laser" | "highlight" | "arrow" | "drag" | "rotate" | "neat" | "hide" | "write" | "react";
 
 export type SequenceItem =
   | { kind: "sentence"; id: string; index: number; text: string }
@@ -33,8 +33,21 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
   switch (event.type) {
     case "component.insert":
       return { action: "insert", label: {
-        graph: tr("放上函数图"), coordinate_grid: tr("放上坐标网格"), unit_circle: tr("放上单位圆"), solid_3d: tr("放上长方体"),
+        graph: tr("放上函数图"), coordinate_grid: tr("放上坐标网格"), unit_circle: tr("放上单位圆"), solid_3d: tr("放上立体"),
+        text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"), diagram: tr("放上图示"), polygon: tr("放上正多边形"),
       }[event.panel] };
+    case "table.fill":
+      return { action: "insert", label: tr("填表格") };
+    case "presenter.react":
+      return { action: "react", label: { encouraging: tr("形象鼓励一下"), careful: tr("形象提醒小心"), celebrating: tr("形象庆祝") }[event.expression] };
+    case "geometry.circle":
+      return { action: "line", label: tr("画一个圆") };
+    case "geometry.segment":
+      return { action: "line", label: tr("连一条线段") };
+    case "graph.add_curve":
+      return { action: "insert", label: tr("再画一条：y = {{v0}}", { v0: event.expression }) };
+    case "diagram.add":
+      return { action: "insert", label: tr("加一步：{{v0}}", { v0: event.label }) };
     case "point_tool.place":
     case "make_point.confirmed":
       return { action: "point", label: tr("标出点 {{v0}}", { v0: event.label }) };
@@ -44,7 +57,7 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
     case "tool.laser":
       return { action: "laser", label: tr("指一下") };
     case "tool.highlighter":
-      return { action: "highlight", label: tr("高亮") };
+      return { action: "highlight", label: { focus: tr("高亮"), supporting: tr("标出“也看看”"), warning: tr("标出“小心”"), resolved: tr("标出“对了”") }[event.emphasis ?? "focus"] };
     case "tool.arrow":
       return { action: "arrow", label: tr("画箭头") };
     case "variable.drag":
@@ -178,8 +191,9 @@ function replaceTake(recording: LearnerRecording, key: string, now: string, chan
 
 /** Why the sequence could not be changed that way. */
 export class SequenceError extends RecordingError {
-  readonly reason: "order" | "nothing";
-  constructor(reason: "order" | "nothing") {
+  /** order: it would play out of order; nothing: nothing to change; last: the card's only sentence; ink: handwriting, erased on the board. */
+  readonly reason: "order" | "nothing" | "last" | "ink";
+  constructor(reason: "order" | "nothing" | "last" | "ink") {
     super(reason);
     this.name = "SequenceError";
     this.reason = reason;
@@ -283,5 +297,33 @@ export function joinWithPrevious(recording: LearnerRecording, key: string, index
     const joined: SpeechSegment = { startMs: first.startMs, endMs: second.endMs, text: joinSpoken([first.text, second.text]) };
     const next = [...segments.slice(0, index - 1), joined, ...segments.slice(index + 1)];
     return { take: { ...take, segments: next, text: joinSpoken(next.map((part) => part.text)), textEditedAt: now } };
+  });
+}
+
+/**
+ * Deletes a sentence from the card: its words leave the lesson; actions made
+ * while it was said stay, now in the pause where it was. A card keeps at least
+ * one sentence (edit it, or re-record the words).
+ */
+export function deleteSentence(recording: LearnerRecording, key: string, index: number, now: string): LearnerRecording {
+  return replaceTake(recording, key, now, (take) => {
+    const segments = [...take.segments!].sort((a, b) => a.startMs - b.startMs);
+    if (!segments[index]) throw new SequenceError("nothing");
+    if (segments.length === 1) throw new SequenceError("last");
+    const next = segments.filter((_, position) => position !== index);
+    return { take: { ...take, segments: next, text: joinSpoken(next.map((part) => part.text)), textEditedAt: now } };
+  });
+}
+
+/**
+ * Deletes an action from the card (`event:<index>`). Handwriting is not
+ * deleted here: it is erased on the board, where it was written.
+ */
+export function deleteAction(recording: LearnerRecording, key: string, id: string, now: string): LearnerRecording {
+  if (id.startsWith("ink:")) throw new SequenceError("ink");
+  const index = id.startsWith("event:") ? Number(id.slice("event:".length)) : NaN;
+  return replaceTake(recording, key, now, (take) => {
+    if (!Number.isInteger(index) || !take.events[index]) throw new SequenceError("nothing");
+    return { take: { ...take, events: take.events.filter((_, position) => position !== index) } };
   });
 }

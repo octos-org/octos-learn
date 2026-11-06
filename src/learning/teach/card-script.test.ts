@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { setLocale } from "@/i18n";
-import { cardSequence, cardTracks, joinWithPrevious, placeAction, SequenceError, splitSentence } from "./card-script";
+import { cardSequence, cardTracks, deleteAction, deleteSentence, joinWithPrevious, placeAction, SequenceError, splitSentence } from "./card-script";
 import { compileRecording } from "./compile-recording";
 import { appendEvent, createRecording, finishTake, planCards, startTake, type CardInk, type LearnerRecording, type RecordingEvent } from "./recording";
 
@@ -96,5 +96,27 @@ describe("card tracks", () => {
     expect(cardTracks(card([]).cards[0]!)!.map((column) => [column.place, column.actions.length])).toEqual([["during", 0], ["during", 0], ["during", 0]]);
     // With gaps, every place an action could go has its column.
     expect(cardTracks(card([]).cards[0]!, { gaps: true })!.map((column) => column.slot)).toEqual([0, 1, 2, 4, 5, 7, 8]);
+  });
+});
+
+describe("deleting from the order strip", () => {
+  const kept = (recording: LearnerRecording) => recording.cards[0]!.takes.at(-1)!;
+
+  it("deletes a sentence, keeping the actions made while it was said, but never the card's last one", () => {
+    const recording = card([grid, pointA, laser]);
+    const after = deleteSentence(recording, "card-1", 1, now);
+    expect(kept(after).segments!.map((segment) => segment.text)).toEqual(["Here is a grid.", "It goes up."]);
+    expect(kept(after).text).toBe("Here is a grid. It goes up.");
+    expect(kept(after).events).toHaveLength(3);
+    const one = deleteSentence(deleteSentence(recording, "card-1", 0, now), "card-1", 0, now);
+    expect(() => deleteSentence(one, "card-1", 0, now)).toThrow(SequenceError);
+  });
+
+  it("deletes an action, but not handwriting", () => {
+    const recording = card([grid, pointA, laser], [{ snapshotId: "ink-snap:w@v1", sha256: SHA, selections: [], take: 1, strokeTimesMs: [300] }]);
+    expect(names(deleteAction(recording, "card-1", "event:2", now))).not.toContain("Point at it");
+    expect(() => deleteAction(recording, "card-1", "ink:ink-snap:w@v1:0", now)).toThrow(SequenceError);
+    // Deleting the grid leaves a point with nothing to sit on: the lesson cannot be made.
+    expect(() => compileRecording(deleteAction(recording, "card-1", "event:0", now), { author, language: "en-US" })).toThrow();
   });
 });

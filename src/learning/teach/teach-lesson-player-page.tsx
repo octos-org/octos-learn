@@ -24,6 +24,7 @@ import { AvatarPicture } from "./presenter-picker";
 import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import { LessonContents, lessonContents } from "./lesson-contents";
+import { usePresenterReaction } from "../avatar/presenter-reaction";
 import "./teach.css";
 
 const LessonAvatarPreview = lazy(() => import("../avatar/lesson-avatar-preview"));
@@ -62,6 +63,8 @@ export function TeachLessonPlayerPage() {
     narrationTiming: sound ? "external" : "estimated",
     topics,
   });
+  // The presenter shows the learner's reactions as the lesson plays them.
+  const reaction = usePresenterReaction(runtime?.currentOperation);
   const runtimeRef = useRef(runtime);
   useEffect(() => { runtimeRef.current = runtime; }, [runtime]);
   const onStart = useCallback((beatId: string) => runtimeRef.current?.startNarration(beatId), []);
@@ -127,7 +130,7 @@ export function TeachLessonPlayerPage() {
         <div className="teach-watch-layout">
           <section className="teach-watch-stage" aria-label={tr("这节课")}>
             <LearningWhiteboard embedded runtime={runtime} resolveAsset={lesson.resolveAsset}
-              overlay={<Suspense fallback={null}><LessonAvatarPreview mode="player" placement="board" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
+              overlay={<Suspense fallback={null}><LessonAvatarPreview reaction={reaction} mode="player" placement="board" characterId={avatar.id} track={mouthTrack} performance={performanceTrack}
                 clock={mediaClock && mediaClock.beatId === beatId && mediaClock.packageHash === packageHash ? mediaClock.clock : null}
                 playing={speaking} preparing={narration.preparing} /></Suspense>} />
           </section>

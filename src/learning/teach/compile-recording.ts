@@ -9,12 +9,20 @@ import {
   currentTake,
   type BoardTarget,
   type CardInk,
+  type CompositeSolid,
   type ComponentInsert,
   type LearnerRecording,
+  type NoteRole,
+  type Solid,
+  baseCorners,
+  compositeHeight,
+  solidUnfolds,
+  solidZRange,
   type RecordingCard,
   type RecordingEvent,
   type Take,
 } from "./recording";
+import { parseGraphEntry } from "./graph-entry";
 import { lineAcross, lineLabel } from "./studio-helpers";
 
 type Action = AuthoringAction & Record<string, unknown>;
@@ -291,27 +299,190 @@ function boxFaces(size: { x: number; y: number; z: number }) {
 }
 
 /** Neat math the learner confirmed for a piece of their ink, in its place or below it. */
-function neatWrite(alias: string, latex: string, ink: string, selection: string, replacesInk: boolean): Action {
+/**
+ * Neat math for a learner's handwriting: in the writing's place, or below it.
+ * Writing that continued a card is a line of that card's working, so its neat
+ * math lines its "=" up with the line above; neat math for part of such
+ * writing continues it, just under it.
+ */
+function neatWrite(alias: string, latex: string, ink: string, selection: string, replacesInk: boolean,
+  continued?: { drawnHeight: number }): Action {
+  const place = replacesInk ? { relation: "replaces", anchor: ink, ...(continued ? { align: "equals" } : {}) }
+    : continued ? { relation: "continues", anchor: ink, offset: { x: 0, y: Math.round(continued.drawnHeight + NEAT_GAP) }, align: "equals" }
+      : { relation: "below", anchor: ink };
   return {
     do: "write", as: alias, kind: "math", role: "derivation",
     content: { fragments: [{ as: "formula", latex }] },
-    place: replacesInk ? { relation: "replaces", anchor: ink } : { relation: "below", anchor: ink },
+    place,
     source: { selection, confirmed_by: "learner" },
   } as Action;
 }
 
+/** A diagram of boxes joined by arrows; each box after the first may carry words on the arrow into it. */
+interface Diagram { shape: "steps" | "cycle"; title: string; boxes: Array<{ label: string; link?: string }> }
+/** The most sides the studio offers a regular polygon (OLL allows 384). */
+export const MAX_POLYGON_SIDES = 48;
+const polygonLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "正多边形" : "regular polygon");
+const sidesLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "边数" : "sides");
+
+/** The most curves the studio puts on one graph. */
+export const MAX_CURVES = 4;
+/** The most boxes OLL lays out as steps (and the studio offers for a cycle). */
+export const MAX_DIAGRAM_BOXES = 8;
+
+/**
+ * OLL diagram content: boxes box-1…, arrows link-2… into each box after the
+ * first; a cycle's last arrow (link-close) goes from the newest box back to the first.
+ */
+function diagramContent(diagram: Diagram): Record<string, unknown> {
+  const elements = diagram.boxes.map((box, index) => ({ as: `box-${index + 1}`, label: box.label }));
+  const edges: Array<Record<string, unknown>> = diagram.boxes.slice(1).map((box, index) => ({
+    as: `link-${index + 2}`, from: `box-${index + 1}`, to: `box-${index + 2}`, ...(box.link ? { label: box.link } : {}),
+  }));
+  if (diagram.shape === "cycle" && diagram.boxes.length > 2) edges.push({ as: "link-close", from: `box-${diagram.boxes.length}`, to: "box-1" });
+  return { title: diagram.title, elements, edges };
+}
+
+const NOTE_HEADINGS: Record<"zh" | "en", Record<NoteRole, string>> = {
+  zh: { conclusion: "结论", warning: "注意", summary: "小结", definition: "定义" },
+  en: { conclusion: "Conclusion", warning: "Be careful", summary: "Summary", definition: "Definition" },
+};
+/** What a note is, as its heading in the lesson's language (lessons are recorded in Chinese or English). */
+function noteHeading(role: NoteRole, language: string): string {
+  return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
+}
+
+/** A composite's two parts, stacked from the bottom: "solid", then "solid-top". */
+function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>): Array<Record<string, unknown>> {
+  const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
+  const bottom = -compositeHeight(solid) / 2;
+  const lower = { ...base, center: at(bottom + solid.height / 2) };
+  const upper = { as: "solid-top", center: at(bottom + solid.height + ("topHeight" in solid ? solid.topHeight / 2 : 0)) };
+  switch (solid.parts) {
+    case "cylinder_cone": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "cone", radius: solid.radius, height: solid.topHeight }];
+    case "cylinder_hemisphere": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "hemisphere", radius: solid.radius }];
+    // A square pyramid's corners are on a circle of radius width/√2, its sides facing the box's.
+    case "box_pyramid": return [{ ...lower, kind: "box", size: { x: solid.width, y: solid.width, z: solid.height } },
+      { ...upper, kind: "pyramid", sides: 4, radius: Number((solid.width / Math.SQRT2).toFixed(6)), height: solid.topHeight }];
+    case "two_cylinders": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "cylinder", radius: solid.topRadius, height: solid.topHeight }];
+  }
+}
+
+/** A solid as OLL scene3d objects, centred on the origin: one, or a composite's parts stacked from the bottom ("solid", then "solid-top"). */
+function solidObjects(solid: Solid): Array<Record<string, unknown>> {
+  const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
+  const base = { as: "solid", kind: solid.shape, center: at(0) };
+  switch (solid.shape) {
+    case "box": return [{ ...base, size: solid.size }];
+    case "cylinder": case "cone": return [{ ...base, radius: solid.radius, height: solid.height }];
+    case "prism": case "pyramid": {
+      const top = solid.shape === "pyramid" && solid.topScale !== undefined ? { top_scale: solid.topScale } : {};
+      if ("base" in solid) {
+        const corners = baseCorners(solid.base);
+        if (!corners) throw new CompileError("The three sides do not make a triangle");
+        return [{ ...base, base: corners.map((corner) => ({ x: Number(corner.x.toFixed(6)), y: Number(corner.y.toFixed(6)) })), height: solid.height, ...top }];
+      }
+      return [{ ...base, sides: solid.sides, radius: solid.radius, height: solid.height, ...top }];
+    }
+    case "frustum": return [{ ...base, radius: solid.radius, top_radius: solid.topRadius, height: solid.height }];
+    case "torus": return [{ ...base, radius: solid.radius, tube: solid.tube }];
+    case "ellipsoid": return [{ ...base, radii: solid.radii }];
+    case "composite": return compositeObjects(solid, base);
+    default: return [{ ...base, radius: solid.radius }];
+  }
+}
+
+const POLYGON_ZH = ["", "", "", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+
+/** A composite in words. */
+function compositeDescription(solid: CompositeSolid, zh: boolean): string {
+  switch (solid.parts) {
+    case "cylinder_cone": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是高 ${solid.topHeight} 的圆锥。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a cone of height ${solid.topHeight} on top.`;
+    case "cylinder_hemisphere": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半球。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a hemisphere on top.`;
+    case "box_pyramid": return zh ? `底面边长 ${solid.width}、高 ${solid.height} 的长方体，上面是高 ${solid.topHeight} 的四棱锥。` : `A box ${solid.width} wide and ${solid.height} high with a square pyramid of height ${solid.topHeight} on top.`;
+    case "two_cylinders": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半径 ${solid.topRadius}、高 ${solid.topHeight} 的圆柱。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a cylinder of radius ${solid.topRadius} and height ${solid.topHeight} on top.`;
+  }
+}
+
+/** A 3D solid in words, in the lesson's language, shown under the scene (and instead of it if it cannot be drawn). */
+function solidDescription(solid: Solid, language: string): string {
+  const zh = language.toLowerCase().startsWith("zh");
+  switch (solid.shape) {
+    case "box": return zh ? `长 ${solid.size.x}、宽 ${solid.size.y}、高 ${solid.size.z} 的长方体。` : `A box ${solid.size.x} by ${solid.size.y} by ${solid.size.z}.`;
+    case "sphere": return zh ? `半径 ${solid.radius} 的球。` : `A sphere of radius ${solid.radius}.`;
+    case "hemisphere": return zh ? `半径 ${solid.radius} 的半球。` : `A hemisphere of radius ${solid.radius}.`;
+    case "cylinder": case "cone": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的${solid.shape === "cone" ? "圆锥" : "圆柱"}。` : `A ${solid.shape} of radius ${solid.radius} and height ${solid.height}.`;
+    case "prism": case "pyramid": {
+      const truncated = solid.shape === "pyramid" && solid.topScale !== undefined;
+      const kind = zh ? (solid.shape === "prism" ? "棱柱" : truncated ? "棱台" : "棱锥") : solid.shape === "prism" ? "prism" : truncated ? "truncated pyramid" : "pyramid";
+      const top = truncated ? (zh ? `，上底是下底的 ${solid.topScale} 倍` : `, its top ${solid.topScale} times the base`) : "";
+      if (!("base" in solid)) return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${kind}，高 ${solid.height}${top}。` : `A ${solid.sides}-sided ${kind} of height ${solid.height}${top}.`;
+      const base = solid.base;
+      const shape = base.kind === "rectangle" ? (zh ? `长 ${base.length}、宽 ${base.width} 的长方形` : `a ${base.length} by ${base.width} rectangle`)
+        : base.kind === "right_triangle" ? (zh ? `直角边为 ${base.a} 和 ${base.b} 的直角三角形` : `a right triangle with legs ${base.a} and ${base.b}`)
+        : zh ? `三边长 ${base.a}、${base.b}、${base.c} 的三角形` : `a triangle with sides ${base.a}, ${base.b} and ${base.c}`;
+      return zh ? `底面是${shape}的${kind}，高 ${solid.height}${top}。` : `A ${kind} on ${shape}, height ${solid.height}${top}.`;
+    }
+    case "ellipsoid": return zh ? `三个半轴是 ${solid.radii.x}、${solid.radii.y}、${solid.radii.z} 的椭球。` : `An ellipsoid with semi-axes ${solid.radii.x}, ${solid.radii.y} and ${solid.radii.z}.`;
+    case "composite": return compositeDescription(solid, zh);
+    case "torus": return zh ? `环半径 ${solid.radius}、管半径 ${solid.tube} 的圆环。` : `A torus of ring radius ${solid.radius} and tube radius ${solid.tube}.`;
+    case "frustum": return zh ? `下底半径 ${solid.radius}、上底半径 ${solid.topRadius}、高 ${solid.height} 的圆台。` : `A frustum of radii ${solid.radius} and ${solid.topRadius}, height ${solid.height}.`;
+    default: {
+      const names = { tetrahedron: ["正四面体", "tetrahedron"], octahedron: ["正八面体", "octahedron"], dodecahedron: ["正十二面体", "dodecahedron"], icosahedron: ["正二十面体", "icosahedron"] }[solid.shape];
+      return zh ? `${names[0]}。` : `A regular ${names[1]}.`;
+    }
+  }
+}
+
+/** The net's slider, in the lesson's language. */
+function unfoldLabel(language: string): string {
+  return language.toLowerCase().startsWith("zh") ? "展开" : "unfold";
+}
+
+/** The cutting plane's slider, in the lesson's language. */
+function cutLabel(language: string): string {
+  return language.toLowerCase().startsWith("zh") ? "切面高度" : "cut height";
+}
+
+/** A slider's step: about a hundredth of its range, rounded to 1, 2 or 5 times a power of ten. */
+export function sliderStep(min: number, max: number): number {
+  const raw = (max - min) / 100;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((factor) => factor * power).find((candidate) => candidate >= raw)!;
+  return Number(step.toPrecision(3));
+}
+
+/** How close (in radians) the viewer must turn a 3D scene to the direction a "Your turn" asks for. */
+const VIEW_TOLERANCE = 0.3;
+
+/** Space between handwriting that continues a card and neat math for part of it, in board units. */
+const NEAT_GAP = 12;
+
 /** Compiles one recording; the lesson still has to pass OLL validation. */
 export function compileRecording(recording: LearnerRecording, options: CompileOptions): CompiledLesson {
-  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit: string; control: { kind: "slider"; step: number } }>();
+  const variables = new Map<string, { as: string; initial: number; min: number; max: number; wrap?: true; label: string; unit?: string; control: { kind: "slider"; step: number } }>();
   const geometryPoints = new Map<string, Point[]>();
   const geometryContent = new Map<string, Record<string, unknown>>();
+  // Segments between two points of a grid, and circles round one of its points.
+  const geometrySegments = new Map<string, Array<Record<string, unknown>>>();
+  const geometryCircles = new Map<string, Array<Record<string, unknown>>>();
   // Lines drawn across a grid: the segment and its two (hidden) end points on the grid's edges.
   const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
   const scenes = new Set<string>();
+  // Each graph's content so far and the slider letters it reads, so a curve added later revises the graph.
+  const graphs = new Map<string, { content: Record<string, unknown>; letters: Map<string, string> }>();
+  // Each diagram's boxes so far, so adding a box revises the whole diagram.
+  const diagrams = new Map<string, Diagram>();
+  // Each table's content as filled so far, so filling a cell revises the whole table.
+  const tables = new Map<string, { title: string; columns: string[]; rows: string[][] }>();
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
   const inkOfSelection = new Map<string, string>(); // selection id -> ink alias
   const hidden = new Set<string>();
+  // Cards written so far (in earlier cards' steps or this card's actions), which writing may continue.
+  const written = new Set<string>();
+  // Handwriting that continues a card, with the height it was written at.
+  const continuedInk = new Map<string, { drawnHeight: number }>();
   const snapshots: NonNullable<ResourceContext["ink_snapshots"]> = [];
   const tasks: NonNullable<AuthoringLesson["lesson"]["tasks"]> = [];
   let lastNode: string | undefined;
@@ -337,10 +508,21 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // A component the learner did not name carries the card's title.
     const title = { title: component.title?.trim() || cardTitle };
     if (component.panel === "graph") {
+      // Letters the learner made sliders read lesson variables; the curve's label keeps the letters.
+      let expression = component.expression;
+      for (const parameter of component.parameters ?? []) {
+        if (variables.has(parameter.variable)) throw new CompileError(`Variable '${parameter.variable}' is already used`);
+        if (!(parameter.min < parameter.max) || parameter.initial < parameter.min || parameter.initial > parameter.max) {
+          throw new CompileError(`The slider ${parameter.letter} needs a range from a smaller to a larger number that holds its starting value`);
+        }
+        variables.set(parameter.variable, { as: parameter.variable, initial: parameter.initial, min: parameter.min, max: parameter.max,
+          label: parameter.letter, control: { kind: "slider", step: sliderStep(parameter.min, parameter.max) } });
+        expression = expression.replace(new RegExp(`(?<![A-Za-z0-9_])${parameter.letter}(?![A-Za-z0-9_])`, "g"), parameter.variable);
+      }
       const content: Record<string, unknown> = {
         ...title,
         axes: { x: { min: component.x[0], max: component.x[1] }, y: { min: component.y[0], max: component.y[1] } },
-        curves: [{ as: "curve", expression: component.expression, label: `y = ${component.expression}` }],
+        curves: [{ as: "curve", expression, label: `y = ${component.expression}` }],
       };
       if (component.linkedVariable) {
         if (!variables.has(component.linkedVariable)) throw new CompileError(`Graph is linked to unknown variable '${component.linkedVariable}'`);
@@ -351,7 +533,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           { target: "current.y", expression: component.expression.replace(/\bx\b/g, variable) },
         ];
       }
-      return { do: "write", as: alias, kind: "plot", role: "diagram", content, place: placeNext() } as Action;
+      graphs.set(alias, { content, letters: new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable])) });
+      return { do: "write", as: alias, kind: "plot", role: "diagram", content: structuredClone(content), place: placeNext() } as Action;
     }
     if (component.panel === "coordinate_grid") {
       geometryPoints.set(alias, []);
@@ -392,29 +575,92 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         },
       } as Action;
     }
-    scenes.add(alias);
-    return {
-      do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(),
-      content: {
+    if (component.panel === "text" || component.panel === "note") {
+      // Words keep only a title the learner gave them: the card's title would repeat what is said.
+      // A note is headed by what kind of note it is, in the lesson's language.
+      const heading = component.title?.trim() || (component.panel === "note" ? noteHeading(component.role, options.language) : "");
+      const named = heading ? { title: heading } : {};
+      return {
+        // A text card's role is its kind, so the board shows no heading the learner did not give it.
+        do: "write", as: alias, kind: component.panel, role: component.panel === "note" ? component.role : "text", place: placeNext(),
+        content: { ...named, text: component.text.trim() },
+      } as Action;
+    }
+    if (component.panel === "polygon") {
+      // A regular polygon in a circle of radius 1, showing its perimeter against the circle's;
+      // its number of sides may be a slider the learner drags while talking.
+      const sides = Math.round(component.sides);
+      if (!(sides >= 3 && sides <= MAX_POLYGON_SIDES)) throw new CompileError(`A regular polygon has 3 to ${MAX_POLYGON_SIDES} sides`);
+      const content: Record<string, unknown> = {
         ...title,
-        fallback: `A box ${component.size.x} by ${component.size.y} by ${component.size.z}.`,
-        axes: false,
-        camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
-        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: component.size }],
-        highlights: boxFaces(component.size),
-      },
-    } as Action;
+        axes: { x: { min: -1.3, max: 1.3, label: "x" }, y: { min: -1.3, max: 1.3, label: "y" }, equal_scale: true },
+        points: [{ as: "origin", x: 0, y: 0, label: "O" }],
+        circles: [{ as: "circle", center: "origin", radius: 1, label: "r = 1" }],
+        regular_polygons: [{ as: "polygon", center: "origin", radius: 1, sides, relation: "inscribed", show_measurements: true, label: polygonLabel(options.language) }],
+      };
+      if (component.slider) {
+        if (variables.has(component.slider.variable)) throw new CompileError(`Variable '${component.slider.variable}' is already used`);
+        variables.set(component.slider.variable, { as: component.slider.variable, initial: sides, min: 3, max: MAX_POLYGON_SIDES, label: sidesLabel(options.language), control: { kind: "slider", step: 1 } });
+        content.bindings = [{ target: "polygon.sides", expression: component.slider.variable }];
+      }
+      return { do: "write", as: alias, kind: "geometry", role: "diagram", content, place: placeNext() } as Action;
+    }
+    if (component.panel === "diagram") {
+      const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
+      for (const box of component.boxes) diagram.boxes.push({ label: box.trim() });
+      diagrams.set(alias, diagram);
+      return { do: "write", as: alias, kind: "diagram", role: "diagram", place: placeNext(), content: diagramContent(diagram) } as Action;
+    }
+    if (component.panel === "table") {
+      const table = { ...title, columns: component.columns.map((column) => column.trim()), rows: component.rows.map((row) => row.map((cell) => cell.trim())) };
+      tables.set(alias, table);
+      return { do: "write", as: alias, kind: "table", role: "observation", place: placeNext(), content: structuredClone(table) } as Action;
+    }
+    scenes.add(alias);
+    const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
+    const objects = solidObjects(solid);
+    if (solid.cut && solid.unfold) throw new CompileError("A solid is either cut or unfolded, not both");
+    if (solid.unfold && !solidUnfolds(solid)) throw new CompileError(`A ${solid.shape} has no net to unfold`);
+    const content: Record<string, unknown> = {
+      ...title,
+      fallback: solidDescription(solid, options.language) + (solid.unfold ? (options.language.toLowerCase().startsWith("zh") ? "拖动滑杆把它展开成平面图。" : " A slider opens it into its net.") : ""),
+      axes: false,
+      camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
+      objects: solid.unfold ? objects.map((object) => ({ ...object, unfold: 0 })) : objects,
+      // A box's faces can be pointed at, unless they move as it opens.
+      ...(solid.shape === "box" && !solid.unfold ? { highlights: boxFaces(solid.size) } : {}),
+    };
+    if (solid.unfold) {
+      // The net opens from 0 (the closed solid) to 1 (lying flat).
+      if (variables.has(solid.unfold.variable)) throw new CompileError(`Variable '${solid.unfold.variable}' is already used`);
+      variables.set(solid.unfold.variable, { as: solid.unfold.variable, initial: 0, min: 0, max: 1, label: unfoldLabel(options.language), control: { kind: "slider", step: 0.02 } });
+      content.bindings = [{ target: "solid.unfold", expression: solid.unfold.variable }];
+    }
+    if (solid.cut) {
+      // A cutting plane across the solid, moved by a slider from its bottom to its top.
+      const [bottom, top] = solidZRange(solid);
+      const middle = Number(((bottom + top) / 2).toFixed(6));
+      if (variables.has(solid.cut.variable)) throw new CompileError(`Variable '${solid.cut.variable}' is already used`);
+      variables.set(solid.cut.variable, { as: solid.cut.variable, initial: middle, min: Number(bottom.toFixed(6)), max: Number(top.toFixed(6)), label: cutLabel(options.language),
+        control: { kind: "slider", step: sliderStep(bottom, top) } });
+      content.sections = [{ as: "cut", axis: "z", value: middle, targets: objects.map((object) => object.as), display: "plane_and_intersection", color: "orange" }];
+      content.bindings = [{ target: "cut.value", expression: solid.cut.variable }];
+    }
+    return { do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(), content } as Action;
   };
 
   /** A grid created with no points yet keeps a hidden origin so it is a valid diagram. */
   const gridContent = (alias: string): Record<string, unknown> => {
     const lines = geometryLines.get(alias) ?? [];
     const points = [...geometryPoints.get(alias)!, ...lines.flatMap((line) => line.ends)];
+    const segments = [...lines.map((line) => line.segment), ...(geometrySegments.get(alias) ?? [])];
+    const circles = geometryCircles.get(alias) ?? [];
     return {
       ...geometryContent.get(alias),
       // Copies: points and lines added in later cards must not appear in earlier ones.
       points: points.length ? points.map((point) => ({ ...point })) : [{ as: "origin", x: 0, y: 0, visible: false }],
-      ...(lines.length ? { segments: lines.map((line) => ({ ...line.segment })) } : {}),
+      ...(segments.length ? { segments: segments.map((segment) => ({ ...segment })) } : {}),
+      ...(circles.length ? { circles: circles.map((circle) => ({ ...circle })) } : {}),
     };
   };
 
@@ -470,6 +716,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       // Writing timed in this take shows stroke by stroke where it was written among the words.
       const stages = ink.take === take.take && ink.strokeTimesMs?.length ? inkStages(ink.strokeTimesMs, sentences) : undefined;
       const staged = stages && stages.length > 1 ? stages : undefined;
+      // Shown at the size it was written, not squeezed into a standard card.
+      if (ink.drawnSize && !ink.annotates) content.drawn_size = { width: ink.drawnSize.width, height: ink.drawnSize.height };
+      // Written under an earlier card's handwriting or math, it is the next line of that card, where it was written.
+      const continues = ink.continues && !ink.annotates && written.has(ink.continues.node) && !hidden.has(ink.continues.node) ? ink.continues : undefined;
+      if (continues) continuedInk.set(alias, { drawnHeight: ink.drawnSize?.height ?? 0 });
       if (ink.annotates) {
         const { node, ...position } = ink.annotates;
         annotations.push({
@@ -479,8 +730,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         });
       } else {
         const [first, ...more] = staged ?? [];
+        const place = continues ? { relation: "continues", anchor: continues.node, offset: { x: continues.x, y: continues.y } } : placeNext();
         actions.push(from(stages && `ink:${ink.snapshotId}:0`, { do: "write", as: alias, kind: "ink", role: "note", content: first ? { ...content, shown_strokes: first.shown } : content,
-          place: placeNext(), ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action));
+          place, ...(stages ? { when: stages[0]!.rank } : {}) } as unknown as Action));
         let shown = first?.shown ?? 0;
         for (const stage of more) {
           actions.push(from(`ink:${ink.snapshotId}:${shown}`, { do: "revise", target: alias, content: { ...content, shown_strokes: stage.shown }, reason: "the learner wrote more", when: stage.rank } as unknown as Action));
@@ -508,6 +760,73 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           focus = [event.alias];
           break;
         }
+        case "presenter.react":
+          actions.push({ do: "expression", expression: event.expression, when } as Action);
+          break;
+        case "geometry.circle":
+        case "geometry.segment": {
+          const points = geometryPoints.get(event.node);
+          if (!points) throw new CompileError(`'${event.node}' is not a coordinate grid`);
+          const named = (point: string) => points.find((candidate) => candidate.as === point) ?? (() => { throw new CompileError(`'${event.node}' has no point '${point}'`); })();
+          const alias = requireAlias(event.alias, event.type === "geometry.circle" ? "Circle" : "Segment");
+          if (event.type === "geometry.circle") {
+            if (!(event.radius > 0)) throw new CompileError("A circle needs a radius above 0");
+            const center = named(event.center);
+            geometryCircles.set(event.node, [...(geometryCircles.get(event.node) ?? []), { as: alias, center: center.as, radius: event.radius, label: `r = ${event.radius}` }]);
+          } else {
+            const a = named(event.from), b = named(event.to);
+            if (a.x === b.x && a.y === b.y) throw new CompileError("A segment needs two different points");
+            geometrySegments.set(event.node, [...(geometrySegments.get(event.node) ?? []), { as: alias, from: a.as, to: b.as, label: `${a.label?.split(" ")[0] ?? a.as}${b.label?.split(" ")[0] ?? b.as}`, style: "solid" }]);
+          }
+          actions.push({ do: "revise", target: event.node, content: gridContent(event.node), reason: event.type === "geometry.circle" ? "the learner drew a circle" : "the learner joined two points", when } as Action);
+          focus = [event.node];
+          break;
+        }
+        case "graph.add_curve": {
+          const graph = graphs.get(event.node);
+          if (!graph) throw new CompileError(`'${event.node}' is not a graph`);
+          const curves = graph.content.curves as Array<Record<string, unknown>>;
+          if (curves.length >= MAX_CURVES) throw new CompileError(`'${event.node}' already has ${MAX_CURVES} curves`);
+          // OLL cannot revise a card's bindings, so a graph following an angle keeps the curve it has.
+          if (graph.content.bindings) throw new CompileError(`'${event.node}' follows an angle, so it cannot take more curves`);
+          const entry = parseGraphEntry(event.expression);
+          if (!entry) throw new CompileError(`'${event.expression}' is not a function, a line x = … or y = …, or an equation`);
+          // The graph's slider letters read the same sliders in the new curve.
+          const reading = (expression: string) => {
+            let read = expression;
+            for (const [letter, variable] of graph.letters) read = read.replace(new RegExp(`(?<![A-Za-z0-9_])${letter}(?![A-Za-z0-9_])`, "g"), variable);
+            return read;
+          };
+          if (entry.kind === "guide") {
+            const guides = (graph.content.guides ??= []) as Array<Record<string, unknown>>;
+            guides.push({ as: `guide-${guides.length + 1}`, kind: entry.axis === "x" ? "vertical_line" : "horizontal_line", value: entry.value, label: `${entry.axis} = ${entry.value}` });
+          } else if (entry.kind === "equation") {
+            curves.push({ as: `curve-${curves.length + 1}`, kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
+          } else {
+            curves.push({ as: `curve-${curves.length + 1}`, expression: reading(entry.expression), label: `y = ${entry.expression}` });
+          }
+          actions.push({ do: "revise", target: event.node, content: structuredClone(graph.content), reason: "the learner added a curve", when } as Action);
+          focus = [event.node];
+          break;
+        }
+        case "diagram.add": {
+          const diagram = diagrams.get(event.node);
+          if (!diagram) throw new CompileError(`'${event.node}' is not a diagram of steps or a cycle`);
+          if (diagram.boxes.length >= MAX_DIAGRAM_BOXES) throw new CompileError(`'${event.node}' already has ${MAX_DIAGRAM_BOXES} boxes`);
+          diagram.boxes.push({ label: event.label.trim(), ...(event.link?.trim() ? { link: event.link.trim() } : {}) });
+          actions.push({ do: "revise", target: event.node, content: diagramContent(diagram), reason: "the learner added a box", when } as Action);
+          focus = [event.node];
+          break;
+        }
+        case "table.fill": {
+          const table = tables.get(event.node);
+          const row = table?.rows[event.row];
+          if (!table || !row || event.column < 0 || event.column >= table.columns.length) throw new CompileError(`'${event.node}' has no cell at row ${event.row + 1}, column ${event.column + 1}`);
+          row[event.column] = event.text.trim();
+          actions.push({ do: "revise", target: event.node, content: structuredClone(table), reason: "the learner filled a cell", when } as Action);
+          focus = [event.node];
+          break;
+        }
         case "point_tool.place":
         case "make_point.confirmed": {
           const points = geometryPoints.get(event.node);
@@ -525,7 +844,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           break;
         case "tool.highlighter":
           if (pointsAtMissingInk(event.target)) break;
-          actions.push({ do: "emphasize", target: target(event.target), emphasis: "focus", when } as Action);
+          actions.push({ do: "emphasize", target: target(event.target), emphasis: event.emphasis ?? "focus", when } as Action);
           if (!highlighted.includes(target(event.target))) highlighted.push(target(event.target));
           focus = [owner(target(event.target))];
           break;
@@ -549,7 +868,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           const ink = inkOfSelection.get(event.selection);
           if (!ink) throw new CompileError(`Selection '${event.selection}' is not part of this lesson's ink`);
           const alias = requireAlias(event.alias, "Formula");
-          actions.push({ ...neatWrite(alias, event.latex, ink, event.selection, event.replacesInk), when } as Action);
+          actions.push({ ...neatWrite(alias, event.latex, ink, event.selection, event.replacesInk, continuedInk.get(ink)), when } as Action);
           if (event.replacesInk) hidden.add(ink);
           lastNode = alias;
           focus = [alias];
@@ -629,27 +948,45 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
 
     // Neat math kept from an earlier take replaces its ink as soon as the ink is written.
     for (const { ink, neat } of keptNeat) {
-      const written = actions.findIndex((action) => action.do === "write" && action.as === ink);
+      const inkAt = actions.findIndex((action) => action.do === "write" && action.as === ink);
       const alias = requireAlias(neat.alias, "Formula");
-      actions.splice(written + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true), ...(actions[written]?.when !== undefined ? { when: actions[written]!.when } : {}) } as Action);
+      actions.splice(inkAt + 1, 0, { ...neatWrite(alias, neat.latex, ink, neat.selection, true, continuedInk.get(ink)), ...(actions[inkAt]?.when !== undefined ? { when: actions[inkAt]!.when } : {}) } as Action);
       hidden.add(ink);
       if (lastNode === ink) lastNode = alias;
       focus = focus.map((id) => (id === ink ? alias : id));
     }
 
     if (card.kind === "your_turn") {
-      // The learner may set the exercise up more than once; the latest wins.
-      const check = [...take.events].reverse().find((event) => event.type === "your_turn.check_picked");
+      // The learner may set the exercise up more than once, in any of its kinds; the latest wins.
+      const setups = take.events.flatMap((event, index) => (
+        event.type === "your_turn.check_picked" || event.type === "your_turn.answer_set" || event.type === "your_turn.view_set" ? [{ event, index }] : []));
+      const latest = setups.at(-1)?.event;
+      const hints = take.events.flatMap((event) => (event.type === "your_turn.hint_spoken" ? [event.text] : []));
+      const base = { as: `task-${card.key}`, prompt: take.text?.trim() || card.title, availability: { kind: "after_lesson" }, hints: hints.length ? hints : [card.title] };
       const demo = [...take.events].reverse().find((event) => event.type === "your_turn.demonstrated");
-      if (check && demo && check.type === "your_turn.check_picked" && demo.type === "your_turn.demonstrated") {
-        const hints = take.events.flatMap((event) => (event.type === "your_turn.hint_spoken" ? [event.text] : []));
+      if (latest?.type === "your_turn.check_picked" && demo?.type === "your_turn.demonstrated") {
         tasks.push({
-          as: `task-${card.key}`,
-          prompt: take.text?.trim() || card.title,
-          availability: { kind: "after_lesson" },
+          ...base,
           allowed_operations: [{ kind: "variable_change", variable: demo.variable, controls: angleControlled.has(demo.variable) ? ["slider", "geometry_point"] : ["slider"] }],
-          completion: { kind: "expression_target", expression: check.expression, value: check.value, tolerance: check.tolerance },
-          hints: hints.length ? hints : [card.title],
+          completion: { kind: "expression_target", expression: latest.expression, value: latest.value, tolerance: latest.tolerance },
+        } as never);
+      } else if (latest?.type === "your_turn.answer_set") {
+        // The answer box sits by what this card put on the board last (or the lesson's latest card).
+        const anchor = [...actions].reverse().find((action) => action.do === "write" && !hidden.has(action.as))?.as
+          ?? (lastNode && !hidden.has(lastNode) ? lastNode : undefined);
+        if (!anchor) throw new CompileError(`"${card.title}" needs something on the board for its question to sit by`);
+        tasks.push({
+          ...base, anchor,
+          allowed_operations: [{ kind: "answer_entry" }],
+          completion: { kind: "numeric_answer", answer: latest.answer.trim(), ...(latest.unit?.trim() ? { unit: latest.unit.trim() } : {}), ...(latest.simplest ? { form: "simplest_fraction" } : {}) },
+        } as never);
+      } else if (latest?.type === "your_turn.view_set") {
+        if (!scenes.has(latest.node)) throw new CompileError(`'${latest.node}' is not a 3D scene`);
+        tasks.push({
+          ...base,
+          allowed_operations: [{ kind: "scene3d_view", node: latest.node, controls: ["orbit", "zoom", "preset", "reset"] }],
+          completion: { kind: "scene3d_view_target", node: latest.node, match: "view_direction", yaw: latest.yaw, pitch: latest.pitch, zoom: 1,
+            angular_tolerance: VIEW_TOLERANCE, zoom_tolerance: 4.8 },
         } as never);
       }
     }
@@ -670,6 +1007,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     // A card being recorded may have nothing on the board yet; a kept one must.
     if (!actions.length && take.status === "recording") continue;
     if (!actions.length) throw new CompileError(`Card '${card.title}' has nothing on the board`);
+    for (const action of actions) if (action.do === "write") written.add(action.as);
     const beats = cardBeats(card, sentences, ranked, beatSpeech);
     for (let part = 0; part * MAX_BEATS < beats.length; part += 1) {
       steps.push({ key: part ? `${card.key}${CARD_PART_SEPARATOR}${part + 1}` : card.key, purpose: card.title, beats: beats.slice(part * MAX_BEATS, (part + 1) * MAX_BEATS) });

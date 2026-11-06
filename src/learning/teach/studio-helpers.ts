@@ -1,7 +1,8 @@
 import type { LessonAuthor } from "octos-lesson-language";
+import { tr } from "@/i18n";
 
 import { presenterAvatar } from "./presenters";
-import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent } from "./recording";
+import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent, type Solid, type SolidShape } from "./recording";
 
 /** The events of the take each card shows now, in card order. */
 function boardEvents(recording: LearnerRecording): RecordingEvent[] {
@@ -43,17 +44,73 @@ export function nextPointLabel(recording: LearnerRecording, node: string): { poi
   }
 }
 
-/** Lesson variables a component introduced (unit circles), in insertion order. */
+const POLYGON_SIDES = ["", "", "", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+
+/** A 3D solid's name, for the learner; a prism or pyramid named by its number of sides when known. */
+export function solidName(shape: SolidShape, sides?: number): string {
+  if ((shape === "prism" || shape === "pyramid") && sides && sides >= 3 && sides <= 12) {
+    return shape === "prism" ? tr("{{v0}}棱柱", { v0: POLYGON_SIDES[sides] }) : tr("{{v0}}棱锥", { v0: POLYGON_SIDES[sides] });
+  }
+  return {
+    box: tr("长方体"), cylinder: tr("圆柱"), cone: tr("圆锥"), sphere: tr("球"), hemisphere: tr("半球"), prism: tr("棱柱"), pyramid: tr("棱锥"),
+    frustum: tr("圆台"), torus: tr("圆环"), ellipsoid: tr("椭球"), composite: tr("组合体"), tetrahedron: tr("正四面体"), octahedron: tr("正八面体"), dodecahedron: tr("正十二面体"), icosahedron: tr("正二十面体"),
+  }[shape];
+}
+
+/** What a stack of two solids is called. */
+export function compositeName(parts: Extract<Solid, { shape: "composite" }>["parts"]): string {
+  return { cylinder_cone: tr("圆柱 + 圆锥"), cylinder_hemisphere: tr("圆柱 + 半球"), box_pyramid: tr("长方体 + 棱锥"), two_cylinders: tr("两个圆柱") }[parts];
+}
+
+/** A solid's name: a six-sided prism, a truncated pyramid, a cylinder with a cone on top. */
+export function solidLabel(solid: Solid): string {
+  if (solid.shape === "composite") return compositeName(solid.parts);
+  if (solid.shape === "pyramid" && solid.topScale !== undefined) return tr("棱台");
+  return solidName(solid.shape, "sides" in solid ? solid.sides : undefined);
+}
+
+/** Lesson variables components introduced (unit circles' angles, graphs' sliders), in insertion order. */
 export function recordingVariables(recording: LearnerRecording): string[] {
-  const variables: string[] = [];
-  {
-    {
-      for (const event of boardEvents(recording)) {
-        if (event.type === "component.insert" && event.panel === "unit_circle" && !variables.includes(event.variable)) variables.push(event.variable);
-      }
-    }
+  return recordingVariableInfo(recording).map((variable) => variable.variable);
+}
+
+/** Each lesson variable with what it is called on the board, and whether it is a unit circle's angle. */
+export function recordingVariableInfo(recording: LearnerRecording): Array<{ variable: string; label: string; angle: boolean }> {
+  const variables: Array<{ variable: string; label: string; angle: boolean }> = [];
+  const add = (variable: string, label: string, angle: boolean) => { if (!variables.some((known) => known.variable === variable)) variables.push({ variable, label, angle }); };
+  for (const event of boardEvents(recording)) {
+    if (event.type !== "component.insert") continue;
+    if (event.panel === "unit_circle") add(event.variable, "θ", true);
+    if (event.panel === "graph") for (const parameter of event.parameters ?? []) add(parameter.variable, parameter.letter, false);
+    if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
+    if (event.panel === "solid_3d" && event.unfold) add(event.unfold.variable, tr("展开"), false);
+    if (event.panel === "polygon" && event.slider) add(event.slider.variable, tr("边数"), false);
   }
   return variables;
+}
+
+/** Names the expression language keeps for itself. */
+const EXPRESSION_WORDS = new Set(["abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "ln", "log", "round", "sin", "sqrt", "tan", "pi", "e", "x"]);
+
+/**
+ * The letters of a graph's expression that can be sliders (any single letter
+ * but x and e), and any other names the expression does not know.
+ */
+export function graphParameterLetters(expression: string): { letters: string[]; unknown: string[] } {
+  const letters: string[] = [], unknown: string[] = [];
+  for (const name of expression.toLowerCase().match(/[a-z][a-z0-9_]*/g) ?? []) {
+    if (EXPRESSION_WORDS.has(name)) continue;
+    const list = name.length === 1 ? letters : unknown;
+    if (!list.includes(name)) list.push(name);
+  }
+  return { letters, unknown };
+}
+
+/** A lesson variable name for a graph's slider letter: the letter itself, or letter_2, letter_3… when taken. */
+export function nextParameterVariable(recording: LearnerRecording, letter: string, taken: string[] = []): string {
+  const used = new Set([...recordingVariables(recording), ...taken]);
+  if (!used.has(letter)) return letter;
+  for (let index = 2; ; index += 1) if (!used.has(`${letter}_${index}`)) return `${letter}_${index}`;
 }
 
 const VARIABLE_NAMES = ["theta", "phi", "alpha", "beta", "gamma"];
@@ -241,8 +298,8 @@ export function wrapDrag(segments: DragSegment[], range: { min: number; max: num
 }
 
 /** What the Add panel can put on the board. */
-export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line";
-const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d"]);
+export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram" | "polygon" | "circle" | "segment";
+const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d", "polygon"]);
 
 /** Whether a kind of component is a figure, which starts a row unless it is put next to a card. */
 export function isFigure(form: InsertForm | null): boolean {

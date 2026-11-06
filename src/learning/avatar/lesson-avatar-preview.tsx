@@ -1,11 +1,15 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { tr } from "@/i18n";
 import type { AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { IllustratedAvatarStage } from "./illustrated-avatar-stage";
 import { lipSyncFrame, type LipSyncTrack } from "./lip-sync";
 import { performanceFrame, presenterFrame, type LessonPerformanceTrack } from "./lesson-performance";
 import { paintedCharacter, type PaintedCharacterId } from "./painted-characters";
+import { REACTION_MS, reactionNow, withReaction, type ReactionMoment } from "./presenter-reaction";
+import { ReactionBurst } from "./reaction-burst";
 import "./lesson-avatar-preview.css";
+
+const performance_now = () => globalThis.performance.now();
 
 const ignoreMetrics = () => undefined;
 
@@ -16,7 +20,9 @@ const ignoreMetrics = () => undefined;
  * wall-clock time. Decorative ear and hair motion stays off here until its
  * naturalness is approved in the avatar lab.
  */
-export default function LessonAvatarPreview({ characterId, track, performance = null, clock, playing, preparing, mode = "preview", placement = "panel" }: {
+export default function LessonAvatarPreview({ characterId, track, performance = null, clock, playing, preparing, mode = "preview", placement = "panel", reaction }: {
+  /** The presenter's latest reaction in the lesson (OLL teacher.expression), shown for a moment. */
+  reaction?: { current: ReactionMoment | null };
   characterId: PaintedCharacterId;
   track: LipSyncTrack | null;
   /** The learner's expression and head, re-timed onto this clip; mouth motion alone without it. */
@@ -39,9 +45,24 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
     // An unrelated/live/native narration without an authoritative clock never
     // borrows another clip's mouth motion or guesses from wall-clock time.
     const position = time?.positionMs ?? 0, available = Boolean(time);
-    return presenterFrame(performanceFrame(performance, position, available), lipSyncFrame(track, position, available));
-  }, [track, performance, clock, playing]);
+    return withReaction(presenterFrame(performanceFrame(performance, position, available), lipSyncFrame(track, position, available)), reactionNow(reaction), performance_now());
+  }, [track, performance, clock, playing, reaction]);
   const character = paintedCharacter(characterId);
+  // Keep drawing while a reaction shows, even when nothing is being said.
+  const [reacting, setReacting] = useState(false);
+  // The reaction showing now, for the burst around the character.
+  const [burst, setBurst] = useState<ReactionMoment | null>(null);
+  useEffect(() => {
+    if (!reaction) return;
+    const check = () => {
+      const moment = reactionNow(reaction);
+      const showing = Boolean(moment && performance_now() - moment.at < REACTION_MS);
+      setReacting(showing);
+      setBurst((current) => (showing ? (current?.at === moment!.at ? current : moment) : null));
+    };
+    const timer = setInterval(check, 200);
+    return () => clearInterval(timer);
+  }, [reaction]);
   const status = failed ? tr("这台设备暂时无法显示动态头像，声音和白板仍可播放。")
     : preparing ? tr("正在准备配音…") : !playing ? tr("播放课程时，头像会跟随配音。")
       : !track ? tr("这张卡片没有配音嘴型。") : clock ? tr("正在跟随课程配音")
@@ -49,8 +70,9 @@ export default function LessonAvatarPreview({ characterId, track, performance = 
   if (placement === "board") {
     if (failed) return null;
     return <aside className="teach-board-presenter" data-learning-board-occlusion="" aria-label={mode === "player" ? tr("讲课的形象") : tr("课程动态头像预览")}>
+      {burst && <ReactionBurst moment={burst} />}
       <IllustratedAvatarStage key={character.id} characterId={character.id} frame={frame} fpsLimit={30} transparentBackground
-        active={playing && Boolean(track && clock)} onMetrics={ignoreMetrics} onError={onGraphicsError} />
+        active={(playing && Boolean(track && clock)) || reacting} onMetrics={ignoreMetrics} onError={onGraphicsError} />
       <p role="status" className="teach-visually-hidden">{status}</p>
     </aside>;
   }

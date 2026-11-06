@@ -1,8 +1,9 @@
-// "Watch my lesson" before the lesson is saved: each card's narration is made
-// here, the way saving makes it, so the presenter's mouth follows the voice and
-// the learner's recorded expressions and head turns are re-timed onto it. The
-// next card's clip is made while the current one plays, so cards follow each
-// other as quickly as with the narration's own prefetching.
+// "Watch my lesson" before the lesson is saved: each sentence's narration is
+// made here, the way saving makes it, so the presenter's mouth follows the
+// voice and the learner's recorded expressions and head turns are re-timed
+// onto it. Sentences are short (one beat each), so the next few are made while
+// one plays, and the first few as soon as the lesson is known: otherwise each
+// sentence waits for its own synthesis and the talk has long pauses.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CanonicalEvent } from "octos-lesson-language";
@@ -18,6 +19,8 @@ import { bytes, type CardPerformances } from "./make-learner-package";
 interface LiveClip { audio: Blob; mouth: LipSyncTrack | null; performance: LessonPerformanceTrack | null }
 
 const keyOf = (beatId: string, text: string) => `${beatId}\u0000${text.trim()}`;
+/** How many sentences ahead are made while one plays. */
+const LOOKAHEAD = 3;
 
 function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) return Promise.reject(new DOMException("Aborted", "AbortError"));
@@ -75,12 +78,21 @@ export function useLiveNarrationAvatar({ enabled, events, voices, language, perf
     return clip;
   }, [voices, language]);
 
+  // Makes the clips of the sentences from `index` on, LOOKAHEAD of them, alongside whatever plays.
+  const prepareFrom = useCallback((index: number) => {
+    for (const line of lines.slice(Math.max(0, index), Math.max(0, index) + LOOKAHEAD)) void make(line.beatId, line.text).catch(() => undefined);
+  }, [lines, make]);
+
+  // The first sentences are ready by the time the learner presses play.
+  useEffect(() => {
+    if (enabled && lines.length) prepareFrom(0);
+  }, [enabled, lines, prepareFrom]);
+
   const resolveAudio = useCallback(async (beatId: string, text: string, signal: AbortSignal): Promise<Blob | null> => {
     const clip = make(beatId, text);
-    const next = lines[lines.findIndex((line) => line.beatId === beatId) + 1];
-    if (next) void clip.then(() => make(next.beatId, next.text)).catch(() => undefined);
+    prepareFrom(lines.findIndex((line) => line.beatId === beatId) + 1);
     return (await abortable(clip, signal)).audio;
-  }, [make, lines]);
+  }, [make, lines, prepareFrom]);
 
   const clipOf = (beatId: string | undefined, text: string) => (beatId ? ready[keyOf(beatId, text)] : undefined);
   return {

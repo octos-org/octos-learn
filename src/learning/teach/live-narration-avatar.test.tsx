@@ -40,3 +40,14 @@ it("leaves narration to the usual path when off", () => {
   expect(result.current.resolveAudio).toBeUndefined();
   expect(result.current.mouthTrack("l:beat:card-1", "The unit circle.")).toBeNull();
 });
+
+it("makes the first sentences before play, and keeps three sentences ahead of the one playing", async () => {
+  speech.calls = [];
+  const sentences = ["One.", "Two.", "Three.", "Four.", "Five.", "Six."];
+  const many = [{ step: { beats: sentences.map((text, index) => ({ id: `l:beat:s${index + 1}`, narration: { text } })) } }] as unknown as CanonicalEvent[];
+  const { result } = renderHook(() => useLiveNarrationAvatar({ enabled: true, events: many, voices: null, language: "en-US", performances: async () => ({}) }));
+  await waitFor(() => expect(speech.calls).toEqual(["One.", "Two.", "Three."]));
+  await act(async () => { await result.current.resolveAudio!("l:beat:s2", "Two.", new AbortController().signal); });
+  // Playing sentence 2 makes 3, 4 and 5 (3 was already made, so only 4 and 5 are new).
+  await waitFor(() => expect(speech.calls).toEqual(["One.", "Two.", "Three.", "Four.", "Five."]));
+});

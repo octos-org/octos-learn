@@ -59,7 +59,8 @@ describe("CoursePack public catalog", () => {
     expect(supportsCoursePackPlayer("0.6.0")).toBe(true);
     expect(supportsCoursePackPlayer("0.7.0")).toBe(true);
     expect(supportsCoursePackPlayer("0.8.0")).toBe(true);
-    expect(supportsCoursePackPlayer("0.9.0")).toBe(false);
+    expect(supportsCoursePackPlayer("0.9.0")).toBe(true);
+    expect(supportsCoursePackPlayer("0.10.0")).toBe(false);
   });
 
   it("rejects URL injection and duplicate versions", () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents, validateAuthoringLesson } from "octos-lesson-language";
+import { assertAuthoringSchema, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents, setLessonVariable, validateAuthoringLesson } from "octos-lesson-language";
 import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
-import { compileRecording, compiledCards, CompileError } from "./compile-recording";
+import { compileRecording, compiledCards, CompileError, sliderStep } from "./compile-recording";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
@@ -21,7 +21,7 @@ function check(recording: LearnerRecording) {
   assertAuthoringSchema(compiled.lesson);
   validateAuthoringLesson(compiled.lesson, compiled.resourceContext);
   const events = normalizeAuthoringLesson(compiled.lesson, { lessonId: "l", boardId: "b", baseRevision: 0, resourceContext: compiled.resourceContext });
-  return { ...compiled, state: reduceCanonicalEvents(events) };
+  return { ...compiled, events, state: reduceCanonicalEvents(events) };
 }
 
 function jordan(): LearnerRecording {
@@ -459,5 +459,350 @@ describe("unwrapAngle", () => {
     const long = wrapDrag([{ from: 6, to: 0.5, startAt: 0, endAt: 1000 }], range);
     expect(long.map((move) => [+move.from.toFixed(2), +move.to.toFixed(2)])).toEqual([[6, 3.25], [3.25, 0.5]]);
     expect(long.map((move) => move.endAt)).toEqual([500, 1000]);
+  });
+});
+
+describe("a worked solution grows in one card where it was written", () => {
+  /** 3x + 5 = 20 made neat; −5 and 3x = 15 written under it; x = 5 written and made neat under that. */
+  function equation(continuesAnchor = "problem"): LearnerRecording {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "Solve 3x + 5 = 20", type: "math_off_map" }, goals: ["Solve it"] }),
+      now, [{ title: "The problem" }, { title: "Take away 5" }, { title: "Divide by 3" }],
+    );
+    recording = record(recording, "card-1", "Here is the problem.", [
+      { t: 2_000, type: "make_neat.confirmed", selection: "sel-c1", latex: "3x+5=20", alias: "problem", replacesInk: true },
+    ], { ink: [{ snapshotId: "ink-snap:c1@v1", sha256: SHA, selections: ["sel-c1"], drawnSize: { width: 300, height: 70 } }] });
+    recording = record(recording, "card-2", "Take five away from both sides.", [], {
+      ink: [{ snapshotId: "ink-snap:c2@v1", sha256: SHA, selections: [], drawnSize: { width: 260, height: 110 }, continues: { node: continuesAnchor, x: 10, y: 90 } }],
+    });
+    recording = record(recording, "card-3", "Divide by three.", [
+      { t: 3_000, type: "make_neat.confirmed", selection: "sel-c3", latex: "x=5", alias: "answer", replacesInk: true },
+    ], { ink: [{ snapshotId: "ink-snap:c3@v1", sha256: SHA, selections: ["sel-c3"], drawnSize: { width: 120, height: 60 }, continues: { node: "ink-card-2", x: 60, y: 120 } }] });
+    return recording;
+  }
+
+  it("continues the card at the offset it was written, at its drawn size, and lines up the neat '='", () => {
+    const { state, lesson } = check(equation());
+    expect(state.nodes["l:node:ink-card-2"]!.placement).toEqual({ relation: "continues", anchor: "l:node:problem", offset: { x: 10, y: 90 } });
+    expect(state.nodes["l:node:ink-card-2"]!.content).toMatchObject({ drawn_size: { width: 260, height: 110 } });
+    expect(state.nodes["l:node:ink-card-3"]!.placement).toMatchObject({ relation: "continues", anchor: "l:node:ink-card-2", offset: { x: 60, y: 120 } });
+    expect(state.nodes["l:node:answer"]!.placement).toEqual({ relation: "replaces", anchor: "l:node:ink-card-3", align: "equals" });
+    // The first card's own handwriting was not a continuation: its neat math simply replaces it.
+    expect(state.nodes["l:node:problem"]!.placement).toEqual({ relation: "replaces", anchor: "l:node:ink-card-1" });
+    expect(lesson.lesson.author).toBeDefined();
+  });
+
+  it("writes a card of its own when the card it continued is no longer in the lesson", () => {
+    const { state } = check(equation("gone"));
+    expect(state.nodes["l:node:ink-card-2"]!.placement).toMatchObject({ relation: "below" });
+  });
+});
+
+describe("words on the board: text, notes and tables", () => {
+  it("writes a text card, a note with its meaning, and a table whose cells are filled while talking", () => {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "States of matter", type: "other" }, goals: ["Tell solids, liquids and gases apart"] }),
+      now, [{ title: "Three states" }],
+    );
+    recording = record(recording, "card-1", "Matter comes in three states. Ice is a solid. Water is a liquid.", [
+      { t: 500, type: "component.insert", panel: "text", alias: "text-1", text: " Matter comes in three states. " },
+      { t: 1_500, type: "component.insert", panel: "table", alias: "table-1", columns: ["State", "Example"], rows: [["Solid", ""], ["Liquid", ""]] },
+      { t: 4_000, type: "table.fill", node: "table-1", row: 0, column: 1, text: "Ice" },
+      { t: 6_000, type: "table.fill", node: "table-1", row: 1, column: 1, text: "Water" },
+      { t: 8_000, type: "component.insert", panel: "note", alias: "note-1", role: "conclusion", text: "Heat changes the state." },
+    ]);
+    const { state } = check(recording);
+    expect(state.nodes["l:node:text-1"]).toMatchObject({ kind: "text", content: { text: "Matter comes in three states." } });
+    expect(state.nodes["l:node:text-1"]!.content.title).toBeUndefined();
+    expect(state.nodes["l:node:note-1"]).toMatchObject({ kind: "note", role: "conclusion", content: { title: "Conclusion", text: "Heat changes the state." } });
+    expect(state.nodes["l:node:table-1"]!.content).toEqual({ title: "Three states", columns: ["State", "Example"], rows: [["Solid", "Ice"], ["Liquid", "Water"]] });
+  });
+
+  it("refuses to fill a cell that is not in the table", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Tables", type: "other" }, goals: [] }), now, [{ title: "One" }]);
+    recording = record(recording, "card-1", "A table.", [
+      { t: 500, type: "component.insert", panel: "table", alias: "table-1", columns: ["A"], rows: [["x"]] },
+      { t: 900, type: "table.fill", node: "table-1", row: 3, column: 0, text: "y" },
+    ]);
+    expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow(CompileError);
+  });
+});
+
+describe("diagrams of steps and cycles", () => {
+  it("joins the boxes in order, closes a cycle back to the first box, and grows while talking", () => {
+    let recording = planCards(
+      createRecording({ id: "rec", now, topic: { text: "The water cycle", type: "other" }, goals: ["Follow water round the cycle"] }),
+      now, [{ title: "Round and round" }],
+    );
+    recording = record(recording, "card-1", "Water evaporates, forms clouds and falls as rain.", [
+      { t: 500, type: "component.insert", panel: "diagram", alias: "diagram-1", shape: "cycle", boxes: ["Sea", "Water vapour", "Clouds"] },
+      { t: 6_000, type: "diagram.add", node: "diagram-1", label: "Rain", link: "falls" },
+      { t: 7_000, type: "tool.highlighter", target: { node: "diagram-1", part: "box-4" } },
+    ]);
+    const { state } = check(recording);
+    const content = state.nodes["l:node:diagram-1"]!.content as { title: string; elements: Array<{ label: string }>; edges: Array<{ id: string; from: string; to: string; label?: string }> };
+    expect(content.title).toBe("Round and round");
+    expect(content.elements.map((element) => element.label)).toEqual(["Sea", "Water vapour", "Clouds", "Rain"]);
+    const box = (n: number) => `l:node:diagram-1:fragment:box-${n}`;
+    expect(content.edges.map((edge) => [edge.from, edge.to, edge.label ?? ""])).toEqual([
+      [box(1), box(2), ""], [box(2), box(3), ""], [box(3), box(4), "falls"], [box(4), box(1), ""],
+    ]);
+
+    let steps = planCards(createRecording({ id: "rec", now, topic: { text: "Steps", type: "other" }, goals: [] }), now, [{ title: "How" }]);
+    steps = record(steps, "card-1", "First this, then that.", [
+      { t: 500, type: "component.insert", panel: "diagram", alias: "diagram-1", shape: "steps", boxes: ["Mix", "Heat"] },
+    ]);
+    const stepEdges = (check(steps).state.nodes["l:node:diagram-1"]!.content as { edges: unknown[] }).edges;
+    expect(stepEdges).toHaveLength(1);
+  });
+});
+
+describe("Your turn beyond dragging: answer a number, turn a 3D shape", () => {
+  function practice(events: RecordingEvent[]) {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Box", type: "math_off_map" }, goals: ["Surface area"] }), now,
+      [{ title: "The box" }, { title: "Your turn", kind: "your_turn" }]);
+    recording = record(recording, "card-1", "Here is a box.", [
+      { t: 500, type: "component.insert", panel: "solid_3d", alias: "box-1", shape: "box", size: { x: 4, y: 3, z: 2 } },
+    ]);
+    return record(recording, "card-2", "How big is the top face?", [
+      { t: 500, type: "component.insert", panel: "text", alias: "text-1", text: "Top face area = ?" },
+      ...events,
+    ]);
+  }
+
+  it("asks for a number by the card's last board item, with its unit and form", () => {
+    const { lesson } = check(practice([
+      { t: 1_000, type: "your_turn.answer_set", answer: "12", unit: "cm²" },
+      { t: 1_200, type: "your_turn.hint_spoken", text: "Length times width." },
+    ]));
+    expect(lesson.lesson.tasks).toEqual([expect.objectContaining({
+      anchor: "text-1", prompt: "How big is the top face?", allowed_operations: [{ kind: "answer_entry" }],
+      completion: { kind: "numeric_answer", answer: "12", unit: "cm²" }, hints: ["Length times width."],
+    })]);
+  });
+
+  it("asks to turn the shape to a direction, and the latest setup wins", () => {
+    const { lesson } = check(practice([
+      { t: 1_000, type: "your_turn.answer_set", answer: "3/4", simplest: true },
+      { t: 2_000, type: "your_turn.view_set", node: "box-1", yaw: 0, pitch: 1.5 },
+    ]));
+    expect(lesson.lesson.tasks).toEqual([expect.objectContaining({
+      allowed_operations: [{ kind: "scene3d_view", node: "box-1", controls: ["orbit", "zoom", "preset", "reset"] }],
+      completion: expect.objectContaining({ kind: "scene3d_view_target", node: "box-1", match: "view_direction", yaw: 0, pitch: 1.5 }),
+    })]);
+    const answered = check(practice([{ t: 2_000, type: "your_turn.view_set", node: "box-1", yaw: 0, pitch: 1.5 }, { t: 3_000, type: "your_turn.answer_set", answer: "3/4", simplest: true }]));
+    expect(answered.lesson.lesson.tasks![0]!.completion).toEqual({ kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" });
+  });
+});
+
+describe("graphs with sliders", () => {
+  it("makes each letter the learner chose a slider the curve reads, and dragging it animates the curve", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Vertex form", type: "math_off_map" }, goals: ["Move a parabola"] }), now, [{ title: "Move it" }]);
+    recording = record(recording, "card-1", "Change h and k to move the parabola.", [
+      { t: 500, type: "component.insert", panel: "graph", alias: "graph-1", expression: "(x-h)^2+k", x: [-6, 6], y: [-6, 10],
+        parameters: [{ letter: "h", variable: "h", initial: 0, min: -4, max: 4 }, { letter: "k", variable: "k_2", initial: 1, min: -3, max: 5 }] },
+      { t: 4_000, type: "variable.drag", variable: "h", via: "slider", from: 0, to: 2, durationMs: 900 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([
+      { as: "h", initial: 0, min: -4, max: 4, label: "h", control: { kind: "slider", step: 0.1 } },
+      { as: "k_2", initial: 1, min: -3, max: 5, label: "k", control: { kind: "slider", step: 0.1 } },
+    ]);
+    const curve = (state.nodes["l:node:graph-1"]!.content as { curves: Array<{ expression: string; label: string }> }).curves[0]!;
+    expect(curve).toMatchObject({ expression: "(x-h)^2+k_2", label: "y = (x-h)^2+k" });
+    expect(state.variables!.h!.value).toBe(2);
+  });
+
+  it("picks slider steps of 1, 2 or 5 times a power of ten", () => {
+    expect([sliderStep(-5, 5), sliderStep(0, 1), sliderStep(0, 300), sliderStep(-2, 2)]).toEqual([0.1, 0.01, 5, 0.05]);
+  });
+});
+
+describe("what marks mean", () => {
+  it("highlights with the meaning the learner picked, ended at the next card like any highlight, and labels arrows", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Burns", type: "other" }, goals: [] }), now, [{ title: "Steam" }, { title: "Next" }]);
+    recording = record(recording, "card-1", "Steam is hot. It comes from boiling water.", [
+      { t: 300, type: "component.insert", panel: "text", alias: "text-1", text: "Steam is hot" },
+      { t: 600, type: "component.insert", panel: "text", alias: "text-2", text: "Boiling water" },
+      { t: 900, type: "tool.highlighter", target: { node: "text-1" }, emphasis: "warning" },
+      { t: 1_200, type: "tool.arrow", from: { node: "text-2" }, to: { node: "text-1" }, label: "makes" },
+    ]);
+    recording = record(recording, "card-2", "Next.", [{ t: 300, type: "component.insert", panel: "text", alias: "text-3", text: "Next" }]);
+    const { lesson, state } = check(recording);
+    const actions = lesson.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions)) as Array<Record<string, unknown>>;
+    expect(actions).toContainEqual(expect.objectContaining({ do: "emphasize", target: "text-1", emphasis: "warning" }));
+    expect(actions).toContainEqual(expect.objectContaining({ do: "emphasize", target: "text-1", emphasis: "none" }));
+    expect(Object.values(state.connections)[0]).toMatchObject({ label: "makes" });
+  });
+});
+
+describe("3D solids beyond the box", () => {
+  it("puts a cylinder, a cone or a sphere on the board, and a cutting plane the learner moves with a slider", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Cross-sections", type: "math_off_map" }, goals: [] }), now, [{ title: "Cut it" }]);
+    recording = record(recording, "card-1", "Move the cut up through the cone.", [
+      { t: 300, type: "component.insert", panel: "solid_3d", alias: "solid-1", shape: "cone", radius: 2, height: 4, cut: { variable: "cut" } },
+      { t: 900, type: "component.insert", panel: "solid_3d", alias: "solid-2", shape: "sphere", radius: 1.5 },
+      { t: 2_000, type: "variable.drag", variable: "cut", via: "slider", from: 0, to: 1.5, durationMs: 800 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([{ as: "cut", initial: 0, min: -2, max: 2, label: "cut height", control: { kind: "slider", step: 0.05 } }]);
+    const cone = state.nodes["l:node:solid-1"]!.content as { objects: Array<Record<string, unknown>>; sections: Array<Record<string, unknown>>; fallback: string };
+    expect(cone.objects[0]).toMatchObject({ kind: "cone", radius: 2, height: 4 });
+    expect(cone.sections[0]).toMatchObject({ axis: "z", display: "plane_and_intersection", value: 1.5 });
+    expect(cone.fallback).toBe("A cone of radius 2 and height 4.");
+    expect((state.nodes["l:node:solid-2"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "sphere", radius: 1.5 });
+  });
+});
+
+describe("adding curves to a graph while talking", () => {
+  it("adds a curve that reads the graph's sliders", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Shifts", type: "math_off_map" }, goals: [] }), now, [{ title: "Up and down" }]);
+    recording = record(recording, "card-1", "Compare x squared with x squared plus k.", [
+      { t: 300, type: "component.insert", panel: "graph", alias: "graph-1", expression: "x^2", x: [-4, 4], y: [-2, 12],
+        parameters: [] },
+      { t: 900, type: "graph.add_curve", node: "graph-1", expression: "x^2+3" },
+    ]);
+    const { state } = check(recording);
+    const curves = (state.nodes["l:node:graph-1"]!.content as { curves: Array<{ expression: string; label: string }> }).curves;
+    expect(curves.map((curve) => curve.label)).toEqual(["y = x^2", "y = x^2+3"]);
+  });
+
+  it("refuses a curve on a graph that follows an angle, which OLL could not keep following", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: [] }), now, [{ title: "Waves" }]);
+    recording = record(recording, "card-1", "Sine and cosine.", [
+      { t: 100, type: "component.insert", panel: "unit_circle", alias: "unit-circle-1", variable: "theta" },
+      { t: 300, type: "component.insert", panel: "graph", alias: "graph-1", expression: "sin(x)", x: [0, 6.3], y: [-1.2, 1.2], linkedVariable: "theta" },
+      { t: 900, type: "graph.add_curve", node: "graph-1", expression: "cos(x)" },
+    ]);
+    expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow("follows an angle");
+  });
+});
+
+describe("geometry on a grid, and regular polygons", () => {
+  it("draws a circle round a point and a segment between two points of a grid", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Circles", type: "math_off_map" }, goals: [] }), now, [{ title: "Radius" }]);
+    recording = record(recording, "card-1", "Every point on the circle is 3 from the centre.", [
+      { t: 100, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-5, 5], y: [-5, 5] },
+      { t: 300, type: "point_tool.place", node: "grid", point: "point-a", x: 0, y: 0, label: "A (0, 0)" },
+      { t: 500, type: "point_tool.place", node: "grid", point: "point-b", x: 3, y: 0, label: "B (3, 0)" },
+      { t: 800, type: "geometry.circle", node: "grid", center: "point-a", radius: 3, alias: "circle-1" },
+      { t: 1_200, type: "geometry.segment", node: "grid", from: "point-a", to: "point-b", alias: "segment-1" },
+    ]);
+    const content = check(recording).state.nodes["l:node:grid"]!.content as { circles: Array<Record<string, unknown>>; segments: Array<Record<string, unknown>> };
+    expect(content.circles[0]).toMatchObject({ radius: 3, label: "r = 3" });
+    expect(content.segments[0]).toMatchObject({ label: "AB", style: "solid" });
+  });
+
+  it("puts a regular polygon in a circle, its number of sides on a slider", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Pi", type: "math_off_map" }, goals: [] }), now, [{ title: "More sides" }]);
+    recording = record(recording, "card-1", "With more sides the perimeter gets close to the circle's.", [
+      { t: 100, type: "component.insert", panel: "polygon", alias: "polygon-1", sides: 6, slider: { variable: "sides" } },
+      { t: 900, type: "variable.drag", variable: "sides", via: "slider", from: 6, to: 24, durationMs: 1_500 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([{ as: "sides", initial: 6, min: 3, max: 48, label: "sides", control: { kind: "slider", step: 1 } }]);
+    const polygon = (state.nodes["l:node:polygon-1"]!.content as { regular_polygons: Array<Record<string, unknown>> }).regular_polygons[0]!;
+    expect(polygon).toMatchObject({ relation: "inscribed", sides: 24, show_measurements: true });
+  });
+});
+
+describe("guides and equations on a graph", () => {
+  it("adds a guide line and an equation drawn as a curve", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Circles", type: "math_off_map" }, goals: [] }), now, [{ title: "Graph" }]);
+    recording = record(recording, "card-1", "A circle and a line.", [
+      { t: 100, type: "component.insert", panel: "graph", alias: "graph-1", expression: "x", x: [-4, 4], y: [-4, 4] },
+      { t: 400, type: "graph.add_curve", node: "graph-1", expression: "x = 1" },
+      { t: 700, type: "graph.add_curve", node: "graph-1", expression: "x^2 + y^2 = 4" },
+    ]);
+    const content = check(recording).state.nodes["l:node:graph-1"]!.content as { curves: Array<Record<string, unknown>>; guides: Array<Record<string, unknown>> };
+    expect(content.guides).toEqual([expect.objectContaining({ kind: "vertical_line", value: 1, label: "x = 1" })]);
+    expect(content.curves[1]).toMatchObject({ kind: "implicit", expression: "(x^2+y^2)-(4)", level: 0 });
+  });
+});
+
+describe("presenter reactions", () => {
+  it("plays the learner's reaction as a teacher expression at that moment", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Well done", type: "other" }, goals: [] }), now, [{ title: "Done" }]);
+    recording = record(recording, "card-1", "You got it.", [
+      { t: 300, type: "component.insert", panel: "text", alias: "text-1", text: "x = 5" },
+      { t: 900, type: "presenter.react", expression: "celebrating" },
+    ]);
+    const { lesson } = check(recording);
+    expect(lesson.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions))).toContainEqual(expect.objectContaining({ do: "expression", expression: "celebrating" }));
+  });
+});
+
+describe("more solids", () => {
+  it("compiles every solid, with a cut that spans it", () => {
+    const solids = [
+      { shape: "prism", sides: 6, radius: 2, height: 3 }, { shape: "pyramid", sides: 4, radius: 2, height: 3 },
+      { shape: "frustum", radius: 2, topRadius: 1, height: 3 }, { shape: "hemisphere", radius: 2 }, { shape: "torus", radius: 2, tube: 0.6 },
+      { shape: "tetrahedron", radius: 2 }, { shape: "octahedron", radius: 2 }, { shape: "dodecahedron", radius: 2 }, { shape: "icosahedron", radius: 2 },
+      { shape: "box", size: { x: 3, y: 3, z: 3 } },
+    ] as const;
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Solids", type: "math_off_map" }, goals: [] }), now, [{ title: "All of them" }]);
+    recording = record(recording, "card-1", "Look.", solids.map((solid, index) => (
+      { t: 100 + index, type: "component.insert", panel: "solid_3d", alias: `solid-${index + 1}`, ...solid, cut: { variable: `cut_${index + 1}` } } as RecordingEvent)));
+    const { lesson, state } = check(recording);
+    const hemisphere = lesson.lesson.variables!.find((variable) => variable.as === "cut_4")!;
+    expect([hemisphere.min, hemisphere.max, hemisphere.initial]).toEqual([0, 2, 1]);
+    expect((state.nodes["l:node:solid-1"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "prism", sides: 6 });
+    expect((state.nodes["l:node:solid-3"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "frustum", top_radius: 1 });
+  });
+});
+
+describe("bases, composites and nets", () => {
+  const scene = (solids: Array<Record<string, unknown>>) => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Solids", type: "math_off_map" }, goals: [] }), now, [{ title: "All of them" }]);
+    recording = record(recording, "card-1", "Look.", solids.map((solid, index) => (
+      { t: 100 + index, type: "component.insert", panel: "solid_3d", alias: `solid-${index + 1}`, ...solid } as RecordingEvent)));
+    return recording;
+  };
+  const objects = (state: ReturnType<typeof check>["state"], alias: string) => (state.nodes[`l:node:${alias}`]!.content as { objects: Array<Record<string, unknown>> }).objects;
+
+  it("compiles prisms and pyramids on any base, truncated pyramids, ellipsoids and stacked solids", () => {
+    const { state, lesson } = check(scene([
+      { shape: "prism", base: { kind: "right_triangle", a: 3, b: 4 }, height: 2 },
+      { shape: "pyramid", base: { kind: "rectangle", length: 4, width: 3 }, height: 3, topScale: 0.5 },
+      { shape: "prism", base: { kind: "triangle", a: 5, b: 4, c: 3 }, height: 2, cut: { variable: "cut_1" } },
+      { shape: "ellipsoid", radii: { x: 3, y: 2, z: 1.5 }, cut: { variable: "cut_2" } },
+      { shape: "composite", parts: "cylinder_cone", radius: 1, height: 4, topHeight: 2, cut: { variable: "cut_3" } },
+      { shape: "composite", parts: "cylinder_hemisphere", radius: 1, height: 3 },
+      { shape: "composite", parts: "box_pyramid", width: 2, height: 2, topHeight: 1 },
+      { shape: "composite", parts: "two_cylinders", radius: 2, height: 1, topRadius: 1, topHeight: 2 },
+    ]));
+    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "prism", base: [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 0, y: 4 }], height: 2 });
+    expect(objects(state, "solid-2")[0]).toMatchObject({ kind: "pyramid", top_scale: 0.5 });
+    // Sides 5, 4, 3: a right triangle, its top corner above the bottom's left end.
+    expect(objects(state, "solid-3")[0]!.base).toEqual([{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 1.8, y: 2.4 }]);
+    expect(objects(state, "solid-4")[0]).toMatchObject({ kind: "ellipsoid", radii: { x: 3, y: 2, z: 1.5 } });
+    // A pencil 6 high: the cylinder from -3 to 1, the cone from 1 to 3; the cut spans both and cuts both.
+    expect(objects(state, "solid-5").map((object) => [object.kind, (object.center as { z: number }).z])).toEqual([["cylinder", -1], ["cone", 2]]);
+    const cut = lesson.lesson.variables!.find((variable) => variable.as === "cut_3")!;
+    expect([cut.min, cut.max]).toEqual([-3, 3]);
+    expect((state.nodes["l:node:solid-5"]!.content as { sections: Array<{ targets: string[] }> }).sections[0]!.targets).toHaveLength(2);
+    expect(objects(state, "solid-6").map((object) => [object.kind, (object.center as { z: number }).z])).toEqual([["cylinder", -0.5], ["hemisphere", 1]]);
+    expect(objects(state, "solid-7")[1]).toMatchObject({ kind: "pyramid", sides: 4, radius: 1.414214 });
+    expect(objects(state, "solid-8").map((object) => object.radius)).toEqual([2, 1]);
+    expect(lesson.steps[0]!.beats[0]!.actions.find((action) => action.as === "solid-8")).toMatchObject({ content: { fallback: expect.stringContaining("radius 1 and height 2 on top") } });
+  });
+
+  it("opens a box, prism, pyramid, cylinder or cone into its net on a slider", () => {
+    const { state, lesson, events } = check(scene([
+      { shape: "box", size: { x: 3, y: 2, z: 1 }, unfold: { variable: "open_1" } },
+      { shape: "cylinder", radius: 1, height: 2, unfold: { variable: "open_2" } },
+      { shape: "pyramid", base: { kind: "right_triangle", a: 3, b: 4 }, height: 2, unfold: { variable: "open_3" } },
+    ]));
+    expect(lesson.lesson.variables!.find((variable) => variable.as === "open_1")).toMatchObject({ initial: 0, min: 0, max: 1, label: "unfold" });
+    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "box", unfold: 0 });
+    // The box's faces are not pointed at while it opens.
+    expect((state.nodes["l:node:solid-1"]!.content as { highlights?: unknown[] }).highlights).toBeUndefined();
+    expect(deriveExecutionRequirements(events).requiredCapabilities).toContain("scene3d:unfold");
+    const opened = setLessonVariable(state, "open_2", 0.5);
+    expect(objects(opened, "solid-2")[0]!.unfold).toBe(0.5);
+    // A sphere has no net; a solid is cut or unfolded, not both.
+    expect(() => compileRecording(scene([{ shape: "sphere", radius: 1, unfold: { variable: "open_1" } }]), { author, language: "en-US" })).toThrow(CompileError);
+    expect(() => compileRecording(scene([{ shape: "cone", radius: 1, height: 2, unfold: { variable: "open_1" }, cut: { variable: "cut_1" } }]), { author, language: "en-US" })).toThrow(CompileError);
+    expect(() => compileRecording(scene([{ shape: "prism", base: { kind: "triangle", a: 1, b: 1, c: 3 }, height: 1 }]), { author, language: "en-US" })).toThrow(CompileError);
   });
 });
