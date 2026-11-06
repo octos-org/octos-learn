@@ -101,7 +101,7 @@ export class BoardHandwritingInput {
     this.publish({ gesture: null });
   }
   viewChanged() {
-    if (this.navigating || this.executingCommand || this.targets.manipulatingVariable || this.state.status !== "active") return;
+    if (this.navigating || this.executingCommand || this.targets.capturingButton || this.targets.manipulatingVariable || this.state.status !== "active") return;
     if (this.targets.hasCapture) { this.pause("view"); return; }
     // An idle pointer is in screen coordinates. Camera animation cannot move
     // its palm reference, and repeatedly disarming it would prevent a pinch.

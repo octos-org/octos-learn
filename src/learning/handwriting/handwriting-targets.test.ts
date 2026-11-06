@@ -59,4 +59,33 @@ describe("capturing one hand action for one explicit target", () => {
     s.targets.dispatch([action("down"), action("up")], () => true, false);
     expect(s.click).not.toHaveBeenCalled(); expect(s.events).toEqual([]);
   });
+  it("activates a tool as soon as pinch is recognized and consumes the whole pinch", () => {
+    const s = setup(); s.button.dataset.airActivation = "press";
+    s.targets.hover(point); s.targets.dispatch([action("down")], () => true, false);
+    expect(s.click).toHaveBeenCalledTimes(1);
+    s.targets.dispatch([action("move", "release", 200), action("up", "release", 200)], () => false, true);
+    expect(s.click).toHaveBeenCalledTimes(1); expect(s.events).toEqual([]);
+  });
+  it("retains a highlighted target through small pinch-onset drift", () => {
+    const s = setup(); s.targets.hover({ x: 128, y: 100 });
+    s.targets.hover({ x: 135, y: 100 });
+    expect(s.button.hasAttribute("data-air-hover")).toBe(true);
+    s.targets.dispatch([action("down", "pinch", 135), action("up", "release", 138)], () => true, false);
+    expect(s.click).toHaveBeenCalledTimes(1);
+  });
+  it("tolerates a release just outside the captured button", () => {
+    const s = setup(); s.targets.dispatch([action("down"), action("up", "release", 138)], () => false, false);
+    expect(s.click).toHaveBeenCalledTimes(1);
+  });
+  it("cancels a release over an adjacent control despite release tolerance", () => {
+    const s = setup();
+    const neighbor = document.createElement("button"); document.body.append(neighbor);
+    Object.defineProperty(document, "elementFromPoint", { configurable: true, value: vi.fn(() => s.button) });
+    s.targets.dispatch([action("down")], () => true, false);
+    vi.mocked(document.elementFromPoint).mockReturnValue(neighbor);
+    s.targets.dispatch([action("up", "release", 138)], () => true, false);
+    expect(s.click).not.toHaveBeenCalled();
+    Reflect.deleteProperty(document, "elementFromPoint");
+  });
+
 });

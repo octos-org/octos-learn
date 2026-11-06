@@ -3500,6 +3500,7 @@ export function LearningWhiteboard({
             className={inkState.mode === "navigate" ? "is-active" : ""}
             onClick={() => setInkMode("navigate")}
             data-air-command="navigate"
+            data-air-activation="press"
             aria-label={tr("浏览白板")}
             aria-pressed={inkState.mode === "navigate"}
           >
@@ -3518,6 +3519,7 @@ export function LearningWhiteboard({
               }
             }}
             data-air-command="draw"
+            data-air-activation="press"
             aria-label={tr("书写笔迹")}
             aria-pressed={inkState.mode === "draw"}
             aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
@@ -3531,6 +3533,7 @@ export function LearningWhiteboard({
             className={inkState.mode === "erase" ? "is-active" : ""}
             onClick={() => setInkMode("erase")}
             data-air-command="erase"
+            data-air-activation="press"
             aria-label={tr("擦除笔迹")}
             aria-pressed={inkState.mode === "erase"}
           >
@@ -3544,6 +3547,7 @@ export function LearningWhiteboard({
               setInkMode("select");
             }}
             data-air-command="select"
+            data-air-activation="press"
             aria-label={tr("框选多个笔迹")}
             aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
             title={tr("拖动矩形，可一次选中一条或多条笔迹")}

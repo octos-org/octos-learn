@@ -101,6 +101,16 @@ describe("binding camera hand input to the existing whiteboard", () => {
     expect(s.events.filter(e => e.type === "pointerdown")).toHaveLength(1);
     s.input.dispose();
   });
+  it("keeps a screen-space button captured when the board camera moves", async () => {
+    const s = setup();
+    const button = document.createElement("button"); button.dataset.airCommand = "undo";
+    button.getBoundingClientRect = () => ({ left: 480, right: 540, top: 218, bottom: 278, width: 60, height: 60 } as DOMRect);
+    const click = vi.fn(); button.addEventListener("click", click); document.body.append(button);
+    await s.begin(); s.input.viewChanged();
+    expect(s.states.at(-1)?.status).toBe("active");
+    [264, 297, 330, 363].forEach(t => s.feed(t, false));
+    expect(click).toHaveBeenCalledTimes(1); s.input.dispose();
+  });
   it("does not restart after disposal", async () => {
     const s = setup(); await s.begin(); s.input.dispose(); const count = s.events.length;
     s.feed(264, true); await s.input.start(document.createElement("video")); expect(s.events).toHaveLength(count); expect(s.captures).toHaveLength(1);

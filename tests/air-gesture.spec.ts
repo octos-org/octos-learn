@@ -186,3 +186,41 @@ test("pad pinches are accepted from different hand orientations despite one nois
     }
   }
 });
+
+async function moveBoardCamera(page: Page) {
+  await page.locator('.learning-oll-board').evaluate(async viewport => {
+    viewport.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -80, clientX: 600, clientY: 350 }));
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+}
+test("a recognized tool pinch activates immediately and stays captured through camera movement", async ({ page }) => {
+  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
+  const pen = page.locator('[data-air-command="draw"]');
+  const box = (await pen.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await hand(page, x, y, false, 24); await hand(page, x, y, true);
+  await expect(pen).toHaveAttribute('aria-pressed', 'true');
+  await moveBoardCamera(page);
+  await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
+  await hand(page, 400, 240, true, 20); await hand(page, 400, 240, false);
+  await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
+  await hand(page, 400, 240, true); await hand(page, 500, 280, true, 20); await hand(page, 500, 280, false);
+  await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
+});
+test("an undo click survives camera movement and slight release drift", async ({ page }) => {
+  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
+  await pinchButton(page, 'draw');
+  await hand(page, 400, 240, false, 24); await hand(page, 400, 240, true);
+  await hand(page, 500, 280, true, 20); await hand(page, 500, 280, false);
+  await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
+  const undo = page.locator('[data-air-command="undo"]');
+  const box = (await undo.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await hand(page, x, y, false, 24); await hand(page, x, y, true);
+  await moveBoardCamera(page);
+  await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
+  await hand(page, x, box.y - 6, true, 20); await hand(page, x, box.y - 6, false);
+  await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
+  await pinchButton(page, 'redo');
+  await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
+});

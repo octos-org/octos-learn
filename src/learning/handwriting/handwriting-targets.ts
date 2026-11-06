@@ -8,11 +8,13 @@ export class HandwritingTargets {
   private variable: HandwritingVariableDrag | null = null;
   private readonly variableOptions?: HandwritingVariableOptions;
   private pressed: HTMLButtonElement | null = null;
+  private activatedOnPress = false;
   private hovered: Element | null = null;
   private boardDown = false;
   private lastPoint: Point = { x: 0, y: 0 };
   executingCommand = false;
   navigating = false;
+  get capturingButton() { return this.pressed !== null; }
   get manipulatingVariable() { return this.variable !== null; }
   get hasCapture() { return this.boardDown || this.pressed !== null || this.variable !== null; }
 
@@ -26,26 +28,44 @@ export class HandwritingTargets {
     this.pointerId = pointerId;
   }
 
-  private buttonAt(point: Point): HTMLButtonElement | null {
+  private buttonHit(button: HTMLButtonElement, point: Point, margin = 0): boolean {
     const rect = this.viewport.getBoundingClientRect();
     const x = rect.left + point.x, y = rect.top + point.y;
+    const box = button.getBoundingClientRect();
+    if (!button.isConnected || button.disabled || button.closest('[hidden], [inert]') || box.width <= 0 || box.height <= 0) return false;
+    if (x < box.left - margin || x > box.right + margin || y < box.top - margin || y > box.bottom + margin) return false;
+    const covering = this.viewport.ownerDocument.elementFromPoint?.(x, y);
+    if (!covering || button.contains(covering)) return true;
+    if (margin === 0 || covering.closest('button, input, select, textarea, [role="slider"]')) return false;
+    // Release tolerance may enter toolbar gaps or the adjacent canvas, while
+    // a different floating panel or another control continues to block it.
+    const occlusion = covering.closest('[data-learning-board-occlusion]');
+    return occlusion ? occlusion === button.closest('[data-learning-board-occlusion]')
+      : covering === this.viewport || this.viewport.contains(covering);
+  }
+
+  private buttonAt(point: Point): HTMLButtonElement | null {
     const root = this.viewport.parentElement ?? this.viewport;
-    const buttons = [...root.querySelectorAll<HTMLButtonElement>('button[data-air-command]')];
-    return buttons.find(button => {
-      const box = button.getBoundingClientRect();
-      if (button.disabled || button.closest('[hidden], [inert]') || box.width <= 0 || box.height <= 0) return false;
-      const covering = this.viewport.ownerDocument.elementFromPoint?.(x, y);
-      if (covering && !button.contains(covering)) return false;
-      return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
-    }) ?? null;
+    return [...root.querySelectorAll<HTMLButtonElement>('button[data-air-command]')]
+      .find(button => this.buttonHit(button, point)) ?? null;
   }
 
   hover(point: Point | null, navigate = false) {
-    const button = point ? this.buttonAt(point) ?? (navigate ? this.variableAt(point) : null) : null;
-    if (button === this.hovered) return;
+    let target: Element | null = this.pressed;
+    if (!target && point) {
+      target = this.buttonAt(point);
+      if (!target && this.hovered instanceof HTMLButtonElement && this.buttonHit(this.hovered, point, 8)) target = this.hovered;
+      target ??= navigate ? this.variableAt(point) : null;
+    }
+    if (target === this.hovered) return;
     this.hovered?.removeAttribute('data-air-hover');
-    this.hovered = button;
-    button?.setAttribute('data-air-hover', '');
+    this.hovered = target;
+    target?.setAttribute('data-air-hover', '');
+  }
+
+  private activate(button: HTMLButtonElement) {
+    this.executingCommand = true;
+    try { button.click(); } finally { this.executingCommand = false; }
   }
 
   private pointer(type: string, point: Point, navigate = this.navigating) {
@@ -65,6 +85,7 @@ export class HandwritingTargets {
     this.variable = null;
     this.pressed?.removeAttribute('data-air-pressed');
     this.pressed = null;
+    this.activatedOnPress = false;
     if (this.boardDown) {
       this.boardDown = false;
       this.pointer('pointerup', this.lastPoint);
@@ -97,8 +118,12 @@ export class HandwritingTargets {
     for (const action of actions) {
       if (action.type === 'down') {
         this.pressed = this.buttonAt(action.point);
+        if (!this.pressed && this.hovered instanceof HTMLButtonElement && this.buttonHit(this.hovered, action.point, 8)) this.pressed = this.hovered;
         if (this.pressed) {
-          this.pressed.setAttribute('data-air-pressed', '');
+          const button = this.pressed;
+          button.setAttribute('data-air-pressed', '');
+          this.activatedOnPress = button.dataset.airActivation === 'press';
+          if (this.activatedOnPress) this.activate(button);
           continue;
         }
         const variableElement = navigate ? this.variableAt(action.point) : null;
@@ -126,10 +151,11 @@ export class HandwritingTargets {
         if (action.type !== 'up') continue;
         const button = this.pressed;
         this.pressed = null;
+        const activated = this.activatedOnPress;
+        this.activatedOnPress = false;
         button.removeAttribute('data-air-pressed');
-        if (action.reason !== 'release' || !button.isConnected || this.buttonAt(action.point) !== button) continue;
-        this.executingCommand = true;
-        try { button.click(); } finally { this.executingCommand = false; }
+        if (activated || action.reason !== 'release' || !this.buttonHit(button, action.point, 12)) continue;
+        this.activate(button);
       } else if (this.boardDown) {
         // A release must reach the recipient even if the cursor became occluded.
         if (action.type === 'up' || blocked(action.point)) {
