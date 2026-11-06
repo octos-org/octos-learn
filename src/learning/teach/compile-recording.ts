@@ -469,7 +469,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const heading = component.title?.trim() || (component.panel === "note" ? noteHeading(component.role, options.language) : "");
       const named = heading ? { title: heading } : {};
       return {
-        do: "write", as: alias, kind: component.panel, role: component.panel === "note" ? component.role : "observation", place: placeNext(),
+        // A text card's role is its kind, so the board shows no heading the learner did not give it.
+        do: "write", as: alias, kind: component.panel, role: component.panel === "note" ? component.role : "text", place: placeNext(),
         content: { ...named, text: component.text.trim() },
       } as Action;
     }
@@ -641,7 +642,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           break;
         case "tool.highlighter":
           if (pointsAtMissingInk(event.target)) break;
-          actions.push({ do: "emphasize", target: target(event.target), emphasis: "focus", when } as Action);
+          actions.push({ do: "emphasize", target: target(event.target), emphasis: event.emphasis ?? "focus", when } as Action);
           if (!highlighted.includes(target(event.target))) highlighted.push(target(event.target));
           focus = [owner(target(event.target))];
           break;

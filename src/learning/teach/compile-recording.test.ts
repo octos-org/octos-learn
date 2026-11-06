@@ -617,3 +617,21 @@ describe("graphs with sliders", () => {
     expect([sliderStep(-5, 5), sliderStep(0, 1), sliderStep(0, 300), sliderStep(-2, 2)]).toEqual([0.1, 0.01, 5, 0.05]);
   });
 });
+
+describe("what marks mean", () => {
+  it("highlights with the meaning the learner picked, ended at the next card like any highlight, and labels arrows", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Burns", type: "other" }, goals: [] }), now, [{ title: "Steam" }, { title: "Next" }]);
+    recording = record(recording, "card-1", "Steam is hot. It comes from boiling water.", [
+      { t: 300, type: "component.insert", panel: "text", alias: "text-1", text: "Steam is hot" },
+      { t: 600, type: "component.insert", panel: "text", alias: "text-2", text: "Boiling water" },
+      { t: 900, type: "tool.highlighter", target: { node: "text-1" }, emphasis: "warning" },
+      { t: 1_200, type: "tool.arrow", from: { node: "text-2" }, to: { node: "text-1" }, label: "makes" },
+    ]);
+    recording = record(recording, "card-2", "Next.", [{ t: 300, type: "component.insert", panel: "text", alias: "text-3", text: "Next" }]);
+    const { lesson, state } = check(recording);
+    const actions = lesson.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions)) as Array<Record<string, unknown>>;
+    expect(actions).toContainEqual(expect.objectContaining({ do: "emphasize", target: "text-1", emphasis: "warning" }));
+    expect(actions).toContainEqual(expect.objectContaining({ do: "emphasize", target: "text-1", emphasis: "none" }));
+    expect(Object.values(state.connections)[0]).toMatchObject({ label: "makes" });
+  });
+});

@@ -49,7 +49,7 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
     case "tool.laser":
       return { action: "laser", label: tr("指一下") };
     case "tool.highlighter":
-      return { action: "highlight", label: tr("高亮") };
+      return { action: "highlight", label: { focus: tr("高亮"), supporting: tr("标出“也看看”"), warning: tr("标出“小心”"), resolved: tr("标出“对了”") }[event.emphasis ?? "focus"] };
     case "tool.arrow":
       return { action: "arrow", label: tr("画箭头") };
     case "variable.drag":

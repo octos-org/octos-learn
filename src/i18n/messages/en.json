@@ -3220,5 +3220,13 @@
   "从": "from",
   "到": "to",
   "开始的数要在范围里，“从”要比“到”小。": "The start must be within the range, and “from” smaller than “to”.",
-  "① 先说出题目，再在白板上拖动滑块 {{v0}}，把正确答案摆出来。": "① Say the question, then drag slider {{v0}} on the board to the right answer."
+  "① 先说出题目，再在白板上拖动滑块 {{v0}}，把正确答案摆出来。": "① Say the question, then drag slider {{v0}} on the board to the right answer.",
+  "标出“也看看”": "Mark “also look”",
+  "标出“小心”": "Mark “careful”",
+  "标出“对了”": "Mark “done”",
+  "这个标记的意思": "What this mark means",
+  "重点": "Important",
+  "也看看": "Also look",
+  "小心": "Careful",
+  "对了": "Done"
 }

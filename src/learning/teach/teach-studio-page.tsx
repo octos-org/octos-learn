@@ -35,6 +35,7 @@ import {
   type BoardTarget,
   type CardInk,
   type InkMark,
+  type Emphasis,
   type LearnerRecording,
   type RecordingCard,
   type RecordingEvent,
@@ -562,6 +563,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
+  // Words for the arrow being drawn, and what the highlighter's mark means.
+  const [arrowLabel, setArrowLabel] = useState("");
+  const [highlight, setHighlight] = useState<Emphasis>("focus");
   // Whether the lesson has a table whose cells can be filled while talking.
   const hasTable = recording?.cards.some((entry) => entry.takes.some((take) => take.events.some((event) => event.type === "component.insert" && (event.panel === "table" || event.panel === "diagram")))) ?? false;
   // The card the writing being written will continue, so the hint can say so.
@@ -579,7 +583,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       record(withTime({ type: "tool.laser" as const, target }), marks(mark));
       boardRef.current?.showPointer(pointer);
     }
-    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target }), marks(mark));
+    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target, ...(highlight !== "focus" ? { emphasis: highlight } : {}) }), marks(mark));
     if (tool === "arrow") {
       // An arrow joins cards: a tap on part of a card means the card.
       const end: BoardTarget = "node" in target ? { node: target.node } : target;
@@ -594,7 +598,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
         return;
       }
       setNotice(null);
-      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: end }), marks(arrowFromMark.current, mark));
+      record(withTime({ type: "tool.arrow" as const, from: arrowFrom, to: end, ...(arrowLabel.trim() ? { label: arrowLabel.trim() } : {}) }), marks(arrowFromMark.current, mark));
+      setArrowLabel("");
       setArrowFrom(null);
       arrowFromMark.current = undefined;
       boardRef.current?.showPointer(null);
@@ -773,6 +778,19 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               onAdd={(box) => { record(withTime({ type: "diagram.add" as const, node: diagramEdit, ...box })); setDiagramEdit(null); }} />
           )}
           {hint && <p className="teach-dock-hint" role="status">{hint}</p>}
+          {isRecording && !addOpen && tool === "highlighter" && (
+            <div className="teach-dock-options" role="radiogroup" aria-label={tr("这个标记的意思")}>
+              {HIGHLIGHTS.map(([value, label]) => (
+                <button key={value} type="button" role="radio" aria-checked={highlight === value} data-emphasis={value} onClick={() => setHighlight(value)}>{label()}</button>
+              ))}
+            </div>
+          )}
+          {isRecording && !addOpen && tool === "arrow" && (
+            <div className="teach-dock-options">
+              <input className="teach-input" aria-label={tr("箭头上写什么（可以不写）")} placeholder={tr("箭头上写什么（可以不写）")} value={arrowLabel} maxLength={30} onChange={(event) => setArrowLabel(event.target.value)} />
+              {said && <button type="button" onClick={() => setArrowLabel(said.length > 30 ? said.slice(0, 30) : said)}>{tr("用刚说的")}</button>}
+            </div>
+          )}
           <div className="teach-dock" role="toolbar" aria-label={tr("录课工具")} aria-disabled={!isRecording || undefined}>
             <button type="button" className="teach-tool" disabled={!isRecording} aria-pressed={isRecording && tool === "none" && !addOpen} onClick={() => chooseTool("none")}>
               <MousePointer2 size={20} aria-hidden="true" />{tr("移动")}
@@ -1007,6 +1025,11 @@ function TranscriptEditor({ text, label, onSave }: { text: string; label?: strin
     </form>
   );
 }
+
+/** What a highlight can mean, as the learner picks it; colour is not the only difference (OLL styles each). */
+const HIGHLIGHTS: Array<[Emphasis, () => string]> = [
+  ["focus", () => tr("重点")], ["supporting", () => tr("也看看")], ["warning", () => tr("小心")], ["resolved", () => tr("对了")],
+];
 
 // A unit circle's variable is its angle, which the board calls θ; a graph's slider is read as itself.
 const READOUTS = (variable: VariableInfo) => (variable.angle ? [

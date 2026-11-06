@@ -27,6 +27,8 @@ test("a card of words: a text card, a table filled cell by cell while talking, a
   await page.getByRole("textbox", { name: "要写的话" }).fill("物质有三种状态。");
   await page.getByRole("button", { name: "放到白板上" }).click();
   await expect(page.locator(".teach-studio .board-node.kind-text")).toContainText("物质有三种状态。");
+  await expect(page.locator(".teach-studio .board-node.kind-text")).not.toContainText("observation");
+  await expect(page.locator(".teach-studio .board-node.kind-text")).not.toContainText("text");
 
   // A table, with the examples left to fill in.
   await page.getByRole("button", { name: /^放入/ }).click();
@@ -107,4 +109,50 @@ test("a cycle diagram grows a box at a time while talking", async ({ page }) => 
   expect(events.map((event: { type: string }) => event.type)).toEqual(["component.insert", "diagram.add"]);
   expect(events[1]).toMatchObject({ node: "diagram-1", label: "下雨", link: "落下" });
   if (process.env.CYCLE_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.CYCLE_SHOT });
+});
+
+test("a highlight says what it means, and an arrow carries words", async ({ page }) => {
+  await installTestAccount(page);
+  const take = (text: string, events: unknown[]) => ({ take: 1, status: "kept", startedAt: now, durationMs: 3_000, asrText: text, text, speechSpanMs: [0, 2_000], segments: [{ startMs: 0, endMs: 2_000, text }], events });
+  const draft = {
+    schema: "octos.learner-recording.v1", id: "rec-marks", createdAt: now, updatedAt: now,
+    topic: { text: "烫伤", type: "other" }, goals: ["小心蒸汽"],
+    cards: [
+      { key: "card-1", title: "开水", kind: "teach", takes: [take("开水会冒出蒸汽。", [{ t: 300, type: "component.insert", panel: "text", alias: "text-1", text: "开水" }])] },
+      { key: "card-2", title: "蒸汽", kind: "teach", takes: [] },
+    ],
+  };
+  await page.addInitScript((value) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([value]));
+  }, draft);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${draft.id}`);
+  await page.getByRole("button", { name: /^2 · / }).click();
+  await page.getByRole("button", { name: "录第 2 张" }).click();
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "文字" }).click();
+  await page.getByRole("textbox", { name: "要写的话" }).fill("蒸汽很烫");
+  await page.getByRole("button", { name: "放到白板上" }).click();
+  const steam = page.locator(`.teach-studio .board-node[data-id$=":node:text-2"]`);
+  await expect(steam).toBeVisible();
+
+  // A "careful" highlight.
+  await page.getByRole("button", { name: /^荧光笔/ }).click();
+  await page.getByRole("radio", { name: "小心" }).click();
+  await steam.click();
+  await expect(steam).toHaveClass(/emphasis-warning/);
+
+  // An arrow from the boiling water to the steam, with words on it.
+  await page.getByRole("button", { name: /^箭头/ }).click();
+  await page.getByRole("textbox", { name: "箭头上写什么（可以不写）" }).fill("冒出");
+  await page.locator(`.teach-studio .board-node[data-id$=":node:text-1"]`).click();
+  await steam.click();
+  await expect(page.locator(".teach-studio").getByText("冒出", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^停止/ }).click();
+  await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
+  const events = await page.evaluate(() => JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!)[0].cards[1].takes.at(-1).events);
+  expect(events.find((event: { type: string }) => event.type === "tool.highlighter")).toMatchObject({ emphasis: "warning" });
+  expect(events.find((event: { type: string }) => event.type === "tool.arrow")).toMatchObject({ label: "冒出", from: { node: "text-1" }, to: { node: "text-2" } });
+  if (process.env.MARKS_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.MARKS_SHOT });
 });

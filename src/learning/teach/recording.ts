@@ -50,6 +50,9 @@ export type ComponentInsert = ComponentPlacement & (
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
+/** What a highlight means: important, also look, careful, or done. */
+export type Emphasis = "focus" | "supporting" | "warning" | "resolved";
+
 /** A letter of a graph's expression shown as a slider: the lesson variable it reads and the slider's range. */
 export interface GraphParameter { letter: string; variable: string; initial: number; min: number; max: number }
 
@@ -59,7 +62,9 @@ export type ComponentPanel = ComponentInsert["panel"];
 
 /** One board action of a take, `t` milliseconds after the take started. */
 export type RecordingEvent =
-  | { t: number; type: "tool.laser" | "tool.highlighter"; target: BoardTarget }
+  | { t: number; type: "tool.laser"; target: BoardTarget }
+  /** A lasting mark; `emphasis` is what it means (important when absent). */
+  | { t: number; type: "tool.highlighter"; target: BoardTarget; emphasis?: Emphasis }
   | { t: number; type: "tool.arrow"; from: BoardTarget; to: BoardTarget; label?: string }
   | ({ t: number; type: "component.insert" } & ComponentInsert)
   | { t: number; type: "point_tool.place"; node: string; point: string; x: number; y: number; label: string }

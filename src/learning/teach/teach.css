@@ -88,7 +88,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tool:disabled { cursor: default; }
 .teach-tool-add { width: 72px; }
 .teach-dock-divider { width: 1px; height: 36px; background: rgba(40, 65, 67, 0.15); }
-.teach-dock-hint { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; }
+.teach-dock-hint { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; }
 
 .teach-add { position: absolute; right: 20px; bottom: 92px; z-index: 5; display: grid; gap: 12px; width: 400px; max-height: calc(100% - 120px); overflow: auto; box-sizing: border-box; padding: 18px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 18px; background: #fff; box-shadow: 0 18px 40px rgba(31, 45, 51, 0.18); }
 .teach-add-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -380,3 +380,8 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-step .teach-diagram-boxes .teach-secondary { min-height: 36px; padding: 0 10px; font-size: 13px; }
 .teach-sliders-form { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
 .teach-slider-letter { align-self: end; min-width: 1.2em; padding-bottom: 8px; color: #1b2457; font: italic 600 18px/1 "Cormorant Garamond", Georgia, serif; }
+/* Options of the tool in hand, just above the dock: what a highlight means, the words on an arrow. */
+.teach-dock-options { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; padding: 6px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 14px; background: #fffef9; box-shadow: 0 8px 20px rgba(20, 26, 64, 0.12); }
+.teach-dock-options button { min-height: 36px; padding: 0 12px; border: 1px solid rgba(40, 65, 67, 0.2); border-radius: 999px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 14px; cursor: pointer; }
+.teach-dock-options button[aria-checked="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
+.teach-dock-options .teach-input { width: 220px; min-height: 36px; padding: 4px 10px; font-size: 14px; }
