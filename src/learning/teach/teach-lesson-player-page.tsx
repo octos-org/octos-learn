@@ -20,7 +20,7 @@ import { fetchLessonPackage } from "./learner-lessons-api";
 import { readLearnerPackage, type LoadedLearnerPackage } from "./learner-package";
 import { readStoredLearnerPackage } from "./learner-package-store";
 import { presenterOfReference } from "./presenters";
-import { AvatarPicture } from "./teach-watch-page";
+import { AvatarPicture } from "./presenter-picker";
 import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
 import { learnerLessonTopic } from "./teaching-board-setup";
 import { LessonContents, lessonContents } from "./lesson-contents";

@@ -36,6 +36,7 @@ import {
   type CardInk,
   type InkMark,
   type LearnerRecording,
+  type Presenter,
   type RecordingCard,
   type RecordingEvent,
   type Take,
@@ -59,6 +60,8 @@ import { useTakeCamera } from "./use-take-camera";
 import { OllDrawer } from "./oll-drawer";
 import { effectiveLesson } from "./oll-override";
 import { presenterAvatar } from "./presenters";
+import { AvatarPicture, PresenterPicker } from "./presenter-picker";
+import { chosenPresenterVoice, useSpeechService, type SpeechAudio } from "./speech-service";
 import { STUDIO_LESSON_ID } from "./studio-board-ids";
 import { InputLevel, MicStatus, type MicState } from "./mic-status";
 import { TeachBoard, type BoardBox, type FrozenInk, type SceneGesture, type TeachBoardHandle, type VariableGesture } from "./teach-board";
@@ -131,6 +134,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  // Who presents the lesson: chosen before recording, changeable any time it is not recording.
+  const speech = useSpeechService();
+  const [choosingPresenter, setChoosingPresenter] = useState(false);
   const undoSteps = useRef<UndoStep[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const pushUndo = (step: UndoStep) => { undoSteps.current.push(step); setCanUndo(true); };
@@ -762,6 +768,20 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
               <CardTitle key={card.key} title={card.title} onRename={(title) => update((current) => renameCard(current, card.key, title, now()))} />
               {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
+              <div className="teach-presenter-summary">
+                <AvatarPicture avatar={presenterAvatar(recording.presenter?.avatar)} size={40} />
+                <span>
+                  <span className="teach-group-label">{tr("谁来讲这节课")}</span>
+                  <span>{tr("{{v0}} · {{v1}}", { v0: presenterAvatar(recording.presenter?.avatar).name(), v1: presenterVoiceLabel(recording.presenter, speech.resource, speech.audio) })}</span>
+                </span>
+                <button type="button" className="teach-secondary" aria-expanded={choosingPresenter} onClick={() => setChoosingPresenter(!choosingPresenter)}>
+                  {choosingPresenter ? tr("收起") : tr("换形象和声音")}
+                </button>
+              </div>
+              {choosingPresenter && (
+                <PresenterPicker compact presenter={recording.presenter} resource={speech.resource} audio={speech.audio}
+                  onChoose={(presenter) => update((current) => setPresenter(current, presenter, now()))} onDone={() => setChoosingPresenter(false)} />
+              )}
               <label className="teach-place teach-camera-toggle">
                 <input type="checkbox" checked={recording.presenter?.cameraMotion === "on"}
                   onChange={(event) => {
@@ -1035,4 +1055,11 @@ function CardTitle({ title, onRename }: { title: string; onRename: (title: strin
       <button type="button" className="teach-link-button" onClick={() => setDraft(null)}>{tr("取消")}</button>
     </form>
   );
+}
+
+/** The chosen voice's name; the saved settings voice when none is chosen; a warning when the speech service no longer offers it. */
+function presenterVoiceLabel(presenter: Presenter | undefined, resource: string | undefined, audio: SpeechAudio): string {
+  if (!presenter?.voice) return tr("设置中的声音");
+  if (audio === "checking") return "…";
+  return chosenPresenterVoice(presenter, resource)?.name() ?? tr("选的声音现在用不了");
 }

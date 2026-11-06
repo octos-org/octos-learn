@@ -10,8 +10,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { normalizeAuthoringLesson, type CanonicalEvent } from "octos-lesson-language";
 
 import { getSelectedProfileId, getToken } from "@/api/client";
-import { availableService, speechResource, type LessonVoices } from "@/byok/providers";
-import { getService, prepareClientServices } from "@/byok/services";
+import type { LessonVoices } from "@/byok/providers";
 
 import { AcademyHeader } from "../academy/academy-header";
 import { holdAwards } from "../academy/award-events";
@@ -34,7 +33,9 @@ import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { useLiveNarrationAvatar } from "./live-narration-avatar";
 import { effectiveLesson } from "./oll-override";
 import { LessonContents, lessonContents } from "./lesson-contents";
-import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterOfReference, presenterVoices, type PresenterAvatar } from "./presenters";
+import { presenterAvatar, presenterOfReference, presenterVoices } from "./presenters";
+import { AvatarPicture, PresenterPicker } from "./presenter-picker";
+import { chosenPresenterVoice, useSpeechService } from "./speech-service";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
@@ -77,7 +78,6 @@ function fingerprint(text: string): string {
   return (hash >>> 0).toString(36);
 }
 
-type Audio = "checking" | "on" | "unavailable";
 
 /** What "My lessons" holds for this lesson: the saved version's content hash, or nothing yet. */
 type Saved = { status: "checking" | "unreachable" } | { status: "known"; contentSha256: string | null };
@@ -129,21 +129,10 @@ export function TeachWatchPage() {
   }, [recording, profileId]);
 
   // Narration needs the learner's own speech service; without it the lesson plays at reading pace with captions.
-  const [audio, setAudio] = useState<Audio>("checking");
+  const { audio, resource } = useSpeechService();
   const [sound, setSound] = useState(true);
-  const [resource, setResource] = useState<string>();
-  useEffect(() => {
-    let active = true;
-    void prepareClientServices().catch(() => undefined).then(() => {
-      if (!active) return;
-      setAudio(availableService("tts") ? "on" : "unavailable");
-      setResource(speechResource(getService("tts")));
-    });
-    return () => { active = false; };
-  }, []);
   // A chosen voice must still be offered; using the account voice is an explicit choice.
-  const voiceChoices = presenterVoices(resource);
-  const chosenVoice = voiceChoices.find((voice) => voice.id === recording?.presenter?.voice);
+  const chosenVoice = chosenPresenterVoice(recording?.presenter, resource);
   const wantedVoice = recording?.presenter?.voice;
   const voiceAvailable = !wantedVoice || Boolean(chosenVoice);
   const voices = useMemo<LessonVoices | null>(() => {
@@ -381,35 +370,7 @@ export function TeachWatchPage() {
       ) : (
         <>
           {choosing && (
-            <section className="teach-presenter" aria-label={tr("谁来讲你的课")}>
-              <fieldset>
-                <legend className="teach-group-label">{tr("形象")}</legend>
-                <div className="teach-presenter-avatars">
-                  {PRESENTER_AVATARS.map((option) => (
-                    <button key={option.id} type="button" aria-pressed={option.id === avatar.id} onClick={() => choosePresenter({ avatar: option.id })}>
-                      <AvatarPicture avatar={option} size={56} />{option.name()}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="teach-group-label">{tr("声音")}</legend>
-                <button type="button" className="teach-secondary" aria-pressed={!wantedVoice} onClick={() => choosePresenter({ voice: "" })}>{tr("使用设置中的声音")}</button>
-                {voiceChoices.length ? (
-                  <div className="teach-presenter-voices">
-                    {voiceChoices.map((voice) => (
-                      <label key={voice.id} className="teach-place">
-                        <input type="radio" name="teach-voice" checked={voice.id === chosenVoice?.id} onChange={() => choosePresenter({ voice: voice.id })} />
-                        <span>{voice.name()}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="academy-muted">{tr("你的语音服务还没有可以选的声音，课会用设置里保存的声音。")}</p>
-                )}
-              </fieldset>
-              <button type="button" className="teach-primary" onClick={() => setChoosing(false)}>{tr("好了")}</button>
-            </section>
+            <PresenterPicker presenter={recording.presenter} resource={resource} audio={audio} onChoose={choosePresenter} onDone={() => setChoosing(false)} />
           )}
           <div className="teach-watch-layout">
             <section className="teach-watch-stage" aria-label={tr("你的课")}>
@@ -462,13 +423,3 @@ export function TeachWatchPage() {
   );
 }
 
-/** An avatar's portrait, cropped to the face, or a placeholder with its initial if it cannot load. */
-export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
-  const [missing, setMissing] = useState<string | null>(null);
-  if (missing === avatar.id) {
-    return <span className="teach-avatar-placeholder" aria-hidden="true" style={{ width: size, height: size, background: avatar.color }}>{avatar.name().slice(0, 1)}</span>;
-  }
-  return <span className="teach-avatar" style={{ width: size, height: size, background: avatar.color }}>
-    <img src={avatarArtUrl(avatar)} alt="" width={size} height={size} onError={() => setMissing(avatar.id)} />
-  </span>;
-}
