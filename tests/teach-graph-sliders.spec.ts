@@ -46,5 +46,3 @@ test("letters of a graph become sliders the learner drags while talking", async 
   expect(drags[0].from).toBe(1);
   expect(drags.at(-1).to).toBeCloseTo(2, 5);
 });
-  expect(drag.to).toBeGreaterThan(drag.from);
-});
