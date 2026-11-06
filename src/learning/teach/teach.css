@@ -160,7 +160,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-package-import label { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .teach-package-import p { margin: 8px 0 0; color: #617384; font-size: 13px; line-height: 1.5; }
 .teach-package-viewer > .teach-watch-caption { flex: 0 0 auto; min-height: 25px; margin-top: 10px; }
-/* Presenter picker: the characters move; the picked one greets in its own voice. */
+/* Presenter picker: the picked character greets in its own voice. */
 .teach-presenter { display: grid; gap: 16px; margin: 0; }
 .teach-presenter-cast { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .teach-presenter .teach-presenter-card { position: relative; display: grid; grid-template-rows: auto auto auto; justify-items: center; gap: 2px; min-width: 0; min-height: 0; margin: 0; padding: 10px 10px 14px;
@@ -172,9 +172,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-presenter .teach-presenter-card[aria-checked="true"] { border-color: #1b2457; box-shadow: 0 0 0 3px rgba(27, 36, 87, 0.12), 0 16px 32px -22px rgba(20, 26, 64, 0.6); }
 .teach-presenter-stage { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 16px;
   background: radial-gradient(circle at 50% 38%, #fffdf7 0%, var(--presenter-color, #f3e3cf) 72%); }
-.teach-presenter-stage > .teach-presenter-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.teach-presenter-stage > .illustrated-avatar { position: absolute; inset: 0; min-height: 0; }
-.teach-presenter-stage > .illustrated-avatar > span { display: none; }
+.teach-presenter-stage > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .teach-presenter-name { margin-top: 8px; font-family: "ZCOOL XiaoWei", "Songti SC", serif; font-size: 19px; line-height: 1.2; }
 .teach-presenter-manner { color: #6f7a76; font-size: 12px; letter-spacing: 0.04em; }
 .teach-presenter-check { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #f6dfa0; background: #1b2457; box-shadow: 0 2px 6px rgba(20, 26, 64, 0.3); }

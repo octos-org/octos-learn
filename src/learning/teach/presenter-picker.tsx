@@ -1,18 +1,14 @@
 // Choosing who presents a learner's lesson: one of the app's characters, each
-// with its own voice. The characters move while the picker is open; the one
-// the learner picks says hello in its voice. Shown at lesson setup, in the
-// studio and on the watch page.
+// with its own voice. The one the learner picks says hello in its voice.
+// Shown at lesson setup, in the studio and on the watch page.
 
 import { Check, Volume2 } from "lucide-react";
-import { lazy, Suspense, useCallback, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
 import { tr } from "@/i18n";
-import type { FaceFrame } from "../avatar/face-frame";
 import type { Presenter } from "./recording";
 import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, type PresenterAvatar } from "./presenters";
-import { usePresenterGreeting, type PresenterGreeting } from "./use-presenter-greeting";
-
-const IllustratedAvatarStage = lazy(() => import("../avatar/illustrated-avatar-stage").then((module) => ({ default: module.IllustratedAvatarStage })));
+import { usePresenterGreeting } from "./use-presenter-greeting";
 
 /** An avatar's portrait, cropped to the face, or a placeholder with its initial if it cannot load. */
 export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
@@ -52,9 +48,9 @@ export function PresenterPicker({ presenter, onChoose, compact, note }: {
             <button key={avatar.id} type="button" role="radio" aria-checked={selected} className="teach-presenter-card"
               data-greeting={greetingHere ? greetingHere.id : undefined} style={{ "--presenter-color": avatar.color } as CSSProperties}
               aria-label={tr("{{v0}}，{{v1}}", { v0: avatar.name(), v1: avatar.manner() })}
-              onClick={(event) => { hop(event.currentTarget); pick(avatar); }}>
+              onClick={() => pick(avatar)}>
               <span className="teach-presenter-stage">
-                <PresenterStage avatar={avatar} chosen={selected} greeting={greetingHere} frame={greeting.frame} />
+                <img src={avatarArtUrl(avatar)} alt="" aria-hidden="true" />
               </span>
               <span className="teach-presenter-name">{avatar.name()}</span>
               {!compact && <span className="teach-presenter-manner">{avatar.manner()}</span>}
@@ -76,29 +72,5 @@ export function PresenterPicker({ presenter, onChoose, compact, note }: {
       </div>
       {note && <p className="academy-muted teach-presenter-note">{note}</p>}
     </section>
-  );
-}
-
-/** A small hop of the picked card, unless the learner prefers less motion. */
-function hop(element: HTMLElement) {
-  if (typeof element.animate !== "function" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-  element.animate([{ transform: "translateY(0)" }, { transform: "translateY(-8px)", offset: 0.35 }, { transform: "translateY(0)", offset: 0.7 }, { transform: "translateY(-2px)", offset: 0.85 }, { transform: "translateY(0)" }],
-    { duration: 520, easing: "ease-out" });
-}
-
-/** The character, moving on its own and greeting when it is the one speaking; its portrait until the animation is ready. */
-function PresenterStage({ avatar, chosen, greeting, frame }: { avatar: PresenterAvatar; chosen: boolean; greeting: PresenterGreeting | null; frame: (avatar: string, now: number, chosen: boolean) => FaceFrame }) {
-  const [failed, setFailed] = useState(false);
-  const onError = useCallback(() => setFailed(true), []);
-  const draw = useCallback((now: number) => frame(avatar.id, now, chosen || Boolean(greeting)), [frame, avatar.id, chosen, greeting]);
-  return (
-    <>
-      <img className="teach-presenter-still" src={avatarArtUrl(avatar)} alt="" aria-hidden="true" />
-      {!failed && (
-        <Suspense fallback={null}>
-          <IllustratedAvatarStage characterId={avatar.id} frame={draw} active={Boolean(greeting)} idleMotion transparentBackground fpsLimit={30} onError={onError} />
-        </Suspense>
-      )}
-    </>
   );
 }
