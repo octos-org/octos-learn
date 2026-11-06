@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { availableService, speechResource } from "@/byok/providers";
+import { availableService, speechResource, type LessonVoices } from "@/byok/providers";
+import { tr } from "@/i18n";
 import { getService, prepareClientServices } from "@/byok/services";
-import type { Presenter } from "./recording";
-import { presenterVoices } from "./presenters";
+import { presenterAvatar, presenterVoiceFor } from "./presenters";
 
 export type SpeechAudio = "checking" | "on" | "unavailable";
 
@@ -25,7 +25,15 @@ export function useSpeechService(): { audio: SpeechAudio; resource: string | und
   return { audio, resource };
 }
 
-/** The voice a presenter names, while the speech service still offers it. */
-export function chosenPresenterVoice(presenter: Presenter | undefined, resource: string | undefined) {
-  return presenterVoices(resource).find((voice) => voice.id === presenter?.voice);
+/** The voices a lesson presented by this character is narrated with: its own voice for the learner's speech resource. */
+export function presenterLessonVoices(avatarId: string | undefined, resource: string | undefined): LessonVoices | null {
+  const voice = presenterVoiceFor(presenterAvatar(avatarId), resource);
+  return voice && resource ? { [resource.trim()]: { id: voice } } : null;
+}
+
+/** What the picker should say about narration when the characters' own voices cannot be used. */
+export function presenterVoiceNote(audio: SpeechAudio, resource: string | undefined): string | null {
+  if (audio === "unavailable") return tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。");
+  if (audio === "on" && !presenterVoiceFor(presenterAvatar(undefined), resource)) return tr("你的语音服务里没有这些形象的声音，课会用设置里保存的声音来讲。");
+  return null;
 }

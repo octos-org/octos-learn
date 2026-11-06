@@ -201,6 +201,7 @@ export interface OllOverride {
 
 export interface Presenter {
   avatar?: string;
+  /** Earlier drafts chose a voice separately; ignored now: each character speaks in its own voice. */
   voice?: string;
   /** Opt-in basic final-audio mouth motion. */
   mouthMotion?: "off" | "basic";

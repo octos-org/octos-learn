@@ -99,7 +99,6 @@
 .teach-planner .teach-step .academy-muted { margin: -9px 0 0; font-size: 13px; line-height: 1.8; }
 .teach-chosen-topic { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1px solid #d9c38f; border-radius: 14px; color: #1b2457; background: #f7efd9; font-size: 16px; font-weight: 600; }
 .teach-planner .teach-step #teach-goal-title { margin-top: 10px; }
-.teach-planner .teach-presenter { margin: 0; padding: 0; border: 0; background: none; }
 .teach-planner .teach-input { min-height: 50px; padding: 12px 16px; border-color: #e0d7c5; border-radius: 12px; background: #fdfbf5; font-size: 15px; line-height: 1.7; }
 .teach-planner textarea.teach-input { min-height: 140px; }
 .teach-planner .teach-actions { justify-content: flex-end; padding-top: 18px; border-top: 1px solid var(--hair); }

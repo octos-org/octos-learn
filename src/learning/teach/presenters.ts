@@ -1,48 +1,8 @@
-// Who presents a learner's lesson: an avatar and a synthetic voice, chosen by
-// the learner from catalogs the app controls, so a lesson never carries the
-// learner's own face or voice. The lesson refers to them only by catalog ID.
+// Who presents a learner's lesson: one of the app's characters, each with its
+// own synthetic voice, so a lesson never carries the learner's own face or
+// voice. The lesson refers to the character only by catalog ID.
 
 import { tr } from "@/i18n";
-import { AZURE_VOICES } from "@/byok/azure-voices";
-
-/** A voice offered to learners, for one speech resource. */
-export interface PresenterVoice {
-  /** The provider's voice ID; also the catalog ID in the lesson's `voice:` reference. */
-  id: string;
-  name: () => string;
-}
-
-/**
- * Friendly voices that read English well, per Volcano speech resource. The
- * catalog has no native US English or child voices; learners who need them
- * use Azure AI Speech (below).
- */
-const VOICES: Record<string, PresenterVoice[]> = {
-  "seed-tts-2.0": [
-    { id: "zh_female_vv_uranus_bigtts", name: () => tr("Vivi") },
-    { id: "zh_female_shaoergushi_uranus_bigtts", name: () => tr("讲故事的姐姐") },
-    { id: "zh_male_linjiananhai_uranus_bigtts", name: () => tr("邻家男孩") },
-    { id: "zh_female_tianmeiyueyue_uranus_bigtts", name: () => tr("甜美悦悦") },
-    { id: "zh_male_yangguangqingnian_uranus_bigtts", name: () => tr("阳光哥哥") },
-    { id: "zh_male_wennuanahu_uranus_bigtts", name: () => tr("温暖阿虎") },
-  ],
-  "seed-tts-1.0": [
-    { id: "zh_female_yingyujiaoyu_mars_bigtts", name: () => tr("Tina 老师") },
-    { id: "zh_female_shuangkuaisisi_moon_bigtts", name: () => tr("Skye") },
-    { id: "zh_female_cancan_mars_bigtts", name: () => tr("Shiny") },
-    { id: "zh_male_wennuanahu_moon_bigtts", name: () => tr("Alvin") },
-    { id: "zh_male_shaonianzixin_moon_bigtts", name: () => tr("Brayan") },
-    { id: "zh_female_shaoergushi_mars_bigtts", name: () => tr("讲故事的姐姐") },
-  ],
-};
-VOICES["seed-tts-1.0-concurr"] = VOICES["seed-tts-1.0"]!;
-/** Azure AI Speech native US English voices; Ana is a child's voice. */
-VOICES["azure"] = [...AZURE_VOICES];
-
-/** The voices a learner can choose with this speech resource (the provider for Azure); none for an unknown resource. */
-export function presenterVoices(resourceId: string | undefined): PresenterVoice[] {
-  return VOICES[resourceId?.trim() ?? ""] ?? [];
-}
 
 /** The painted 2D characters a lesson can be presented by (src/learning/avatar/painted-characters.ts). */
 export type PresenterCharacterId = "star-fox" | "red-panda" | "white-rabbit" | "moon-cat";
@@ -55,7 +15,16 @@ export interface PresenterAvatar {
   portrait: string;
   /** Background behind the portrait, and of the placeholder if it cannot load. */
   color: string;
+  /** In a few words, how the character speaks. */
+  manner: () => string;
+  /**
+   * The character's voice for each speech resource it can be narrated with
+   * (Volcano resource ID, or "azure"). Greeting clips are made with the same voices.
+   */
+  voices: Readonly<Record<SpeechResourceId, string>>;
 }
+
+export type SpeechResourceId = "seed-tts-2.0" | "seed-tts-1.0" | "seed-tts-1.0-concurr" | "azure";
 
 /**
  * The presenter catalog. Each ID is also the character ID of the animated
@@ -64,10 +33,18 @@ export interface PresenterAvatar {
  * lessons that name them are shown with the default character.
  */
 export const PRESENTER_AVATARS: PresenterAvatar[] = [
-  { id: "star-fox", name: () => tr("星狐"), portrait: "teach-avatars/star-fox/painted-v0.3/portrait-extended.png", color: "#f3e3cf" },
-  { id: "red-panda", name: () => tr("小熊猫"), portrait: "teach-avatars/red-panda/painted-v0.1/portrait.png", color: "#f1ddd6" },
-  { id: "white-rabbit", name: () => tr("白兔"), portrait: "teach-avatars/white-rabbit/painted-v0.1/portrait.png", color: "#e9e7f2" },
-  { id: "moon-cat", name: () => tr("月猫"), portrait: "teach-avatars/moon-cat/painted-v0.1/portrait.png", color: "#e6e1f2" },
+  { id: "star-fox", name: () => tr("星狐"), portrait: "teach-avatars/star-fox/painted-v0.3/portrait-extended.png", color: "#f3e3cf",
+    manner: () => tr("好奇、爱冒险"),
+    voices: { "seed-tts-2.0": "zh_male_linjiananhai_uranus_bigtts", "seed-tts-1.0": "zh_male_shaonianzixin_moon_bigtts", "seed-tts-1.0-concurr": "zh_male_shaonianzixin_moon_bigtts", azure: "en-US-BrianNeural" } },
+  { id: "red-panda", name: () => tr("小熊猫"), portrait: "teach-avatars/red-panda/painted-v0.1/portrait.png", color: "#f1ddd6",
+    manner: () => tr("温暖、有耐心"),
+    voices: { "seed-tts-2.0": "zh_male_wennuanahu_uranus_bigtts", "seed-tts-1.0": "zh_male_wennuanahu_moon_bigtts", "seed-tts-1.0-concurr": "zh_male_wennuanahu_moon_bigtts", azure: "en-US-AndrewNeural" } },
+  { id: "white-rabbit", name: () => tr("白兔"), portrait: "teach-avatars/white-rabbit/painted-v0.1/portrait.png", color: "#e9e7f2",
+    manner: () => tr("活泼、点子多"),
+    voices: { "seed-tts-2.0": "zh_female_tianmeiyueyue_uranus_bigtts", "seed-tts-1.0": "zh_female_shuangkuaisisi_moon_bigtts", "seed-tts-1.0-concurr": "zh_female_shuangkuaisisi_moon_bigtts", azure: "en-US-AnaNeural" } },
+  { id: "moon-cat", name: () => tr("月猫"), portrait: "teach-avatars/moon-cat/painted-v0.1/portrait.png", color: "#e6e1f2",
+    manner: () => tr("安静、爱想象"),
+    voices: { "seed-tts-2.0": "zh_female_shaoergushi_uranus_bigtts", "seed-tts-1.0": "zh_female_shaoergushi_mars_bigtts", "seed-tts-1.0-concurr": "zh_female_shaoergushi_mars_bigtts", azure: "en-US-AvaNeural" } },
 ];
 
 export const DEFAULT_AVATAR: PresenterCharacterId = "star-fox";
@@ -84,4 +61,9 @@ export function presenterOfReference(reference: string | undefined): PresenterAv
 /** Where an avatar's portrait is served from. */
 export function avatarArtUrl(avatar: PresenterAvatar): string {
   return `${import.meta.env.BASE_URL}${avatar.portrait}`;
+}
+
+/** The character's own voice for the learner's speech resource; undefined when the resource has none (the saved settings voice is used). */
+export function presenterVoiceFor(avatar: PresenterAvatar, resourceId: string | undefined): string | undefined {
+  return (avatar.voices as Record<string, string | undefined>)[resourceId?.trim() ?? ""];
 }

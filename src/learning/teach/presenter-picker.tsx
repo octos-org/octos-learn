@@ -1,15 +1,18 @@
-// Choosing who presents a learner's lesson: one of the app's characters and
-// one of the catalog voices for the learner's speech service. Shown in the
-// studio before recording and on the watch page.
+// Choosing who presents a learner's lesson: one of the app's characters, each
+// with its own voice. The characters move while the picker is open; the one
+// the learner picks says hello in its voice. Shown at lesson setup, in the
+// studio and on the watch page.
 
-import { Loader2, Square, Volume2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, Volume2 } from "lucide-react";
+import { lazy, Suspense, useCallback, useState, type CSSProperties } from "react";
 
-import { ServiceError, synthesizeTeacherSample } from "@/byok/providers";
 import { tr } from "@/i18n";
+import type { FaceFrame } from "../avatar/face-frame";
 import type { Presenter } from "./recording";
-import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, presenterVoices, type PresenterAvatar } from "./presenters";
-import { chosenPresenterVoice, type SpeechAudio } from "./speech-service";
+import { avatarArtUrl, PRESENTER_AVATARS, presenterAvatar, type PresenterAvatar } from "./presenters";
+import { usePresenterGreeting, type PresenterGreeting } from "./use-presenter-greeting";
+
+const IllustratedAvatarStage = lazy(() => import("../avatar/illustrated-avatar-stage").then((module) => ({ default: module.IllustratedAvatarStage })));
 
 /** An avatar's portrait, cropped to the face, or a placeholder with its initial if it cannot load. */
 export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size: number }) {
@@ -22,102 +25,80 @@ export function AvatarPicture({ avatar, size }: { avatar: PresenterAvatar; size:
   </span>;
 }
 
-type Sample = { voice: string; state: "loading" | "playing" } | { voice: string; state: "error"; message: string } | null;
-
-/** The character and voice choices; each voice can be heard before choosing it. */
-export function PresenterPicker({ presenter, resource, audio, onChoose, onDone, compact }: {
+/** The character choices. Picking one (or picking it again) plays one of its greetings. */
+export function PresenterPicker({ presenter, onChoose, compact, note }: {
   presenter: Presenter | undefined;
-  resource: string | undefined;
-  audio: SpeechAudio;
   onChoose: (presenter: Presenter) => void;
-  onDone?: () => void;
   /** Narrow layout for the studio's side panel. */
   compact?: boolean;
+  /** Shown under the greeting, e.g. that the lesson will use the settings voice. */
+  note?: string | null;
 }) {
-  const avatar = presenterAvatar(presenter?.avatar);
-  const voices = presenterVoices(resource);
-  const chosen = chosenPresenterVoice(presenter, resource);
-  const [sample, setSample] = useState<Sample>(null);
-  const player = useRef<HTMLAudioElement | null>(null);
-  const work = useRef<AbortController | null>(null);
-  const cache = useRef(new Map<string, string>());
-  useEffect(() => () => {
-    work.current?.abort();
-    player.current?.pause();
-    for (const url of cache.current.values()) URL.revokeObjectURL(url);
-  }, []);
-
-  const listen = async (voiceId: string) => {
-    work.current?.abort();
-    player.current?.pause();
-    if (sample?.voice === voiceId && sample.state !== "error") { setSample(null); return; }
-    const controller = new AbortController();
-    work.current = controller;
-    setSample({ voice: voiceId, state: "loading" });
-    try {
-      let url = cache.current.get(voiceId);
-      if (!url) {
-        const blob = await synthesizeTeacherSample(tr("你好！这节课由我来讲。"), resource ? { [resource.trim()]: { id: voiceId } } : {}, controller.signal);
-        url = URL.createObjectURL(blob);
-        cache.current.set(voiceId, url);
-      }
-      if (controller.signal.aborted) return;
-      const audioElement = new Audio(url);
-      player.current = audioElement;
-      audioElement.onended = () => setSample((current) => (current?.voice === voiceId ? null : current));
-      await audioElement.play();
-      if (!controller.signal.aborted) setSample({ voice: voiceId, state: "playing" });
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      const message = error instanceof ServiceError && error.state === "unconfigured"
-        ? tr("在“设置”里连接语音服务后，就能试听声音。")
-        : tr("暂时试听不了这个声音，请稍后再试。");
-      setSample({ voice: voiceId, state: "error", message });
-    }
+  const chosen = presenterAvatar(presenter?.avatar);
+  const greeting = usePresenterGreeting();
+  const speaking = greeting.current;
+  const pick = (avatar: PresenterAvatar) => {
+    if (avatar.id !== chosen.id) onChoose({ avatar: avatar.id });
+    greeting.greet(avatar.id);
   };
-
+  const speaker = speaking ? presenterAvatar(speaking.avatar) : null;
   return (
     <section className="teach-presenter" data-compact={compact || undefined} aria-label={tr("谁来讲你的课")}>
-      <fieldset>
-        <legend className="teach-group-label">{tr("形象")}</legend>
-        <div className="teach-presenter-avatars">
-          {PRESENTER_AVATARS.map((option) => (
-            <button key={option.id} type="button" aria-pressed={option.id === avatar.id} onClick={() => onChoose({ avatar: option.id })}>
-              <AvatarPicture avatar={option} size={compact ? 48 : 56} />{option.name()}
+      <div className="teach-presenter-cast" role="radiogroup" aria-label={tr("形象")}>
+        {PRESENTER_AVATARS.map((avatar) => {
+          const selected = avatar.id === chosen.id;
+          const greetingHere = speaking?.avatar === avatar.id ? speaking : null;
+          return (
+            <button key={avatar.id} type="button" role="radio" aria-checked={selected} className="teach-presenter-card"
+              data-greeting={greetingHere ? greetingHere.id : undefined} style={{ "--presenter-color": avatar.color } as CSSProperties}
+              aria-label={tr("{{v0}}，{{v1}}", { v0: avatar.name(), v1: avatar.manner() })}
+              onClick={(event) => { hop(event.currentTarget); pick(avatar); }}>
+              <span className="teach-presenter-stage">
+                <PresenterStage avatar={avatar} chosen={selected} greeting={greetingHere} frame={greeting.frame} />
+              </span>
+              <span className="teach-presenter-name">{avatar.name()}</span>
+              {!compact && <span className="teach-presenter-manner">{avatar.manner()}</span>}
+              {selected && <span className="teach-presenter-check" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>}
             </button>
-          ))}
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend className="teach-group-label">{tr("声音")}</legend>
-        <button type="button" className="teach-secondary" aria-pressed={!presenter?.voice} onClick={() => onChoose({ voice: "" })}>{tr("使用设置中的声音")}</button>
-        {audio === "checking" ? null : voices.length ? (
-          <div className="teach-presenter-voices">
-            {voices.map((voice) => {
-              const mine = sample?.voice === voice.id ? sample : null;
-              return (
-                <div key={voice.id} className="teach-presenter-voice">
-                  <label className="teach-place">
-                    <input type="radio" name="teach-voice" checked={voice.id === chosen?.id} onChange={() => onChoose({ voice: voice.id })} />
-                    <span>{voice.name()}</span>
-                  </label>
-                  <button type="button" className="teach-icon-button" disabled={audio !== "on"}
-                    aria-label={mine?.state === "playing" ? tr("停止试听") : tr("试听{{v0}}", { v0: voice.name() })}
-                    title={mine?.state === "playing" ? tr("停止试听") : tr("试听{{v0}}", { v0: voice.name() })}
-                    onClick={() => void listen(voice.id)}>
-                    {mine?.state === "loading" ? <Loader2 size={16} className="teach-spin" aria-hidden="true" />
-                      : mine?.state === "playing" ? <Square size={14} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          );
+        })}
+      </div>
+      <div className="teach-presenter-greeting" aria-live="polite" data-active={speaking ? true : undefined}>
+        {speaking && speaker ? (
+          <>
+            <AvatarPicture avatar={speaker} size={compact ? 28 : 36} />
+            <p><span className="teach-visually-hidden">{tr("{{v0}}说：", { v0: speaker.name() })}</span>{speaking.text}</p>
+            {speaking.state === "playing" && <Volume2 size={16} className="teach-presenter-sound" aria-hidden="true" />}
+          </>
         ) : (
-          <p className="academy-muted">{tr("你的语音服务还没有可以选的声音，课会用设置里保存的声音。")}</p>
+          <p className="academy-muted">{tr("每个形象都有自己的声音。点一个，听听它怎么打招呼。")}</p>
         )}
-        {sample?.state === "error" && <p role="status" className="teach-notice">{sample.message}</p>}
-      </fieldset>
-      {onDone && <button type="button" className="teach-primary" onClick={onDone}>{tr("好了")}</button>}
+      </div>
+      {note && <p className="academy-muted teach-presenter-note">{note}</p>}
     </section>
+  );
+}
+
+/** A small hop of the picked card, unless the learner prefers less motion. */
+function hop(element: HTMLElement) {
+  if (typeof element.animate !== "function" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  element.animate([{ transform: "translateY(0)" }, { transform: "translateY(-8px)", offset: 0.35 }, { transform: "translateY(0)", offset: 0.7 }, { transform: "translateY(-2px)", offset: 0.85 }, { transform: "translateY(0)" }],
+    { duration: 520, easing: "ease-out" });
+}
+
+/** The character, moving on its own and greeting when it is the one speaking; its portrait until the animation is ready. */
+function PresenterStage({ avatar, chosen, greeting, frame }: { avatar: PresenterAvatar; chosen: boolean; greeting: PresenterGreeting | null; frame: (avatar: string, now: number, chosen: boolean) => FaceFrame }) {
+  const [failed, setFailed] = useState(false);
+  const onError = useCallback(() => setFailed(true), []);
+  const draw = useCallback((now: number) => frame(avatar.id, now, chosen || Boolean(greeting)), [frame, avatar.id, chosen, greeting]);
+  return (
+    <>
+      <img className="teach-presenter-still" src={avatarArtUrl(avatar)} alt="" aria-hidden="true" />
+      {!failed && (
+        <Suspense fallback={null}>
+          <IllustratedAvatarStage characterId={avatar.id} frame={draw} active={Boolean(greeting)} idleMotion transparentBackground fpsLimit={30} onError={onError} />
+        </Suspense>
+      )}
+    </>
   );
 }

@@ -160,20 +160,43 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-package-import label { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .teach-package-import p { margin: 8px 0 0; color: #617384; font-size: 13px; line-height: 1.5; }
 .teach-package-viewer > .teach-watch-caption { flex: 0 0 auto; min-height: 25px; margin-top: 10px; }
-.teach-presenter { display: grid; gap: 14px; margin-top: 12px; padding: 16px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fffef9; }
-.teach-presenter fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
-.teach-presenter-avatars { display: flex; flex-wrap: wrap; gap: 10px; }
-.teach-presenter-avatars button { display: grid; justify-items: center; gap: 4px; min-width: 84px; padding: 8px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 14px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 13px; cursor: pointer; }
-.teach-presenter-avatars button[aria-pressed="true"] { border: 2px solid #1b2457; }
-.teach-presenter-voices { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-.teach-presenter > .teach-primary { justify-self: start; }
-.teach-presenter-voice { display: flex; align-items: center; gap: 6px; }
-.teach-presenter-voice > .teach-place { flex: 1; min-width: 0; }
-.teach-presenter-voice .teach-spin { animation: teach-spin 0.9s linear infinite; }
-.teach-presenter[data-compact] { margin-top: 0; padding: 12px; gap: 12px; }
-.teach-presenter[data-compact] .teach-presenter-avatars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.teach-presenter[data-compact] .teach-presenter-avatars button { min-width: 0; }
-.teach-presenter[data-compact] .teach-presenter-voices { grid-template-columns: 1fr; }
+/* Presenter picker: the characters move; the picked one greets in its own voice. */
+.teach-presenter { display: grid; gap: 16px; margin: 0; }
+.teach-presenter-cast { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.teach-presenter .teach-presenter-card { position: relative; display: grid; grid-template-rows: auto auto auto; justify-items: center; gap: 2px; min-width: 0; min-height: 0; margin: 0; padding: 10px 10px 14px;
+  border: 1.5px solid rgba(40, 65, 67, 0.12); border-radius: 22px; color: #1b2457; background: #fffef9; font: inherit; cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 10px 24px -22px rgba(20, 26, 64, 0.5);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.teach-presenter .teach-presenter-card:hover { border-color: rgba(27, 36, 87, 0.35); box-shadow: 0 14px 30px -22px rgba(20, 26, 64, 0.55); }
+.teach-presenter .teach-presenter-card:focus-visible { outline: 3px solid #c99a3e; outline-offset: 3px; }
+.teach-presenter .teach-presenter-card[aria-checked="true"] { border-color: #1b2457; box-shadow: 0 0 0 3px rgba(27, 36, 87, 0.12), 0 16px 32px -22px rgba(20, 26, 64, 0.6); }
+.teach-presenter-stage { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 16px;
+  background: radial-gradient(circle at 50% 38%, #fffdf7 0%, var(--presenter-color, #f3e3cf) 72%); }
+.teach-presenter-stage > .teach-presenter-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.teach-presenter-stage > .illustrated-avatar { position: absolute; inset: 0; min-height: 0; }
+.teach-presenter-stage > .illustrated-avatar > span { display: none; }
+.teach-presenter-name { margin-top: 8px; font-family: "ZCOOL XiaoWei", "Songti SC", serif; font-size: 19px; line-height: 1.2; }
+.teach-presenter-manner { color: #6f7a76; font-size: 12px; letter-spacing: 0.04em; }
+.teach-presenter-check { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #f6dfa0; background: #1b2457; box-shadow: 0 2px 6px rgba(20, 26, 64, 0.3); }
+.teach-presenter-greeting { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 16px; border-radius: 18px; background: #f6f1e4; }
+.teach-presenter-greeting[data-active] { background: #fdf6e3; box-shadow: inset 0 0 0 1px #ecd9a6; }
+.teach-presenter-greeting > p { flex: 1; min-width: 0; margin: 0; color: #1b2457; font-size: 15px; line-height: 1.5; }
+.teach-presenter-greeting > p.academy-muted { color: #6f7a76; font-size: 13px; }
+.teach-presenter-sound { flex: none; color: #c99a3e; animation: teach-presenter-pulse 1s ease-in-out infinite; }
+@keyframes teach-presenter-pulse { 50% { opacity: 0.35; } }
+.teach-presenter-note { margin: 0; font-size: 12px; }
+.teach-presenter[data-compact] { gap: 10px; }
+.teach-presenter[data-compact] .teach-presenter-cast { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.teach-presenter[data-compact] .teach-presenter-card { padding: 6px 6px 8px; border-radius: 16px; }
+.teach-presenter[data-compact] .teach-presenter-stage { border-radius: 12px; }
+.teach-presenter[data-compact] .teach-presenter-name { margin-top: 4px; font-size: 15px; }
+.teach-presenter[data-compact] .teach-presenter-check { top: 10px; right: 10px; width: 20px; height: 20px; }
+.teach-presenter[data-compact] .teach-presenter-greeting { min-height: 40px; padding: 6px 10px; gap: 8px; }
+.teach-presenter[data-compact] .teach-presenter-greeting > p { font-size: 13px; }
+.teach-presenter-panel { display: grid; gap: 14px; margin-top: 12px; padding: 18px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 20px; background: #fffef9; }
+.teach-presenter-panel > .teach-primary { justify-self: end; }
+@media (max-width: 720px) { .teach-presenter-cast { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .teach-presenter-sound { animation: none; } .teach-presenter .teach-presenter-card { transition: none; } }
 .teach-presenter-summary { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .teach-presenter-summary > span:nth-child(2) { display: grid; flex: 1; min-width: 0; color: #2f4a52; font-size: 14px; }
 .teach-presenter-summary > .teach-secondary { flex: none; }

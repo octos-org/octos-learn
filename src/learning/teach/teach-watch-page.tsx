@@ -33,9 +33,9 @@ import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { useLiveNarrationAvatar } from "./live-narration-avatar";
 import { effectiveLesson } from "./oll-override";
 import { LessonContents, lessonContents } from "./lesson-contents";
-import { presenterAvatar, presenterOfReference, presenterVoices } from "./presenters";
+import { presenterAvatar, presenterOfReference } from "./presenters";
 import { AvatarPicture, PresenterPicker } from "./presenter-picker";
-import { chosenPresenterVoice, useSpeechService } from "./speech-service";
+import { presenterLessonVoices, presenterVoiceNote, useSpeechService } from "./speech-service";
 import { learnerAuthor } from "./studio-helpers";
 import { unlockAudio, type AudioPlaybackClock } from "@/home/voice/audio-playback";
 import { cardIndexOfBeat, lessonCards } from "./lesson-cards";
@@ -132,13 +132,8 @@ export function TeachWatchPage() {
   const { audio, resource } = useSpeechService();
   const [sound, setSound] = useState(true);
   // A chosen voice must still be offered; using the account voice is an explicit choice.
-  const chosenVoice = chosenPresenterVoice(recording?.presenter, resource);
-  const wantedVoice = recording?.presenter?.voice;
-  const voiceAvailable = !wantedVoice || Boolean(chosenVoice);
-  const voices = useMemo<LessonVoices | null>(() => {
-    const offered = presenterVoices(resource).some((voice) => voice.id === wantedVoice);
-    return offered && resource && wantedVoice ? { [resource.trim()]: { id: wantedVoice } } : null;
-  }, [wantedVoice, resource]);
+  // The character narrates in its own voice; a speech resource without one uses the saved settings voice.
+  const voices = useMemo<LessonVoices | null>(() => presenterLessonVoices(recording?.presenter?.avatar, resource), [recording?.presenter?.avatar, resource]);
   const avatar = presenterAvatar(recording?.presenter?.avatar);
   const includeLipSync = recording?.presenter?.mouthMotion === "basic";
   // Cards whose kept take was recorded with the camera on (their movement is on this device).
@@ -187,7 +182,7 @@ export function TeachWatchPage() {
   }, [recordingId]);
   // Saving makes the package when the lesson has none that matches, then keeps it in "My lessons".
   const saveLesson = async () => {
-    if (!recording || !lesson || (pack.status !== "ready" && !voiceAvailable)) return;
+    if (!recording || !lesson) return;
     setMakeFailed(null);
     setMaking({ done: 0, total: 0 });
     makeWork.current?.abort(); const controller = new AbortController(); makeWork.current = controller;
@@ -231,7 +226,7 @@ export function TeachWatchPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
   const resolvePackagedAudio = useCallback((beatId: string, text: string) => packaged?.narration(beatId, text) ?? null, [packaged]);
-  const narrated = (Boolean(packaged) || (audio === "on" && voiceAvailable)) && sound;
+  const narrated = (Boolean(packaged) || (audio === "on")) && sound;
 
   const runtime = useOllLessonRuntime({
     source: lesson && audio !== "checking" && pack.status !== "loading" ? packaged?.source ?? lesson.source : null,
@@ -250,7 +245,7 @@ export function TeachWatchPage() {
   const livePerformances = useCallback(async (): Promise<CardPerformances> => (recording && lesson && recording.presenter?.cameraMotion === "on" && cameraTakes.length
     ? cardPerformances(profileId, recording.id, cameraTakes, lesson.events, lesson.compiled.beatSpeech) : {}), [recording, lesson, cameraTakes, profileId]);
   const live = useLiveNarrationAvatar({
-    enabled: showAvatar && !packaged && pack.status !== "loading" && audio === "on" && voiceAvailable && sound,
+    enabled: showAvatar && !packaged && pack.status !== "loading" && audio === "on" && sound,
     events: lesson?.events ?? null, voices, language: lesson?.language, performances: livePerformances,
   });
   const liveAvatar = Boolean(live.resolveAudio);
@@ -260,7 +255,7 @@ export function TeachWatchPage() {
     ? packaged.performanceTrack(narrationBeatId, narrationText) : live.performanceTrack(narrationBeatId, narrationText), [packaged, narrationBeatId, narrationText, live]);
   const hasMouthTracks = Boolean(packaged?.manifest.lipSync?.length) || liveAvatar;
   // Whether the moving presenter can show at all: a saved package with mouth motion, or a voice to make narration with.
-  const avatarPossible = Boolean(packaged?.manifest.lipSync?.length) || (!packaged && audio === "on" && voiceAvailable && sound);
+  const avatarPossible = Boolean(packaged?.manifest.lipSync?.length) || (!packaged && audio === "on" && sound);
   const playing = Boolean(runtime?.playing);
   useEffect(() => {
     holdAwards("teach-watch", playing);
@@ -305,7 +300,7 @@ export function TeachWatchPage() {
   // Cards not recorded yet are left out of what plays.
   const unrecorded = recording.cards.filter((entry) => !keptTake(entry)).length;
   const isSaved = pack.status === "ready" && saved.status === "known" && saved.contentSha256 === pack.stored.contentSha256;
-  const canSave = unrecorded === 0 && checked && !privateTitles.length && (pack.status === "ready" || (audio === "on" && voiceAvailable));
+  const canSave = unrecorded === 0 && checked && !privateTitles.length && (pack.status === "ready" || (audio === "on"));
   const contents = lesson ? lessonContents(lesson.events, (key) => recording?.cards.find((candidate) => candidate.key === key)?.title) : [];
   const card = !runtime ? 0 : runtime.completed ? lesson?.cards.length ?? 0 : Math.min(lesson?.cards.length ?? 0, cardIndexOfBeat(lesson?.cards ?? [], runtime.currentBeatId) + 1);
   return (
@@ -370,7 +365,10 @@ export function TeachWatchPage() {
       ) : (
         <>
           {choosing && (
-            <PresenterPicker presenter={recording.presenter} resource={resource} audio={audio} onChoose={choosePresenter} onDone={() => setChoosing(false)} />
+            <div className="teach-presenter-panel">
+              <PresenterPicker presenter={recording.presenter} onChoose={choosePresenter} note={presenterVoiceNote(audio, resource)} />
+              <button type="button" className="teach-primary" onClick={() => setChoosing(false)}>{tr("好了")}</button>
+            </div>
           )}
           <div className="teach-watch-layout">
             <section className="teach-watch-stage" aria-label={tr("你的课")}>
@@ -383,7 +381,7 @@ export function TeachWatchPage() {
           </div>
           <LessonContents runtime={runtime} entries={contents} onJump={() => { if (narrated) unlockAudio(); }} />
           <div className="teach-watch-bar">
-            <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象或声音")} onClick={() => setChoosing(!choosing)}>
+            <button type="button" className="teach-presenter-button" aria-label={tr("换一个形象")} onClick={() => setChoosing(!choosing)}>
               <AvatarPicture avatar={avatar} size={44} />
             </button>
             <button type="button" className="teach-primary" disabled={!runtime || audio === "checking"}
@@ -415,7 +413,6 @@ export function TeachWatchPage() {
           {/* The playing card's words and actions, the current ones lit, to check the recording. */}
           <WatchSequence recording={recording} compiled={lesson.compiled} cards={lesson.cards} runtime={runtime} onJump={() => { if (narrated) unlockAudio(); }} />
           {audio === "unavailable" && !packaged && <p role="status" className="teach-notice">{tr("还没有连接语音合成，课会只显示字幕。可以在设置的 API Keys 里连接。")}</p>}
-          {!packaged && audio !== "checking" && !voiceAvailable && <p role="status" className="teach-notice">{tr("之前选择的声音在当前语音服务中不可用。请重新选择声音，或明确选择“使用设置中的声音”。")}</p>}
           {narration.error && <p role="status" className="teach-notice">{narration.error}</p>}
         </>
       )}

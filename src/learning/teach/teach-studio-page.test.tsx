@@ -100,11 +100,6 @@ vi.mock("./teach-assist", () => ({
 const screenCheck = vi.hoisted(() => ({ results: [] as unknown[] }));
 vi.mock("./readability-check", () => ({ checkReadability: vi.fn(async () => screenCheck.results) }));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token", getSelectedProfileId: () => "learner-1" }));
-const tts = vi.hoisted(() => ({ samples: [] as Array<{ text: string; voices: unknown }> }));
-vi.mock("@/byok/services", async (original) => ({ ...(await original<object>()), prepareClientServices: async () => undefined,
-  getService: () => ({ provider: "volcano", params: { resource_id: "seed-tts-2.0", voice: "saved-voice" } }) }));
-vi.mock("@/byok/providers", async (original) => ({ ...(await original<object>()), availableService: () => true,
-  synthesizeTeacherSample: async (text: string, voices: unknown) => { tts.samples.push({ text, voices }); return new Blob(["mp3"], { type: "audio/mpeg" }); } }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
 const camera = vi.hoisted(() => ({ starts: [] as number[], stops: 0, cancels: 0, opens: 0, closes: 0, saved: [] as unknown[],
@@ -119,6 +114,7 @@ vi.mock("./take-performance-store", () => ({ saveTakePerformance: async (key: un
 import { appendEvent, createRecording, finishTake, keptTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { TeachStudioPage } from "./teach-studio-page";
+import { PRESENTER_GREETINGS } from "./presenter-greetings";
 
 /** A recorded card's actions in play order, across its beats. */
 const cardActions = (compiled: CompiledLesson | null | undefined, index: number) => compiled!.lesson.steps[index]!.beats.flatMap((beat) => beat.actions);
@@ -241,38 +237,23 @@ it("records the learner's face movement with a take only when they turn the came
   expect(screen.queryByRole("region", { name: "Your character" })).toBeNull();
 });
 
-it("lets the learner choose their character and voice before recording, and hear a voice first", async () => {
-  const played: string[] = [];
-  vi.stubGlobal("Audio", class { onended: (() => void) | null = null; constructor(public src: string) {} play() { played.push(this.src); return Promise.resolve(); } pause() {} });
-  vi.stubGlobal("URL", Object.assign(class extends URL {}, { createObjectURL: () => "blob:sample", revokeObjectURL: () => undefined }));
-  try {
-    renderStudio();
-    expect(await screen.findByText("Star Fox · Voice from settings")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Change character & voice" }));
-    const picker = screen.getByRole("region", { name: "Who presents your lesson" });
-    fireEvent.click(within(picker).getByRole("button", { name: /Red Panda/ }));
-    expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ avatar: "red-panda" });
+it("lets the learner change the character before recording, and the character greets them", async () => {
+  renderStudio();
+  expect(await screen.findByText("Star Fox · curious and adventurous")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Change character" }));
+  const picker = screen.getByRole("region", { name: "Who presents your lesson" });
+  fireEvent.click(within(picker).getByRole("radio", { name: /^Red Panda/ }));
+  expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ avatar: "red-panda" });
+  expect(screen.getByText("Red Panda · warm and patient")).toBeTruthy();
+  // It says one of its own lines.
+  await waitFor(() => expect(PRESENTER_GREETINGS["red-panda"].en.some((line) => within(picker).queryByText(line))).toBe(true));
 
-    // A voice is heard with the learner's own speech service before it is chosen.
-    fireEvent.click(await within(picker).findByRole("button", { name: "Hear Vivi" }));
-    await waitFor(() => expect(played).toEqual(["blob:sample"]));
-    expect(tts.samples).toEqual([{ text: "Hi! I'll be presenting this lesson.", voices: { "seed-tts-2.0": { id: "zh_female_vv_uranus_bigtts" } } }]);
-    expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter?.voice).toBeUndefined();
-
-    fireEvent.click(within(picker).getByRole("radio", { name: "Vivi" }));
-    expect(loadRecordingDrafts(localStorage, "learner-1")[0]!.presenter).toMatchObject({ avatar: "red-panda", voice: "zh_female_vv_uranus_bigtts" });
-    expect(screen.getByText("Red Panda · Vivi")).toBeTruthy();
-
-    // The camera preview draws the chosen character.
-    fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
-    expect((await screen.findByRole("region", { name: "Your character" })).dataset.character).toBe("red-panda");
-    // While recording, the choice is locked.
-    fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
-    expect(screen.queryByRole("button", { name: "Change character & voice" })).toBeNull();
-  } finally {
-    tts.samples = [];
-    vi.unstubAllGlobals();
-  }
+  // The camera preview draws the chosen character.
+  fireEvent.click(screen.getByRole("checkbox", { name: "Let my camera move my character" }));
+  expect((await screen.findByRole("region", { name: "Your character" })).dataset.character).toBe("red-panda");
+  // While recording, the choice is locked.
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  expect(screen.queryByRole("button", { name: "Change character" })).toBeNull();
 });
 
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {

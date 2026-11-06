@@ -41,7 +41,7 @@ async function lessonEvents() {
   recording = addTakeInk(recording, "card-2", { snapshotId: "ink-snap:rec-1-card-2-t1-n1@v1", sha256: await inkChecksum(SVG), selections: ["sel-n1"], neat: { selection: "sel-n1", latex: "m=2", alias: "formula-1" } }, now);
   recording = appendEvent(recording, "card-2", { t: 100, type: "make_neat.confirmed", selection: "sel-n1", latex: "m=2", alias: "formula-1", replacesInk: true }, now);
   recording = finishTake(recording, "card-2", now, { durationMs: 5_000, asrText: "Six over three is two." });
-  const compiled = compileRecording(recording, { author: learnerAuthor("Jordan Lee", { avatar: "avatar-3", voice: "zh_male_linjiananhai_uranus_bigtts" }), language: "en-US" });
+  const compiled = compileRecording(recording, { author: learnerAuthor("Jordan Lee", { avatar: "moon-cat" }), language: "en-US" });
   const events = normalizeAuthoringLesson(compiled.lesson, { lessonId: "learner-rec-1", boardId: "board", baseRevision: 0, resourceContext: compiled.resourceContext });
   const snapshots = { "ink-snap:rec-1-card-2-t1-n1@v1": { svg: SVG, width: 40, height: 20, regions: {} } };
   const narration: NarrationClip[] = lessonNarration(events).map((entry, index) => ({ ...entry, audio: new Uint8Array([0xff, 0xfb, index + 1]), durationMs: 2_000 + index }));
@@ -53,7 +53,7 @@ describe("learner lesson package", () => {
     const { events, snapshots, narration } = await lessonEvents();
     const { archive, manifest } = await buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration });
     expect(manifest.narration.map((entry) => entry.durationMs)).toEqual([2000, 2001]);
-    expect(manifest.author).toMatchObject({ avatar_ref: "avatar:avatar-3", voice_ref: "voice:zh_male_linjiananhai_uranus_bigtts" });
+    expect(manifest.author).toMatchObject({ avatar_ref: "avatar:moon-cat", voice_ref: "voice:moon-cat" });
     expect(manifest.author.learner_ref).toMatch(/^learner:[a-f0-9]{32}$/);
     const loaded = await readLearnerPackage(archive);
     expect(manifest.schema).toBe(LEARNER_PACKAGE_SCHEMA);

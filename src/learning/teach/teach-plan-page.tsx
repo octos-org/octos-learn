@@ -13,7 +13,7 @@ import { defaultCardTitles } from "./card-templates";
 import { createRecording, planCards, setPresenter, type LearnerRecording, type Presenter } from "./recording";
 import { saveRecordingDraft } from "./recording-store";
 import { PresenterPicker } from "./presenter-picker";
-import { useSpeechService } from "./speech-service";
+import { presenterVoiceNote, useSpeechService } from "./speech-service";
 import { searchStarTopics, topicFromChoice, type TopicChoice } from "./topic-choice";
 import "./teach.css";
 import "./teach-pages.css";
@@ -215,8 +215,8 @@ export function TeachPlanPage({ onPlanned }: { onPlanned?: (recording: LearnerRe
         {step === "presenter" && (
           <section className="teach-step" aria-labelledby="teach-presenter-title">
             <h2 id="teach-presenter-title">{tr("谁来讲你的课？")}</h2>
-            <p className="academy-muted">{tr("你的课会由这个形象和声音来讲，不会用你自己的样子和声音。录课时也可以再换。")}</p>
-            <PresenterPicker presenter={presenter} resource={speech.resource} audio={speech.audio}
+            <p className="academy-muted">{tr("选一个形象，它会用自己的声音讲你的课，不会用你自己的样子和声音。录课时也可以再换。")}</p>
+            <PresenterPicker presenter={presenter} note={presenterVoiceNote(speech.audio, speech.resource)}
               onChoose={(choice) => setPresenterChoice((current) => ({ ...current, ...choice }))} />
             <div className="teach-actions">
               <button type="button" className="teach-secondary" onClick={() => setStep("cards")}>{tr("上一步")}</button>

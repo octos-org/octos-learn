@@ -38,7 +38,7 @@ it("plans a lesson on a free topic and saves the draft for the learner", async (
   fireEvent.click(screen.getByRole("button", { name: "Next" }));
   // Last step: who presents the lesson.
   expect(screen.getByRole("heading", { name: "Who presents your lesson?" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: /White Rabbit/ }));
+  fireEvent.click(screen.getByRole("radio", { name: /^White Rabbit/ }));
   fireEvent.click(screen.getByRole("button", { name: "Start recording" }));
   await waitFor(() => expect(onPlanned).toHaveBeenCalledOnce());
   const [draft] = loadRecordingDrafts(localStorage, "learner-1");
