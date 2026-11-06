@@ -100,6 +100,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-panel { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; box-sizing: border-box; padding: 20px; border: 1px solid rgba(40, 65, 67, 0.14); border-radius: 18px; background: #fffef9; }
 .teach-panel-title h2 { margin: 4px 0 0; color: #1b2457; font-family: "Cormorant Garamond", Georgia, serif; font-size: 24px; font-weight: 600; }
 .teach-recorded { color: #0f766e; font-size: 13px; font-weight: 600; }
+.teach-recorded[data-missing] { color: #b45309; }
 .teach-panel-text { margin: 0; color: #2f4a52; font-size: 15px; line-height: 1.5; }
 .teach-panel-end { margin-top: auto; }
 .teach-panel-actions { display: grid; gap: 8px; }

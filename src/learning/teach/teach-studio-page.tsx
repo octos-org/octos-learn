@@ -698,8 +698,10 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       <ol className="teach-card-strip" aria-label={tr("卡片")}>
         {recording.cards.map((candidate, index) => {
           const recordingThis = Boolean(currentTake(candidate));
-          const flagged = checkOf(candidate.key)?.status === "fix";
-          const state = recordingThis ? "recording" : flagged ? "fix" : keptTake(candidate) ? "recorded" : "empty";
+          // A take without words plays silently: flagged at once, not only after the check.
+          const keptHere = keptTake(candidate);
+          const flagged = checkOf(candidate.key)?.status === "fix" || Boolean(keptHere && !recordingThis && !keptHere.text?.trim());
+          const state = recordingThis ? "recording" : flagged ? "fix" : keptHere ? "recorded" : "empty";
           const status = { recording: tr("正在录"), fix: tr("要改一下"), recorded: tr("已录好"), empty: tr("还没录") }[state];
           return (
             <li key={candidate.key}>
@@ -766,7 +768,9 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <div className="teach-panel-title">
               <div className="teach-group-label">{tr("第 {{v0}} 张，共 {{v1}} 张", { v0: cardIndex + 1, v1: recording.cards.length })}</div>
               <CardTitle key={card.key} title={card.title} onRename={(title) => update((current) => renameCard(current, card.key, title, now()))} />
-              {kept && cardCheck?.status !== "fix" && <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>}
+              {kept && cardCheck?.status !== "fix" && (kept.text?.trim()
+                ? <span className="teach-recorded">{tr("✓ 已录好 · {{v0}}", { v0: clockText(kept.durationMs ?? 0) })}</span>
+                : <span className="teach-recorded" data-missing="">{tr("! 没有识别出你说的话 · 在下面补上，或重录我的话")}</span>)}
               <div className="teach-presenter-summary">
                 <AvatarPicture avatar={presenterAvatar(recording.presenter?.avatar)} size={40} />
                 <span>

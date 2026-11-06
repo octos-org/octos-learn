@@ -256,6 +256,17 @@ it("lets the learner change the character before recording, and the character gr
   expect(screen.queryByRole("button", { name: "Change character" })).toBeNull();
 });
 
+it("flags a card at once when its take has no recognized words, instead of marking it recorded", async () => {
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  time = 9_000;
+  fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
+  expect(await screen.findByText("! No words recognized · add them below, or re-record your words")).toBeTruthy();
+  const strip = screen.getByRole("list", { name: "Cards" });
+  expect(within(strip).getAllByRole("button")[0]!.dataset.state).toBe("fix");
+  expect(screen.queryByText(/^✓ Recorded/)).toBeNull();
+});
+
 it("keeps other cards locked while one records, and discarding a take leaves no trace", () => {
   renderStudio();
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
@@ -691,6 +702,10 @@ it("Check my lesson runs the screen check and Octo's review as one, and opens th
   // Re-recording the card clears its findings until the next check.
   time = 99_000;
   fireEvent.click(screen.getByRole("button", { name: "Re-record my words" }));
+  voice.transcripts = ["The rise is two."];
+  await waitFor(() => expect(voice.onUtterance).toBeTruthy());
+  time = 102_000;
+  act(() => voice.onUtterance!(new Blob(["wav"])));
   time = 104_000;
   fireEvent.click(screen.getByRole("button", { name: /^Stop/ }));
   await screen.findByRole("button", { name: "Re-record my words" });
