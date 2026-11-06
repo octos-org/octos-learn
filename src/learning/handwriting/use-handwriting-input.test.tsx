@@ -95,3 +95,12 @@ it("flushes an active stroke when disabled and requires an explicit camera start
   await s.start();
   expect(captures).toHaveLength(2);
 });
+
+it("gives a physical composer click priority before a native image picker can open", async () => {
+  const s = setup(); await s.begin();
+  const dock = document.createElement("form"); dock.className = "learning-input-dock";
+  const choose = document.createElement("button"); dock.append(choose); document.body.append(dock);
+  act(() => choose.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, bubbles: true })));
+  expect(s.result.current.state).toMatchObject({ status: "paused", reason: "direct" });
+  expect(captures[0]!.stop).toHaveBeenCalled();
+});

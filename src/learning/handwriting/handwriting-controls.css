@@ -90,8 +90,8 @@
 .board-handwriting-cursor[data-down="true"] i { border-color: #ce5a3d; background: #ce5a3d; }
 .air-gesture-enabled .learning-ink-toolbar { flex-wrap: wrap; overflow: visible; }
 .air-gesture-enabled .learning-ink-toolbar > button[data-air-command] { min-width: 56px; min-height: 56px; }
-.air-gesture-enabled button[data-air-hover] { outline: 2px solid #36856c; outline-offset: 2px; }
-.air-gesture-enabled button[data-air-pressed] { box-shadow: inset 0 0 0 2px #36856c; }
+.air-gesture-enabled [data-air-command][data-air-hover] { outline: 2px solid #36856c; outline-offset: 2px; }
+.air-gesture-enabled [data-air-command][data-air-pressed] { box-shadow: inset 0 0 0 2px #36856c; }
 .air-gesture-enabled [data-oll-variable-control][data-air-hover] { stroke: #26836b; stroke-width: 4; }
 .air-gesture-enabled [data-oll-variable-control][data-air-pressed] { fill: #ce5a3d; }
 .air-gesture-enabled input[data-air-variable] { min-height: 48px; }

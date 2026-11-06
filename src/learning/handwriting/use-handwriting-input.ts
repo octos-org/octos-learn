@@ -61,7 +61,7 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       if (event.pointerId === input.pointerId) return;
       const target = event.target;
       if (!(target instanceof Element) || target.closest('[data-handwriting-controls]')) return;
-      if (viewport.contains(target) || target.closest('.learning-ink-toolbar,input,textarea,select,[contenteditable="true"]')) input.pause("direct");
+      if (viewport.contains(target) || target.closest('.learning-ink-toolbar,.learning-input-dock,[data-air-command],input,textarea,select,[contenteditable="true"]')) input.pause("direct");
     };
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") input.pause("manual"); };
     const onHidden = () => { if (document.hidden) input.pause("hidden"); };
@@ -86,7 +86,8 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
     };
   }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, cancelSetup]);
   useEffect(() => {
-    const shell = viewportRef.current?.parentElement;
+    const viewport = viewportRef.current;
+    const shell = viewport?.closest('[data-air-scope]') ?? viewport?.closest('.learning-workspace') ?? viewport?.parentElement;
     shell?.classList.toggle("air-gesture-enabled", state.status === "active" || state.status === "starting");
     return () => shell?.classList.remove("air-gesture-enabled");
   }, [viewportRef, state.status]);

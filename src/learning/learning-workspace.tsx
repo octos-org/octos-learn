@@ -3620,6 +3620,7 @@ export function LearningWorkspace({
             <>
           <button
             type="button"
+            data-air-command="toggle-voice"
             className={`learning-mode-button ${voiceEnabled ? "is-active" : ""}`}
             onClick={voiceEnabled ? onUseTextMode : () => void handleUseVoiceMode()}
             aria-label={
@@ -3639,6 +3640,7 @@ export function LearningWorkspace({
           </button>
           <button
             type="button"
+            data-air-command="toggle-camera"
             className={`learning-mode-button ${conv.cameraActive ? "is-active" : ""}`}
             onClick={conv.toggleCamera}
             aria-label={conv.cameraActive ? tr("关闭摄像头") : tr("启用摄像头")}

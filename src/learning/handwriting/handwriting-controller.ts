@@ -82,8 +82,8 @@ export class HandwritingPointerController {
     return [{ type: "up", point, timeMs, reason }];
   }
 
-  update(frame: HandwritingInputFrame, viewport: HandwritingViewportSize): HandwritingControllerUpdate {
-    if (this.grip) return this.grip.update(frame, viewport);
+  update(frame: HandwritingInputFrame, viewport: HandwritingViewportSize, precision = false): HandwritingControllerUpdate {
+    if (this.grip) return this.grip.update(frame, viewport, precision);
     const gesture = this.gestures.update(frame);
     let cursor: { x: number; y: number } | null = null;
     const actions: HandwritingPointerAction[] = [];

@@ -255,3 +255,30 @@ test("gesture settings are compact, dismissible, and keyboard accessible", async
   await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
   await page.screenshot({ path: testInfo.outputPath('desktop-gesture-panel.png') });
 });
+
+
+test("calibrated hand input reaches page navigation and composer controls without writing behind them", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('octos-learn-air-gesture-preferences-v1', JSON.stringify({
+    version: 1, pinchMetric: 2, pinch: { down: 0.28, up: 0.42 },
+    region: { left: 0.3, top: 0.25, right: 0.7, bottom: 0.75 }, tutorialDone: true,
+  })));
+  await page.goto('/tests/fixtures/air-gesture.html?workspace'); await startHandInput(page);
+  for (const command of ['home', 'history', 'toggle-voice', 'toggle-camera', 'dock-camera', 'dock-microphone']) await pinchButton(page, command);
+  await pinchButton(page, 'question-input');
+  await expect(page.getByRole('textbox', { name: '输入学习问题' })).toBeFocused();
+  await page.keyboard.type('handwritten question');
+  await pinchButton(page, 'send-question');
+  await expect(page.getByRole('textbox', { name: '输入学习问题' })).toHaveValue('');
+  expect(await page.evaluate(() => (window as unknown as { controlActions: string[] }).controlActions)).toEqual([
+    'home', 'history', 'toggle-voice', 'toggle-camera', 'camera', 'mic', 'handwritten question',
+  ]);
+  await pinchButton(page, 'question-suggestion');
+  await expect(page.getByRole('textbox', { name: '输入学习问题' })).toHaveValue('测试问题');
+  await pinchButton(page, 'upload-image');
+  await expect(page.getByText('请用鼠标或触屏选择图片')).toBeVisible();
+  await pinchButton(page, 'cancel-image-picker');
+  await expect(page.getByText('请用鼠标或触屏选择图片')).toHaveCount(0);
+  await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
+  await pinchButton(page, 'toggle-gestures');
+  await expect(page.getByRole('button', { name: '启用手势' })).toBeVisible();
+});

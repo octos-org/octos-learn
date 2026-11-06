@@ -27,7 +27,7 @@ function handwritingStatus(state: Input["state"]): string {
 export function HandwritingInputButton({ state, start, stop, disabled }: Pick<Input, "state" | "start" | "stop"> & { disabled: boolean }) {
   const on = state.status !== "off" && state.status !== "failed";
   const label = on ? tr("关闭手势") : tr("启用手势");
-  return <button type="button" className={`learning-mode-button learning-gesture-toggle${on ? " is-active" : ""}`} data-handwriting-controls=""
+  return <button type="button" className={`learning-mode-button learning-gesture-toggle${on ? " is-active" : ""}`} data-handwriting-controls="" data-air-command="toggle-gestures"
     disabled={disabled && !on} aria-label={label} aria-pressed={on}
     title={disabled && !on ? tr("暂停课程后可以启用手势") : label}
     onClick={on ? stop : start}>

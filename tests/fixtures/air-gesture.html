@@ -1,10 +1,11 @@
 <!doctype html>
 <meta charset="utf-8"><title>Air gesture integration</title>
 <style>body{margin:0}#input-methods{height:56px;display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:0 20px;}</style>
-<header id="input-methods" class="learning-workspace-actions"><button class="learning-mode-button">启用语音</button><button class="learning-mode-button">启用摄像头</button><span id="gesture-entry"></span></header>
-<div id="root" style="height:calc(100vh - 56px)"></div>
+<div data-air-scope="" style="height:100vh"><header id="input-methods" class="learning-workspace-actions"><button data-air-command="home" style="display:none;position:absolute;left:20px">返回首页</button><button data-air-command="history" style="display:none;position:absolute;left:120px">打开学习记录</button><button data-air-command="toggle-voice" class="learning-mode-button">启用语音</button><button data-air-command="toggle-camera" class="learning-mode-button">启用摄像头</button><span id="gesture-entry"></span></header>
+<div id="root" style="height:calc(100vh - 56px)"></div><div id="dock"></div></div>
 <script type="module">
 import React from 'react';
+import { StudentInputDock } from '/src/learning/student-input-dock.tsx';
 import { createRoot } from 'react-dom/client';
 import { useOllLessonRuntime } from '/src/learning/oll/use-oll-lesson-runtime.ts';
 import circleSource from '/src/learning/oll/fixtures/unit-circle-sine.canonical.jsonl?raw';
@@ -16,6 +17,13 @@ import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 localStorage.setItem('octos-learn-experiment-air-writing','true');
 window.asked=[];
+window.controlActions=[];
+if(new URLSearchParams(location.search).has('workspace'))for(const button of document.querySelectorAll('[data-air-command=home],[data-air-command=history]'))button.style.display='inline-flex';
+for(const button of document.querySelectorAll('#input-methods button[data-air-command]'))button.addEventListener('click',()=>window.controlActions.push(button.dataset.airCommand));
+if(new URLSearchParams(location.search).has('workspace'))createRoot(document.getElementById('dock')).render(React.createElement(StudentInputDock,{
+ voiceState:'idle',cameraActive:false,onMic:()=>window.controlActions.push('mic'),onToggleCamera:()=>window.controlActions.push('camera'),
+ onSendText:text=>window.controlActions.push(text),onSendImage:()=>window.controlActions.push('image'),suggestions:['测试问题'],
+}));
 HandwritingCapture.prototype.start=async function(){window.feedFrame=frame=>this.callbacks.onFrame(frame);this.callbacks.onState('tracking');};
 function Course(){
  const runtime=useOllLessonRuntime({source:circleSource,storageKey:'air-course',startAtEnd:true});
@@ -49,7 +57,7 @@ window.handAtAngle=async function(yaw,pitch,closed,noisyWorld=false){
 };
 window.hand=async function(x,y,closed,count=4){
  const viewport=document.querySelector('.learning-oll-board');
- const rect=viewport.getBoundingClientRect();
+ const rect=viewport.closest('[data-air-scope]').getBoundingClientRect();
  const region=JSON.parse(localStorage.getItem('octos-learn-air-gesture-preferences-v1')??'null')?.region??{left:.1,top:.08,right:.9,bottom:.92};
  const palm={x:1-(region.left+(x-rect.left)/rect.width*(region.right-region.left)),y:region.top+(y-rect.top)/rect.height*(region.bottom-region.top)};
  const points=makeHandwritingLandmarks({x:.4,y:.3},closed?.1:.75,'pinch');

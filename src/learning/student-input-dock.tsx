@@ -52,6 +52,7 @@ export function StudentInputDock({
   useLocale();
   const [text, setText] = useState(initialText);
   const [sending, setSending] = useState(false);
+  const [imagePickerPending, setImagePickerPending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLInputElement>(null);
 
@@ -71,6 +72,7 @@ export function StudentInputDock({
   const selectImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
+    setImagePickerPending(false);
     if (!file || sendDisabled || sending) return;
     setSending(true);
     try {
@@ -85,16 +87,21 @@ export function StudentInputDock({
 
   return (
     <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
-      {suggestions.length > 0 && !text && !sending && !sendDisabled && references.length === 0 ? (
+      {suggestions.length > 0 && !text && !sending && !sendDisabled && references.length === 0 && !imagePickerPending ? (
         <div className="learning-input-suggestions" aria-label={tr("试着从一个主题开始")}>
           {suggestions.map((suggestion) => (
-            <button key={suggestion} type="button" onClick={() => {
+            <button key={suggestion} type="button" data-air-command="question-suggestion" onClick={() => {
               setText(suggestion);
               textRef.current?.focus();
             }}>{suggestion}</button>
           ))}
         </div>
       ) : null}
+      {imagePickerPending ? <div className="learning-input-picker" role="status">
+        <span>{tr("请用鼠标或触屏选择图片")}</span>
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={sendDisabled || sending}>{tr("选择图片")}</button>
+        <button type="button" data-air-command="cancel-image-picker" aria-label={tr("取消选择图片")} onClick={() => setImagePickerPending(false)}>×</button>
+      </div> : null}
       {references.length > 0 ? (
         <div className="learning-input-references" aria-label={tr("已引用的白板内容")}>
           {references.map((reference) => (
@@ -102,6 +109,7 @@ export function StudentInputDock({
               {tr("已引用：")}{reference.label}
               <button
                 type="button"
+                data-air-command="remove-reference"
                 onClick={() => onRemoveReference?.(reference.id)}
                 aria-label={tr("移除引用：{{v0}}", { v0: reference.label })}
               >
@@ -123,7 +131,13 @@ export function StudentInputDock({
           <button
             type="button"
             className="learning-input-button"
-            onClick={() => fileRef.current?.click()}
+            onClick={event => {
+              // Browser file dialogs need a physical user activation. A hand
+              // command reveals an explicit picker instead of silently failing.
+              if (event.currentTarget.hasAttribute("data-air-activating")) setImagePickerPending(true);
+              else fileRef.current?.click();
+            }}
+            data-air-command="upload-image"
             aria-label={tr("上传题目图片")}
             disabled={sendDisabled || sending}
           >
@@ -133,6 +147,7 @@ export function StudentInputDock({
             type="button"
             className={`learning-input-button ${cameraActive ? "is-active" : ""}`}
             onClick={onToggleCamera}
+            data-air-command="dock-camera"
             aria-label={cameraActive ? tr("关闭摄像头") : tr("打开摄像头")}
             disabled={cameraDisabled}
           >
@@ -141,6 +156,7 @@ export function StudentInputDock({
           <button
             type="button"
             className={`learning-mic-button is-${voiceState}`}
+            data-air-command="dock-microphone"
             onClick={onMic}
             aria-label={
               voiceStarting ? tr("语音准备中") : busy ? tr("打断 Octos") : tr("语音提问")
@@ -153,6 +169,7 @@ export function StudentInputDock({
       ) : null}
       <input
         ref={textRef}
+        data-air-command="question-input"
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder={tr("问一个问题，或告诉 Octos 你卡在哪里…")}
@@ -161,6 +178,7 @@ export function StudentInputDock({
       />
       <button
         type="submit"
+        data-air-command="send-question"
         className="learning-send-button"
         aria-label={tr("发送问题")}
         disabled={sendDisabled || sending || text.trim().length === 0}

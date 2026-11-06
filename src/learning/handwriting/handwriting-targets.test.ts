@@ -88,4 +88,36 @@ describe("capturing one hand action for one explicit target", () => {
     Reflect.deleteProperty(document, "elementFromPoint");
   });
 
+  it("captures registered controls throughout the same page while excluding another page", () => {
+    const s = setup();
+    const scope = s.button.parentElement!;
+    scope.dataset.airScope = "";
+    const field = document.createElement("input");
+    field.dataset.airCommand = "question-input";
+    field.getBoundingClientRect = s.button.getBoundingClientRect;
+    s.button.remove(); scope.append(field);
+    s.targets.hover(point);
+    expect(field.hasAttribute("data-air-hover")).toBe(true);
+    s.targets.dispatch([action("down"), action("up")], () => true, false);
+    expect(document.activeElement).toBe(field);
+    expect(s.events).toEqual([]);
+    const other = document.createElement("button"); other.dataset.airCommand = "home";
+    other.getBoundingClientRect = field.getBoundingClientRect; document.body.append(other);
+    const click = vi.fn(); other.addEventListener("click", click);
+    field.remove(); s.targets.dispatch([action("down"), action("up")], () => true, false);
+    expect(click).not.toHaveBeenCalled();
+  });
+
+  it("keeps a hovered course range in the variable path instead of treating it as a text field", () => {
+    const s = setup(); s.button.remove();
+    const range = document.createElement("input"); range.type = "range"; range.dataset.airVariable = "theta";
+    range.getBoundingClientRect = s.button.getBoundingClientRect;
+    document.body.firstElementChild!.firstElementChild!.append(range);
+    s.targets.hover(point, true);
+    expect(range.hasAttribute("data-air-hover")).toBe(true);
+    s.targets.dispatch([action("down")], () => true, true);
+    expect(s.targets.capturingButton).toBe(false);
+    expect(s.events).toEqual([]);
+  });
+
 });

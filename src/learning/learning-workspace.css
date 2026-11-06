@@ -3652,6 +3652,24 @@
   backdrop-filter: blur(18px);
 }
 
+.learning-input-picker {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 40px);
+  padding: 9px 12px;
+  border: 1px solid #dce7e1;
+  border-radius: 12px;
+  background: #fcfefc;
+  color: #446351;
+  box-shadow: 0 8px 24px #223e3015;
+  font-size: 12px;
+}
+.learning-input-picker button { flex-shrink: 0; padding: 4px 6px; border-radius: 6px; background: #eaf2ec; }
+
 .learning-input-references {
   position: absolute;
   bottom: calc(100% + 8px);

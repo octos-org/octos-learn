@@ -145,4 +145,22 @@ describe("binding camera hand input to the existing whiteboard", () => {
     const button = document.createElement("button"); button.hidden = true; button.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect); document.body.append(button);
     expect(handwritingPointBlocked(s.viewport, { x: 10, y: 10 })).toBe(false); s.input.dispose();
   });
+  it("maps the calibrated area to the whole input scope, including controls outside the canvas", async () => {
+    const s = setup();
+    const scope = document.createElement("main"); scope.dataset.airScope = "";
+    scope.getBoundingClientRect = () => ({ left: 10, top: 0, width: 800, height: 640, right: 810, bottom: 640 } as DOMRect);
+    document.body.append(scope); scope.append(s.viewport);
+    const button = document.createElement("button"); button.dataset.airCommand = "home";
+    button.getBoundingClientRect = () => ({ left: 480, right: 540, top: 0, bottom: 40, width: 60, height: 40 } as DOMRect);
+    scope.append(button); const click = vi.fn(); button.addEventListener("click", click);
+    await s.input.start(document.createElement("video"));
+    for (const t of [0, 33, 66, 99]) s.feed(t, false, { x: 0.4, y: 0.1 });
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.y).toBeLessThan(0);
+    for (const t of [132, 165, 198, 231]) s.feed(t, true, { x: 0.4, y: 0.1 });
+    for (const t of [264, 297, 330, 363]) s.feed(t, false, { x: 0.4, y: 0.1 });
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(s.events).toEqual([]); expect(s.states.at(-1)?.status).toBe("active");
+    s.input.dispose();
+  });
+
 });

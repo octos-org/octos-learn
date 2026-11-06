@@ -71,8 +71,13 @@ export class BoardHandwritingInput {
     this.state = { ...this.state, ...patch };
     this.options.onState(this.state);
   }
+  private local(point: { x: number; y: number }) {
+    const view = this.options.viewport.getBoundingClientRect();
+    const bounds = this.targets.root.hasAttribute("data-air-scope") ? this.targets.root.getBoundingClientRect() : view;
+    return { x: point.x + bounds.left - view.left, y: point.y + bounds.top - view.top };
+  }
   private dispatch(actions: HandwritingPointerAction[]) {
-    this.targets.dispatch(actions, point => handwritingPointBlocked(this.options.viewport, point),
+    this.targets.dispatch(actions.map(action => ({ ...action, point: this.local(action.point) })), point => handwritingPointBlocked(this.options.viewport, point),
       this.options.getInk()?.state.mode === "navigate");
   }
 
@@ -158,15 +163,21 @@ export class BoardHandwritingInput {
           this.options.onVisual(frame, null);
           return;
         }
-        const gesture = this.controller.update(frame, { width: this.options.viewport.clientWidth, height: this.options.viewport.clientHeight });
+        const viewport = this.options.viewport;
+        const root = this.targets.root;
+        const bounds = root.hasAttribute("data-air-scope") ? root.getBoundingClientRect() : viewport.getBoundingClientRect();
+        const update = this.controller.update(frame, { width: bounds.width || viewport.clientWidth, height: bounds.height || viewport.clientHeight },
+          this.options.getInk()?.state.mode === "draw");
+        const gesture = { ...update, cursor: update.cursor ? this.local(update.cursor) : null,
+          actions: update.actions.map(action => ({ ...action, point: this.local(action.point) })) };
         this.targets.hover(gesture.cursor, this.options.getInk()?.state.mode === "navigate");
-        this.dispatch(gesture.actions);
+        this.dispatch(update.actions);
         if (this.disposed || generation !== this.generation) return;
         if (gesture.cursor && handwritingPointBlocked(this.options.viewport, gesture.cursor)
           && !this.targets.executingCommand && !this.targets.manipulatingVariable) {
           // Flush an already emitted release before resetting the recognizer.
           // Commands use their own capture and may sit inside an occlusion.
-          if (!this.options.viewport.parentElement?.querySelector('[data-air-hover], [data-air-pressed]')) {
+          if (!this.targets.hasHover && !this.targets.capturingButton) {
             this.dispatch(this.controller.interrupt(frame.timeMs));
             this.targets.cancel();
             const hovering = { ...gesture, penDown: false, phase: "blocked" as const, actions: [] };

@@ -10,9 +10,9 @@ function frame(timeMs: number, ratio: number, x = 0.4): HandwritingInputFrame {
   const center = handPalmCenter(points);
   return { timeMs, tracked: true, landmarks: points.map(p => ({ x: p.x + x - center.x, y: p.y + 0.4 - center.y })) };
 }
-function begin(c: HandwritingPointerController) {
+function begin(c: HandwritingPointerController, precision = false) {
   for (const t of [0, 33, 66, 99]) c.update(frame(t, 0.75), viewport);
-  return [132, 165, 198, 231].flatMap(t => c.update(frame(t, 0.1), viewport).actions);
+  return [132, 165, 198, 231].flatMap(t => c.update(frame(t, 0.1), viewport, precision).actions);
 }
 describe("palm targeting with a thumb-index clutch", () => {
   it("anchors pen down to the visible hover point despite fingertip movement", () => {
@@ -74,6 +74,54 @@ describe("palm targeting with a thumb-index clutch", () => {
     // One fully open observation after an ambiguous pose must not release.
     expect(c.update(frame(429, 0.75), viewport).transition).toBeNull();
     expect(c.update(frame(462, 0.1), viewport).penDown).toBe(true);
+  });
+
+  it("suppresses stationary hand tremor in writing without changing pinch recognition", () => {
+    const run = (precision: boolean) => {
+      const c = new HandwritingPointerController({ mode: "palm-pinch" });
+      const down = begin(c, precision).find(action => action.type === "down")!;
+      let maximum = 0;
+      for (let i = 0; i < 90; i++) {
+        const update = c.update(frame(264 + i * 33, 0.1, 0.4 + Math.sin(i * 1.9) * 0.003), viewport, precision);
+        expect(update.penDown).toBe(true);
+        maximum = Math.max(maximum, Math.abs(update.cursor!.x - down.point.x));
+      }
+      return maximum;
+    };
+    const ordinary = run(false), writing = run(true);
+    expect(writing).toBeLessThan(ordinary * 0.5);
+    expect(writing).toBeLessThan(1.5);
+  });
+
+  it("preserves accumulated slow movement, short lines, and return strokes in precision writing", () => {
+    const c = new HandwritingPointerController({ mode: "palm-pinch" });
+    const down = begin(c, true).find(action => action.type === "down")!;
+    let tip = down.point;
+    const actions = [];
+    for (let i = 0; i < 90; i++) {
+      const update = c.update(frame(264 + i * 33, 0.1, 0.4 + Math.min(i, 60) * 0.0005), viewport, true);
+      actions.push(...update.actions); tip = update.cursor!;
+    }
+    expect(down.point.x - tip.x).toBeGreaterThan(15);
+    expect(down.point.x - tip.x).toBeLessThan(21);
+    const far = tip.x;
+    for (let i = 0; i < 60; i++) tip = c.update(frame(3234 + i * 33, 0.1, 0.43 - Math.min(i, 40) * 0.0005), viewport, true).cursor!;
+    expect(tip.x - far).toBeGreaterThan(8);
+    expect(actions.some(action => action.type === "move")).toBe(true);
+    expect(c.update(frame(5214, 0.75), viewport, true).penDown).toBe(true);
+    c.update(frame(5247, 0.75), viewport, true);
+    expect(c.update(frame(5280, 0.75), viewport, true).actions.at(-1)?.type).toBe("up");
+  });
+
+  it("recovers absolute hover position after clutch offsets so calibrated edges remain reachable", () => {
+    const c = new HandwritingPointerController({ mode: "palm-pinch" });
+    begin(c);
+    for (const t of [264, 297, 330]) c.update(frame(t, 0.75, 0.48), viewport);
+    let cursor = null;
+    for (let i = 0; i < 50; i++) cursor = c.update(frame(363 + i * 33, 0.75, 0.48), viewport).cursor;
+    expect(cursor!.x).toBeCloseTo(420, 1);
+    for (let i = 0; i < 50; i++) cursor = c.update(frame(2013 + i * 33, 0.75, 0.105), viewport).cursor;
+    expect(cursor!.x).toBeGreaterThan(793);
   });
 
 });
