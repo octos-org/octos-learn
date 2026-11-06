@@ -154,7 +154,7 @@ Apple 的文档支持这些交互语义。下面的手部锚点、时间窗、�
 2026-11-06 用户明确批准使用 5175 独立 HTTPS 预览，沿用现有本机账号与 50080 后端。启动目录为 `octos-learn-air-writing`，正常白板入口为 <https://127.0.0.1:5175/board>。5173 的录课预览继续由其原任务管理。
 
 ```sh
-PATH=/opt/homebrew/opt/node@22/bin:$PATH VITE_ENABLE_HANDWRITING=true pnpm dev:https --host 127.0.0.1 --port 5175 --strictPort
+PATH=/opt/homebrew/opt/node@22/bin:$PATH VITE_ENABLE_HANDWRITING=true VITE_ENABLE_BOARD_WRITING=true pnpm dev:https --host 127.0.0.1 --port 5175 --strictPort
 ```
 
-预览按用户请求保持运行。首次打开此端口时，若出现登录页，使用现有本机单用户的「无需密码继续」。浏览器已有的实验开关选择优先于启动默认值，入口隐藏时可到「设置 → 实验功能」开启「隔空书写」。启动摄像头及授权由用户点击白板入口完成。建议先做内置练习，再尝试个人校准和活动范围，最后按上述真人验收步骤记录问题。
+预览按用户请求保持运行。首次打开此端口时，若出现登录页，使用现有本机单用户的「免密码继续」。浏览器已有的实验开关选择优先于启动默认值，入口隐藏时可到「设置 → 实验功能」开启「隔空书写」。启动摄像头及授权由用户点击白板入口完成。建议先做内置练习，再尝试个人校准和活动范围，最后按上述真人验收步骤记录问题。
