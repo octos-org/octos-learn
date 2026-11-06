@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents, validateAuthoringLesson } from "octos-lesson-language";
+import { assertAuthoringSchema, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents, setLessonVariable, validateAuthoringLesson } from "octos-lesson-language";
 import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
@@ -21,7 +21,7 @@ function check(recording: LearnerRecording) {
   assertAuthoringSchema(compiled.lesson);
   validateAuthoringLesson(compiled.lesson, compiled.resourceContext);
   const events = normalizeAuthoringLesson(compiled.lesson, { lessonId: "l", boardId: "b", baseRevision: 0, resourceContext: compiled.resourceContext });
-  return { ...compiled, state: reduceCanonicalEvents(events) };
+  return { ...compiled, events, state: reduceCanonicalEvents(events) };
 }
 
 function jordan(): LearnerRecording {
@@ -748,5 +748,61 @@ describe("more solids", () => {
     expect([hemisphere.min, hemisphere.max, hemisphere.initial]).toEqual([0, 2, 1]);
     expect((state.nodes["l:node:solid-1"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "prism", sides: 6 });
     expect((state.nodes["l:node:solid-3"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "frustum", top_radius: 1 });
+  });
+});
+
+describe("bases, composites and nets", () => {
+  const scene = (solids: Array<Record<string, unknown>>) => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Solids", type: "math_off_map" }, goals: [] }), now, [{ title: "All of them" }]);
+    recording = record(recording, "card-1", "Look.", solids.map((solid, index) => (
+      { t: 100 + index, type: "component.insert", panel: "solid_3d", alias: `solid-${index + 1}`, ...solid } as RecordingEvent)));
+    return recording;
+  };
+  const objects = (state: ReturnType<typeof check>["state"], alias: string) => (state.nodes[`l:node:${alias}`]!.content as { objects: Array<Record<string, unknown>> }).objects;
+
+  it("compiles prisms and pyramids on any base, truncated pyramids, ellipsoids and stacked solids", () => {
+    const { state, lesson } = check(scene([
+      { shape: "prism", base: { kind: "right_triangle", a: 3, b: 4 }, height: 2 },
+      { shape: "pyramid", base: { kind: "rectangle", length: 4, width: 3 }, height: 3, topScale: 0.5 },
+      { shape: "prism", base: { kind: "triangle", a: 5, b: 4, c: 3 }, height: 2, cut: { variable: "cut_1" } },
+      { shape: "ellipsoid", radii: { x: 3, y: 2, z: 1.5 }, cut: { variable: "cut_2" } },
+      { shape: "composite", parts: "cylinder_cone", radius: 1, height: 4, topHeight: 2, cut: { variable: "cut_3" } },
+      { shape: "composite", parts: "cylinder_hemisphere", radius: 1, height: 3 },
+      { shape: "composite", parts: "box_pyramid", width: 2, height: 2, topHeight: 1 },
+      { shape: "composite", parts: "two_cylinders", radius: 2, height: 1, topRadius: 1, topHeight: 2 },
+    ]));
+    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "prism", base: [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 0, y: 4 }], height: 2 });
+    expect(objects(state, "solid-2")[0]).toMatchObject({ kind: "pyramid", top_scale: 0.5 });
+    // Sides 5, 4, 3: a right triangle, its top corner above the bottom's left end.
+    expect(objects(state, "solid-3")[0]!.base).toEqual([{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 1.8, y: 2.4 }]);
+    expect(objects(state, "solid-4")[0]).toMatchObject({ kind: "ellipsoid", radii: { x: 3, y: 2, z: 1.5 } });
+    // A pencil 6 high: the cylinder from -3 to 1, the cone from 1 to 3; the cut spans both and cuts both.
+    expect(objects(state, "solid-5").map((object) => [object.kind, (object.center as { z: number }).z])).toEqual([["cylinder", -1], ["cone", 2]]);
+    const cut = lesson.lesson.variables!.find((variable) => variable.as === "cut_3")!;
+    expect([cut.min, cut.max]).toEqual([-3, 3]);
+    expect((state.nodes["l:node:solid-5"]!.content as { sections: Array<{ targets: string[] }> }).sections[0]!.targets).toHaveLength(2);
+    expect(objects(state, "solid-6").map((object) => [object.kind, (object.center as { z: number }).z])).toEqual([["cylinder", -0.5], ["hemisphere", 1]]);
+    expect(objects(state, "solid-7")[1]).toMatchObject({ kind: "pyramid", sides: 4, radius: 1.414214 });
+    expect(objects(state, "solid-8").map((object) => object.radius)).toEqual([2, 1]);
+    expect(lesson.steps[0]!.beats[0]!.actions.find((action) => action.as === "solid-8")).toMatchObject({ content: { fallback: expect.stringContaining("radius 1 and height 2 on top") } });
+  });
+
+  it("opens a box, prism, pyramid, cylinder or cone into its net on a slider", () => {
+    const { state, lesson, events } = check(scene([
+      { shape: "box", size: { x: 3, y: 2, z: 1 }, unfold: { variable: "open_1" } },
+      { shape: "cylinder", radius: 1, height: 2, unfold: { variable: "open_2" } },
+      { shape: "pyramid", base: { kind: "right_triangle", a: 3, b: 4 }, height: 2, unfold: { variable: "open_3" } },
+    ]));
+    expect(lesson.lesson.variables!.find((variable) => variable.as === "open_1")).toMatchObject({ initial: 0, min: 0, max: 1, label: "unfold" });
+    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "box", unfold: 0 });
+    // The box's faces are not pointed at while it opens.
+    expect((state.nodes["l:node:solid-1"]!.content as { highlights?: unknown[] }).highlights).toBeUndefined();
+    expect(deriveExecutionRequirements(events).requiredCapabilities).toContain("scene3d:unfold");
+    const opened = setLessonVariable(state, "open_2", 0.5);
+    expect(objects(opened, "solid-2")[0]!.unfold).toBe(0.5);
+    // A sphere has no net; a solid is cut or unfolded, not both.
+    expect(() => compileRecording(scene([{ shape: "sphere", radius: 1, unfold: { variable: "open_1" } }]), { author, language: "en-US" })).toThrow(CompileError);
+    expect(() => compileRecording(scene([{ shape: "cone", radius: 1, height: 2, unfold: { variable: "open_1" }, cut: { variable: "cut_1" } }]), { author, language: "en-US" })).toThrow(CompileError);
+    expect(() => compileRecording(scene([{ shape: "prism", base: { kind: "triangle", a: 1, b: 1, c: 3 }, height: 1 }]), { author, language: "en-US" })).toThrow(CompileError);
   });
 });

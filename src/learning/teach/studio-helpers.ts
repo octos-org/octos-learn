@@ -2,7 +2,7 @@ import type { LessonAuthor } from "octos-lesson-language";
 import { tr } from "@/i18n";
 
 import { presenterAvatar } from "./presenters";
-import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent, type SolidShape } from "./recording";
+import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent, type Solid, type SolidShape } from "./recording";
 
 /** The events of the take each card shows now, in card order. */
 function boardEvents(recording: LearnerRecording): RecordingEvent[] {
@@ -53,8 +53,20 @@ export function solidName(shape: SolidShape, sides?: number): string {
   }
   return {
     box: tr("长方体"), cylinder: tr("圆柱"), cone: tr("圆锥"), sphere: tr("球"), hemisphere: tr("半球"), prism: tr("棱柱"), pyramid: tr("棱锥"),
-    frustum: tr("圆台"), torus: tr("圆环"), tetrahedron: tr("正四面体"), octahedron: tr("正八面体"), dodecahedron: tr("正十二面体"), icosahedron: tr("正二十面体"),
+    frustum: tr("圆台"), torus: tr("圆环"), ellipsoid: tr("椭球"), composite: tr("组合体"), tetrahedron: tr("正四面体"), octahedron: tr("正八面体"), dodecahedron: tr("正十二面体"), icosahedron: tr("正二十面体"),
   }[shape];
+}
+
+/** What a stack of two solids is called. */
+export function compositeName(parts: Extract<Solid, { shape: "composite" }>["parts"]): string {
+  return { cylinder_cone: tr("圆柱 + 圆锥"), cylinder_hemisphere: tr("圆柱 + 半球"), box_pyramid: tr("长方体 + 棱锥"), two_cylinders: tr("两个圆柱") }[parts];
+}
+
+/** A solid's name: a six-sided prism, a truncated pyramid, a cylinder with a cone on top. */
+export function solidLabel(solid: Solid): string {
+  if (solid.shape === "composite") return compositeName(solid.parts);
+  if (solid.shape === "pyramid" && solid.topScale !== undefined) return tr("棱台");
+  return solidName(solid.shape, "sides" in solid ? solid.sides : undefined);
 }
 
 /** Lesson variables components introduced (unit circles' angles, graphs' sliders), in insertion order. */
@@ -71,6 +83,7 @@ export function recordingVariableInfo(recording: LearnerRecording): Array<{ vari
     if (event.panel === "unit_circle") add(event.variable, "θ", true);
     if (event.panel === "graph") for (const parameter of event.parameters ?? []) add(parameter.variable, parameter.letter, false);
     if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
+    if (event.panel === "solid_3d" && event.unfold) add(event.unfold.variable, tr("展开"), false);
     if (event.panel === "polygon" && event.slider) add(event.slider.variable, tr("边数"), false);
   }
   return variables;

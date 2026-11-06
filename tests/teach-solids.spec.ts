@@ -22,7 +22,7 @@ test("a cone with a cut: the slider moves the cutting plane and its cross-sectio
   await page.getByRole("button", { name: "录第 1 张" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "立体" }).click();
-  await page.getByRole("radio", { name: "圆锥" }).click();
+  await page.getByRole("radio", { name: "圆锥", exact: true }).click();
   await page.getByRole("checkbox", { name: /^切一刀/ }).check();
   await page.getByRole("button", { name: "放到白板上" }).click();
 
@@ -109,7 +109,7 @@ test("more solids: a hexagonal prism with a cut and an icosahedron, from the Sol
   await page.getByRole("button", { name: "录第 1 张" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "立体" }).click();
-  await page.getByRole("radio", { name: "棱柱" }).click();
+  await page.getByRole("radio", { name: "棱柱", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "底面边数（3 到 12）" })).toHaveValue("6");
   await page.getByRole("checkbox", { name: /^切一刀/ }).check();
   await page.getByRole("button", { name: "放到白板上" }).click();
@@ -118,7 +118,7 @@ test("more solids: a hexagonal prism with a cut and an icosahedron, from the Sol
   await expect(prism.locator(".scene3d-intersection")).toHaveCount(1);
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "立体" }).click();
-  await page.getByRole("radio", { name: "正二十面体" }).click();
+  await page.getByRole("radio", { name: "正二十面体", exact: true }).click();
   await page.getByRole("button", { name: "放到白板上" }).click();
   const icosahedron = page.locator(".teach-studio .board-node.kind-scene3d").last();
   await expect(icosahedron).toContainText("正二十面体");

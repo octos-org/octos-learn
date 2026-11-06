@@ -8,8 +8,8 @@ import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
-import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole, Solid, SolidShape } from "./recording";
-import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, type InsertForm } from "./studio-helpers";
+import { baseCorners, solidUnfolds, type ComponentInsert, type GraphParameter, type LearnerRecording, type NoteRole, type Solid, type SolidBase, type SolidShape } from "./recording";
+import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, compositeName, type InsertForm } from "./studio-helpers";
 
 
 function numberField(value: string): number | undefined {
@@ -549,50 +549,102 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
   );
 }
 
-/** The solids offered, in groups, with the sizes each needs. Cube is a box with equal edges. */
-type SolidChoice = SolidShape | "cube";
+/** The solids offered, in groups, with the sizes each needs. Cube is a box with equal edges; a truncated pyramid is a pyramid with its top cut off. */
+type CompositeParts = Extract<Solid, { shape: "composite" }>["parts"];
+type SolidChoice = Exclude<SolidShape, "composite"> | "cube" | "truncated" | CompositeParts;
 const SOLID_GROUPS: Array<[() => string, SolidChoice[]]> = [
-  [() => tr("常见的立体"), ["box", "cube", "cylinder", "cone", "sphere", "hemisphere", "frustum", "torus"]],
-  [() => tr("棱柱和棱锥"), ["prism", "pyramid"]],
+  [() => tr("常见的立体"), ["box", "cube", "cylinder", "cone", "sphere", "hemisphere", "ellipsoid", "frustum", "torus"]],
+  [() => tr("棱柱和棱锥"), ["prism", "pyramid", "truncated"]],
+  [() => tr("组合体"), ["cylinder_cone", "cylinder_hemisphere", "box_pyramid", "two_cylinders"]],
   [() => tr("正多面体"), ["tetrahedron", "octahedron", "dodecahedron", "icosahedron"]],
 ];
-type SizeField = "x" | "y" | "z" | "edge" | "radius" | "height" | "topRadius" | "tube" | "sides";
+const COMPOSITES: ReadonlySet<SolidChoice> = new Set(["cylinder_cone", "cylinder_hemisphere", "box_pyramid", "two_cylinders"]);
+/** A prism's or pyramid's base: regular, or a rectangle or triangle. */
+type BaseChoice = "regular" | "rectangle" | "right_triangle" | "triangle";
+const BASE_CHOICES: Array<[BaseChoice, () => string]> = [
+  ["regular", () => tr("正多边形")], ["rectangle", () => tr("长方形")], ["right_triangle", () => tr("直角三角形")], ["triangle", () => tr("三角形（三边）")],
+];
+const BASE_FIELDS: Record<BaseChoice, SizeField[]> = { regular: ["sides", "radius"], rectangle: ["x", "y"], right_triangle: ["a", "b"], triangle: ["a", "b", "c"] };
+type SizeField = "x" | "y" | "z" | "edge" | "radius" | "height" | "topRadius" | "tube" | "sides" | "a" | "b" | "c" | "topScale" | "topHeight" | "side";
 const FIELDS: Record<SolidChoice, SizeField[]> = {
-  box: ["x", "y", "z"], cube: ["edge"], cylinder: ["radius", "height"], cone: ["radius", "height"], sphere: ["radius"], hemisphere: ["radius"],
-  frustum: ["radius", "topRadius", "height"], torus: ["radius", "tube"], prism: ["sides", "radius", "height"], pyramid: ["sides", "radius", "height"],
+  box: ["x", "y", "z"], cube: ["edge"], cylinder: ["radius", "height"], cone: ["radius", "height"], sphere: ["radius"], hemisphere: ["radius"], ellipsoid: ["x", "y", "z"],
+  frustum: ["radius", "topRadius", "height"], torus: ["radius", "tube"], prism: ["height"], pyramid: ["height"], truncated: ["height", "topScale"],
+  cylinder_cone: ["radius", "height", "topHeight"], cylinder_hemisphere: ["radius", "height"], box_pyramid: ["side", "height", "topHeight"], two_cylinders: ["radius", "height", "topRadius", "topHeight"],
   tetrahedron: ["radius"], octahedron: ["radius"], dodecahedron: ["radius"], icosahedron: ["radius"],
 };
 const FIELD_LABELS: Record<SizeField, () => string> = {
   x: () => tr("长"), y: () => tr("宽"), z: () => tr("高"), edge: () => tr("棱长"), radius: () => tr("半径"), height: () => tr("高"),
-  topRadius: () => tr("上底半径"), tube: () => tr("管的半径"), sides: () => tr("底面边数（3 到 12）"),
+  topRadius: () => tr("上底半径"), tube: () => tr("管的半径"), sides: () => tr("底面边数（3 到 12）"), a: () => tr("边 a"), b: () => tr("边 b"), c: () => tr("边 c"),
+  topScale: () => tr("上底是下底的几倍（0 到 1）"), topHeight: () => tr("上面部分的高"), side: () => tr("底面边长"),
 };
-const DEFAULT_SIZES: Record<SizeField, string> = { x: "4", y: "3", z: "2", edge: "3", radius: "2", height: "4", topRadius: "1", tube: "0.6", sides: "6" };
+/** Labels that differ for one solid: an ellipsoid's semi-axes, a stack's two parts, a right triangle's legs. */
+function fieldLabel(choice: SolidChoice, base: BaseChoice, field: SizeField): string {
+  if (choice === "ellipsoid" && (field === "x" || field === "y" || field === "z")) return tr("{{v0}} 方向的半轴", { v0: field });
+  if (COMPOSITES.has(choice) && field === "height") return tr("下面部分的高");
+  if (choice === "two_cylinders" && field === "topRadius") return tr("上面圆柱的半径");
+  if (choice === "two_cylinders" && field === "radius") return tr("下面圆柱的半径");
+  if (base === "right_triangle" && (field === "a" || field === "b")) return field === "a" ? tr("直角边 a") : tr("直角边 b");
+  if (base === "regular" && field === "radius" && ["prism", "pyramid", "truncated"].includes(choice)) return tr("底面外接圆半径");
+  return FIELD_LABELS[field]();
+}
+const DEFAULT_SIZES: Record<SizeField, string> = {
+  x: "4", y: "3", z: "2", edge: "3", radius: "2", height: "4", topRadius: "1", tube: "0.6", sides: "6", a: "3", b: "4", c: "5", topScale: "0.5", topHeight: "2", side: "3",
+};
 
-/** A 3D solid: which one, its sizes, and optionally a cutting plane on a slider. */
+/** What a choice in the solid picker is called. */
+function choiceName(option: SolidChoice): string {
+  if (option === "cube") return tr("正方体");
+  if (option === "truncated") return tr("棱台");
+  if (COMPOSITES.has(option)) return compositeName(option as CompositeParts);
+  return solidName(option as SolidShape);
+}
+
+/** A 3D solid: which one, its sizes, and optionally a cutting plane or a net on a slider. */
 function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
   const [choice, setChoice] = useState<SolidChoice>("box");
+  const [baseChoice, setBaseChoice] = useState<BaseChoice>("regular");
   const [sizes, setSizes] = useState<Record<SizeField, string>>(DEFAULT_SIZES);
-  const [cut, setCut] = useState(false);
+  const [slider, setSlider] = useState<"none" | "cut" | "unfold">("none");
   const value = (field: SizeField) => numberField(sizes[field]);
   const positive = (field: SizeField) => { const number = value(field); return number !== undefined && number > 0 ? number : undefined; };
+  const based = choice === "prism" || choice === "pyramid" || choice === "truncated";
+  const fields = based ? [...BASE_FIELDS[baseChoice], ...FIELDS[choice]] : FIELDS[choice];
+  const prismBase = ((): { sides: number; radius: number } | { base: SolidBase } | undefined => {
+    const [x, y, a, b, c, radius, sides] = [positive("x"), positive("y"), positive("a"), positive("b"), positive("c"), positive("radius"), value("sides")];
+    switch (baseChoice) {
+      case "regular": return radius && sides && Number.isInteger(sides) && sides >= 3 && sides <= 12 ? { sides, radius } : undefined;
+      case "rectangle": return x && y ? { base: { kind: "rectangle", length: x, width: y } } : undefined;
+      case "right_triangle": return a && b ? { base: { kind: "right_triangle", a, b } } : undefined;
+      case "triangle": return a && b && c && baseCorners({ kind: "triangle", a, b, c }) ? { base: { kind: "triangle", a, b, c } } : undefined;
+    }
+  })();
   const solid = ((): Solid | undefined => {
-    const radius = positive("radius"), height = positive("height");
+    const radius = positive("radius"), height = positive("height"), topHeight = positive("topHeight");
     switch (choice) {
       case "box": { const [x, y, z] = [positive("x"), positive("y"), positive("z")]; return x && y && z ? { shape: "box", size: { x, y, z } } : undefined; }
       case "cube": { const edge = positive("edge"); return edge ? { shape: "box", size: { x: edge, y: edge, z: edge } } : undefined; }
+      case "ellipsoid": { const [x, y, z] = [positive("x"), positive("y"), positive("z")]; return x && y && z ? { shape: "ellipsoid", radii: { x, y, z } } : undefined; }
       case "cylinder": case "cone": return radius && height ? { shape: choice, radius, height } : undefined;
-      case "prism": case "pyramid": { const sides = value("sides"); return radius && height && sides && Number.isInteger(sides) && sides >= 3 && sides <= 12 ? { shape: choice, sides, radius, height } : undefined; }
+      case "prism": case "pyramid": return prismBase && height ? { shape: choice, height, ...prismBase } as Solid : undefined;
+      case "truncated": { const topScale = positive("topScale"); return prismBase && height && topScale && topScale < 1 ? { shape: "pyramid", height, topScale, ...prismBase } as Solid : undefined; }
       case "frustum": { const topRadius = positive("topRadius"); return radius && height && topRadius ? { shape: "frustum", radius, topRadius, height } : undefined; }
       case "torus": { const tube = positive("tube"); return radius && tube && tube < radius ? { shape: "torus", radius, tube } : undefined; }
+      case "cylinder_cone": return radius && height && topHeight ? { shape: "composite", parts: choice, radius, height, topHeight } : undefined;
+      case "cylinder_hemisphere": return radius && height ? { shape: "composite", parts: choice, radius, height } : undefined;
+      case "box_pyramid": { const width = positive("side"); return width && height && topHeight ? { shape: "composite", parts: choice, width, height, topHeight } : undefined; }
+      case "two_cylinders": { const topRadius = positive("topRadius"); return radius && height && topRadius && topHeight ? { shape: "composite", parts: choice, radius, height, topRadius, topHeight } : undefined; }
       default: return radius ? { shape: choice, radius } : undefined;
     }
   })();
-  const named = (option: SolidChoice) => (option === "cube" ? tr("正方体") : solidName(option));
+  const unfolds = solid !== undefined ? solidUnfolds(solid) : ["box", "cube", "cylinder", "cone", "prism", "pyramid", "truncated"].includes(choice);
+  const chosenSlider = slider === "unfold" && !unfolds ? "none" : slider;
+  const named = (option: SolidChoice) => choiceName(option);
   return (
     <form className="teach-step" onSubmit={(event) => {
       event.preventDefault();
       if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
-        ...(cut ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}) });
+        ...(chosenSlider === "cut" ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}),
+        ...(chosenSlider === "unfold" ? { unfold: { variable: nextParameterVariable(recording, "unfold") } } : {}) });
     }}>
       {SOLID_GROUPS.map(([group, options]) => (
         <div key={options[0]} className="teach-solid-group">
@@ -604,15 +656,28 @@ function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecor
           </div>
         </div>
       ))}
+      {based && (
+        <div className="teach-solid-group">
+          <span className="teach-group-label">{tr("底面")}</span>
+          <div className="teach-note-roles" role="radiogroup" aria-label={tr("底面")}>
+            {BASE_CHOICES.map(([option, name]) => (
+              <button key={option} type="button" role="radio" aria-checked={baseChoice === option} onClick={() => setBaseChoice(option)}>{name()}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="teach-range" role="group" aria-label={tr("{{v0}}的尺寸", { v0: named(choice) })}>
-        {FIELDS[choice].map((field) => (
-          <label key={field}>{FIELD_LABELS[field]()}
+        {fields.map((field) => (
+          <label key={field}>{fieldLabel(choice, baseChoice, field)}
             <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
           </label>
         ))}
       </div>
       {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
-      <label className="teach-place"><input type="checkbox" checked={cut} onChange={(event) => setCut(event.target.checked)} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
+      {based && baseChoice === "triangle" && prismBase === undefined && positive("a") && positive("b") && positive("c") && <p className="teach-notice">{tr("这三条边围不成三角形：任意两边之和要大于第三边。")}</p>}
+      {choice === "truncated" && solid === undefined && (value("topScale") ?? 0) >= 1 && <p className="teach-notice">{tr("上底要比下底小：填 0 到 1 之间的数。")}</p>}
+      <label className="teach-place"><input type="checkbox" checked={chosenSlider === "cut"} onChange={(event) => setSlider(event.target.checked ? "cut" : "none")} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
+      {unfolds && <label className="teach-place"><input type="checkbox" checked={chosenSlider === "unfold"} onChange={(event) => setSlider(event.target.checked ? "unfold" : "none")} /><span>{tr("展开成平面图：讲课时拖滑块，把它慢慢打开，看表面积")}</span></label>}
       {placement}
       <button type="submit" disabled={!solid}>{tr("放到白板上")}</button>
     </form>

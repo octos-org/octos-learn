@@ -9,10 +9,14 @@ import {
   currentTake,
   type BoardTarget,
   type CardInk,
+  type CompositeSolid,
   type ComponentInsert,
   type LearnerRecording,
   type NoteRole,
   type Solid,
+  baseCorners,
+  compositeHeight,
+  solidUnfolds,
   solidZRange,
   type RecordingCard,
   type RecordingEvent,
@@ -348,20 +352,57 @@ function noteHeading(role: NoteRole, language: string): string {
   return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
 }
 
-/** A solid as an OLL scene3d object, centred on the origin. */
-function solidObject(solid: Solid): Record<string, unknown> {
-  const base = { as: "solid", kind: solid.shape, center: { x: 0, y: 0, z: 0 } };
+/** A composite's two parts, stacked from the bottom: "solid", then "solid-top". */
+function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>): Array<Record<string, unknown>> {
+  const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
+  const bottom = -compositeHeight(solid) / 2;
+  const lower = { ...base, center: at(bottom + solid.height / 2) };
+  const upper = { as: "solid-top", center: at(bottom + solid.height + ("topHeight" in solid ? solid.topHeight / 2 : 0)) };
+  switch (solid.parts) {
+    case "cylinder_cone": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "cone", radius: solid.radius, height: solid.topHeight }];
+    case "cylinder_hemisphere": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "hemisphere", radius: solid.radius }];
+    // A square pyramid's corners are on a circle of radius width/√2, its sides facing the box's.
+    case "box_pyramid": return [{ ...lower, kind: "box", size: { x: solid.width, y: solid.width, z: solid.height } },
+      { ...upper, kind: "pyramid", sides: 4, radius: Number((solid.width / Math.SQRT2).toFixed(6)), height: solid.topHeight }];
+    case "two_cylinders": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "cylinder", radius: solid.topRadius, height: solid.topHeight }];
+  }
+}
+
+/** A solid as OLL scene3d objects, centred on the origin: one, or a composite's parts stacked from the bottom ("solid", then "solid-top"). */
+function solidObjects(solid: Solid): Array<Record<string, unknown>> {
+  const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
+  const base = { as: "solid", kind: solid.shape, center: at(0) };
   switch (solid.shape) {
-    case "box": return { ...base, size: solid.size };
-    case "cylinder": case "cone": return { ...base, radius: solid.radius, height: solid.height };
-    case "prism": case "pyramid": return { ...base, sides: solid.sides, radius: solid.radius, height: solid.height };
-    case "frustum": return { ...base, radius: solid.radius, top_radius: solid.topRadius, height: solid.height };
-    case "torus": return { ...base, radius: solid.radius, tube: solid.tube };
-    default: return { ...base, radius: solid.radius };
+    case "box": return [{ ...base, size: solid.size }];
+    case "cylinder": case "cone": return [{ ...base, radius: solid.radius, height: solid.height }];
+    case "prism": case "pyramid": {
+      const top = solid.shape === "pyramid" && solid.topScale !== undefined ? { top_scale: solid.topScale } : {};
+      if ("base" in solid) {
+        const corners = baseCorners(solid.base);
+        if (!corners) throw new CompileError("The three sides do not make a triangle");
+        return [{ ...base, base: corners.map((corner) => ({ x: Number(corner.x.toFixed(6)), y: Number(corner.y.toFixed(6)) })), height: solid.height, ...top }];
+      }
+      return [{ ...base, sides: solid.sides, radius: solid.radius, height: solid.height, ...top }];
+    }
+    case "frustum": return [{ ...base, radius: solid.radius, top_radius: solid.topRadius, height: solid.height }];
+    case "torus": return [{ ...base, radius: solid.radius, tube: solid.tube }];
+    case "ellipsoid": return [{ ...base, radii: solid.radii }];
+    case "composite": return compositeObjects(solid, base);
+    default: return [{ ...base, radius: solid.radius }];
   }
 }
 
 const POLYGON_ZH = ["", "", "", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+
+/** A composite in words. */
+function compositeDescription(solid: CompositeSolid, zh: boolean): string {
+  switch (solid.parts) {
+    case "cylinder_cone": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是高 ${solid.topHeight} 的圆锥。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a cone of height ${solid.topHeight} on top.`;
+    case "cylinder_hemisphere": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半球。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a hemisphere on top.`;
+    case "box_pyramid": return zh ? `底面边长 ${solid.width}、高 ${solid.height} 的长方体，上面是高 ${solid.topHeight} 的四棱锥。` : `A box ${solid.width} wide and ${solid.height} high with a square pyramid of height ${solid.topHeight} on top.`;
+    case "two_cylinders": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半径 ${solid.topRadius}、高 ${solid.topHeight} 的圆柱。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a cylinder of radius ${solid.topRadius} and height ${solid.topHeight} on top.`;
+  }
+}
 
 /** A 3D solid in words, in the lesson's language, shown under the scene (and instead of it if it cannot be drawn). */
 function solidDescription(solid: Solid, language: string): string {
@@ -371,15 +412,31 @@ function solidDescription(solid: Solid, language: string): string {
     case "sphere": return zh ? `半径 ${solid.radius} 的球。` : `A sphere of radius ${solid.radius}.`;
     case "hemisphere": return zh ? `半径 ${solid.radius} 的半球。` : `A hemisphere of radius ${solid.radius}.`;
     case "cylinder": case "cone": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的${solid.shape === "cone" ? "圆锥" : "圆柱"}。` : `A ${solid.shape} of radius ${solid.radius} and height ${solid.height}.`;
-    case "prism": case "pyramid": return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${solid.shape === "prism" ? "棱柱" : "棱锥"}，高 ${solid.height}。`
-      : `A ${solid.sides}-sided ${solid.shape} of height ${solid.height}.`;
-    case "frustum": return zh ? `下底半径 ${solid.radius}、上底半径 ${solid.topRadius}、高 ${solid.height} 的圆台。` : `A frustum of radii ${solid.radius} and ${solid.topRadius}, height ${solid.height}.`;
+    case "prism": case "pyramid": {
+      const truncated = solid.shape === "pyramid" && solid.topScale !== undefined;
+      const kind = zh ? (solid.shape === "prism" ? "棱柱" : truncated ? "棱台" : "棱锥") : solid.shape === "prism" ? "prism" : truncated ? "truncated pyramid" : "pyramid";
+      const top = truncated ? (zh ? `，上底是下底的 ${solid.topScale} 倍` : `, its top ${solid.topScale} times the base`) : "";
+      if (!("base" in solid)) return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${kind}，高 ${solid.height}${top}。` : `A ${solid.sides}-sided ${kind} of height ${solid.height}${top}.`;
+      const base = solid.base;
+      const shape = base.kind === "rectangle" ? (zh ? `长 ${base.length}、宽 ${base.width} 的长方形` : `a ${base.length} by ${base.width} rectangle`)
+        : base.kind === "right_triangle" ? (zh ? `直角边为 ${base.a} 和 ${base.b} 的直角三角形` : `a right triangle with legs ${base.a} and ${base.b}`)
+        : zh ? `三边长 ${base.a}、${base.b}、${base.c} 的三角形` : `a triangle with sides ${base.a}, ${base.b} and ${base.c}`;
+      return zh ? `底面是${shape}的${kind}，高 ${solid.height}${top}。` : `A ${kind} on ${shape}, height ${solid.height}${top}.`;
+    }
+    case "ellipsoid": return zh ? `三个半轴是 ${solid.radii.x}、${solid.radii.y}、${solid.radii.z} 的椭球。` : `An ellipsoid with semi-axes ${solid.radii.x}, ${solid.radii.y} and ${solid.radii.z}.`;
+    case "composite": return compositeDescription(solid, zh);
     case "torus": return zh ? `环半径 ${solid.radius}、管半径 ${solid.tube} 的圆环。` : `A torus of ring radius ${solid.radius} and tube radius ${solid.tube}.`;
+    case "frustum": return zh ? `下底半径 ${solid.radius}、上底半径 ${solid.topRadius}、高 ${solid.height} 的圆台。` : `A frustum of radii ${solid.radius} and ${solid.topRadius}, height ${solid.height}.`;
     default: {
       const names = { tetrahedron: ["正四面体", "tetrahedron"], octahedron: ["正八面体", "octahedron"], dodecahedron: ["正十二面体", "dodecahedron"], icosahedron: ["正二十面体", "icosahedron"] }[solid.shape];
       return zh ? `${names[0]}。` : `A regular ${names[1]}.`;
     }
   }
+}
+
+/** The net's slider, in the lesson's language. */
+function unfoldLabel(language: string): string {
+  return language.toLowerCase().startsWith("zh") ? "展开" : "unfold";
 }
 
 /** The cutting plane's slider, in the lesson's language. */
@@ -561,15 +618,24 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     scenes.add(alias);
     const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
-    const object = solidObject(solid);
+    const objects = solidObjects(solid);
+    if (solid.cut && solid.unfold) throw new CompileError("A solid is either cut or unfolded, not both");
+    if (solid.unfold && !solidUnfolds(solid)) throw new CompileError(`A ${solid.shape} has no net to unfold`);
     const content: Record<string, unknown> = {
       ...title,
-      fallback: solidDescription(solid, options.language),
+      fallback: solidDescription(solid, options.language) + (solid.unfold ? (options.language.toLowerCase().startsWith("zh") ? "拖动滑杆把它展开成平面图。" : " A slider opens it into its net.") : ""),
       axes: false,
       camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
-      objects: [object],
-      ...(solid.shape === "box" ? { highlights: boxFaces(solid.size) } : {}),
+      objects: solid.unfold ? objects.map((object) => ({ ...object, unfold: 0 })) : objects,
+      // A box's faces can be pointed at, unless they move as it opens.
+      ...(solid.shape === "box" && !solid.unfold ? { highlights: boxFaces(solid.size) } : {}),
     };
+    if (solid.unfold) {
+      // The net opens from 0 (the closed solid) to 1 (lying flat).
+      if (variables.has(solid.unfold.variable)) throw new CompileError(`Variable '${solid.unfold.variable}' is already used`);
+      variables.set(solid.unfold.variable, { as: solid.unfold.variable, initial: 0, min: 0, max: 1, label: unfoldLabel(options.language), control: { kind: "slider", step: 0.02 } });
+      content.bindings = [{ target: "solid.unfold", expression: solid.unfold.variable }];
+    }
     if (solid.cut) {
       // A cutting plane across the solid, moved by a slider from its bottom to its top.
       const [bottom, top] = solidZRange(solid);
@@ -577,7 +643,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       if (variables.has(solid.cut.variable)) throw new CompileError(`Variable '${solid.cut.variable}' is already used`);
       variables.set(solid.cut.variable, { as: solid.cut.variable, initial: middle, min: Number(bottom.toFixed(6)), max: Number(top.toFixed(6)), label: cutLabel(options.language),
         control: { kind: "slider", step: sliderStep(bottom, top) } });
-      content.sections = [{ as: "cut", axis: "z", value: middle, targets: ["solid"], display: "plane_and_intersection", color: "orange" }];
+      content.sections = [{ as: "cut", axis: "z", value: middle, targets: objects.map((object) => object.as), display: "plane_and_intersection", color: "orange" }];
       content.bindings = [{ target: "cut.value", expression: solid.cut.variable }];
     }
     return { do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(), content } as Action;
