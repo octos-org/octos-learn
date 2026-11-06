@@ -338,6 +338,9 @@ function noteHeading(role: NoteRole, language: string): string {
   return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
 }
 
+/** How close (in radians) the viewer must turn a 3D scene to the direction a "Your turn" asks for. */
+const VIEW_TOLERANCE = 0.3;
+
 /** Space between handwriting that continues a card and neat math for part of it, in board units. */
 const NEAT_GAP = 12;
 
@@ -732,18 +735,36 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
 
     if (card.kind === "your_turn") {
-      // The learner may set the exercise up more than once; the latest wins.
-      const check = [...take.events].reverse().find((event) => event.type === "your_turn.check_picked");
+      // The learner may set the exercise up more than once, in any of its kinds; the latest wins.
+      const setups = take.events.flatMap((event, index) => (
+        event.type === "your_turn.check_picked" || event.type === "your_turn.answer_set" || event.type === "your_turn.view_set" ? [{ event, index }] : []));
+      const latest = setups.at(-1)?.event;
+      const hints = take.events.flatMap((event) => (event.type === "your_turn.hint_spoken" ? [event.text] : []));
+      const base = { as: `task-${card.key}`, prompt: take.text?.trim() || card.title, availability: { kind: "after_lesson" }, hints: hints.length ? hints : [card.title] };
       const demo = [...take.events].reverse().find((event) => event.type === "your_turn.demonstrated");
-      if (check && demo && check.type === "your_turn.check_picked" && demo.type === "your_turn.demonstrated") {
-        const hints = take.events.flatMap((event) => (event.type === "your_turn.hint_spoken" ? [event.text] : []));
+      if (latest?.type === "your_turn.check_picked" && demo?.type === "your_turn.demonstrated") {
         tasks.push({
-          as: `task-${card.key}`,
-          prompt: take.text?.trim() || card.title,
-          availability: { kind: "after_lesson" },
+          ...base,
           allowed_operations: [{ kind: "variable_change", variable: demo.variable, controls: angleControlled.has(demo.variable) ? ["slider", "geometry_point"] : ["slider"] }],
-          completion: { kind: "expression_target", expression: check.expression, value: check.value, tolerance: check.tolerance },
-          hints: hints.length ? hints : [card.title],
+          completion: { kind: "expression_target", expression: latest.expression, value: latest.value, tolerance: latest.tolerance },
+        } as never);
+      } else if (latest?.type === "your_turn.answer_set") {
+        // The answer box sits by what this card put on the board last (or the lesson's latest card).
+        const anchor = [...actions].reverse().find((action) => action.do === "write" && !hidden.has(action.as))?.as
+          ?? (lastNode && !hidden.has(lastNode) ? lastNode : undefined);
+        if (!anchor) throw new CompileError(`"${card.title}" needs something on the board for its question to sit by`);
+        tasks.push({
+          ...base, anchor,
+          allowed_operations: [{ kind: "answer_entry" }],
+          completion: { kind: "numeric_answer", answer: latest.answer.trim(), ...(latest.unit?.trim() ? { unit: latest.unit.trim() } : {}), ...(latest.simplest ? { form: "simplest_fraction" } : {}) },
+        } as never);
+      } else if (latest?.type === "your_turn.view_set") {
+        if (!scenes.has(latest.node)) throw new CompileError(`'${latest.node}' is not a 3D scene`);
+        tasks.push({
+          ...base,
+          allowed_operations: [{ kind: "scene3d_view", node: latest.node, controls: ["orbit", "zoom", "preset", "reset"] }],
+          completion: { kind: "scene3d_view_target", node: latest.node, match: "view_direction", yaw: latest.yaw, pitch: latest.pitch, zoom: 1,
+            angular_tolerance: VIEW_TOLERANCE, zoom_tolerance: 4.8 },
         } as never);
       }
     }

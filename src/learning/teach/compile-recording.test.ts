@@ -556,3 +556,41 @@ describe("diagrams of steps and cycles", () => {
     expect(stepEdges).toHaveLength(1);
   });
 });
+
+describe("Your turn beyond dragging: answer a number, turn a 3D shape", () => {
+  function practice(events: RecordingEvent[]) {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Box", type: "math_off_map" }, goals: ["Surface area"] }), now,
+      [{ title: "The box" }, { title: "Your turn", kind: "your_turn" }]);
+    recording = record(recording, "card-1", "Here is a box.", [
+      { t: 500, type: "component.insert", panel: "solid_3d", alias: "box-1", shape: "box", size: { x: 4, y: 3, z: 2 } },
+    ]);
+    return record(recording, "card-2", "How big is the top face?", [
+      { t: 500, type: "component.insert", panel: "text", alias: "text-1", text: "Top face area = ?" },
+      ...events,
+    ]);
+  }
+
+  it("asks for a number by the card's last board item, with its unit and form", () => {
+    const { lesson } = check(practice([
+      { t: 1_000, type: "your_turn.answer_set", answer: "12", unit: "cm²" },
+      { t: 1_200, type: "your_turn.hint_spoken", text: "Length times width." },
+    ]));
+    expect(lesson.lesson.tasks).toEqual([expect.objectContaining({
+      anchor: "text-1", prompt: "How big is the top face?", allowed_operations: [{ kind: "answer_entry" }],
+      completion: { kind: "numeric_answer", answer: "12", unit: "cm²" }, hints: ["Length times width."],
+    })]);
+  });
+
+  it("asks to turn the shape to a direction, and the latest setup wins", () => {
+    const { lesson } = check(practice([
+      { t: 1_000, type: "your_turn.answer_set", answer: "3/4", simplest: true },
+      { t: 2_000, type: "your_turn.view_set", node: "box-1", yaw: 0, pitch: 1.5 },
+    ]));
+    expect(lesson.lesson.tasks).toEqual([expect.objectContaining({
+      allowed_operations: [{ kind: "scene3d_view", node: "box-1", controls: ["orbit", "zoom", "preset", "reset"] }],
+      completion: expect.objectContaining({ kind: "scene3d_view_target", node: "box-1", match: "view_direction", yaw: 0, pitch: 1.5 }),
+    })]);
+    const answered = check(practice([{ t: 2_000, type: "your_turn.view_set", node: "box-1", yaw: 0, pitch: 1.5 }, { t: 3_000, type: "your_turn.answer_set", answer: "3/4", simplest: true }]));
+    expect(answered.lesson.lesson.tasks![0]!.completion).toEqual({ kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" });
+  });
+});

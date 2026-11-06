@@ -3,7 +3,7 @@ import { useLocale } from "@/i18n/use-locale";
 import { ArrowUpRight, Braces, Crosshair, Eraser, Highlighter, ListChecks, MousePointer2, Pencil, PenLine, Play, Plus, Sparkles, Undo2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
+import { isSimplestFraction, normalizeAuthoringLesson, parseNumericAnswer, reduceCanonicalEvents, scene3dViewTargetScore } from "octos-lesson-language";
 
 import { getSelectedProfileId } from "@/api/client";
 import { fetchCloudAsrStatus, transcribeCloudSpeech } from "@/api/cloud-asr";
@@ -862,7 +862,17 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               {card?.kind === "your_turn" && (
                 <YourTurnPanel
                   variables={recordingVariables(recording)}
+                  scenes={recordingScenes(recording)}
                   valueOf={(alias) => boardRef.current?.variableValue(alias)}
+                  viewOf={(node) => latestView(recording, card.key, node)}
+                  onSaveAnswer={(exercise) => record([
+                    withTime({ type: "your_turn.answer_set" as const, answer: exercise.answer, ...(exercise.unit ? { unit: exercise.unit } : {}), ...(exercise.simplest ? { simplest: true } : {}) }),
+                    ...(exercise.hint ? [withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint })] : []),
+                  ])}
+                  onSaveView={(exercise) => record([
+                    withTime({ type: "your_turn.view_set" as const, node: exercise.node, yaw: exercise.yaw, pitch: exercise.pitch }),
+                    ...(exercise.hint ? [withTime({ type: "your_turn.hint_spoken" as const, text: exercise.hint })] : []),
+                  ])}
                   onSave={(exercise) => {
                     record([
                       withTime({ type: "your_turn.demonstrated" as const, variable: exercise.variable, value: exercise.value }),
@@ -1011,11 +1021,44 @@ function evaluateReadout(expression: string, value: number): number {
   return value;
 }
 
+type PracticeKind = "drag" | "answer" | "view";
+
 /**
- * Sets up a "Your turn" exercise from the learner's own demonstration: they
- * put the answer on the board, then choose which reading is checked.
+ * Sets up a "Your turn" exercise: drag something to the answer the learner
+ * shows, type a number, or turn a 3D shape to the view the learner shows.
  */
-function YourTurnPanel({ variables, valueOf, onSave }: {
+function YourTurnPanel({ variables, scenes, valueOf, viewOf, onSave, onSaveAnswer, onSaveView }: {
+  variables: string[];
+  scenes: Array<{ alias: string; label: string }>;
+  valueOf: (alias: string) => number | undefined;
+  /** How the learner last turned a 3D scene in this take. */
+  viewOf: (node: string) => { yaw: number; pitch: number } | undefined;
+  onSave: (exercise: { variable: string; value: number; expression: string; target: number; tolerance: number; hint: string }) => void;
+  onSaveAnswer: (exercise: { answer: string; unit: string; simplest: boolean; hint: string }) => void;
+  onSaveView: (exercise: { node: string; yaw: number; pitch: number; hint: string }) => void;
+}) {
+  const kinds: Array<[PracticeKind, string]> = [
+    ...(variables.length ? [["drag", tr("拖到答案")] as [PracticeKind, string]] : []),
+    ["answer", tr("填一个数")],
+    ...(scenes.length ? [["view", tr("转到某个角度")] as [PracticeKind, string]] : []),
+  ];
+  const [kind, setKind] = useState<PracticeKind>(kinds[0]![0]);
+  return (
+    <div className="teach-your-turn">
+      <h2 className="teach-group-label">{tr("设置练习")}</h2>
+      <div className="teach-note-roles" role="radiogroup" aria-label={tr("练习的样子")}>
+        {kinds.map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={kind === value} onClick={() => setKind(value)}>{label}</button>)}
+      </div>
+      {kind === "drag" && <DragPractice variables={variables} valueOf={valueOf} onSave={onSave} />}
+      {kind === "answer" && <AnswerPractice onSave={onSaveAnswer} />}
+      {kind === "view" && <ViewPractice scenes={scenes} viewOf={viewOf} onSave={onSaveView} />}
+      {!variables.length && <p className="academy-muted">{tr("想让看的人拖动答案，需要一个可以拖动的组件，比如单位圆。")}</p>}
+    </div>
+  );
+}
+
+/** The viewer drags a lesson variable until a reading reaches the answer the learner put on the board. */
+function DragPractice({ variables, valueOf, onSave }: {
   variables: string[];
   valueOf: (alias: string) => number | undefined;
   onSave: (exercise: { variable: string; value: number; expression: string; target: number; tolerance: number; hint: string }) => void;
@@ -1025,7 +1068,6 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
   const [expression, setExpression] = useState(variable ? `sin(${variable})` : "");
   const [hint, setHint] = useState("");
   const [saved, setSaved] = useState(false);
-  if (!variables.length) return <p className="academy-muted">{tr("“轮到你了”需要一个可以拖动的组件，比如单位圆。先在前面的卡片里放一个。")}</p>;
   const target = demonstrated === undefined ? undefined : Math.round(evaluateReadout(expression, demonstrated) * 100) / 100;
   return (
     <form className="teach-step" aria-label={tr("设置“轮到你了”练习")} onSubmit={(event) => {
@@ -1034,7 +1076,6 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
       onSave({ variable, value: demonstrated, expression, target, tolerance: expression === variable ? 0.05 : 0.01, hint: hint.trim() });
       setSaved(true);
     }}>
-      <h2 className="teach-group-label">{tr("设置练习")}</h2>
       <p className="academy-muted">{tr("① 先说出题目，再在白板上拖动单位圆下面的滑块（或圆上的点），把正确答案摆出来。")}</p>
       {variables.length > 1 && (
         <select className="teach-input" value={variable} aria-label={tr("拖动哪个")} onChange={(event) => { setVariable(event.target.value); setExpression(`sin(${event.target.value})`); setDemonstrated(undefined); }}>
@@ -1058,6 +1099,99 @@ function YourTurnPanel({ variables, valueOf, onSave }: {
       )}
     </form>
   );
+}
+
+/** The viewer types a number: whole, decimal, fraction or mixed number, optionally in simplest form, with a unit shown by the box. */
+function AnswerPractice({ onSave }: { onSave: (exercise: { answer: string; unit: string; simplest: boolean; hint: string }) => void }) {
+  const [answer, setAnswer] = useState("");
+  const [unit, setUnit] = useState("");
+  const [simplest, setSimplest] = useState(false);
+  const [hint, setHint] = useState("");
+  const [saved, setSaved] = useState(false);
+  const parsed = answer.trim() ? parseNumericAnswer(answer.trim()) : undefined;
+  const fraction = parsed?.form === "fraction" || parsed?.form === "mixed";
+  const problem = !answer.trim() ? null
+    : !parsed ? tr("写成整数、小数、分数（如 3/4）或带分数（如 2 3/4）。")
+      : simplest && fraction && !isSimplestFraction(parsed) ? tr("要求最简分数时，答案本身也要是最简分数。") : null;
+  return (
+    <form className="teach-step" aria-label={tr("设置填数练习")} onSubmit={(event) => {
+      event.preventDefault();
+      if (!parsed || problem) return;
+      onSave({ answer: answer.trim(), unit: unit.trim(), simplest: simplest && fraction, hint: hint.trim() });
+      setSaved(true);
+    }}>
+      <p className="academy-muted">{tr("① 把题目说出来，也可以写在白板上。看的人讲完后在旁边的框里填答案。")}</p>
+      <div className="teach-range">
+        <label>{tr("正确答案")}<input className="teach-input" inputMode="decimal" value={answer} maxLength={64} onChange={(event) => { setAnswer(event.target.value); setSaved(false); }} /></label>
+        <label>{tr("单位（可以不写）")}<input className="teach-input" value={unit} maxLength={16} onChange={(event) => setUnit(event.target.value)} /></label>
+      </div>
+      {fraction && <label className="teach-place"><input type="checkbox" checked={simplest} onChange={(event) => setSimplest(event.target.checked)} /><span>{tr("要写成最简分数")}</span></label>}
+      {problem && <p role="status" className="teach-notice">{problem}</p>}
+      <label className="teach-label">{tr("给一个提示（可以不写）")}<input className="teach-input" value={hint} onChange={(event) => setHint(event.target.value)} /></label>
+      <button type="submit" disabled={!parsed || Boolean(problem)}>{saved ? tr("已保存，可以再改") : tr("保存这道练习")}</button>
+    </form>
+  );
+}
+
+/** Where a 3D scene starts (OLL's initial camera); a target must be a different view. */
+const START_VIEW = { yaw: 0.72, pitch: 0.55, zoom: 1 };
+
+/** The viewer turns a 3D shape until they look at it from the direction the learner shows. */
+function ViewPractice({ scenes, viewOf, onSave }: {
+  scenes: Array<{ alias: string; label: string }>;
+  viewOf: (node: string) => { yaw: number; pitch: number } | undefined;
+  onSave: (exercise: { node: string; yaw: number; pitch: number; hint: string }) => void;
+}) {
+  const [node, setNode] = useState(scenes.at(-1)?.alias ?? "");
+  const [view, setView] = useState<{ yaw: number; pitch: number }>();
+  const [hint, setHint] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const take = () => {
+    const current = viewOf(node);
+    if (!current) { setProblem(tr("先在白板上转动这个立体，再点这个按钮。")); return; }
+    const target = { kind: "scene3d_view_target" as const, node, match: "view_direction" as const, yaw: current.yaw, pitch: current.pitch, zoom: 1, angular_tolerance: 0.3, zoom_tolerance: 4.8 };
+    if (scene3dViewTargetScore(START_VIEW, target) <= 1) { setProblem(tr("这和一开始看到的角度差不多，看的人不用转就做对了。再多转一点。")); return; }
+    setProblem(null); setView(current); setSaved(false);
+  };
+  return (
+    <form className="teach-step" aria-label={tr("设置转动练习")} onSubmit={(event) => {
+      event.preventDefault();
+      if (!view) return;
+      onSave({ node, yaw: view.yaw, pitch: view.pitch, hint: hint.trim() });
+      setSaved(true);
+    }}>
+      <p className="academy-muted">{tr("① 说出要看的人找什么（比如“转到能看到顶面”），再在白板上把立体转到那个角度。")}</p>
+      {scenes.length > 1 && (
+        <select className="teach-input" value={node} aria-label={tr("转哪个立体")} onChange={(event) => { setNode(event.target.value); setView(undefined); }}>
+          {scenes.map((scene) => <option key={scene.alias} value={scene.alias}>{scene.label}</option>)}
+        </select>
+      )}
+      <p className="academy-muted">{tr("② 转好了，点这个按钮记下来：")}</p>
+      <button type="button" className="teach-secondary" onClick={take}>{tr("就是这个角度")}</button>
+      {problem && <p role="status" className="teach-notice">{problem}</p>}
+      {view && (
+        <>
+          <p className="academy-muted">{tr("看的人要自己把它转到差不多这个方向，才算做对。")}</p>
+          <label className="teach-label">{tr("给一个提示（可以不写）")}<input className="teach-input" value={hint} onChange={(event) => setHint(event.target.value)} /></label>
+          <button type="submit">{saved ? tr("已保存，可以再改") : tr("保存这道练习")}</button>
+        </>
+      )}
+    </form>
+  );
+}
+
+/** The 3D scenes of the recording, by alias, labelled by the card they were put on. */
+function recordingScenes(recording: LearnerRecording): Array<{ alias: string; label: string }> {
+  return recording.cards.flatMap((card, index) => (keptTake(card) ?? currentTake(card))?.events.flatMap((event) => (
+    event.type === "component.insert" && event.panel === "solid_3d" ? [{ alias: event.alias, label: tr("第 {{v0}} 张的长方体", { v0: index + 1 }) }] : [])) ?? []);
+}
+
+/** How the learner last turned a 3D scene in the card's take being recorded. */
+function latestView(recording: LearnerRecording, key: string, node: string): { yaw: number; pitch: number } | undefined {
+  const take = currentTake(recording.cards.find((card) => card.key === key)!) ;
+  const turned = [...(take?.events ?? [])].reverse().find((event) => event.type === "view.rotate" && event.node === node);
+  return turned?.type === "view.rotate" ? { yaw: turned.yaw, pitch: turned.pitch } : undefined;
 }
 
 /** The card's title; the learner can rename it. */

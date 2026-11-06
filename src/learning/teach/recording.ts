@@ -73,7 +73,11 @@ export type RecordingEvent =
   | { t: number; type: "diagram.add"; node: string; label: string; link?: string }
   | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
   | { t: number; type: "your_turn.check_picked"; expression: string; value: number; tolerance: number }
-  | { t: number; type: "your_turn.hint_spoken"; text: string };
+  | { t: number; type: "your_turn.hint_spoken"; text: string }
+  /** "Your turn" asks for a number: the answer as the viewer would type it (whole, decimal, fraction or mixed). */
+  | { t: number; type: "your_turn.answer_set"; answer: string; unit?: string; simplest?: boolean }
+  /** "Your turn" asks the viewer to turn a 3D scene so they look at it from this direction. */
+  | { t: number; type: "your_turn.view_set"; node: string; yaw: number; pitch: number };
 
 /** One sentence of a take, in take time; `asrText` is what recognition heard, before the learner's corrections. */
 export interface SpeechSegment {
@@ -321,7 +325,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
   "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add",
   "tool.arrow", "tool.highlighter",
-  "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken",
+  "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken", "your_turn.answer_set", "your_turn.view_set",
 ]);
 
 /**

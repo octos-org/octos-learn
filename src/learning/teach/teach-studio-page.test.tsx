@@ -554,6 +554,37 @@ it("sets up a Your turn exercise from the learner's demonstration", async () => 
   });
 });
 
+it("sets up a Your turn question answered with a number, checked as the viewer would type it", async () => {
+  localStorage.clear();
+  const recording = planCards(
+    createRecording({ id: "rec-1", now: "2026-10-31T12:00:00.000Z", topic: { text: "Fractions", type: "math_off_map" }, goals: ["Simplify"] }),
+    "2026-10-31T12:00:00.000Z",
+    [{ title: "Halves" }, { title: "Your turn", kind: "your_turn" }],
+  );
+  saveRecordingDraft(localStorage, "learner-1", recording);
+  renderStudio();
+  fireEvent.click(screen.getByRole("button", { name: /2 · Your turn/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
+  addKind("Text");
+  fireEvent.change(screen.getByRole("textbox", { name: "Words to write" }), { target: { value: "Simplify 6/8" } });
+  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  // No unit circle: dragging is not offered; typing a number is.
+  expect(screen.queryByRole("radio", { name: "Drag to the answer" })).toBeNull();
+  expect(screen.getByRole("radio", { name: "Type a number" }).getAttribute("aria-checked")).toBe("true");
+  const answer = screen.getByRole("textbox", { name: "Correct answer" });
+  fireEvent.change(answer, { target: { value: "three quarters" } });
+  expect(screen.getByText(/Write a whole number, a decimal, a fraction/)).toBeTruthy();
+  fireEvent.change(answer, { target: { value: "6/8" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Must be in simplest form" }));
+  expect(screen.getByText("If the answer must be in simplest form, write it in simplest form here too.")).toBeTruthy();
+  fireEvent.change(answer, { target: { value: "3/4" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save this exercise" }));
+  expect(board.compiled!.lesson.lesson.tasks?.[0]).toMatchObject({
+    anchor: "text-1", allowed_operations: [{ kind: "answer_entry" }],
+    completion: { kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" },
+  });
+});
+
 it("turns a card with nothing recorded into the lesson's Your turn exercise, and back", async () => {
   localStorage.clear();
   const recording = planCards(
