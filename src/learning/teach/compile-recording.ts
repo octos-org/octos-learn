@@ -315,6 +315,8 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
 
 /** A diagram of boxes joined by arrows; each box after the first may carry words on the arrow into it. */
 interface Diagram { shape: "steps" | "cycle"; title: string; boxes: Array<{ label: string; link?: string }> }
+/** The most curves the studio puts on one graph. */
+export const MAX_CURVES = 4;
 /** The most boxes OLL lays out as steps (and the studio offers for a cycle). */
 export const MAX_DIAGRAM_BOXES = 8;
 
@@ -380,6 +382,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const geometryLines = new Map<string, Array<{ segment: Record<string, unknown>; ends: Point[] }>>();
   const angleControlled = new Set<string>();
   const scenes = new Set<string>();
+  // Each graph's content so far and the slider letters it reads, so a curve added later revises the graph.
+  const graphs = new Map<string, { content: Record<string, unknown>; letters: Map<string, string> }>();
   // Each diagram's boxes so far, so adding a box revises the whole diagram.
   const diagrams = new Map<string, Diagram>();
   // Each table's content as filled so far, so filling a cell revises the whole table.
@@ -441,7 +445,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           { target: "current.y", expression: component.expression.replace(/\bx\b/g, variable) },
         ];
       }
-      return { do: "write", as: alias, kind: "plot", role: "diagram", content, place: placeNext() } as Action;
+      graphs.set(alias, { content, letters: new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable])) });
+      return { do: "write", as: alias, kind: "plot", role: "diagram", content: structuredClone(content), place: placeNext() } as Action;
     }
     if (component.panel === "coordinate_grid") {
       geometryPoints.set(alias, []);
@@ -635,6 +640,21 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           actions.push({ ...action, ...beside, when } as Action);
           lastNode = event.alias;
           focus = [event.alias];
+          break;
+        }
+        case "graph.add_curve": {
+          const graph = graphs.get(event.node);
+          if (!graph) throw new CompileError(`'${event.node}' is not a graph`);
+          const curves = graph.content.curves as Array<Record<string, unknown>>;
+          if (curves.length >= MAX_CURVES) throw new CompileError(`'${event.node}' already has ${MAX_CURVES} curves`);
+          // OLL cannot revise a card's bindings, so a graph following an angle keeps the curve it has.
+          if (graph.content.bindings) throw new CompileError(`'${event.node}' follows an angle, so it cannot take more curves`);
+          // The graph's slider letters read the same sliders in the new curve.
+          let expression = event.expression.trim();
+          for (const [letter, variable] of graph.letters) expression = expression.replace(new RegExp(`(?<![A-Za-z0-9_])${letter}(?![A-Za-z0-9_])`, "g"), variable);
+          curves.push({ as: `curve-${curves.length + 1}`, expression, label: `y = ${event.expression.trim()}` });
+          actions.push({ do: "revise", target: event.node, content: structuredClone(graph.content), reason: "the learner added a curve", when } as Action);
+          focus = [event.node];
           break;
         }
         case "diagram.add": {

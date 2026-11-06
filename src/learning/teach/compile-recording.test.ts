@@ -653,3 +653,27 @@ describe("3D solids beyond the box", () => {
     expect((state.nodes["l:node:solid-2"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "sphere", radius: 1.5 });
   });
 });
+
+describe("adding curves to a graph while talking", () => {
+  it("adds a curve that reads the graph's sliders", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Shifts", type: "math_off_map" }, goals: [] }), now, [{ title: "Up and down" }]);
+    recording = record(recording, "card-1", "Compare x squared with x squared plus k.", [
+      { t: 300, type: "component.insert", panel: "graph", alias: "graph-1", expression: "x^2", x: [-4, 4], y: [-2, 12],
+        parameters: [] },
+      { t: 900, type: "graph.add_curve", node: "graph-1", expression: "x^2+3" },
+    ]);
+    const { state } = check(recording);
+    const curves = (state.nodes["l:node:graph-1"]!.content as { curves: Array<{ expression: string; label: string }> }).curves;
+    expect(curves.map((curve) => curve.label)).toEqual(["y = x^2", "y = x^2+3"]);
+  });
+
+  it("refuses a curve on a graph that follows an angle, which OLL could not keep following", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: [] }), now, [{ title: "Waves" }]);
+    recording = record(recording, "card-1", "Sine and cosine.", [
+      { t: 100, type: "component.insert", panel: "unit_circle", alias: "unit-circle-1", variable: "theta" },
+      { t: 300, type: "component.insert", panel: "graph", alias: "graph-1", expression: "sin(x)", x: [0, 6.3], y: [-1.2, 1.2], linkedVariable: "theta" },
+      { t: 900, type: "graph.add_curve", node: "graph-1", expression: "cos(x)" },
+    ]);
+    expect(() => compileRecording(recording, { author, language: "en-US" })).toThrow("follows an angle");
+  });
+});

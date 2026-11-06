@@ -40,7 +40,7 @@ test("a card of words: a text card, a table filled cell by cell while talking, a
   await page.getByRole("button", { name: "放到白板上" }).click();
   const table = page.locator(".teach-studio .board-node.kind-table");
   await expect(table).toContainText("固体");
-  await expect(page.getByText("点表格里的格子可以填写，点图示可以再加一步。")).toBeVisible();
+  await expect(page.getByText("点表格里的格子可以填写，点图示可以再加一步，点函数图可以再画一条。")).toBeVisible();
 
   // Fill the first example while talking.
   await table.locator("td").nth(1).click();

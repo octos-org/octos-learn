@@ -289,8 +289,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   onContinuing?: (node: string | null) => void;
   /** While set, tapping a cell of a table on the board reports it, to fill it in. */
   onTableCell?: (cell: TableCell) => void;
-  /** While set, tapping a diagram on the board reports it, to add a box. */
-  onDiagram?: (node: string) => void;
+  /** While set, tapping a diagram or a graph on the board reports it, to add a box or a curve. */
+  onDiagram?: (node: string, kind: "diagram" | "plot") => void;
 }>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell, onDiagram }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
@@ -358,11 +358,12 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         onTableCellRef.current!({ node: found[1]!, row: Number(found[2]), column: Number(found[3]), text: cell!.textContent?.trim() ?? "" });
         return;
       }
-      // A diagram, to add a box to.
-      const diagram = onDiagramRef.current ? (event.target as Element | null)?.closest?.<HTMLElement>(".board-node.kind-diagram[data-id]") : null;
-      const diagramTarget = diagram ? boardTargetFromId(diagram.dataset.id) : undefined;
-      if (diagramTarget) {
-        onDiagramRef.current!(diagramTarget.node);
+      // A diagram or a graph, to add a box or a curve to (not its own controls).
+      const growing = onDiagramRef.current && !(event.target as Element | null)?.closest?.("button, input, select, label")
+        ? (event.target as Element | null)?.closest?.<HTMLElement>(".board-node.kind-diagram[data-id], .board-node.kind-plot[data-id]") : null;
+      const growingTarget = growing ? boardTargetFromId(growing.dataset.id) : undefined;
+      if (growing && growingTarget) {
+        onDiagramRef.current!(growingTarget.node, growing.dataset.kind === "plot" ? "plot" : "diagram");
         return;
       }
       if (!onTargetRef.current) return;

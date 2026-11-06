@@ -38,6 +38,8 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
       }[event.panel] };
     case "table.fill":
       return { action: "insert", label: tr("填表格") };
+    case "graph.add_curve":
+      return { action: "insert", label: tr("再画一条：y = {{v0}}", { v0: event.expression }) };
     case "diagram.add":
       return { action: "insert", label: tr("加一步：{{v0}}", { v0: event.label }) };
     case "point_tool.place":

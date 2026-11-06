@@ -3190,7 +3190,6 @@
   "加上": "Add",
   "放上图示": "Put a diagram",
   "加一步：{{v0}}": "Add a step: {{v0}}",
-  "点表格里的格子可以填写，点图示可以再加一步。": "Tap a table cell to fill it in, or a diagram to add a step.",
   "拖到答案": "Drag to the answer",
   "填一个数": "Type a number",
   "转到某个角度": "Turn to a view",
@@ -3237,5 +3236,14 @@
   "圆柱": "Cylinder",
   "圆锥": "Cone",
   "球": "Sphere",
-  "切面高度": "Cut height"
+  "切面高度": "Cut height",
+  "再画一条：y = {{v0}}": "Another curve: y = {{v0}}",
+  "在函数图上再画一条": "Add a curve to the graph",
+  "这张图跟着单位圆的角度动，不能再加曲线。可以另放一张函数图。": "This graph follows the unit circle's angle, so it can't take more curves. Put in another graph instead.",
+  "这张图已经有 {{v0}} 条曲线了。": "This graph already has {{v0}} curves.",
+  "再画一条 y =": "Another curve y =",
+  "画上": "Draw it",
+  "点表格里的格子可以填写，点图示可以再加一步，点函数图可以再画一条。": "Tap a table cell to fill it in, a diagram to add a step, or a graph to add a curve.",
+  "这张图没有 {{v0}}。": "This graph has no {{v0}}.",
+  "可以用这张图的滑块：{{v0}}": "You can use this graph's sliders: {{v0}}"
 }

@@ -92,6 +92,8 @@ export type RecordingEvent =
   | { t: number; type: "ink.hide"; node: string }
   /** Words put into one cell of a table on the board (row and column count from 0, rows below the header). */
   | { t: number; type: "table.fill"; node: string; row: number; column: number; text: string }
+  /** One more curve on a graph, to compare with the ones already there. */
+  | { t: number; type: "graph.add_curve"; node: string; expression: string }
   /** One more box at the end of a diagram's steps or cycle, with words on the arrow into it if any. */
   | { t: number; type: "diagram.add"; node: string; label: string; link?: string }
   | { t: number; type: "your_turn.demonstrated"; variable: string; value: number }
@@ -346,7 +348,7 @@ export function keptTake(card: RecordingCard): Take | undefined {
 // What stays on the board when only the words are re-recorded: cards, arrows
 // and highlights. The laser and drags are moments in the talk and are redone.
 const BOARD_CONTENT = new Set<RecordingEvent["type"]>([
-  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add",
+  "component.insert", "point_tool.place", "make_point.confirmed", "graph_it.confirmed", "line_tool.draw", "ink.hide", "table.fill", "diagram.add", "graph.add_curve",
   "tool.arrow", "tool.highlighter",
   "your_turn.demonstrated", "your_turn.check_picked", "your_turn.hint_spoken", "your_turn.answer_set", "your_turn.view_set",
 ]);

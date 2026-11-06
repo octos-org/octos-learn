@@ -46,3 +46,35 @@ test("letters of a graph become sliders the learner drags while talking", async 
   expect(drags[0].from).toBe(1);
   expect(drags.at(-1).to).toBeCloseTo(2, 5);
 });
+
+test("tapping a graph while talking adds a curve to compare, reading its sliders", async ({ page }) => {
+  await installTestAccount(page);
+  const draft = {
+    schema: "octos.learner-recording.v1", id: "rec-curves", createdAt: now, updatedAt: now,
+    topic: { text: "上下平移", type: "math_off_map" }, goals: ["看懂 +k"],
+    cards: [{ key: "card-1", title: "平移", kind: "teach", takes: [] }],
+  };
+  await page.addInitScript(({ value, key }) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem(key, JSON.stringify([value]));
+  }, { value: draft, key: RECORDINGS });
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${draft.id}`);
+  await page.getByRole("button", { name: "录第 1 张" }).click();
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "函数图" }).click();
+  await page.getByRole("textbox", { name: "函数 y =" }).fill("x^2+k");
+  await page.getByRole("button", { name: "放到白板上" }).click();
+  const graph = page.locator(".teach-studio .board-node.kind-plot");
+  await expect(graph).toBeVisible();
+  await graph.locator("svg").first().click();
+  await page.getByRole("textbox", { name: "再画一条 y =" }).fill("x^2+m");
+  await expect(page.getByText("这张图没有 m。")).toBeVisible();
+  await page.getByRole("textbox", { name: "再画一条 y =" }).fill("x^2");
+  await page.getByRole("button", { name: "画上" }).click();
+  await expect(graph).toContainText("y = x^2");
+  await page.getByRole("button", { name: /^停止/ }).click();
+  await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
+  const events = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
+  expect(events.at(-1)).toMatchObject({ type: "graph.add_curve", node: "graph-1", expression: "x^2" });
+});

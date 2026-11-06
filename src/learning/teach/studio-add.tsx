@@ -447,6 +447,43 @@ function DiagramForm({ recording, said, onInsert }: { recording: LearnerRecordin
   );
 }
 
+/** One more curve on a graph on the board; a graph that follows an angle cannot take one. */
+export function CurveEditor({ follows, curves, letters, onAdd, onCancel }: {
+  follows: boolean;
+  curves: number;
+  /** The graph's slider letters, which a new curve may read. */
+  letters: string[];
+  onAdd: (expression: string) => void;
+  onCancel: () => void;
+}) {
+  const [expression, setExpression] = useState("");
+  const full = curves >= MAX_GRAPH_CURVES;
+  const named = graphParameterLetters(expression);
+  const unknown = [...named.unknown, ...named.letters.filter((letter) => !letters.includes(letter))];
+  return (
+    <form className="teach-add teach-cell-editor" role="dialog" aria-label={tr("在函数图上再画一条")} onSubmit={(event) => {
+      event.preventDefault();
+      if (expression.trim() && !full && !follows && !unknown.length) onAdd(expression.trim());
+    }}>
+      {follows ? <p className="academy-muted">{tr("这张图跟着单位圆的角度动，不能再加曲线。可以另放一张函数图。")}</p>
+        : full ? <p className="academy-muted">{tr("这张图已经有 {{v0}} 条曲线了。", { v0: MAX_GRAPH_CURVES })}</p> : (
+          <>
+            <label className="teach-label">{tr("再画一条 y =")}<input className="teach-input" value={expression} autoFocus onChange={(event) => setExpression(event.target.value)} /></label>
+            {unknown.length > 0 && <p role="status" className="teach-notice">{tr("这张图没有 {{v0}}。", { v0: unknown.join("、") })}</p>}
+            {letters.length > 0 && <p className="academy-muted">{tr("可以用这张图的滑块：{{v0}}", { v0: letters.join("、") })}</p>}
+          </>
+        )}
+      <div className="teach-actions">
+        <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
+        {!follows && !full && <button type="submit" disabled={!expression.trim() || unknown.length > 0}>{tr("画上")}</button>}
+      </div>
+    </form>
+  );
+}
+
+/** The most curves the studio puts on one graph (the compiler holds the same limit). */
+const MAX_GRAPH_CURVES = 4;
+
 /** One more box at the end of a diagram on the board, with words on the arrow into it if any. */
 export function DiagramEditor({ boxes, said, onAdd, onCancel }: {
   /** How many boxes the diagram has now. */
