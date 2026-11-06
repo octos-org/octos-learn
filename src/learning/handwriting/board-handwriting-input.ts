@@ -1,3 +1,5 @@
+import type { HandwritingVariableOptions } from "./handwriting-variable-drag";
+import type { HandwritingPreferences } from "./handwriting-preferences";
 import { HandwritingTargets } from "./handwriting-targets";
 import type { HandwritingGestureMode } from "./handwriting-gesture";
 import { HandwritingCapture, type HandwritingCaptureCallbacks, type HandwritingCaptureError, type HandwritingCaptureFrame, type HandwritingCaptureState } from "./handwriting-capture";
@@ -21,6 +23,11 @@ export interface BoardHandwritingOptions {
   onState(state: BoardHandwritingState): void;
   onVisual(frame: HandwritingCaptureFrame | null, gesture: HandwritingControllerUpdate | null): void;
   mode?: HandwritingGestureMode;
+  preferences?: HandwritingPreferences;
+  variables?: HandwritingVariableOptions;
+  onSample?(frame: HandwritingCaptureFrame): boolean;
+  onInterruption?(): void;
+  onGesture?(gesture: HandwritingControllerUpdate): boolean;
   createCapture?: (video: HTMLVideoElement, callbacks: HandwritingCaptureCallbacks) => Capture;
 }
 let nextPointerId = 85_000;
@@ -48,17 +55,18 @@ export class BoardHandwritingInput {
   get navigating() { return this.targets.navigating; }
   private capture: Capture | null = null;
   private generation = 0;
+  private frameTimer: ReturnType<typeof setTimeout> | null = null;
   private lastNotified = -Infinity;
   private disposed = false;
   private readonly options: BoardHandwritingOptions;
 
   constructor(options: BoardHandwritingOptions) {
     this.options = options;
-    this.controller = new HandwritingPointerController({ mode: options.mode ?? "palm-pinch" });
+    this.controller = new HandwritingPointerController({ mode: options.mode ?? "palm-pinch", ...options.preferences });
     this.targets = new HandwritingTargets(options.viewport, this.pointerId, () => {
       const ink = options.getInk();
       if (ink?.state.mode === "select") ink.clearSelection?.();
-    });
+    }, options.variables);
   }
   private publish(patch: Partial<BoardHandwritingState>) {
     this.state = { ...this.state, ...patch };
@@ -71,6 +79,8 @@ export class BoardHandwritingInput {
 
   private finish(reason: "stop" | "lost") {
     const running = this.capture !== null || this.state.status === "starting" || this.state.status === "active";
+    if (this.frameTimer) clearTimeout(this.frameTimer);
+    this.frameTimer = null;
     this.generation += 1;
     const generation = this.generation;
     this.dispatch(this.controller.reset(performance.now(), reason));
@@ -82,13 +92,20 @@ export class BoardHandwritingInput {
       if (!this.disposed && generation === this.generation) this.publish({ status: "failed", error: "capture_failed" });
     });
   }
-  viewChanged() {
-    if (this.navigating || this.executingCommand || this.state.status !== "active") return;
-    if (this.targets.hasCapture) { this.pause("view"); return; }
+  configure(preferences: HandwritingPreferences) {
     this.dispatch(this.controller.reset(performance.now(), "lost"));
     this.targets.cancel();
+    this.options.preferences = preferences;
+    this.controller = new HandwritingPointerController({ mode: this.options.mode ?? "palm-pinch", ...preferences });
     this.options.onVisual(null, null);
     this.publish({ gesture: null });
+  }
+  viewChanged() {
+    if (this.navigating || this.executingCommand || this.targets.manipulatingVariable || this.state.status !== "active") return;
+    if (this.targets.hasCapture) { this.pause("view"); return; }
+    // An idle pointer is in screen coordinates. Camera animation cannot move
+    // its palm reference, and repeatedly disarming it would prevent a pinch.
+    this.targets.hover(this.state.gesture?.cursor ?? null, this.options.getInk()?.state.mode === "navigate");
   }
   pause(reason: HandwritingPauseReason = "manual") {
     if (this.executingCommand && reason === "tool") return;
@@ -106,7 +123,7 @@ export class BoardHandwritingInput {
   async start(video: HTMLVideoElement) {
     if (this.disposed || !this.options.allowed() || !this.options.getInk()) return;
     this.finish("stop");
-    this.controller = new HandwritingPointerController({ mode: this.options.mode ?? "palm-pinch" });
+    this.controller = new HandwritingPointerController({ mode: this.options.mode ?? "palm-pinch", ...this.options.preferences });
     const generation = this.generation;
     this.options.getInk()?.setMode("navigate");
     this.publish({ status: "starting", capture: "starting", reason: null, error: null, gesture: null });
@@ -123,16 +140,37 @@ export class BoardHandwritingInput {
       },
       onFrame: frame => {
         if (this.disposed || generation !== this.generation) return;
+        if (this.frameTimer) clearTimeout(this.frameTimer);
+        this.frameTimer = setTimeout(() => {
+          if (this.disposed || generation !== this.generation) return;
+          this.dispatch(this.controller.reset(performance.now(), "lost"));
+          this.targets.cancel();
+          this.options.onVisual(null, null);
+          this.options.onInterruption?.();
+          this.publish({ capture: "lost", gesture: null });
+        }, 350);
         if (!this.options.allowed()) { this.pause("playback"); return; }
         const dialog = Array.from(this.options.viewport.ownerDocument.querySelectorAll<HTMLElement>('[role="dialog"], [aria-modal="true"]'))
           .some(element => element.getBoundingClientRect().width > 0);
         if (dialog) { this.pause("dialog"); return; }
+        if (this.options.onSample?.(frame)) {
+          this.dispatch(this.controller.reset(frame.timeMs, "lost"));
+          this.targets.cancel();
+          this.options.onVisual(frame, null);
+          return;
+        }
         const gesture = this.controller.update(frame, { width: this.options.viewport.clientWidth, height: this.options.viewport.clientHeight });
-        this.targets.hover(gesture.cursor);
+        if (this.options.onGesture?.(gesture)) {
+          this.targets.cancel();
+          this.options.onVisual(frame, gesture);
+          this.publish({ gesture });
+          return;
+        }
+        this.targets.hover(gesture.cursor, this.options.getInk()?.state.mode === "navigate");
         this.dispatch(gesture.actions);
         if (this.disposed || generation !== this.generation) return;
         if (gesture.cursor && handwritingPointBlocked(this.options.viewport, gesture.cursor)
-          && !this.targets.executingCommand) {
+          && !this.targets.executingCommand && !this.targets.manipulatingVariable) {
           // Flush an already emitted release before resetting the recognizer.
           // Commands use their own capture and may sit inside an occlusion.
           if (!this.options.viewport.parentElement?.querySelector('[data-air-hover], [data-air-pressed]')) {

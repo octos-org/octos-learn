@@ -10,7 +10,7 @@ beforeEach(() => {
     constructor(type: string, init: PointerEventInit) { super(type, init); this.pointerId = init.pointerId!; this.pointerType = init.pointerType!; }
   });
 });
-afterEach(() => { document.body.innerHTML = ""; vi.unstubAllGlobals(); });
+afterEach(() => { document.body.innerHTML = ""; vi.useRealTimers(); vi.unstubAllGlobals(); });
 function setup() {
   const viewport = document.createElement("div"); document.body.append(viewport);
   Object.defineProperty(viewport, "clientWidth", { value: 800 }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
@@ -90,6 +90,16 @@ describe("binding camera hand input to the existing whiteboard", () => {
     s.captures[0]!.callbacks.onFrame({ timeMs: 264, tracked: false, confidence: 0, processingMs: 1, pipelineMs: 1 });
     expect(s.ink.clearSelection).toHaveBeenCalledTimes(1);
     expect(s.events.at(-1)?.type).toBe("pointerup"); s.input.dispose();
+  });
+  it("ends a held gesture when frames stop and requires the fingers to reopen", async () => {
+    vi.useFakeTimers();
+    const s = setup(); await s.begin();
+    vi.advanceTimersByTime(351);
+    expect(s.events.filter(e => e.type === "pointerup")).toHaveLength(1);
+    expect(s.states.at(-1)?.capture).toBe("lost");
+    [264, 297, 330, 363].forEach(t => s.feed(t, true));
+    expect(s.events.filter(e => e.type === "pointerdown")).toHaveLength(1);
+    s.input.dispose();
   });
   it("does not restart after disposal", async () => {
     const s = setup(); await s.begin(); s.input.dispose(); const count = s.events.length;

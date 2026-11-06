@@ -3437,6 +3437,10 @@ export function LearningWhiteboard({
     viewportRef, inputRef: handwritingInputRef, inkRef: inkRuntimeRef, enabled: handwritingEnabled,
     ready: inkAvailable && handwritingEnabled, playing: Boolean(runtime?.playing), sessionId: inkSessionId,
     onZoom: factor => mountedRef.current?.view.zoomBy(factor),
+    variables: { getRuntime: () => runtimeRef.current,
+      commitValue: (alias, value, control, width) => snapValueToActiveTask(runtimeRef.current, alias, value,
+        control === "slider" ? sliderTaskSnapDistance(runtimeRef.current, alias, width)
+          : geometryTaskSnapDistance(viewportRef.current!, runtimeRef.current, alias), control) },
   });
 
   return (
@@ -3868,6 +3872,7 @@ export function LearningWhiteboard({
                               <label htmlFor={inputId}>{control.label}</label>
                               <input
                                 id={inputId}
+                                data-air-variable={control.alias}
                                 type="range"
                                 min={control.min}
                                 max={control.max}

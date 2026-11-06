@@ -1,3 +1,4 @@
+import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 import {
   HandwritingGestureFilter,
   HANDWRITING_DEFAULT_MODE,
@@ -47,15 +48,17 @@ export class HandwritingPointerController {
     mirrorX?: boolean;
     region?: HandwritingCameraRegion;
     mode?: HandwritingGestureMode;
+    pinch?: HandwritingPinchThresholds;
   };
 
   constructor(options: {
     mirrorX?: boolean;
     region?: HandwritingCameraRegion;
     mode?: HandwritingGestureMode;
+    pinch?: HandwritingPinchThresholds;
   } = {}) {
     this.options = options;
-    this.gestures = new HandwritingGestureFilter(options.mode);
+    this.gestures = new HandwritingGestureFilter(options.mode, options.pinch);
     this.grip = (["grip", "palm-pinch"].includes(options.mode ?? HANDWRITING_DEFAULT_MODE)) ? new HandwritingGripPointerController(options) : null;
   }
 

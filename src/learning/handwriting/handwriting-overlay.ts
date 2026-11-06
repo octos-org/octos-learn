@@ -26,6 +26,7 @@ export function drawHandwritingOverlay(
   frame: HandwritingInputFrame | null,
   penDown = false,
   mode: HandwritingGestureMode = HANDWRITING_DEFAULT_MODE,
+  region = HANDWRITING_CAMERA_REGION,
 ): void {
   if (!frame) {
     canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
@@ -46,9 +47,8 @@ export function drawHandwritingOverlay(
   const project = (point: { x: number; y: number }) => projectPreviewPoint(point, { width, height }, {
     width: frame.imageWidth || 640, height: frame.imageHeight || 480,
   });
-  const region = HANDWRITING_CAMERA_REGION;
-  const topLeft = project({ x: region.left, y: region.top });
-  const bottomRight = project({ x: region.right, y: region.bottom });
+  const topLeft = project({ x: 1 - region.right, y: region.top });
+  const bottomRight = project({ x: 1 - region.left, y: region.bottom });
   context.strokeStyle = "rgba(255,255,255,0.45)";
   context.lineWidth = 1;
   context.setLineDash([4, 5]);

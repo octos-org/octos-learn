@@ -1,3 +1,4 @@
+import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 import { HandwritingGestureFilter, type HandwritingInputFrame, type HandwritingGestureMode } from "./handwriting-gesture";
 import { HandwritingPointFilter, mapHandPointToViewport, type HandwritingCameraRegion, type HandwritingViewportSize } from "./handwriting-map";
 import type { HandwritingControllerUpdate, HandwritingPointerAction } from "./handwriting-controller";
@@ -10,6 +11,8 @@ type Sample = { point: Point; timeMs: number };
 export class HandwritingGripPointerController {
   private readonly gestures: HandwritingGestureFilter;
   private readonly points = new HandwritingPointFilter();
+  private rawPoint: Point | null = null;
+  private rawTime = -Infinity;
   private previous: Point | null = null;
   private cursor: Point | null = null;
   private frozen = false;
@@ -21,9 +24,9 @@ export class HandwritingGripPointerController {
   private releaseAt: number | undefined;
   private readonly options: { mirrorX?: boolean; region?: HandwritingCameraRegion };
 
-  constructor(options: { mirrorX?: boolean; region?: HandwritingCameraRegion; mode?: HandwritingGestureMode } = {}) {
+  constructor(options: { mirrorX?: boolean; region?: HandwritingCameraRegion; mode?: HandwritingGestureMode; pinch?: HandwritingPinchThresholds } = {}) {
     this.options = options;
-    this.gestures = new HandwritingGestureFilter(options.mode ?? "grip");
+    this.gestures = new HandwritingGestureFilter(options.mode ?? "grip", options.pinch);
   }
 
   private commit(cutoff: number): HandwritingPointerAction[] {
@@ -61,6 +64,8 @@ export class HandwritingGripPointerController {
     const actions = this.end(timeMs, reason, this.releaseAt);
     this.gestures.reset();
     this.points.reset();
+    this.rawPoint = null;
+    this.rawTime = -Infinity;
     this.previous = null;
     this.cursor = null;
     this.frozen = false;
@@ -79,6 +84,14 @@ export class HandwritingGripPointerController {
       const actions = this.reset(frame.timeMs, "lost");
       return result(actions, "lost", active ? "break" : gesture.transition);
     }
+    const raw = gesture.reading.palmCenter;
+    if (this.active && gesture.canMove && gesture.phase === "drawing" && this.rawPoint && frame.timeMs - this.rawTime <= 100
+      && Math.hypot(raw.x - this.rawPoint.x, raw.y - this.rawPoint.y) > 0.35) {
+      const actions = this.reset(frame.timeMs, "lost");
+      return result(actions, "lost", "break");
+    }
+    this.rawPoint = raw;
+    this.rawTime = frame.timeMs;
     const mapped = mapHandPointToViewport(gesture.reading.palmCenter, viewport, this.options.mirrorX ?? true, this.options.region);
     if (!mapped.inside) {
       const active = this.active;

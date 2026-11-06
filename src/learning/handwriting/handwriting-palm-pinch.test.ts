@@ -48,4 +48,20 @@ describe("palm targeting with a thumb-index clutch", () => {
     const actions = [264, 297, 330].flatMap(t => c.update(frame(t, 0.75, 0.55), viewport).actions);
     expect(actions.map(a => a.type)).toEqual(["up"]);
   });
+  it("uses calibrated thresholds and breaks an implausible tracked jump", () => {
+    const c = new HandwritingPointerController({ mode: "palm-pinch", pinch: { down: 0.45, up: 0.7 } });
+    for (const t of [0, 33, 66, 99]) c.update(frame(t, 0.8), viewport);
+    const actions = [132, 165, 198, 231].flatMap(t => c.update(frame(t, 0.35), viewport).actions);
+    expect(actions.filter(a => a.type === "down")).toHaveLength(1);
+    expect(c.update(frame(264, 0.35, 0.8), viewport).actions.at(-1)?.reason).toBe("lost");
+    expect(c.update(frame(297, 0.35, 0.8), viewport).actions).toEqual([]);
+  });
+
+  it("ends a long ambiguous opening without accepting further ink", () => {
+    const c = new HandwritingPointerController({ mode: "palm-pinch" }); begin(c);
+    const actions = [264, 400, 530, 660, 730].flatMap(t => c.update(frame(t, 0.35), viewport).actions);
+    expect(actions.map(a => a.type)).toEqual(["up"]);
+    expect(actions[0]!.reason).toBe("lost");
+  });
+
 });

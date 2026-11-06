@@ -1,3 +1,4 @@
+import { HandwritingSetupControls, HandwritingPracticeOverlay } from "./handwriting-setup-controls";
 import { ChevronDown, ChevronUp, ScanLine, X } from "lucide-react";
 import { tr } from "@/i18n";
 import type { useHandwritingInput } from "./use-handwriting-input";
@@ -36,12 +37,14 @@ export function HandwritingToolbarButton({ state, start, stop, disabled }: Pick<
   </button>;
 }
 
-export function HandwritingControls({ state, videoRef, overlayRef, cursorRef, collapsed, setCollapsed, start, pause, stop, canResume, gestureMode, setGestureMode, zoomBy }: Input & { canResume: boolean }) {
+export function HandwritingControls(input: Input & { canResume: boolean }) {
+  const { state, videoRef, overlayRef, cursorRef, collapsed, setCollapsed, start, pause, stop, canResume, gestureMode, setGestureMode, zoomBy } = input;
   const on = state.status !== "off";
   const pinch = gestureMode === "palm-pinch";
   const paused = state.status === "paused" || state.status === "failed";
   return <>
     <aside className="board-handwriting-controls" data-learning-board-occlusion="" data-handwriting-controls=""
+      data-training={input.training ? "true" : undefined}
       aria-label={tr("隔空书写控制")} hidden={!on}>
       <header>
         <strong>{tr("隔空书写")}</strong>
@@ -50,7 +53,7 @@ export function HandwritingControls({ state, videoRef, overlayRef, cursorRef, co
           data-air-command="preview" onClick={() => setCollapsed(!collapsed)}>{collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</button>
         <button type="button" data-air-command="stop" aria-label={tr("关闭隔空书写")} onClick={stop}><X size={16} /></button>
       </header>
-      <div className="board-handwriting-body" hidden={collapsed}>
+      <div className="board-handwriting-body" hidden={collapsed || Boolean(input.training)}>
         <div className="board-handwriting-camera">
           <video ref={videoRef} autoPlay muted playsInline aria-label={tr("本机摄像头预览")} />
           <canvas ref={overlayRef} aria-label={tr("实时手部关键点与骨架")} />
@@ -63,6 +66,7 @@ export function HandwritingControls({ state, videoRef, overlayRef, cursorRef, co
         </select></label>
         <p className="board-handwriting-note">{tr("仅在本机识别，不会因开启手势而给老师发送画面。")}</p>
       </div>
+      <HandwritingSetupControls input={input} />
       <div className="board-handwriting-state" role="status" data-state={state.status} data-phase={state.gesture?.phase ?? "none"}>
         {handwritingStatus(state, pinch)}
       </div>
@@ -73,6 +77,7 @@ export function HandwritingControls({ state, videoRef, overlayRef, cursorRef, co
         {paused ? tr("继续隔空书写") : tr("暂停隔空书写")}
       </button></footer>
     </aside>
+    <HandwritingPracticeOverlay input={input} />
     <div ref={cursorRef} className="board-handwriting-cursor" hidden aria-hidden="true"><i /></div>
   </>;
 }

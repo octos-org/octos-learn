@@ -1,10 +1,12 @@
+import { useHandwritingSetup } from "./use-handwriting-setup";
+import type { HandwritingVariableOptions } from "./handwriting-variable-drag";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { HandwritingGestureMode } from "./handwriting-gesture";
 import type { InkRuntime } from "../oll/oll-ink-runtime";
 import { BoardHandwritingInput, INITIAL_HANDWRITING_STATE, type BoardHandwritingState } from "./board-handwriting-input";
 import { drawHandwritingOverlay } from "./handwriting-overlay";
 
-export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, enabled, ready, playing, sessionId, onZoom }: {
+export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, enabled, ready, playing, sessionId, onZoom, variables }: {
   viewportRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<BoardHandwritingInput | null>;
   inkRef: RefObject<InkRuntime | null>;
@@ -12,8 +14,13 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
   ready: boolean;
   playing: boolean;
   sessionId?: string;
+  variables?: HandwritingVariableOptions;
   onZoom?: (factor: number) => void;
 }) {
+  const setup = useHandwritingSetup(viewportRef);
+  const cancelSetup = setup.cancelSetup;
+  const variableOptions = useRef(variables);
+  useEffect(() => { variableOptions.current = variables; }, [variables]);
   const zoom = useRef(onZoom);
   useEffect(() => { zoom.current = onZoom; }, [onZoom]);
   const [gestureMode, setGestureMode] = useState<HandwritingGestureMode>("palm-pinch");
@@ -28,10 +35,14 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
     const viewport = viewportRef.current;
     if (!viewport || !sessionId || !enabled) return;
     const input = new BoardHandwritingInput({
-      viewport, mode: gestureMode, getInk: () => inkRef.current, allowed: () => allowed.current,
+      viewport, mode: gestureMode, preferences: setup.preferencesRef.current,
+      variables: { getRuntime: () => variableOptions.current?.getRuntime() ?? null,
+        commitValue: (alias, value, control, width) => variableOptions.current?.commitValue?.(alias, value, control, width) ?? value },
+      onSample: setup.sample, onGesture: setup.gesture, onInterruption: cancelSetup,
+      getInk: () => inkRef.current, allowed: () => allowed.current,
       onState: setState,
       onVisual: (frame, gesture) => {
-        if (overlay.current) drawHandwritingOverlay(overlay.current, frame, gesture?.penDown, gestureMode);
+        if (overlay.current) drawHandwritingOverlay(overlay.current, frame, gesture?.penDown, gestureMode, setup.preferencesRef.current.region);
         if (cursor.current) {
           cursor.current.hidden = !gesture?.cursor;
           cursor.current.dataset.phase = gesture?.phase ?? "lost";
@@ -70,16 +81,18 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       document.removeEventListener("visibilitychange", onHidden);
       resize?.disconnect();
     };
-  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode]);
+  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, setup.gesture, cancelSetup]);
   useEffect(() => {
     const shell = viewportRef.current?.parentElement;
     shell?.classList.toggle("air-gesture-enabled", state.status === "active" || state.status === "starting");
     return () => shell?.classList.remove("air-gesture-enabled");
   }, [viewportRef, state.status]);
+  useEffect(() => { ownerRef.current?.configure(setup.preferences); }, [ownerRef, setup.preferences]);
+  useEffect(() => { if (state.status !== "active" && state.status !== "starting") cancelSetup(); }, [state.status, cancelSetup]);
   useEffect(() => { if (playing) ownerRef.current?.pause("playback"); }, [playing, ownerRef]);
   const start = useCallback(() => { if (video.current) void ownerRef.current?.start(video.current); }, [ownerRef]);
   const zoomBy = useCallback((factor: number) => zoom.current?.(factor), []);
   const pause = useCallback(() => ownerRef.current?.pause("manual"), [ownerRef]);
   const stop = useCallback(() => ownerRef.current?.stop(), [ownerRef]);
-  return { state, zoomBy, gestureMode, setGestureMode, videoRef: video, overlayRef: overlay, cursorRef: cursor, collapsed, setCollapsed, start, pause, stop };
+  return { ...setup, state, zoomBy, gestureMode, setGestureMode, videoRef: video, overlayRef: overlay, cursorRef: cursor, collapsed, setCollapsed, start, pause, stop };
 }

@@ -1,3 +1,4 @@
+import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 export interface HandLandmark {
   x: number;
   y: number;
@@ -171,8 +172,10 @@ export class HandwritingGestureFilter {
   private gripOpenFrames = 0;
   private gripHistory: Array<{ timeMs: number; score: number }> = [];
 
-  constructor(mode: HandwritingGestureMode = HANDWRITING_DEFAULT_MODE) {
+  private readonly pinch: HandwritingPinchThresholds;
+  constructor(mode: HandwritingGestureMode = HANDWRITING_DEFAULT_MODE, pinch: HandwritingPinchThresholds = { down: 0.28, up: 0.42 }) {
     this.mode = mode;
+    this.pinch = pinch;
   }
 
   reset(): HandwritingGestureTransition {
@@ -247,7 +250,9 @@ export class HandwritingGestureFilter {
   }
 
   private updatePalmPinch(reading: HandwritingGestureReading, timeMs: number): HandwritingGestureUpdate {
-    const opening = reading.pinchScore > HANDWRITING_PINCH_DOWN_SCORE;
+    reading.writingPose = reading.valid && reading.pinchScore <= this.pinch.down;
+    reading.movePose = reading.valid && reading.pinchScore >= this.pinch.up;
+    const opening = reading.pinchScore > this.pinch.down;
     const candidate = this.penDown ? (opening ? "move" : null)
       : !this.armed ? (reading.movePose ? "move" : null)
       : reading.writingPose ? "write" : null;
@@ -258,6 +263,11 @@ export class HandwritingGestureFilter {
     }
     if (candidate) this.streak += 1;
     let transition: HandwritingGestureTransition = null;
+    if (this.penDown && opening && timeMs - this.since > 450) {
+      const started = this.since;
+      this.reset();
+      return { reading, transition: "break", phase: "unarmed", penDown: false, canMove: false, transitionStartedAt: started };
+    }
     if (this.streak >= 2 && timeMs - this.since >= (this.penDown ? 40 : 60)) {
       if (this.penDown && reading.movePose) {
         this.penDown = false;

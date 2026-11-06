@@ -5,6 +5,8 @@
 <script type="module">
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { useOllLessonRuntime } from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import circleSource from '/src/learning/oll/fixtures/unit-circle-sine.canonical.jsonl?raw';
 import { LearningWhiteboard } from '/src/learning/oll/oll-lesson-runtime.tsx';
 import { HandwritingCapture } from '/src/learning/handwriting/handwriting-capture.ts';
 import { makeHandwritingLandmarks } from '/src/learning/handwriting/simulated-trajectory.ts';
@@ -14,15 +16,27 @@ import '/src/learning/learning-workspace.css';
 localStorage.setItem('octos-learn-experiment-air-writing','true');
 window.asked=[];
 HandwritingCapture.prototype.start=async function(){window.feedFrame=frame=>this.callbacks.onFrame(frame);this.callbacks.onState('tracking');};
-createRoot(document.getElementById('root')).render(React.createElement(LearningWhiteboard,{
- inkSessionId:'air-integration',onAskInkSelection:request=>{window.asked.push(request.toolId);}
-}));
+function Course(){
+ const runtime=useOllLessonRuntime({source:circleSource,storageKey:'air-course',startAtEnd:true});
+ window.airRuntime=runtime;
+ return React.createElement(LearningWhiteboard,{runtime,inkSessionId:'air-course-integration'});
+}
+createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).has('course')
+ ?React.createElement(Course)
+ :React.createElement(LearningWhiteboard,{inkSessionId:'air-integration',onAskInkSelection:request=>{window.asked.push(request.toolId);}}));
 let time=0;
 window.loseHand=()=>{time+=33;window.feedFrame({timeMs:time,tracked:false,processingMs:1,pipelineMs:1});};
+window.handRaw=async function(x,y,score,count=4){
+ const points=makeHandwritingLandmarks({x:.4,y:.3},score,'pinch');
+ const center=handPalmCenter(points);
+ const landmarks=points.map(p=>({x:p.x+1-x-center.x,y:p.y+y-center.y}));
+ for(let i=0;i<count;i++){time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,processingMs:1,pipelineMs:1});await new Promise(resolve=>requestAnimationFrame(resolve));}
+};
 window.hand=async function(x,y,closed,count=4){
  const viewport=document.querySelector('.learning-oll-board');
  const rect=viewport.getBoundingClientRect();
- const palm={x:1-(.1+(x-rect.left)/rect.width*.8),y:.08+(y-rect.top)/rect.height*.84};
+ const region=JSON.parse(localStorage.getItem('octos-learn-air-gesture-preferences-v1')??'null')?.region??{left:.1,top:.08,right:.9,bottom:.92};
+ const palm={x:1-(region.left+(x-rect.left)/rect.width*(region.right-region.left)),y:region.top+(y-rect.top)/rect.height*(region.bottom-region.top)};
  const points=makeHandwritingLandmarks({x:.4,y:.3},closed?.1:.75,'pinch');
  const center=handPalmCenter(points);
  const landmarks=points.map(p=>({x:p.x+palm.x-center.x,y:p.y+palm.y-center.y}));
