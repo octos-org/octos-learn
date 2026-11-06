@@ -1,16 +1,18 @@
-// The order of a recorded card, as a strip under the board, on two tracks:
-// what the learner said above, what they did below. An action sits under the
-// sentence it is done with, or in the gap between two sentences. Actions are
-// dragged to another column (or moved with the arrow keys); a sentence is
-// edited in place, where Enter splits it and Backspace at its start joins it
-// to the one before. The strip folds away to one line.
+// The order of a recorded card, as a strip under the board, on two compact
+// tracks: what the learner said above, what they did below, one line each.
+// An action sits under the sentence it is done with, or in the gap between two
+// sentences, and is dragged to another column (or moved with the arrow keys).
+// Tapping a block opens a popover above it: a sentence is edited there (Enter
+// splits it, Backspace at its start joins it to the one before), watched from,
+// joined or deleted; an action is deleted there. The strip folds to one line.
 
 import { tr } from "@/i18n";
-import { ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, type LucideIcon, Merge, MessageSquare, MousePointer2, MoveHorizontal, PenLine, Play, Pointer, Smile, Sparkles, TrendingUp } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, type LucideIcon, Merge, MessageSquare, MousePointer2, MoveHorizontal, PenLine, Play, Pointer, Smile, Sparkles, Trash2, TrendingUp } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
-import { cardTracks, joinWithPrevious, placeAction, SequenceError, splitSentence, type ActionKind, type TrackColumn } from "./card-script";
+import { cardTracks, deleteAction, deleteSentence, joinWithPrevious, placeAction, SequenceError, splitSentence, type ActionKind, type TrackColumn } from "./card-script";
 import { correctSentence, type LearnerRecording, type RecordingCard } from "./recording";
 
 export const ICONS: Record<ActionKind, LucideIcon> = {
@@ -66,7 +68,10 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
   const sentences = columns.flatMap((column) => (column.sentence ? [column.sentence] : []));
   const [folded, setFolded] = useState(readFolded);
   const [problem, setProblem] = useState<string | null>(null);
+  // The block whose popover is open, and the words being edited in it.
+  const [open, setOpen] = useState<{ id: string; anchor: HTMLElement } | null>(null);
   const [editing, setEditing] = useState<{ index: number; text: string } | null>(null);
+  const close = () => { setOpen(null); setEditing(null); };
   const [drag, setDrag] = useState<Drag | null>(null);
   const track = useRef<HTMLDivElement>(null);
   const focusAfter = useRef<string | null>(null);
@@ -115,7 +120,9 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
       } catch (error) {
         setProblem(error instanceof SequenceError && error.reason === "order"
             ? tr("不能放在那里：动作要在它用到的东西之后，先写的笔画也要先出现。")
-            : tr("这个改动做不了。"));
+            : error instanceof SequenceError && error.reason === "last" ? tr("这张卡片只剩这一句了。可以修改它，或者“重录我的话”。")
+              : error instanceof SequenceError && error.reason === "ink" ? tr("手写要在白板上用橡皮擦掉。")
+                : tr("这个改动做不了。"));
         return current;
       }
     });
@@ -158,6 +165,8 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
     if (!drag || event.pointerId !== drag.pointer) return;
     const done = drag;
     setDrag(null);
+    // A tap (no drag) opens the action's popover.
+    if (!done.active) { setOpen({ id: done.id, anchor: event.currentTarget }); return; }
     // Dropped where it was: nothing changes.
     if (done.active && !samePlace(done.to, placeOf(columns, done.id))) {
       apply((current) => placeAction(current, card.key, done.id, done.to.slot, done.to.position, now()));
@@ -177,18 +186,18 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
   // ---- Editing a sentence
 
   const commit = (index: number, text: string) => {
-    setEditing(null);
+    close();
     const sentence = sentences.find((item) => item.index === index);
     if (sentence && text.trim() !== sentence.text) apply((current) => correctSentence(current, card.key, index, text, now()));
   };
   const onSentenceKey = (index: number) => (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     const box = event.currentTarget;
-    if (event.key === "Escape") { event.preventDefault(); setEditing(null); return; }
+    if (event.key === "Escape") { event.preventDefault(); close(); return; }
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       const at = box.selectionStart;
       const text = box.value;
-      setEditing(null);
+      close();
       // Enter inside the words splits there; at either end it just finishes editing.
       if (at > 0 && at < text.trim().length) {
         apply((current) => splitSentence(correctSentence(current, card.key, index, text, now()), card.key, index, at, now()));
@@ -198,7 +207,7 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
     if (event.key === "Backspace" && box.selectionStart === 0 && box.selectionEnd === 0 && index > 0) {
       event.preventDefault();
       const text = box.value;
-      setEditing(null);
+      close();
       apply((current) => joinWithPrevious(text.trim() ? correctSentence(current, card.key, index, text, now()) : current, card.key, index, now()));
     }
   };
@@ -215,9 +224,7 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
         </button>
         {!folded && (problem
           ? <p role="alert" className="teach-sequence-note" data-problem>{problem}</p>
-          : <p className="teach-sequence-note">{editing
-            ? tr("按回车：从光标处分成两句。在句首按退格：和前一句合并。")
-            : tr("把动作拖到一句话下面，就在说这句时做；拖到两句之间，就在停顿时做。点你说的话可以修改。")}</p>)}
+          : <p className="teach-sequence-note">{tr("把动作拖到一句话下面，就在说这句时做；拖到两句之间，就在停顿时做。点一块可以修改或删掉。")}</p>)}
       </header>
       {!folded && (
         <div className="teach-tracks" data-dragging={target ? true : undefined}>
@@ -229,7 +236,6 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
             <ol className="teach-tracks-columns">
               {columns.map((column) => {
                 const item = column.sentence;
-                const from = item && watchFrom?.(item.index);
                 const dropHere = target?.slot === column.slot;
                 const others = column.actions.filter((action) => action.id !== drag?.id);
                 return (
@@ -237,30 +243,12 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
                     data-empty={!item && !column.actions.length || undefined} data-drop={dropHere || undefined}>
                     <div className="teach-tracks-speech">
                       {item ? (
-                        <div data-item={item.id} className="teach-tracks-sentence" data-sentence data-editing={editing?.index === item.index || undefined}>
-                          {editing?.index === item.index ? (
-                            <textarea autoFocus className="teach-sequence-text" value={editing.text} aria-label={tr("第 {{v0}} 句", { v0: item.index + 1 })}
-                              onChange={(event) => setEditing({ index: item.index, text: event.target.value })}
-                              onKeyDown={onSentenceKey(item.index)} onBlur={(event) => { if (editing) commit(item.index, event.currentTarget.value); }} />
-                          ) : (
-                            <button type="button" className="teach-sequence-words" title={tr("点一下修改")}
-                              aria-label={tr("第 {{v0}} 句：{{v1}}。点一下修改", { v0: item.index + 1, v1: item.text || tr("（没听清）") })}
-                              onClick={() => setEditing({ index: item.index, text: item.text })}>
-                              {item.text || <span className="academy-muted">{tr("这句没听清，点这里写下你说的话。")}</span>}
-                            </button>
-                          )}
-                          {editing?.index !== item.index && (
-                            <span className="teach-sequence-block-tools">
-                              {from && <Link className="teach-sequence-tool" to={from} aria-label={tr("从这句开始看")} title={tr("从这句开始看")}><Play size={14} aria-hidden="true" /></Link>}
-                              {item.index > 0 && (
-                                <button type="button" className="teach-sequence-tool" aria-label={tr("和前一句合并成一句")} title={tr("和前一句合并成一句")}
-                                  onClick={() => apply((current) => joinWithPrevious(current, card.key, item.index, now()))}>
-                                  <Merge size={14} aria-hidden="true" />
-                                </button>
-                              )}
-                            </span>
-                          )}
-                        </div>
+                        <button type="button" data-item={item.id} className="teach-tracks-sentence" data-sentence data-open={open?.id === item.id || undefined}
+                          title={item.text} aria-haspopup="dialog" aria-expanded={open?.id === item.id}
+                          aria-label={tr("第 {{v0}} 句：{{v1}}。点一下修改", { v0: item.index + 1, v1: item.text || tr("（没听清）") })}
+                          onClick={(event) => { setOpen({ id: item.id, anchor: event.currentTarget }); setEditing({ index: item.index, text: item.text }); }}>
+                          <span className="teach-tracks-words">{item.text || <span className="academy-muted">{tr("这句没听清，点这里写下你说的话。")}</span>}</span>
+                        </button>
                       ) : <span className="teach-tracks-pause" aria-hidden="true" />}
                     </div>
                     <ul className="teach-tracks-actions" data-drop-end={dropHere && target!.position === others.length || undefined}
@@ -289,6 +277,69 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
           </div>
         </div>
       )}
+      {open && (() => {
+        const sentence = sentences.find((candidate) => candidate.id === open.id);
+        if (sentence && editing) {
+          const from = watchFrom?.(sentence.index);
+          return (
+            <BlockPopover anchor={open.anchor} label={tr("第 {{v0}} 句", { v0: sentence.index + 1 })} onClose={() => commit(sentence.index, editing.text)}>
+              <textarea autoFocus className="teach-sequence-text" value={editing.text} aria-label={tr("第 {{v0}} 句", { v0: sentence.index + 1 })}
+                onChange={(event) => setEditing({ index: sentence.index, text: event.target.value })} onKeyDown={onSentenceKey(sentence.index)} />
+              <p className="academy-muted">{tr("按回车：从光标处分成两句。在句首按退格：和前一句合并。")}</p>
+              <div className="teach-popover-actions">
+                {from && <Link className="teach-secondary" to={from}><Play size={14} aria-hidden="true" />{tr("从这句开始看")}</Link>}
+                {sentence.index > 0 && <button type="button" className="teach-secondary" onClick={() => { close(); apply((current) => joinWithPrevious(current, card.key, sentence.index, now())); }}><Merge size={14} aria-hidden="true" />{tr("和前一句合并")}</button>}
+                <button type="button" className="teach-secondary teach-danger" onClick={() => { close(); apply((current) => deleteSentence(current, card.key, sentence.index, now())); }}><Trash2 size={14} aria-hidden="true" />{tr("删掉这句")}</button>
+                <button type="button" className="teach-primary" onClick={() => commit(sentence.index, editing.text)}>{tr("好了")}</button>
+              </div>
+            </BlockPopover>
+          );
+        }
+        const action = columns.flatMap((column) => column.actions).find((candidate) => candidate.id === open.id);
+        if (!action) return null;
+        const Icon = ICONS[action.action];
+        const ink = action.id.startsWith("ink:");
+        return (
+          <BlockPopover anchor={open.anchor} label={action.label} onClose={close}>
+            <p className="teach-popover-title"><Icon size={16} aria-hidden="true" />{action.label}</p>
+            <p className="academy-muted">{ink ? tr("手写要在白板上用橡皮擦掉。") : tr("拖动它可以换个时候做。")}</p>
+            <div className="teach-popover-actions">
+              {!ink && <button type="button" className="teach-secondary teach-danger" onClick={() => { close(); apply((current) => deleteAction(current, card.key, action.id, now())); }}><Trash2 size={14} aria-hidden="true" />{tr("删掉这个动作")}</button>}
+              <button type="button" className="teach-primary" onClick={close}>{tr("好了")}</button>
+            </div>
+          </BlockPopover>
+        );
+      })()}
     </section>
+  );
+}
+
+/**
+ * A popover above a block of the strip (drawn over the page, so the strip's
+ * scrolling does not cut it off); it closes on Escape or a press outside.
+ */
+function BlockPopover({ anchor, label, onClose, children }: { anchor: HTMLElement; label: string; onClose: () => void; children: ReactNode }) {
+  const panel = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ left: number; bottom: number } | null>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useLayoutEffect(() => {
+    const box = anchor.getBoundingClientRect();
+    const width = panel.current?.offsetWidth ?? 320;
+    setPlace({ left: Math.max(8, Math.min(box.left + box.width / 2 - width / 2, window.innerWidth - width - 8)), bottom: window.innerHeight - box.top + 8 });
+  }, [anchor]);
+  useEffect(() => {
+    const away = (event: PointerEvent) => { if (!panel.current?.contains(event.target as Node) && !anchor.contains(event.target as Node)) closeRef.current(); };
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape") closeRef.current(); };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+  }, [anchor]);
+  return createPortal(
+    <div ref={panel} role="dialog" aria-label={label} className="teach-block-popover"
+      style={place ? { left: place.left, bottom: place.bottom } : { visibility: "hidden", left: 0, bottom: 0 }}>
+      {children}
+    </div>,
+    document.body,
   );
 }

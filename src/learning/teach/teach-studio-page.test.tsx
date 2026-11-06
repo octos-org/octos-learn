@@ -374,9 +374,10 @@ it("turns what the learner says into the card's captions, timed from the take st
 
   // Correcting one sentence keeps the others and the card's words in step.
   fireEvent.click(strip.getByRole("button", { name: /^Sentence 2: / }));
-  const box = strip.getByRole("textbox", { name: "Sentence 2" });
-  fireEvent.change(box, { target: { value: "Point A is at 1, 2." } });
-  fireEvent.blur(box);
+  // It opens in a popover above the block.
+  const popover = within(screen.getByRole("dialog", { name: "Sentence 2" }));
+  fireEvent.change(popover.getByRole("textbox", { name: "Sentence 2" }), { target: { value: "Point A is at 1, 2." } });
+  fireEvent.click(popover.getByRole("button", { name: "Done" }));
   const corrected = keptTake(loadRecordingDrafts(localStorage, "learner-1")[0]!.cards[0]!)!;
   expect(corrected.segments!.map((segment) => segment.text)).toEqual(["Here is a grid.", "Point A is at 1, 2."]);
   expect(corrected.text).toBe("Here is a grid. Point A is at 1, 2.");

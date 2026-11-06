@@ -212,20 +212,28 @@ test("the order strip: drag an action, split and join sentences, move with the k
 
   // Enter inside a sentence splits it; Backspace at the start of the second part joins it back.
   await strip.getByRole("button", { name: /^第 3 句：/ }).click();
-  const third = strip.getByRole("textbox", { name: "第 3 句" });
+  const third = page.getByRole("dialog", { name: "第 3 句" }).getByRole("textbox", { name: "第 3 句" });
   await third.press("Home");
   await third.press("ArrowRight");
   await third.press("Enter");
   await expect.poll(order).toContain("它");
   await expect.poll(order).toContain("往上走。");
   await strip.getByRole("button", { name: /^第 4 句：往上走/ }).click();
-  const fourth = strip.getByRole("textbox", { name: "第 4 句" });
+  const fourth = page.getByRole("dialog", { name: "第 4 句" }).getByRole("textbox", { name: "第 4 句" });
   await fourth.press("Home");
   await fourth.press("Backspace");
   await expect.poll(order).toContain("它往上走。");
 
+  // Delete an action, then a sentence, from their popovers.
+  await strip.locator("[data-item]", { hasText: "标出点 Beta" }).click();
+  await page.getByRole("dialog", { name: "标出点 Beta" }).getByRole("button", { name: "删掉这个动作" }).click();
+  await expect.poll(order).not.toContain("标出点 Beta");
+  await strip.getByRole("button", { name: /^第 4 句：/ }).click();
+  await page.getByRole("dialog", { name: "第 4 句" }).getByRole("button", { name: "删掉这句" }).click();
+  await expect.poll(order).not.toContain("然后往右走。");
   // Watch from sentence 2: the lesson starts there.
-  await strip.getByRole("link", { name: "从这句开始看" }).nth(1).click();
+  await strip.getByRole("button", { name: /^第 2 句：/ }).click();
+  await page.getByRole("dialog", { name: "第 2 句" }).getByRole("link", { name: "从这句开始看" }).click();
   await expect(page).toHaveURL(/\/watch\?from=card-1-s2$/);
   const sound = page.getByRole("button", { name: "关掉声音" });
   if (await sound.isVisible().catch(() => false)) await sound.click();
@@ -267,11 +275,13 @@ test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a p
   const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
   const sentences = () => strip.locator("[data-sentence]").count();
   expect(await sentences()).toBe(14);
-  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await strip.locator("[data-item='sentence:1']").click();
+  await page.getByRole("dialog", { name: "第 2 句" }).getByRole("button", { name: "和前一句合并" }).click();
   await expect.poll(sentences).toBe(13);
   await expect(strip.locator("[data-item='sentence:0']")).toContainText("这是第 1 段话，用来把顺序条撑满。这是第 2 段话");
   // Joined across the point placed between the sentences.
-  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await strip.locator("[data-item='sentence:1']").click();
+  await page.getByRole("dialog", { name: "第 2 句" }).getByRole("button", { name: "和前一句合并" }).click();
   await expect.poll(sentences).toBe(12);
   await expect(strip.getByRole("alert")).toHaveCount(0);
 

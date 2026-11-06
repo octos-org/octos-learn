@@ -3131,7 +3131,6 @@
   "还有 {{v0}} 张没录": "{{v0}} not recorded yet",
   "正在保存 {{v0}}/{{v1}}": "Saving {{v0}}/{{v1}}",
   "课里一起保存": "Save with the lesson",
-  "把动作拖到一句话下面，就在说这句时做；拖到两句之间，就在停顿时做。点你说的话可以修改。": "Drag an action under a sentence to do it while saying that sentence, or between two sentences to do it in the pause. Click your words to edit them.",
   "谁来讲这节课": "Who presents this lesson",
   "{{v0}} · {{v1}}": "{{v0}} · {{v1}}",
   "主题和目标": "Topic & goal",
@@ -3265,5 +3264,12 @@
   "形象庆祝": "Presenter celebrates",
   "看的人拖动滑块（或圆上的点），拖到你摆出的答案。": "Viewers drag a slider (or the point on the circle) to the answer you showed.",
   "看的人在框里填一个数：整数、小数、分数都可以。": "Viewers type a number: whole, decimal or fraction.",
-  "看的人转动立体，转到你选的那个角度。": "Viewers turn the shape to the view you chose."
+  "看的人转动立体，转到你选的那个角度。": "Viewers turn the shape to the view you chose.",
+  "这张卡片只剩这一句了。可以修改它，或者“重录我的话”。": "This is the card's only sentence. Edit it, or re-record your words.",
+  "手写要在白板上用橡皮擦掉。": "Handwriting is erased on the board, with the eraser.",
+  "把动作拖到一句话下面，就在说这句时做；拖到两句之间，就在停顿时做。点一块可以修改或删掉。": "Drag an action under a sentence to do it while saying that sentence, or between two sentences to do it in the pause. Tap a block to edit or delete it.",
+  "和前一句合并": "Join with the previous sentence",
+  "删掉这句": "Delete this sentence",
+  "拖动它可以换个时候做。": "Drag it to do it at another moment.",
+  "删掉这个动作": "Delete this action"
 }

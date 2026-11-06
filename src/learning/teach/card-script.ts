@@ -191,8 +191,9 @@ function replaceTake(recording: LearnerRecording, key: string, now: string, chan
 
 /** Why the sequence could not be changed that way. */
 export class SequenceError extends RecordingError {
-  readonly reason: "order" | "nothing";
-  constructor(reason: "order" | "nothing") {
+  /** order: it would play out of order; nothing: nothing to change; last: the card's only sentence; ink: handwriting, erased on the board. */
+  readonly reason: "order" | "nothing" | "last" | "ink";
+  constructor(reason: "order" | "nothing" | "last" | "ink") {
     super(reason);
     this.name = "SequenceError";
     this.reason = reason;
@@ -296,5 +297,33 @@ export function joinWithPrevious(recording: LearnerRecording, key: string, index
     const joined: SpeechSegment = { startMs: first.startMs, endMs: second.endMs, text: joinSpoken([first.text, second.text]) };
     const next = [...segments.slice(0, index - 1), joined, ...segments.slice(index + 1)];
     return { take: { ...take, segments: next, text: joinSpoken(next.map((part) => part.text)), textEditedAt: now } };
+  });
+}
+
+/**
+ * Deletes a sentence from the card: its words leave the lesson; actions made
+ * while it was said stay, now in the pause where it was. A card keeps at least
+ * one sentence (edit it, or re-record the words).
+ */
+export function deleteSentence(recording: LearnerRecording, key: string, index: number, now: string): LearnerRecording {
+  return replaceTake(recording, key, now, (take) => {
+    const segments = [...take.segments!].sort((a, b) => a.startMs - b.startMs);
+    if (!segments[index]) throw new SequenceError("nothing");
+    if (segments.length === 1) throw new SequenceError("last");
+    const next = segments.filter((_, position) => position !== index);
+    return { take: { ...take, segments: next, text: joinSpoken(next.map((part) => part.text)), textEditedAt: now } };
+  });
+}
+
+/**
+ * Deletes an action from the card (`event:<index>`). Handwriting is not
+ * deleted here: it is erased on the board, where it was written.
+ */
+export function deleteAction(recording: LearnerRecording, key: string, id: string, now: string): LearnerRecording {
+  if (id.startsWith("ink:")) throw new SequenceError("ink");
+  const index = id.startsWith("event:") ? Number(id.slice("event:".length)) : NaN;
+  return replaceTake(recording, key, now, (take) => {
+    if (!Number.isInteger(index) || !take.events[index]) throw new SequenceError("nothing");
+    return { take: { ...take, events: take.events.filter((_, position) => position !== index) } };
   });
 }
