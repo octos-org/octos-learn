@@ -329,6 +329,7 @@ export function HandwritingLabPage() {
               <option value="grip">{tr("松握拳书写 / 张掌移动（新版试用）")}</option>
               <option value="fist">{tr("伸指书写 / 收拳抬笔（旧版对比）")}</option>
               <option value="point">{tr("单指书写 / 双指移动（对比试用）")}</option>
+              <option value="palm-pinch">{tr("掌部定位与捏合（试用）")}</option>
               <option value="pinch">{tr("拇指与食指捏合（对比试用）")}</option>
             </select>
           </label>

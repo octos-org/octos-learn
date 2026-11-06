@@ -68,14 +68,19 @@ class OneEuroChannel {
   private previousDerivative = 0;
   private previousTime: number | undefined;
 
-  private readonly minimumCutoff: number;
-  private readonly beta: number;
+  private minimumCutoff: number;
+  private beta: number;
   private readonly derivativeCutoff: number;
 
   constructor(minimumCutoff: number, beta: number, derivativeCutoff = 1) {
     this.minimumCutoff = minimumCutoff;
     this.beta = beta;
     this.derivativeCutoff = derivativeCutoff;
+  }
+
+  tune(minimumCutoff: number, beta: number): void {
+    this.minimumCutoff = minimumCutoff;
+    this.beta = beta;
   }
 
   private alpha(cutoff: number, dt: number): number {
@@ -121,6 +126,11 @@ export class HandwritingPointFilter {
   reset(): void {
     this.x.reset();
     this.y.reset();
+  }
+
+  tune(minimumCutoff: number, beta: number): void {
+    this.x.tune(minimumCutoff, beta);
+    this.y.tune(minimumCutoff, beta);
   }
 
   filter(point: { x: number; y: number }, timeMs: number): { x: number; y: number } {

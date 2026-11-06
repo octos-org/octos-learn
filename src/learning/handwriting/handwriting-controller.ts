@@ -1,3 +1,4 @@
+import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 import {
   HandwritingGestureFilter,
   HANDWRITING_DEFAULT_MODE,
@@ -27,7 +28,7 @@ export interface HandwritingControllerUpdate {
   penDown: boolean;
   transition: HandwritingGestureTransition;
   pinchScore: number;
-  phase: HandwritingGesturePhase | "outside";
+  phase: HandwritingGesturePhase | "outside" | "blocked";
   reading: HandwritingGestureReading;
   actions: HandwritingPointerAction[];
 }
@@ -47,16 +48,22 @@ export class HandwritingPointerController {
     mirrorX?: boolean;
     region?: HandwritingCameraRegion;
     mode?: HandwritingGestureMode;
+    pinch?: HandwritingPinchThresholds;
   };
 
   constructor(options: {
     mirrorX?: boolean;
     region?: HandwritingCameraRegion;
     mode?: HandwritingGestureMode;
+    pinch?: HandwritingPinchThresholds;
   } = {}) {
     this.options = options;
-    this.gestures = new HandwritingGestureFilter(options.mode);
-    this.grip = (options.mode ?? HANDWRITING_DEFAULT_MODE) === "grip" ? new HandwritingGripPointerController(options) : null;
+    this.gestures = new HandwritingGestureFilter(options.mode, options.pinch);
+    this.grip = (["grip", "palm-pinch"].includes(options.mode ?? HANDWRITING_DEFAULT_MODE)) ? new HandwritingGripPointerController(options) : null;
+  }
+
+  interrupt(timeMs: number): HandwritingPointerAction[] {
+    return this.grip ? this.grip.interrupt(timeMs) : this.reset(timeMs, "lost");
   }
 
   reset(timeMs = 0, reason: "lost" | "stop" = "stop"): HandwritingPointerAction[] {
@@ -75,8 +82,8 @@ export class HandwritingPointerController {
     return [{ type: "up", point, timeMs, reason }];
   }
 
-  update(frame: HandwritingInputFrame, viewport: HandwritingViewportSize): HandwritingControllerUpdate {
-    if (this.grip) return this.grip.update(frame, viewport);
+  update(frame: HandwritingInputFrame, viewport: HandwritingViewportSize, precision = false): HandwritingControllerUpdate {
+    if (this.grip) return this.grip.update(frame, viewport, precision);
     const gesture = this.gestures.update(frame);
     let cursor: { x: number; y: number } | null = null;
     const actions: HandwritingPointerAction[] = [];

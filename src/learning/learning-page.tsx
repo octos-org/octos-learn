@@ -740,13 +740,14 @@ export function LearningPage() {
           if (session.id === record.id) { setHistoryOpen(false); return; }
           void leaveTo(learningSessionHref(session));
         }} />}
-      <main className="relative min-w-0 flex-1" inert={historyOpen}>
+      <main className="relative min-w-0 flex-1" data-air-scope="" inert={historyOpen}>
         <div
           className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2"
           data-learning-board-occlusion=""
         >
           <button
             type="button"
+            data-air-command="home"
             aria-label={returnLabel}
             title={returnToCollection ? tr("返回课程集") : returnLabel}
             onClick={() => void leaveTo(returnDestination)}
@@ -756,6 +757,7 @@ export function LearningPage() {
           </button>
           <button
             type="button"
+            data-air-command="history"
             aria-label={tr("打开学习记录")}
             title={tr("学习记录")}
             onClick={() => setHistoryOpen(true)}

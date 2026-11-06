@@ -30,7 +30,7 @@ afterEach(() => { cleanup(); document.body.innerHTML = ""; vi.unstubAllGlobals()
 
 function setup(enabled = true) {
   const viewport = document.createElement("div"); document.body.append(viewport);
-  Object.defineProperty(viewport, "clientWidth", { value: 800 }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
+  Object.defineProperty(viewport, "clientWidth", { value: 800, configurable: true }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
   viewport.getBoundingClientRect = () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 } as DOMRect);
   const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), saveNow: vi.fn(async () => null) };
   const ownerRef = { current: null as BoardHandwritingInput | null };
@@ -39,7 +39,7 @@ function setup(enabled = true) {
   const video = document.createElement("video");
   Object.assign(hook.result.current.videoRef, { current: video });
   const feed = (timeMs: number, drawing: boolean) => act(() => captures.at(-1)!.callbacks.onFrame({
-    timeMs, tracked: true, confidence: 1, landmarks: makeHandwritingLandmarks({ x: 0.4, y: 0.4 }, 0.75, "grip", drawing), processingMs: 1, pipelineMs: 1,
+    timeMs, tracked: true, confidence: 1, landmarks: makeHandwritingLandmarks({ x: 0.4, y: 0.4 }, drawing ? 0.1 : 0.75, "pinch", drawing), processingMs: 1, pipelineMs: 1,
   }));
   const start = async () => { await act(async () => { hook.result.current.start(); }); };
   const begin = async () => { await start(); [0, 33, 66, 99].forEach(t => feed(t, false)); [132, 165, 198, 231].forEach(t => feed(t, true)); };
@@ -65,7 +65,11 @@ it("ends synthetic ink before a real pointer reaches the board", async () => {
 });
 
 it("pauses on resizing and playback, then requires explicit restart", async () => {
-  const s = setup(); await s.begin(); act(() => resize.callback?.());
+  const s = setup(); await s.begin();
+  act(() => resize.callback?.());
+  expect(s.result.current.state.status).toBe("active");
+  Object.defineProperty(s.viewport, "clientWidth", { value: 801 });
+  act(() => resize.callback?.());
   expect(s.result.current.state).toMatchObject({ status: "paused", reason: "view" });
   await s.start(); expect(s.result.current.state.status).toBe("active");
   s.rerender({ ...s.props, playing: true });
@@ -90,4 +94,13 @@ it("flushes an active stroke when disabled and requires an explicit camera start
   expect(captures).toHaveLength(1);
   await s.start();
   expect(captures).toHaveLength(2);
+});
+
+it("gives a physical composer click priority before a native image picker can open", async () => {
+  const s = setup(); await s.begin();
+  const dock = document.createElement("form"); dock.className = "learning-input-dock";
+  const choose = document.createElement("button"); dock.append(choose); document.body.append(dock);
+  act(() => choose.dispatchEvent(new PointerEvent("pointerdown", { pointerId: 1, bubbles: true })));
+  expect(s.result.current.state).toMatchObject({ status: "paused", reason: "direct" });
+  expect(captures[0]!.stop).toHaveBeenCalled();
 });

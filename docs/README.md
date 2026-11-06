@@ -62,6 +62,8 @@
 
 ## 专题计划
 
+- [学习白板的隔空手势交互设计](AIR_GESTURE_INTERACTION_DESIGN.md) 包含 Apple 手势调研、输入分派和验证门槛。
+
 - [录课摄像头动作接入课程](LEARNER_AVATAR_CAMERA_PERFORMANCE.md)：录课时可选摄像头带动形象；表情/转头按最终配音重新对齐进课包，播放时与配音嘴型合成；隐私与校验边界。
 - [耳发随头动与张嘴线条](LEARNER_AVATAR_HEAD_FOLLOW_MOUTH.md)：当前版本；耳朵滞后跟随、转头侧耳朵侧转、头发惯性，张嘴改为光滑抗锯齿下唇。
 - [耳廓主动转向：四角色修正](LEARNER_AVATAR_EAR_ORIENTATION.md)：当前耳动实现；独立转向/保持/回正、小角度耳平面投影与单独发梢惯性，附近景与四角色实际动画、60 项测试和素材边界。

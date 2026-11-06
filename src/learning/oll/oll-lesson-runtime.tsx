@@ -1,6 +1,6 @@
 import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
 import { useHandwritingInput } from "../handwriting/use-handwriting-input";
-import { HandwritingControls, HandwritingToolbarButton } from "../handwriting/handwriting-controls";
+import { HandwritingControls, HandwritingInputButton } from "../handwriting/handwriting-controls";
 import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
@@ -681,6 +681,7 @@ function geometryTaskSnapDistance(
 }
 
 export function LearningWhiteboard({
+  gestureToggleHost,
   runtime,
   resolveAsset,
   embedded = false,
@@ -712,6 +713,8 @@ export function LearningWhiteboard({
   taskReactions = NEUTRAL_REACTIONS,
   overlay,
 }: {
+  /** Host beside the workspace's other input-mode toggles. */
+  gestureToggleHost?: HTMLElement | null;
   /**
    * Shown over the board, such as a presenter in its corner. Elements marked
    * data-learning-board-occlusion keep the lesson's content clear of it.
@@ -2515,7 +2518,7 @@ export function LearningWhiteboard({
     let previousHandwritingCamera = mounted.view.getCameraState();
     const unsubscribeHandwritingCamera = mounted.view.subscribeCamera((camera) => {
       if (camera.panX !== previousHandwritingCamera.panX || camera.panY !== previousHandwritingCamera.panY || camera.scale !== previousHandwritingCamera.scale) {
-        handwritingInputRef.current?.pause("view");
+        handwritingInputRef.current?.viewChanged();
       }
       previousHandwritingCamera = camera;
     });
@@ -3436,6 +3439,11 @@ export function LearningWhiteboard({
   const handwriting = useHandwritingInput({
     viewportRef, inputRef: handwritingInputRef, inkRef: inkRuntimeRef, enabled: handwritingEnabled,
     ready: inkAvailable && handwritingEnabled, playing: Boolean(runtime?.playing), sessionId: inkSessionId,
+    onZoom: factor => mountedRef.current?.view.zoomBy(factor),
+    variables: { getRuntime: () => runtimeRef.current,
+      commitValue: (alias, value, control, width) => snapValueToActiveTask(runtimeRef.current, alias, value,
+        control === "slider" ? sliderTaskSnapDistance(runtimeRef.current, alias, width)
+          : geometryTaskSnapDistance(viewportRef.current!, runtimeRef.current, alias), control) },
   });
 
   return (
@@ -3448,7 +3456,10 @@ export function LearningWhiteboard({
         aria-label={tr("OLL 无限白板")}
       />
       {overlay}
-      {handwritingEnabled && inkSessionId && inkAvailable ? <HandwritingControls {...handwriting} canResume={!runtime?.playing} /> : null}
+      {handwritingEnabled && inkSessionId && inkAvailable ? <>
+        <HandwritingControls {...handwriting} canResume={!runtime?.playing} />
+        {gestureToggleHost ? createPortal(<HandwritingInputButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} />, gestureToggleHost) : null}
+      </> : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0
@@ -3494,6 +3505,8 @@ export function LearningWhiteboard({
             type="button"
             className={inkState.mode === "navigate" ? "is-active" : ""}
             onClick={() => setInkMode("navigate")}
+            data-air-command="navigate"
+            data-air-activation="press"
             aria-label={tr("浏览白板")}
             aria-pressed={inkState.mode === "navigate"}
           >
@@ -3511,6 +3524,8 @@ export function LearningWhiteboard({
                 setInkWidthMenuOpen(false);
               }
             }}
+            data-air-command="draw"
+            data-air-activation="press"
             aria-label={tr("书写笔迹")}
             aria-pressed={inkState.mode === "draw"}
             aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
@@ -3518,11 +3533,12 @@ export function LearningWhiteboard({
           >
             <PenLine size={17} />
           </button>
-          {handwritingEnabled ? <HandwritingToolbarButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} /> : null}
           <button
             type="button"
             className={inkState.mode === "erase" ? "is-active" : ""}
             onClick={() => setInkMode("erase")}
+            data-air-command="erase"
+            data-air-activation="press"
             aria-label={tr("擦除笔迹")}
             aria-pressed={inkState.mode === "erase"}
           >
@@ -3535,6 +3551,8 @@ export function LearningWhiteboard({
               setSelectionMode("rectangle");
               setInkMode("select");
             }}
+            data-air-command="select"
+            data-air-activation="press"
             aria-label={tr("框选多个笔迹")}
             aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
             title={tr("拖动矩形，可一次选中一条或多条笔迹")}
@@ -3580,6 +3598,7 @@ export function LearningWhiteboard({
                   <button
                     key={tool.id}
                     type="button"
+                    data-air-command="selection-action"
                     className="learning-ink-quick-action"
                     onClick={() => void askSelection(
                       tool.prompt,
@@ -3594,6 +3613,7 @@ export function LearningWhiteboard({
                 ))}
                 <button
                   type="button"
+                  data-air-command="selection-question"
                   className="learning-ink-ask"
                   onClick={() => void openSelectionQuestion()}
                   aria-expanded={selectionQuestionOpen}
@@ -3616,6 +3636,7 @@ export function LearningWhiteboard({
           <button
             type="button"
             onClick={() => runInkHistory("undo")}
+            data-air-command="undo"
             aria-label={tr("撤销笔迹")}
           >
             <Undo2 size={17} />
@@ -3623,6 +3644,7 @@ export function LearningWhiteboard({
           <button
             type="button"
             onClick={() => runInkHistory("redo")}
+            data-air-command="redo"
             aria-label={tr("重做笔迹")}
           >
             <Redo2 size={17} />
@@ -3748,6 +3770,7 @@ export function LearningWhiteboard({
             ).map((tool) => (
               <button
                 key={tool.id}
+                data-air-command="selection-action"
                 type="button"
                 onClick={() => void askSelection(
                   tool.prompt,
@@ -3858,6 +3881,7 @@ export function LearningWhiteboard({
                               <label htmlFor={inputId}>{control.label}</label>
                               <input
                                 id={inputId}
+                                data-air-variable={control.alias}
                                 type="range"
                                 min={control.min}
                                 max={control.max}
@@ -3963,6 +3987,7 @@ export function LearningWhiteboard({
                                         },
                                       );
                                     }}
+                                    data-air-command="variable-step"
                                     aria-label={`${direction < 0 ? tr("减小") : tr("增大")}${control.label}`}
                                   >
                                     {direction < 0 ? "−" : "+"}

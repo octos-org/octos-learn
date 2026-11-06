@@ -1,10 +1,12 @@
+import { handPinchContactScore } from "./handwriting-pinch";
+import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 export interface HandLandmark {
   x: number;
   y: number;
   z?: number;
 }
 
-export type HandwritingGestureMode = "grip" | "fist" | "point" | "pinch";
+export type HandwritingGestureMode = "grip" | "fist" | "point" | "pinch" | "palm-pinch";
 export const HANDWRITING_DEFAULT_MODE: HandwritingGestureMode = "grip";
 export type HandwritingGesturePhase = "lost" | "unarmed" | "ready" | "pending" | "drawing" | "holding";
 
@@ -120,14 +122,16 @@ export function readHandwritingGesture(
   const rawValid = Boolean(landmarks && validHandLandmarks(landmarks) && Number.isFinite(confidence) && confidence >= HANDWRITING_MIN_CONFIDENCE);
   // Use a common metric scale for all axes, including depth. Image coordinates
   // normalize x/y independently, so correct the aspect ratio in the fallback.
-  const geometry = rawValid
-    ? validHandLandmarks(worldLandmarks) ? worldLandmarks : landmarks!.map((point) => ({
-      x: point.x * aspectRatio, y: point.y, z: (point.z ?? 0) * aspectRatio,
-    }))
-    : [];
+  const imageGeometry = rawValid ? landmarks!.map(point => ({
+    x: point.x * aspectRatio, y: point.y, z: (point.z ?? 0) * aspectRatio,
+  })) : [];
+  const worldValid = validHandLandmarks(worldLandmarks)
+    && distance(worldLandmarks[0]!, worldLandmarks[9]!) > 0.005
+    && distance(worldLandmarks[5]!, worldLandmarks[17]!) > 0.005;
+  const geometry = rawValid ? worldValid ? worldLandmarks! : imageGeometry : [];
   const valid = rawValid && distance(geometry[0]!, geometry[9]!) > 0.005
     && distance(geometry[5]!, geometry[17]!) > 0.005;
-  const score = valid ? pinchScore(geometry) : Number.POSITIVE_INFINITY;
+  const score = valid ? (mode === "palm-pinch" ? handPinchContactScore(landmarks!, worldLandmarks, aspectRatio) : pinchScore(geometry)) : Number.POSITIVE_INFINITY;
   const fingers = valid ? [[5, 6, 8], [9, 10, 12], [13, 14, 16], [17, 18, 20]]
     .map(([mcp, pip, tip]) => fingerState(geometry, mcp!, pip!, tip!)) : [];
   const clamp = (value: number) => Math.min(1, Math.max(0, value));
@@ -141,7 +145,7 @@ export function readHandwritingGesture(
     tracked: Boolean(landmarks),
     valid,
     writingPose: valid && (mode === "grip" ? gripScore >= 0.55 && fingerCurls.filter(curl => curl >= 0.45).length >= 3
-      : mode === "pinch" ? score <= HANDWRITING_PINCH_DOWN_SCORE : writingPose(geometry, mode)),
+      : (mode === "pinch" || mode === "palm-pinch") ? score <= HANDWRITING_PINCH_DOWN_SCORE : writingPose(geometry, mode as "point" | "fist")),
     movePose: valid && (mode === "grip" ? gripScore <= 0.20 && fingerCurls.filter(curl => curl <= 0.25).length >= 3
       : mode === "fist" ? fingers.every((finger) => finger === "folded")
       : mode === "point" ? fingers[0] === "extended" && fingers[1] === "extended" : score >= HANDWRITING_PINCH_UP_SCORE),
@@ -165,14 +169,17 @@ export class HandwritingGestureFilter {
   private lastTime = -Infinity;
   private candidate: "move" | "write" | null = null;
   private readonly mode: HandwritingGestureMode;
+  private pinchOpeningAt: number | null = null;
   private gripClosingAt: number | null = null;
   private gripOpeningAt: number | null = null;
   private gripOpenSince: number | null = null;
   private gripOpenFrames = 0;
   private gripHistory: Array<{ timeMs: number; score: number }> = [];
 
-  constructor(mode: HandwritingGestureMode = HANDWRITING_DEFAULT_MODE) {
+  private readonly pinch: HandwritingPinchThresholds;
+  constructor(mode: HandwritingGestureMode = HANDWRITING_DEFAULT_MODE, pinch: HandwritingPinchThresholds = { down: 0.28, up: 0.42 }) {
     this.mode = mode;
+    this.pinch = pinch;
   }
 
   reset(): HandwritingGestureTransition {
@@ -182,6 +189,7 @@ export class HandwritingGestureFilter {
     this.candidate = null;
     this.streak = 0;
     this.lastTime = -Infinity;
+    this.pinchOpeningAt = null;
     this.gripClosingAt = null;
     this.gripOpeningAt = null;
     this.gripOpenSince = null;
@@ -210,6 +218,7 @@ export class HandwritingGestureFilter {
       if (transition) return result(transition, "unarmed");
     }
     this.lastTime = frame.timeMs;
+    if (this.mode === "palm-pinch") return this.updatePalmPinch(reading, frame.timeMs);
     if (this.mode === "grip") return this.updateGrip(reading, frame.timeMs);
     if (this.penDown) {
       // Lift as soon as the index stops being clearly extended, without
@@ -243,6 +252,47 @@ export class HandwritingGestureFilter {
       return result("down", "drawing");
     }
     return result(null, !this.armed ? "unarmed" : candidate === "write" ? "pending" : "ready");
+  }
+
+  private updatePalmPinch(reading: HandwritingGestureReading, timeMs: number): HandwritingGestureUpdate {
+    reading.writingPose = reading.valid && reading.pinchScore <= this.pinch.down;
+    reading.movePose = reading.valid && reading.pinchScore >= this.pinch.up;
+    const releaseIntent = this.pinch.down + (this.pinch.up - this.pinch.down) * 0.65;
+    const opening = this.penDown && reading.pinchScore >= releaseIntent;
+    if (opening) this.pinchOpeningAt ??= timeMs;
+    else this.pinchOpeningAt = null;
+    const candidate = this.penDown ? (reading.movePose ? "move" : null)
+      : !this.armed ? (reading.movePose ? "move" : null)
+      : reading.writingPose ? "write" : null;
+    if (candidate !== this.candidate) {
+      this.candidate = candidate;
+      this.since = timeMs;
+      this.streak = 0;
+    }
+    if (candidate) this.streak += 1;
+    let transition: HandwritingGestureTransition = null;
+    const releaseAt = this.pinchOpeningAt;
+    if (releaseAt !== null && timeMs - releaseAt > 450) {
+      this.reset();
+      return { reading, transition: "break", phase: "unarmed", penDown: false, canMove: false, transitionStartedAt: releaseAt };
+    }
+    if (this.streak >= 2 && timeMs - this.since >= (this.penDown ? 40 : 60)) {
+      if (this.penDown && reading.movePose) {
+        this.penDown = false;
+        this.armed = true;
+        this.pinchOpeningAt = null;
+        transition = "up";
+      } else if (!this.penDown && candidate === "move") this.armed = true;
+      else if (candidate === "write") {
+        this.penDown = true;
+        transition = "down";
+      }
+    }
+    const phase = this.penDown ? (opening ? "holding" : "drawing")
+      : !this.armed ? "unarmed" : candidate === "write" ? "pending" : "ready";
+    return { reading, transition, phase, penDown: this.penDown,
+      canMove: this.penDown && !opening,
+      transitionStartedAt: releaseAt ?? undefined };
   }
 
   private updateGrip(reading: HandwritingGestureReading, timeMs: number): HandwritingGestureUpdate {

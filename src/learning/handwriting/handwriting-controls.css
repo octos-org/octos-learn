@@ -1,31 +1,107 @@
-.learning-ink-toolbar > button.board-handwriting-toggle {
-  display: inline-flex; width: auto; min-width: max-content;
-  align-items: center; justify-content: center; gap: 5px; padding: 0 8px; white-space: nowrap;
-}
-.learning-ink-toolbar > button.board-handwriting-toggle svg { flex-shrink: 0; }
+.learning-gesture-entry:empty { display: none; }
 .board-handwriting-controls {
-  position: absolute; top: 64px; right: 16px; width: 280px; z-index: 40;
-  color: #20302c; background: #fbfdfc; border: 1px solid #cddcd5;
-  border-radius: 12px; box-shadow: 0 5px 20px #152e241a; overflow: hidden;
-  max-height: calc(100% - 90px); overflow-y: auto;
+  position: absolute;
+  top: 74px;
+  right: 20px;
+  z-index: 40;
+  width: 248px;
+  color: #294d49;
+  background: linear-gradient(145deg, #fffffffa, #f5f9f7f5);
+  border: 1px solid #dce7e1;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px #243b3212, 0 1px 3px #243b3208;
+  backdrop-filter: blur(20px);
 }
 .board-handwriting-controls[hidden], .board-handwriting-body[hidden] { display: none; }
-.board-handwriting-controls header { display: flex; align-items: center; gap: 7px; padding: 8px 10px; }
-.board-handwriting-controls strong { font-size: 13px; }
-.board-handwriting-controls header span { flex: 1; font-size: 11px; color: #587467; }
-.board-handwriting-controls button { min-height: 32px; padding: 5px 8px; border: 1px solid #cddcd5; border-radius: 7px; background: white; color: #214d3e; cursor: pointer; }
-.board-handwriting-controls button:disabled { opacity: .5; cursor: default; }
+.board-handwriting-controls header, .board-handwriting-controls footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+}
+.board-handwriting-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d5e8df;
+  border-radius: 10px;
+  color: #28755e;
+  background: #edf5ef;
+}
+.board-handwriting-controls strong { flex: 1; font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.board-handwriting-actions { display: flex; gap: 3px; }
+.board-handwriting-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 5px;
+  border: 0;
+  border-radius: 8px;
+  color: #6b8278;
+  background: transparent;
+  cursor: pointer;
+  transition: color 140ms, background 140ms;
+}
+.board-handwriting-controls button:hover, .board-handwriting-controls button[aria-expanded="true"] { color: #245c48; background: #e8f0eb; }
+.board-handwriting-controls button:focus-visible { outline: 2px solid #29856a; outline-offset: 2px; }
+.board-handwriting-controls button:disabled { opacity: .35; cursor: default; }
+.board-handwriting-actions .is-expanded { transform: rotate(180deg); }
 .board-handwriting-body { padding: 0 10px; }
-.board-handwriting-camera { position: relative; aspect-ratio: 4 / 3; background: #17211f; border-radius: 8px; overflow: hidden; }
+.board-handwriting-camera { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 11px; background: #17251f; box-shadow: inset 0 0 0 1px #ffffff10; }
 .board-handwriting-camera video, .board-handwriting-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 .board-handwriting-camera canvas { pointer-events: none; }
-.board-handwriting-body p { margin: 8px 0; font-size: 12px; line-height: 1.5; }
-.board-handwriting-note { color: #61766b; }
-.board-handwriting-state { padding: 6px 10px; font-size: 12px; color: #1f6b51; }
-.board-handwriting-state[data-phase="drawing"] { color: #ac452e; }
-.board-handwriting-controls footer { padding: 4px 10px 10px; }
-.board-handwriting-controls footer button { width: 100%; font-size: 12px; }
-.board-handwriting-cursor { position: absolute; top: 0; left: 0; z-index: 35; width: 0; height: 0; pointer-events: none; }
-.board-handwriting-cursor i { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border: 2px solid #17745b; border-radius: 50%; background: #ffffffb3; box-shadow: 0 0 0 3px #17745b20; }
-.board-handwriting-cursor[data-down="true"] i { border-color: #ce5a3d; background: #ce5a3d25; }
-@media (max-width: 640px) { .board-handwriting-controls { width: 230px; top: 10px; right: 10px; } }
+.board-handwriting-camera-idle { position: absolute; inset: 0; display: grid; place-items: center; color: #8caa98; background: linear-gradient(145deg, #eff5ef, #e4eee7); }
+.board-handwriting-controls footer { padding: 8px 10px; }
+.board-handwriting-state { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; font-size: 11px; line-height: 1.4; color: #75887d; }
+.board-handwriting-state i { width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: #92a69b; }
+.board-handwriting-state[data-phase="ready"] i { background: #4e997b; }
+.board-handwriting-state[data-phase="drawing"] { color: #28755e; }
+.board-handwriting-state[data-phase="drawing"] i { background: #308d69; box-shadow: 0 0 0 3px #308d6910; }
+.board-handwriting-state[data-state="failed"] { color: #a65a44; }
+.board-handwriting-state[data-state="failed"] i { background: #c1785f; }
+.board-handwriting-settings {
+  position: absolute;
+  top: 44px;
+  right: 10px;
+  z-index: 2;
+  width: 200px;
+  padding: 5px;
+  border: 1px solid #dce7e1;
+  border-radius: 12px;
+  background: #fcfefc;
+  box-shadow: 0 8px 24px #223e3020;
+}
+.board-handwriting-settings button { width: 100%; justify-content: flex-start; padding: 9px 10px; font-size: 12px; color: #385c4e; }
+.board-handwriting-settings label { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; margin-top: 4px; border-top: 1px solid #e6ede8; font-size: 11px; color: #7c8b80; }
+.board-handwriting-settings select { max-width: 105px; padding: 4px; border: 1px solid #dce7e1; border-radius: 6px; background: #f5f9f6; color: #446351; font: inherit; }
+.board-handwriting-settings select:disabled { opacity: .55; }
+.board-handwriting-setup { padding: 10px 12px 0; border-top: 1px solid #e4ece6; font-size: 12px; line-height: 1.6; }
+.board-handwriting-setup p { margin: 0 0 8px; }
+.board-handwriting-setup progress { display: block; width: 100%; height: 4px; margin: 10px 0; accent-color: #37856a; }
+.board-handwriting-setup button { margin-right: 6px; padding: 5px 9px; color: #356c54; background: #eaf2ec; font-size: 11px; }
+.board-handwriting-save-error { padding: 0 12px; color: #a65a44; font-size: 11px; }
+.board-handwriting-cursor { position: fixed; top: 0; left: 0; z-index: 2147483000; width: 0; height: 0; pointer-events: none; }
+.board-handwriting-cursor i { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border: 2px solid #197d62; border-radius: 50%; background: #fafffbd9; box-shadow: 0 0 0 3px #197d6220, 0 1px 5px #102e2630; }
+.board-handwriting-cursor[data-phase="pending"] i { border-style: dashed; }
+.board-handwriting-cursor[data-phase="blocked"] i { border-color: #7c9387; }
+.board-handwriting-cursor[data-down="true"] i { border-color: #ce5a3d; background: #ce5a3d; }
+.air-gesture-enabled .learning-ink-toolbar { flex-wrap: wrap; overflow: visible; }
+.air-gesture-enabled .learning-ink-toolbar > button[data-air-command] { min-width: 56px; min-height: 56px; }
+.air-gesture-enabled [data-air-command][data-air-hover] { outline: 2px solid #36856c; outline-offset: 2px; }
+.air-gesture-enabled [data-air-command][data-air-pressed] { box-shadow: inset 0 0 0 2px #36856c; }
+.air-gesture-enabled [data-oll-variable-control][data-air-hover] { stroke: #26836b; stroke-width: 4; }
+.air-gesture-enabled [data-oll-variable-control][data-air-pressed] { fill: #ce5a3d; }
+.air-gesture-enabled input[data-air-variable] { min-height: 48px; }
+.air-gesture-enabled input[data-air-hover] { outline: 2px solid #36856c; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .board-handwriting-controls { top: auto; right: 12px; bottom: 12px; width: 224px; }
+  .board-handwriting-camera { max-height: 135px; }
+  .learning-workspace .board-handwriting-controls { bottom: max(110px, calc(env(safe-area-inset-bottom) + 96px)); }
+  .board-handwriting-settings { top: auto; bottom: calc(100% + 8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-handwriting-controls button { transition: none; }
+}

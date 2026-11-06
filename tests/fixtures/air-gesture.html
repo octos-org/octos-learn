@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8"><title>Air gesture integration</title>
+<style>body{margin:0}#input-methods{height:56px;display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:0 20px;}</style>
+<div data-air-scope="" style="height:100vh"><header id="input-methods" class="learning-workspace-actions"><button data-air-command="home" style="display:none;position:absolute;left:20px">返回首页</button><button data-air-command="history" style="display:none;position:absolute;left:120px">打开学习记录</button><button data-air-command="toggle-voice" class="learning-mode-button">启用语音</button><button data-air-command="toggle-camera" class="learning-mode-button">启用摄像头</button><span id="gesture-entry"></span></header>
+<div id="root" style="height:calc(100vh - 56px)"></div><div id="dock"></div></div>
+<script type="module">
+import React from 'react';
+import { StudentInputDock } from '/src/learning/student-input-dock.tsx';
+import { createRoot } from 'react-dom/client';
+import { useOllLessonRuntime } from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import circleSource from '/src/learning/oll/fixtures/unit-circle-sine.canonical.jsonl?raw';
+import { LearningWhiteboard } from '/src/learning/oll/oll-lesson-runtime.tsx';
+import { HandwritingCapture } from '/src/learning/handwriting/handwriting-capture.ts';
+import { makeHandwritingLandmarks } from '/src/learning/handwriting/simulated-trajectory.ts';
+import { handPalmCenter } from '/src/learning/handwriting/handwriting-gesture.ts';
+import '/src/index.css';
+import '/src/learning/learning-workspace.css';
+localStorage.setItem('octos-learn-experiment-air-writing','true');
+window.asked=[];
+window.controlActions=[];
+if(new URLSearchParams(location.search).has('workspace'))for(const button of document.querySelectorAll('[data-air-command=home],[data-air-command=history]'))button.style.display='inline-flex';
+for(const button of document.querySelectorAll('#input-methods button[data-air-command]'))button.addEventListener('click',()=>window.controlActions.push(button.dataset.airCommand));
+if(new URLSearchParams(location.search).has('workspace'))createRoot(document.getElementById('dock')).render(React.createElement(StudentInputDock,{
+ voiceState:'idle',cameraActive:false,onMic:()=>window.controlActions.push('mic'),onToggleCamera:()=>window.controlActions.push('camera'),
+ onSendText:text=>window.controlActions.push(text),onSendImage:()=>window.controlActions.push('image'),suggestions:['测试问题'],
+}));
+HandwritingCapture.prototype.start=async function(){window.feedFrame=frame=>this.callbacks.onFrame(frame);this.callbacks.onState('tracking');};
+function Course(){
+ const runtime=useOllLessonRuntime({source:circleSource,storageKey:'air-course',startAtEnd:true});
+ window.airRuntime=runtime;
+ return React.createElement(LearningWhiteboard,{runtime,gestureToggleHost:document.getElementById("gesture-entry"),inkSessionId:'air-course-integration'});
+}
+createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).has('course')
+ ?React.createElement(Course)
+ :React.createElement(LearningWhiteboard,{gestureToggleHost:document.getElementById('gesture-entry'),inkSessionId:'air-integration',onAskInkSelection:request=>{window.asked.push(request.toolId);}}));
+let time=0;
+window.loseHand=()=>{time+=33;window.feedFrame({timeMs:time,tracked:false,processingMs:1,pipelineMs:1});};
+window.handRaw=async function(x,y,score,count=4){
+ const points=makeHandwritingLandmarks({x:.4,y:.3},score,'pinch');
+ const center=handPalmCenter(points);
+ const landmarks=points.map(p=>({x:p.x+1-x-center.x,y:p.y+y-center.y}));
+ for(let i=0;i<count;i++){time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,processingMs:1,pipelineMs:1});await new Promise(resolve=>requestAnimationFrame(resolve));}
+};
+window.handAtAngle=async function(yaw,pitch,closed,noisyWorld=false){
+ const points=makeHandwritingLandmarks({x:0,y:0},.8,'pinch').map(p=>({...p,z:0}));
+ if(closed){points[4]={x:.008,y:.06,z:.003};points[3]={x:.04,y:.09,z:.008};}
+ const rotated=points.map(p=>{
+  const x=p.x*Math.cos(yaw)+p.z*Math.sin(yaw), z=-p.x*Math.sin(yaw)+p.z*Math.cos(yaw);
+  return {x,y:p.y*Math.cos(pitch)-z*Math.sin(pitch),z:p.y*Math.sin(pitch)+z*Math.cos(pitch)};
+ });
+ const aspect=4/3;
+ const landmarks=rotated.map(p=>({x:.5+p.x/aspect,y:.5+p.y,z:p.z/aspect}));
+ const center=handPalmCenter(landmarks);
+ for(const p of landmarks){p.x+=.5-center.x;p.y+=.5-center.y;}
+ const worldLandmarks=rotated.map((p,i)=>({x:p.x*.4,y:p.y*.4,z:p.z*.4+(closed&&noisyWorld&&(i===3||i===4)?.06:0)}));
+ for(let i=0;i<5;i++){time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,worldLandmarks,imageWidth:640,imageHeight:480,processingMs:1,pipelineMs:1});await new Promise(resolve=>requestAnimationFrame(resolve));}
+};
+window.hand=async function(x,y,closed,count=4){
+ const viewport=document.querySelector('.learning-oll-board');
+ const rect=viewport.closest('[data-air-scope]').getBoundingClientRect();
+ const region=JSON.parse(localStorage.getItem('octos-learn-air-gesture-preferences-v1')??'null')?.region??{left:.1,top:.08,right:.9,bottom:.92};
+ const palm={x:1-(region.left+(x-rect.left)/rect.width*(region.right-region.left)),y:region.top+(y-rect.top)/rect.height*(region.bottom-region.top)};
+ const points=makeHandwritingLandmarks({x:.4,y:.3},closed?.1:.75,'pinch');
+ const center=handPalmCenter(points);
+ const landmarks=points.map(p=>({x:p.x+palm.x-center.x,y:p.y+palm.y-center.y}));
+ for(let i=0;i<count;i++){
+  time+=33;window.feedFrame({timeMs:time,tracked:true,landmarks,processingMs:1,pipelineMs:1});
+  await new Promise(resolve=>requestAnimationFrame(resolve));
+ }
+};
+</script>

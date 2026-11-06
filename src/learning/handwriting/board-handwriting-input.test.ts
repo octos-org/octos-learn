@@ -10,17 +10,17 @@ beforeEach(() => {
     constructor(type: string, init: PointerEventInit) { super(type, init); this.pointerId = init.pointerId!; this.pointerType = init.pointerType!; }
   });
 });
-afterEach(() => { document.body.innerHTML = ""; vi.unstubAllGlobals(); });
+afterEach(() => { document.body.innerHTML = ""; vi.useRealTimers(); vi.unstubAllGlobals(); });
 function setup() {
   const viewport = document.createElement("div"); document.body.append(viewport);
   Object.defineProperty(viewport, "clientWidth", { value: 800 }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
   viewport.getBoundingClientRect = () => ({ x: 10, y: 20, left: 10, top: 20, right: 810, bottom: 620, width: 800, height: 600, toJSON() {} });
-  const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), saveNow: vi.fn(async () => null) };
+  const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), clearSelection: vi.fn(), saveNow: vi.fn(async () => null) };
   const options = { allowed: true };
   const captures: Array<{ callbacks: HandwritingCaptureCallbacks; stop: ReturnType<typeof vi.fn> }> = [];
   const states: BoardHandwritingState[] = [];
   const visual = vi.fn();
-  const input = new BoardHandwritingInput({ viewport, getInk: () => ink as unknown as InkRuntime, allowed: () => options.allowed,
+  const input = new BoardHandwritingInput({ viewport, mode: "grip", getInk: () => ink as unknown as InkRuntime, allowed: () => options.allowed,
     onState: next => states.push(next), onVisual: visual,
     createCapture: (_video, callbacks) => {
       const capture = { callbacks, stop: vi.fn() }; captures.push(capture);
@@ -75,6 +75,59 @@ describe("binding camera hand input to the existing whiteboard", () => {
     overlay.getBoundingClientRect = () => ({ left: 100, top: 100, right: 700, bottom: 600, width: 600, height: 500 } as DOMRect);
     document.body.append(overlay); await s.begin(); expect(s.events).toHaveLength(0); s.input.dispose();
   });
+  it("delivers release when a floating control covers the cursor on that same frame", async () => {
+    const s = setup(); await s.begin();
+    [264, 297].forEach(t => s.feed(t, true));
+    [330, 363].forEach(t => s.feed(t, false));
+    const overlay = document.createElement("div"); overlay.dataset.learningBoardOcclusion = "";
+    overlay.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect);
+    document.body.append(overlay); s.feed(396, false); s.input.stop();
+    expect(s.events.filter(e => e.type === "pointerdown")).toHaveLength(1);
+    expect(s.events.filter(e => e.type === "pointerup")).toHaveLength(1);
+  });
+  it("clears an unfinished selection after tracking is lost", async () => {
+    const s = setup(); await s.begin(); s.ink.state.mode = "select";
+    s.captures[0]!.callbacks.onFrame({ timeMs: 264, tracked: false, confidence: 0, processingMs: 1, pipelineMs: 1 });
+    expect(s.ink.clearSelection).toHaveBeenCalledTimes(1);
+    expect(s.events.at(-1)?.type).toBe("pointerup"); s.input.dispose();
+  });
+  it("ends a held gesture when frames stop and requires the fingers to reopen", async () => {
+    vi.useFakeTimers();
+    const s = setup(); await s.begin();
+    vi.advanceTimersByTime(351);
+    expect(s.events.filter(e => e.type === "pointerup")).toHaveLength(1);
+    expect(s.states.at(-1)?.capture).toBe("lost");
+    [264, 297, 330, 363].forEach(t => s.feed(t, true));
+    expect(s.events.filter(e => e.type === "pointerdown")).toHaveLength(1);
+    s.input.dispose();
+  });
+  it("keeps a screen-space button captured when the board camera moves", async () => {
+    const s = setup();
+    const button = document.createElement("button"); button.dataset.airCommand = "undo";
+    button.getBoundingClientRect = () => ({ left: 480, right: 540, top: 218, bottom: 278, width: 60, height: 60 } as DOMRect);
+    const click = vi.fn(); button.addEventListener("click", click); document.body.append(button);
+    await s.begin(); s.input.viewChanged();
+    expect(s.states.at(-1)?.status).toBe("active");
+    [264, 297, 330, 363].forEach(t => s.feed(t, false));
+    expect(click).toHaveBeenCalledTimes(1); s.input.dispose();
+  });
+  it("keeps the cursor visible over a blocked floating panel while ending ink once", async () => {
+    const s = setup(); await s.begin();
+    const overlay = document.createElement("div"); overlay.dataset.learningBoardOcclusion = "";
+    overlay.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect);
+    document.body.append(overlay);
+    s.feed(264, true);
+    expect(s.visual.mock.calls.at(-1)?.[1]).toMatchObject({ phase: "blocked", penDown: false });
+    const cursor = s.visual.mock.calls.at(-1)?.[1]?.cursor;
+    expect(cursor).not.toBeNull();
+    s.feed(297, true); s.feed(330, true);
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.x).toBeCloseTo(cursor!.x);
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.y).toBeCloseTo(cursor!.y);
+    expect(s.events.filter(event => event.type === "pointerup")).toHaveLength(1);
+    overlay.remove(); s.feed(363, true); s.feed(396, true);
+    expect(s.events.filter(event => event.type === "pointerdown")).toHaveLength(1);
+    s.input.dispose();
+  });
   it("does not restart after disposal", async () => {
     const s = setup(); await s.begin(); s.input.dispose(); const count = s.events.length;
     s.feed(264, true); await s.input.start(document.createElement("video")); expect(s.events).toHaveLength(count); expect(s.captures).toHaveLength(1);
@@ -92,4 +145,22 @@ describe("binding camera hand input to the existing whiteboard", () => {
     const button = document.createElement("button"); button.hidden = true; button.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect); document.body.append(button);
     expect(handwritingPointBlocked(s.viewport, { x: 10, y: 10 })).toBe(false); s.input.dispose();
   });
+  it("maps the calibrated area to the whole input scope, including controls outside the canvas", async () => {
+    const s = setup();
+    const scope = document.createElement("main"); scope.dataset.airScope = "";
+    scope.getBoundingClientRect = () => ({ left: 10, top: 0, width: 800, height: 640, right: 810, bottom: 640 } as DOMRect);
+    document.body.append(scope); scope.append(s.viewport);
+    const button = document.createElement("button"); button.dataset.airCommand = "home";
+    button.getBoundingClientRect = () => ({ left: 480, right: 540, top: 0, bottom: 40, width: 60, height: 40 } as DOMRect);
+    scope.append(button); const click = vi.fn(); button.addEventListener("click", click);
+    await s.input.start(document.createElement("video"));
+    for (const t of [0, 33, 66, 99]) s.feed(t, false, { x: 0.4, y: 0.1 });
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.y).toBeLessThan(0);
+    for (const t of [132, 165, 198, 231]) s.feed(t, true, { x: 0.4, y: 0.1 });
+    for (const t of [264, 297, 330, 363]) s.feed(t, false, { x: 0.4, y: 0.1 });
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(s.events).toEqual([]); expect(s.states.at(-1)?.status).toBe("active");
+    s.input.dispose();
+  });
+
 });

@@ -54,10 +54,10 @@ describe("AdminSettingsPage", () => {
     const toggle = await screen.findByRole("switch", { name: tr("隔空书写") });
     expect(toggle.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("true"));
     expect(localStorage.getItem(AIR_WRITING_STORAGE_KEY)).toBe("true");
     fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("false"));
     expect(localStorage.getItem(AIR_WRITING_STORAGE_KEY)).toBe("false");
   });
 
