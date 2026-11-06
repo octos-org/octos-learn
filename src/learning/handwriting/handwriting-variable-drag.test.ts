@@ -51,4 +51,12 @@ describe("hand drags use the existing runtime operation transaction", () => {
     expect(s.runtime.board!.variables![s.alias]!.value).toBe(s.before);
     expect(s.session.studentOperations).toHaveLength(0);
   });
+  it("cancels if the captured control becomes disabled", () => {
+    const s = setup(); const drag = HandwritingVariableDrag.start(s.input, { x: 150, y: 100 }, s.options)!;
+    drag.update({ x: 90, y: 100 }); s.input.disabled = true;
+    drag.update({ x: 80, y: 100 }); drag.end(true);
+    expect(s.runtime.board!.variables![s.alias]!.value).toBe(s.before);
+    expect(s.session.studentOperations).toHaveLength(0);
+  });
+
 });

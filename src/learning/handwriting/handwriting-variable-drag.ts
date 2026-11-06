@@ -70,6 +70,9 @@ export class HandwritingVariableDrag {
       this.element = replacement;
       this.element.setAttribute("data-air-pressed", "");
     }
+    if (this.element.closest('[hidden], [inert]')
+      || (this.element instanceof HTMLInputElement && this.element.disabled)
+      || this.element.getBoundingClientRect().width <= 0) { this.end(false); return; }
     if (this.options.getRuntime()?.handleStudentVariableInput !== this.runtime.handleStudentVariableInput || this.options.getRuntime()?.playing) { this.end(false); return; }
     if (this.control === "slider") {
       // Relative dragging avoids a jump when the enlarged slider track is hit.
