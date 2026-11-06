@@ -27,7 +27,6 @@ export interface BoardHandwritingOptions {
   variables?: HandwritingVariableOptions;
   onSample?(frame: HandwritingCaptureFrame): boolean;
   onInterruption?(): void;
-  onGesture?(gesture: HandwritingControllerUpdate): boolean;
   createCapture?: (video: HTMLVideoElement, callbacks: HandwritingCaptureCallbacks) => Capture;
 }
 let nextPointerId = 85_000;
@@ -160,12 +159,6 @@ export class BoardHandwritingInput {
           return;
         }
         const gesture = this.controller.update(frame, { width: this.options.viewport.clientWidth, height: this.options.viewport.clientHeight });
-        if (this.options.onGesture?.(gesture)) {
-          this.targets.cancel();
-          this.options.onVisual(frame, gesture);
-          this.publish({ gesture });
-          return;
-        }
         this.targets.hover(gesture.cursor, this.options.getInk()?.state.mode === "navigate");
         this.dispatch(gesture.actions);
         if (this.disposed || generation !== this.generation) return;
@@ -174,10 +167,11 @@ export class BoardHandwritingInput {
           // Flush an already emitted release before resetting the recognizer.
           // Commands use their own capture and may sit inside an occlusion.
           if (!this.options.viewport.parentElement?.querySelector('[data-air-hover], [data-air-pressed]')) {
-            this.dispatch(this.controller.reset(frame.timeMs, "lost"));
+            this.dispatch(this.controller.interrupt(frame.timeMs));
             this.targets.cancel();
-            this.options.onVisual(frame, null);
-            this.publish({ gesture: null });
+            const hovering = { ...gesture, penDown: false, phase: "blocked" as const, actions: [] };
+            this.options.onVisual(frame, hovering);
+            this.publish({ gesture: hovering });
             return;
           }
         }

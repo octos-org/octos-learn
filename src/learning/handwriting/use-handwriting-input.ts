@@ -17,7 +17,7 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
   variables?: HandwritingVariableOptions;
   onZoom?: (factor: number) => void;
 }) {
-  const setup = useHandwritingSetup(viewportRef);
+  const setup = useHandwritingSetup();
   const cancelSetup = setup.cancelSetup;
   const variableOptions = useRef(variables);
   useEffect(() => { variableOptions.current = variables; }, [variables]);
@@ -38,7 +38,7 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       viewport, mode: gestureMode, preferences: setup.preferencesRef.current,
       variables: { getRuntime: () => variableOptions.current?.getRuntime() ?? null,
         commitValue: (alias, value, control, width) => variableOptions.current?.commitValue?.(alias, value, control, width) ?? value },
-      onSample: setup.sample, onGesture: setup.gesture, onInterruption: cancelSetup,
+      onSample: setup.sample, onInterruption: cancelSetup,
       getInk: () => inkRef.current, allowed: () => allowed.current,
       onState: setState,
       onVisual: (frame, gesture) => {
@@ -47,7 +47,10 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
           cursor.current.hidden = !gesture?.cursor;
           cursor.current.dataset.phase = gesture?.phase ?? "lost";
           cursor.current.dataset.down = gesture?.penDown ? "true" : "false";
-          if (gesture?.cursor) cursor.current.style.transform = `translate3d(${gesture.cursor.x}px, ${gesture.cursor.y}px, 0)`;
+          if (gesture?.cursor) {
+            const rect = viewport.getBoundingClientRect();
+            cursor.current.style.transform = `translate3d(${rect.left + gesture.cursor.x}px, ${rect.top + gesture.cursor.y}px, 0)`;
+          }
         }
       },
     });
@@ -81,7 +84,7 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       document.removeEventListener("visibilitychange", onHidden);
       resize?.disconnect();
     };
-  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, setup.gesture, cancelSetup]);
+  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, cancelSetup]);
   useEffect(() => {
     const shell = viewportRef.current?.parentElement;
     shell?.classList.toggle("air-gesture-enabled", state.status === "active" || state.status === "starting");

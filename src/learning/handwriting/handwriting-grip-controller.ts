@@ -60,6 +60,13 @@ export class HandwritingGripPointerController {
     return actions;
   }
 
+  interrupt(timeMs: number): HandwritingPointerAction[] {
+    const actions = this.end(timeMs, "lost");
+    this.gestures.reset();
+    this.frozen = false;
+    return actions;
+  }
+
   reset(timeMs = 0, reason: "lost" | "stop" = "stop"): HandwritingPointerAction[] {
     const actions = this.end(timeMs, reason, this.releaseAt);
     this.gestures.reset();

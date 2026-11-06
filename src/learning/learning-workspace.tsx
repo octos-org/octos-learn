@@ -1943,6 +1943,7 @@ export function LearningWorkspace({
   }, [lessonDeliverySettled, ollLesson?.playing]);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
+  const [gestureToggleHost, setGestureToggleHost] = useState<HTMLSpanElement | null>(null);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
   const cameraSettings = conv.cameraSettings ?? DEFAULT_CAMERA_FRAME_SETTINGS;
   const completedArtifactFilenames = completedTurnId
@@ -3646,6 +3647,7 @@ export function LearningWorkspace({
             {conv.cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
             <span>{conv.cameraActive ? tr("关闭摄像头") : tr("启用摄像头")}</span>
           </button>
+          <span className="learning-gesture-entry" ref={setGestureToggleHost} />
             </>
           )}
         </div>
@@ -3670,6 +3672,7 @@ export function LearningWorkspace({
 
       <main className="learning-canvas-shell">
         <LearningWhiteboard
+          gestureToggleHost={gestureToggleHost}
           runtime={controlledOllLesson ?? ollLesson}
           taskReactions={lessonReactions}
           portableCourseRegion={coursePack?.courseRegion}

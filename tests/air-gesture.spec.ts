@@ -19,9 +19,9 @@ async function pinchButton(page: Page, command: string) {
 test("hand input switches tools, writes, undoes, selects and asks once through the real whiteboard", async ({ page }) => {
   const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
   await page.goto("/tests/fixtures/air-gesture.html");
-  await page.getByRole("button", { name: "隔空书写（试用）" }).waitFor();
+  await page.getByRole("button", { name: "启用手势" }).waitFor();
   await page.evaluate(async () => { await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))); });
-  await page.getByRole("button", { name: "隔空书写（试用）" }).click();
+  await page.getByRole("button", { name: "启用手势" }).click();
   await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
   await pinchButton(page, "draw");
   await expect(page.locator('[data-air-command="draw"]')).toHaveAttribute('aria-pressed','true');
@@ -35,18 +35,18 @@ test("hand input switches tools, writes, undoes, selects and asks once through t
   await pinchButton(page, "redo");
   await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
   await pinchButton(page, "select");
-  await hand(page, 350, 190, false, 24);
-  await hand(page, 350, 190, true);
+  await hand(page, 350, 220, false, 24);
+  await hand(page, 350, 220, true);
   await hand(page, 550, 330, true, 24);
   await hand(page, 550, 330, false);
   await expect(page.locator('.learning-ink-status')).toContainText('已选 1');
   // An interrupted second selection must not leave a selection to send.
-  await hand(page, 350, 190, false, 24);
-  await hand(page, 350, 190, true);
+  await hand(page, 350, 220, false, 24);
+  await hand(page, 350, 220, true);
   await page.evaluate(() => (window as unknown as { loseHand: () => void }).loseHand());
   await expect(page.locator('.learning-ink-status')).not.toContainText('已选');
-  await hand(page, 350, 190, false, 24);
-  await hand(page, 350, 190, true);
+  await hand(page, 350, 220, false, 24);
+  await hand(page, 350, 220, true);
   await hand(page, 550, 330, true, 24);
   await hand(page, 550, 330, false);
   await expect(page.locator('.learning-ink-status')).toContainText('已选 1');
@@ -58,9 +58,9 @@ test("hand input switches tools, writes, undoes, selects and asks once through t
 
 test("hand navigation and zoom retain capture, while physical input takes over", async ({ page }) => {
   await page.goto("/tests/fixtures/air-gesture.html");
-  await page.getByRole("button", { name: "隔空书写（试用）" }).waitFor();
+  await page.getByRole("button", { name: "启用手势" }).waitFor();
   await page.evaluate(async () => { await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))); });
-  await page.getByRole("button", { name: "隔空书写（试用）" }).click();
+  await page.getByRole("button", { name: "启用手势" }).click();
   await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
   await hand(page, 400, 240, false, 24);
   await hand(page, 400, 240, true);
@@ -75,7 +75,7 @@ test("hand navigation and zoom retain capture, while physical input takes over",
 });
 
 async function startHandInput(page: Page) {
-  const toggle = page.getByRole("button", { name: "隔空书写（试用）" });
+  const toggle = page.getByRole("button", { name: "启用手势" });
   await toggle.waitFor();
   await page.evaluate(async () => { await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))); });
   await toggle.click();
@@ -88,12 +88,14 @@ async function rawHand(page: Page, x: number, y: number, score: number, count = 
 }
 test("personal pinch and comfort region are saved and restored", async ({ page }) => {
   await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
-  await page.getByRole('button', { name: '校准捏合', exact: true }).click();
+  await page.getByRole('button', { name: '手势设置', exact: true }).click();
+  await page.getByRole('menuitem', { name: '校准捏合', exact: true }).click();
   await rawHand(page, 0.4, 0.4, 0.8);
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await rawHand(page, 0.4, 0.4, 0.1);
   await page.getByRole('button', { name: '保存设置', exact: true }).click();
-  await page.getByRole('button', { name: '设置活动范围', exact: true }).click();
+  await page.getByRole('button', { name: '手势设置', exact: true }).click();
+  await page.getByRole('menuitem', { name: '设置活动范围', exact: true }).click();
   await rawHand(page, 0.2, 0.2, 0.8);
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await rawHand(page, 0.8, 0.8, 0.8);
@@ -105,19 +107,6 @@ test("personal pinch and comfort region are saved and restored", async ({ page }
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('octos-learn-air-gesture-preferences-v1')!))).toEqual(value);
   await pinchButton(page, 'draw');
   await expect(page.locator('[data-air-command="draw"]')).toHaveAttribute('aria-pressed','true');
-});
-test("guided practice finishes without adding learner ink", async ({ page }) => {
-  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
-  await page.getByRole('button', { name: '手势练习', exact: true }).click();
-  const viewport = (await page.locator('.learning-oll-board').boundingBox())!;
-  const x = viewport.x + viewport.width * 0.3, y = viewport.y + viewport.height * 0.4;
-  await hand(page, x, y, false, 24); await hand(page, x, y, true);
-  await hand(page, x + 90, y, true, 24); await hand(page, x + 90, y, false);
-  await hand(page, viewport.x + viewport.width * 0.6, y, false, 24);
-  await page.getByRole('button', { name: '开始使用', exact: true }).click();
-  await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
-  await expect(page.locator('.board-handwriting-practice')).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('octos-learn-air-gesture-preferences-v1')!).tutorialDone)).toBe(true);
 });
 test("course sliders and geometry points commit once and roll back when tracking is lost", async ({ page }) => {
   await page.goto('/tests/fixtures/air-gesture.html?course');
@@ -152,7 +141,7 @@ test("course sliders and geometry points commit once and roll back when tracking
   await expect.poll(() => page.evaluate(() => (window as unknown as { airRuntime: { studentOperations: unknown[] } }).airRuntime.studentOperations.length)).toBe(2);
 });
 
-test("portrait layout leaves tools and practice targets reachable", async ({ page }, testInfo) => {
+test("portrait layout keeps the compact gesture panel and tools reachable", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
   for (const command of ['draw', 'erase', 'select', 'undo', 'redo']) {
@@ -164,14 +153,13 @@ test("portrait layout leaves tools and practice targets reachable", async ({ pag
     });
     expect(exposed).toBe(true);
   }
-  await page.getByRole('button', { name: '手势练习', exact: true }).click();
-  const circles = page.locator('.board-handwriting-practice circle');
-  for (let i = 0; i < 2; i++) {
-    const box = (await circles.nth(i).boundingBox())!;
-    const panel = (await page.locator('.board-handwriting-controls').boundingBox())!;
-    expect(box.y + box.height).toBeLessThan(panel.y);
-  }
-  await page.screenshot({ path: testInfo.outputPath('portrait-practice.png') });
+  const panel = (await page.locator('.board-handwriting-controls').boundingBox())!;
+  expect(panel.width).toBeLessThan(250); expect(panel.height).toBeLessThan(300);
+  expect(panel.y + panel.height).toBeLessThanOrEqual(844);
+  await page.getByRole('button', { name: '手势设置', exact: true }).click();
+  const menu = (await page.getByRole('menu', { name: '手势设置' }).boundingBox())!;
+  expect(menu.y).toBeGreaterThanOrEqual(0); expect(menu.y + menu.height).toBeLessThanOrEqual(844);
+  await page.screenshot({ path: testInfo.outputPath('portrait-gesture-panel.png') });
 });
 
 
@@ -223,4 +211,47 @@ test("an undo click survives camera movement and slight release drift", async ({
   await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
   await pinchButton(page, 'redo');
   await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
+});
+
+test("the gesture cursor stays above floating panels without creating ink", async ({ page }, testInfo) => {
+  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
+  await expect(page.locator('.learning-ink-toolbar .learning-gesture-toggle')).toHaveCount(0);
+  await expect(page.locator('#input-methods .learning-gesture-toggle')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '手势练习', exact: true })).toHaveCount(0);
+  await page.evaluate(() => {
+    const viewport = document.querySelector('.learning-oll-board')!.getBoundingClientRect();
+    const panel = document.createElement('div'); panel.id = 'floating-gesture-test'; panel.dataset.learningBoardOcclusion = '';
+    Object.assign(panel.style, { position: 'fixed', left: `${viewport.left + 300}px`, top: `${viewport.top + 200}px`, width: '220px', height: '150px', zIndex: '100000', borderRadius: '16px', background: '#eef4f0', border: '1px solid #c8d9cc' });
+    document.body.append(panel);
+  });
+  const box = (await page.locator('#floating-gesture-test').boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await hand(page, x, y, false, 24);
+  const cursor = page.locator('body > .board-handwriting-cursor');
+  await expect(cursor.locator('i')).toBeVisible();
+  await expect(cursor).toHaveAttribute('data-phase', 'blocked');
+  const topmost = await cursor.evaluate(element => {
+    const dot = element.querySelector('i')!.getBoundingClientRect();
+    (element as HTMLElement).style.pointerEvents = 'auto';
+    const hit = document.elementFromPoint(dot.left + dot.width / 2, dot.top + dot.height / 2);
+    (element as HTMLElement).style.pointerEvents = '';
+    return Boolean(hit && element.contains(hit));
+  });
+  expect(topmost).toBe(true);
+  await hand(page, x, y, true); await hand(page, x, y, false);
+  await expect(cursor.locator('i')).toBeVisible();
+  await expect(page.locator('.learning-ink-status')).toContainText('0 项笔迹');
+  await page.screenshot({ path: testInfo.outputPath('cursor-above-floating-panel.png') });
+});
+test("gesture settings are compact, dismissible, and keyboard accessible", async ({ page }, testInfo) => {
+  await page.goto('/tests/fixtures/air-gesture.html'); await startHandInput(page);
+  await expect(page.getByRole('menuitem', { name: '校准捏合', exact: true })).toHaveCount(0);
+  await pinchButton(page, 'gesture-settings');
+  await expect(page.getByRole('menuitem', { name: '校准捏合', exact: true })).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: '设置活动范围', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu', { name: '手势设置' })).toHaveCount(0);
+  await expect(page.locator('.board-handwriting-state')).toHaveAttribute('data-state', 'active');
+  await page.screenshot({ path: testInfo.outputPath('desktop-gesture-panel.png') });
 });

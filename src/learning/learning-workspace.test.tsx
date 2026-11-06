@@ -597,6 +597,19 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
   });
 
+  it("places the gesture input toggle alongside voice and camera controls", async () => {
+    localStorage.setItem("octos-learn-experiment-air-writing", "true");
+    try {
+      await renderLearning(<LearningWorkspace sessionId="learn-gesture-input" voiceEnabled={false} onBack={vi.fn()} />);
+      const gestures = await screen.findByRole("button", { name: tr("启用手势") });
+      const actions = gestures.closest(".learning-workspace-actions");
+      expect(actions?.contains(screen.getByRole("button", { name: tr("启用语音") }))).toBe(true);
+      expect(actions?.contains(screen.getByRole("button", { name: tr("启用摄像头") }))).toBe(true);
+      expect(screen.getByLabelText(tr("白板书写工具")).contains(gestures)).toBe(false);
+      expect(screen.queryByRole("button", { name: tr("手势练习") })).toBeNull();
+    } finally { localStorage.removeItem("octos-learn-experiment-air-writing"); }
+  });
+
   it("speaks a completed plain reply without covering the board with a notice", async () => {
     vi.useFakeTimers();
     conversationMock.turns = [{

@@ -111,6 +111,23 @@ describe("binding camera hand input to the existing whiteboard", () => {
     [264, 297, 330, 363].forEach(t => s.feed(t, false));
     expect(click).toHaveBeenCalledTimes(1); s.input.dispose();
   });
+  it("keeps the cursor visible over a blocked floating panel while ending ink once", async () => {
+    const s = setup(); await s.begin();
+    const overlay = document.createElement("div"); overlay.dataset.learningBoardOcclusion = "";
+    overlay.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect);
+    document.body.append(overlay);
+    s.feed(264, true);
+    expect(s.visual.mock.calls.at(-1)?.[1]).toMatchObject({ phase: "blocked", penDown: false });
+    const cursor = s.visual.mock.calls.at(-1)?.[1]?.cursor;
+    expect(cursor).not.toBeNull();
+    s.feed(297, true); s.feed(330, true);
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.x).toBeCloseTo(cursor!.x);
+    expect(s.visual.mock.calls.at(-1)?.[1]?.cursor?.y).toBeCloseTo(cursor!.y);
+    expect(s.events.filter(event => event.type === "pointerup")).toHaveLength(1);
+    overlay.remove(); s.feed(363, true); s.feed(396, true);
+    expect(s.events.filter(event => event.type === "pointerdown")).toHaveLength(1);
+    s.input.dispose();
+  });
   it("does not restart after disposal", async () => {
     const s = setup(); await s.begin(); s.input.dispose(); const count = s.events.length;
     s.feed(264, true); await s.input.start(document.createElement("video")); expect(s.events).toHaveLength(count); expect(s.captures).toHaveLength(1);

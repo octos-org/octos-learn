@@ -1,6 +1,6 @@
 import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
 import { useHandwritingInput } from "../handwriting/use-handwriting-input";
-import { HandwritingControls, HandwritingToolbarButton } from "../handwriting/handwriting-controls";
+import { HandwritingControls, HandwritingInputButton } from "../handwriting/handwriting-controls";
 import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
@@ -681,6 +681,7 @@ function geometryTaskSnapDistance(
 }
 
 export function LearningWhiteboard({
+  gestureToggleHost,
   runtime,
   resolveAsset,
   embedded = false,
@@ -712,6 +713,8 @@ export function LearningWhiteboard({
   taskReactions = NEUTRAL_REACTIONS,
   overlay,
 }: {
+  /** Host beside the workspace's other input-mode toggles. */
+  gestureToggleHost?: HTMLElement | null;
   /**
    * Shown over the board, such as a presenter in its corner. Elements marked
    * data-learning-board-occlusion keep the lesson's content clear of it.
@@ -3453,7 +3456,10 @@ export function LearningWhiteboard({
         aria-label={tr("OLL 无限白板")}
       />
       {overlay}
-      {handwritingEnabled && inkSessionId && inkAvailable ? <HandwritingControls {...handwriting} canResume={!runtime?.playing} /> : null}
+      {handwritingEnabled && inkSessionId && inkAvailable ? <>
+        <HandwritingControls {...handwriting} canResume={!runtime?.playing} />
+        {gestureToggleHost ? createPortal(<HandwritingInputButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} />, gestureToggleHost) : null}
+      </> : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0
@@ -3527,7 +3533,6 @@ export function LearningWhiteboard({
           >
             <PenLine size={17} />
           </button>
-          {handwritingEnabled ? <HandwritingToolbarButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} /> : null}
           <button
             type="button"
             className={inkState.mode === "erase" ? "is-active" : ""}

@@ -1,7 +1,8 @@
 <!doctype html>
 <meta charset="utf-8"><title>Air gesture integration</title>
-<style>body{margin:0}#root{height:100vh}</style>
-<div id="root"></div>
+<style>body{margin:0}#input-methods{height:56px;display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:0 20px;}</style>
+<header id="input-methods" class="learning-workspace-actions"><button class="learning-mode-button">启用语音</button><button class="learning-mode-button">启用摄像头</button><span id="gesture-entry"></span></header>
+<div id="root" style="height:calc(100vh - 56px)"></div>
 <script type="module">
 import React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -19,11 +20,11 @@ HandwritingCapture.prototype.start=async function(){window.feedFrame=frame=>this
 function Course(){
  const runtime=useOllLessonRuntime({source:circleSource,storageKey:'air-course',startAtEnd:true});
  window.airRuntime=runtime;
- return React.createElement(LearningWhiteboard,{runtime,inkSessionId:'air-course-integration'});
+ return React.createElement(LearningWhiteboard,{runtime,gestureToggleHost:document.getElementById("gesture-entry"),inkSessionId:'air-course-integration'});
 }
 createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).has('course')
  ?React.createElement(Course)
- :React.createElement(LearningWhiteboard,{inkSessionId:'air-integration',onAskInkSelection:request=>{window.asked.push(request.toolId);}}));
+ :React.createElement(LearningWhiteboard,{gestureToggleHost:document.getElementById('gesture-entry'),inkSessionId:'air-integration',onAskInkSelection:request=>{window.asked.push(request.toolId);}}));
 let time=0;
 window.loseHand=()=>{time+=33;window.feedFrame({timeMs:time,tracked:false,processingMs:1,pipelineMs:1});};
 window.handRaw=async function(x,y,score,count=4){

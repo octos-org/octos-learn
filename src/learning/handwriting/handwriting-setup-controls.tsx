@@ -16,7 +16,6 @@ function setupInstruction(stage: NonNullable<Input["setup"]>["stage"]) {
   }
 }
 export function HandwritingSetupControls({ input }: { input: Input }) {
-  const active = input.state.status === "active";
   if (input.setup) {
     const stage = input.setup.stage;
     const next = stage === "open-ready" || stage === "corner-ready";
@@ -27,37 +26,5 @@ export function HandwritingSetupControls({ input }: { input: Input }) {
       <button type="button" onClick={input.cancelSetup}>{tr("取消设置")}</button>
     </section>;
   }
-  if (input.training) {
-    const stage = input.training.stage;
-    const instruction = stage === "aim" ? tr("松开手指，把光标移进左边的圆。")
-      : stage === "pinch" ? tr("在圆内轻捏拇指和食指。")
-      : stage === "draw" ? tr("保持捏合，移动手画一段短线，再松开。")
-      : stage === "move" ? tr("保持松开，把光标移进右边的圆。")
-      : tr("练习完成。现在可以选择画笔、框选或操作课程控件。");
-    return <section className="board-handwriting-setup">
-      <p role="status">{instruction}</p>
-      <p>{tr("练习轨迹只用于引导。")}</p>
-      <button type="button" onClick={input.finishPractice}>{stage === "done" ? tr("开始使用") : tr("跳过练习")}</button>
-    </section>;
-  }
-  return <section className="board-handwriting-setup">
-    {!input.preferences.tutorialDone && active ? <p>{tr("第一次使用？可以先练习瞄准、落笔和抬笔，也可以跳过。")}</p> : null}
-    <div className="board-handwriting-setup-actions">
-      <button type="button" data-air-command="practice" disabled={!active} onClick={input.beginPractice}>{tr("手势练习")}</button>
-      {!input.preferences.tutorialDone && active ? <button type="button" data-air-command="skip-practice" onClick={input.finishPractice}>{tr("跳过练习")}</button> : null}
-      <button type="button" disabled={!active || input.gestureMode !== "palm-pinch"} onClick={() => input.beginSetup("pinch")}>{tr("校准捏合")}</button>
-      <button type="button" disabled={!active} onClick={() => input.beginSetup("region")}>{tr("设置活动范围")}</button>
-      <button type="button" onClick={input.resetPreferences}>{tr("恢复默认设置")}</button>
-    </div>
-    {!input.saved ? <p role="status">{tr("设置已在本次使用中生效，浏览器未能保存。")}</p> : null}
-  </section>;
-}
-export function HandwritingPracticeOverlay({ input }: { input: Input }) {
-  const training = input.training;
-  if (!training) return null;
-  return <svg className="board-handwriting-practice" aria-hidden="true">
-    <circle cx={training.first.x} cy={training.first.y} r={32} className={training.stage === "move" || training.stage === "done" ? "" : "is-active"} />
-    <circle cx={training.second.x} cy={training.second.y} r={32} className={training.stage === "move" ? "is-active" : ""} />
-    <polyline points={training.points.map(p => `${p.x},${p.y}`).join(" ")} />
-  </svg>;
+  return !input.saved ? <p className="board-handwriting-save-error" role="status">{tr("设置已在本次使用中生效，浏览器未能保存。")}</p> : null;
 }

@@ -1,5 +1,4 @@
 import { readHandwritingGesture, type HandwritingInputFrame } from "./handwriting-gesture";
-import type { HandwritingControllerUpdate } from "./handwriting-controller";
 import type { HandwritingPreferences } from "./handwriting-preferences";
 import { validHandwritingRegion, validPinchThresholds } from "./handwriting-preferences";
 
@@ -65,36 +64,5 @@ export class HandwritingSetup {
           : { stage: "failed", progress: 0 };
       }
     }
-  }
-}
-
-export interface HandwritingPracticeSnapshot {
-  stage: "aim" | "pinch" | "draw" | "move" | "done";
-  first: Point; second: Point; points: Point[];
-}
-export class HandwritingPractice {
-  snapshot: HandwritingPracticeSnapshot;
-  constructor(width: number, height: number) {
-    const y = height * (width < 640 ? 0.65 : 0.4);
-    this.snapshot = { stage: "aim", first: { x: width * 0.3, y }, second: { x: width * 0.6, y }, points: [] };
-  }
-  update(gesture: HandwritingControllerUpdate) {
-    const s = this.snapshot;
-    if (s.stage === "done") return;
-    if (gesture.phase === "lost" || gesture.phase === "outside") {
-      if (s.stage === "draw") this.snapshot = { ...s, stage: "aim", points: [] };
-      return;
-    }
-    const near = (p: Point) => gesture.cursor && Math.hypot(gesture.cursor.x - p.x, gesture.cursor.y - p.y) <= 32;
-    if (s.stage === "aim" && near(s.first) && gesture.phase === "ready") this.snapshot = { ...s, stage: "pinch" };
-    else if (s.stage === "pinch" && gesture.actions.some(a => a.type === "down") && near(s.first)) {
-      this.snapshot = { ...s, stage: "draw", points: [{ ...gesture.cursor! }] };
-    } else if (s.stage === "draw") {
-      const points = [...s.points, ...gesture.actions.filter(a => a.type === "move").map(a => a.point)].slice(-200);
-      const release = gesture.actions.find(a => a.type === "up");
-      const length = points.reduce((sum, p, i) => i === 0 ? sum : sum + Math.hypot(p.x - points[i - 1]!.x, p.y - points[i - 1]!.y), 0);
-      const stage = release ? (release.reason === "release" && length >= 40 ? "move" : "aim") : "draw";
-      this.snapshot = { ...s, points, stage };
-    } else if (s.stage === "move" && near(s.second) && gesture.phase === "ready") this.snapshot = { ...s, stage: "done" };
   }
 }

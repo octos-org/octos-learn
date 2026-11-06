@@ -28,7 +28,7 @@ export interface HandwritingControllerUpdate {
   penDown: boolean;
   transition: HandwritingGestureTransition;
   pinchScore: number;
-  phase: HandwritingGesturePhase | "outside";
+  phase: HandwritingGesturePhase | "outside" | "blocked";
   reading: HandwritingGestureReading;
   actions: HandwritingPointerAction[];
 }
@@ -60,6 +60,10 @@ export class HandwritingPointerController {
     this.options = options;
     this.gestures = new HandwritingGestureFilter(options.mode, options.pinch);
     this.grip = (["grip", "palm-pinch"].includes(options.mode ?? HANDWRITING_DEFAULT_MODE)) ? new HandwritingGripPointerController(options) : null;
+  }
+
+  interrupt(timeMs: number): HandwritingPointerAction[] {
+    return this.grip ? this.grip.interrupt(timeMs) : this.reset(timeMs, "lost");
   }
 
   reset(timeMs = 0, reason: "lost" | "stop" = "stop"): HandwritingPointerAction[] {
