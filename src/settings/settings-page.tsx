@@ -17,6 +17,7 @@ import {
   Sun,
   Bug,
   BookHeart,
+  FlaskConical,
 } from "lucide-react";
 import { StudioTopbar } from "@/components/studio-topbar";
 import { useTheme } from "@/hooks/use-theme";
@@ -29,6 +30,7 @@ import { AuthenticationTab } from "./authentication-tab";
 import { TeachersTab } from "./teachers-tab";
 import { TeacherMemoryTab } from "./teacher-memory-tab";
 import { DeveloperTab } from "./developer-tab";
+import { ExperimentsTab } from "./experiments-tab";
 
 type TabId =
   | "profile"
@@ -38,6 +40,7 @@ type TabId =
   | "teachers"
   | "memory"
   | "authentication"
+  | "experiments"
   | "developer";
 
 type TabGroup = "personal" | "learning" | "system" | "developer";
@@ -64,6 +67,7 @@ const TABS: TabDef[] = localizedCatalog([
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "voice", label: "Voice", icon: Volume2, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
+  { id: "experiments", label: "实验功能", icon: FlaskConical, group: "learning" },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true, group: "system" },
   { id: "developer", label: "Developer Options", icon: Bug, group: "developer" },
 ]);
@@ -265,6 +269,8 @@ export function AdminSettingsPage() {
 
               {activeTab === "developer" ? (
                 <DeveloperTab />
+              ) : activeTab === "experiments" ? (
+                <ExperimentsTab />
               ) : activeTab === "teachers" ? (
                 <TeachersTab />
               ) : !isAdminOnlyTab && profile ? (

@@ -1,0 +1,331 @@
+import { createHash } from "node:crypto";
+import { expect, test } from "@playwright/test";
+import { installTestAccount } from "./helpers/course-test-account";
+
+// One card, said in four sentences, with board actions between and during
+// them. Playback must keep the order they were recorded in.
+const now = "2026-11-06T08:00:00.000Z";
+const recording = {
+  schema: "octos.learner-recording.v1", id: "rec-order", createdAt: now, updatedAt: now,
+  topic: { text: "两点之间", type: "math_off_map" }, goals: ["按顺序看懂两个点"],
+  cards: [{
+    key: "card-1", title: "两个点", kind: "teach",
+    takes: [{
+      take: 1, status: "kept", startedAt: now, durationMs: 9_000,
+      asrText: "这是一个坐标网格。现在放第二个点。它往上走。然后往右走。",
+      text: "这是一个坐标网格。现在放第二个点。它往上走。然后往右走。",
+      speechSpanMs: [0, 7_000],
+      segments: [
+        { startMs: 0, endMs: 1_000, text: "这是一个坐标网格。" },
+        { startMs: 2_000, endMs: 3_000, text: "现在放第二个点。" },
+        { startMs: 4_000, endMs: 5_000, text: "它往上走。" },
+        { startMs: 6_000, endMs: 7_000, text: "然后往右走。" },
+      ],
+      events: [
+        { t: 500, type: "component.insert", panel: "coordinate_grid", alias: "grid", x: [-1, 6], y: [-1, 9] },
+        { t: 1_500, type: "point_tool.place", node: "grid", point: "point-a", x: 1, y: 2, label: "Alpha" },
+        { t: 2_500, type: "point_tool.place", node: "grid", point: "point-b", x: 4, y: 8, label: "Beta" },
+      ],
+    }],
+  }],
+};
+
+test("a recorded card plays its sentences and board actions in the order they were recorded", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+  }, recording);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${recording.id}/watch`);
+  await expect(page.getByText("第 1 张，共 1 张")).toBeVisible();
+
+  // Sample what is said and what the board shows while the lesson plays, without sound.
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const timeline = await page.evaluate(async () => {
+    const samples: string[] = [];
+    const stage = document.querySelector(".teach-watch-stage")!;
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 300; tick += 1) {
+      const board = stage.textContent ?? "";
+      const sample = `${caption.textContent?.trim() || "—"} | alpha:${board.includes("Alpha")} beta:${board.includes("Beta")}`;
+      if (sample !== samples.at(-1)) samples.push(sample);
+      if (caption.textContent?.includes("看完了")) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return samples;
+  });
+  console.log(timeline.join("\n"));
+
+  const first = (predicate: (sample: string) => boolean) => timeline.findIndex(predicate);
+  const said = (words: string) => first((sample) => sample.startsWith(words));
+  // The first point was placed in the pause after the first sentence: before the second sentence is said.
+  expect(first((sample) => sample.includes("alpha:true"))).toBeGreaterThan(-1);
+  expect(first((sample) => sample.includes("alpha:true"))).toBeLessThan(said("现在放第二个点"));
+  // The second point was placed while the second sentence was said: not before it.
+  expect(first((sample) => sample.includes("beta:true"))).toBeGreaterThanOrEqual(said("现在放第二个点"));
+  expect(said("这是一个坐标网格")).toBeLessThan(said("现在放第二个点"));
+});
+
+// Three strokes: the first written during sentence 1, the second in the pause after it, the third during sentence 2.
+const strokes = ["M5 5L40 5", "M5 20L40 20", "M5 35L40 35"];
+const inkSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 40" width="45" height="40" data-oll-ink-selection="1">${
+  strokes.map((d, index) => `<g data-oll-stroke="${index}"><path d="${d}" fill="none" stroke="#1b2457" stroke-width="3"/></g>`).join("")}</svg>`;
+const inkRecording = {
+  ...recording, id: "rec-ink",
+  cards: [{
+    key: "card-1", title: "三条线", kind: "teach",
+    ink: [{ snapshotId: "ink-snap:rec-ink-card-1-t1@v1", sha256: createHash("sha256").update(inkSvg).digest("hex"), selections: [], take: 1, strokeTimesMs: [300, 1_500, 2_300] }],
+    takes: [{
+      take: 1, status: "kept", startedAt: now, durationMs: 4_000,
+      asrText: "先画第一条。再画第三条。", text: "先画第一条。再画第三条。", speechSpanMs: [0, 3_000],
+      segments: [{ startMs: 0, endMs: 1_000, text: "先画第一条。" }, { startMs: 2_000, endMs: 3_000, text: "再画第三条。" }],
+      events: [],
+    }],
+  }],
+};
+
+test("handwriting plays stroke by stroke where it was written among the sentences", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript(({ draft, svg }) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+    localStorage.setItem("octos-learn:learner-ink:v1:curated-learner", JSON.stringify({ "ink-snap:rec-ink-card-1-t1@v1": { svg, width: 45, height: 40 } }));
+  }, { draft: inkRecording, svg: inkSvg });
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${inkRecording.id}/watch`);
+  await expect(page.getByText("第 1 张，共 1 张")).toBeVisible();
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const timeline = await page.evaluate(async () => {
+    const samples: string[] = [];
+    const stage = document.querySelector(".teach-watch-stage")!;
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 300; tick += 1) {
+      const sample = `${caption.textContent?.trim() || "—"} | strokes:${stage.querySelectorAll(".lesson-ink path").length}`;
+      if (sample !== samples.at(-1)) samples.push(sample);
+      if (caption.textContent?.includes("看完了")) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return samples;
+  });
+  console.log(timeline.join("\n"));
+  const first = (predicate: (sample: string) => boolean) => timeline.findIndex(predicate);
+  const said = (words: string) => first((sample) => sample.startsWith(words));
+  // One stroke while the first sentence is said, the second before the next sentence, the third with it.
+  expect(timeline.some((sample) => sample.startsWith("先画第一条") && sample.endsWith("strokes:1"))).toBe(true);
+  expect(first((sample) => sample.endsWith("strokes:2"))).toBeLessThan(said("再画第三条"));
+  expect(first((sample) => sample.endsWith("strokes:3"))).toBeGreaterThanOrEqual(said("再画第三条"));
+});
+
+test("strokes written in the studio keep when they were written, numbered in drawing order", async ({ page }) => {
+  await installTestAccount(page);
+  const empty = { ...recording, id: "rec-draw", cards: [{ key: "card-1", title: "写三笔", kind: "teach", takes: [] }] };
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+  }, empty);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${empty.id}`);
+  await page.getByRole("button", { name: "录第 1 张" }).click();
+  await page.getByRole("button", { name: /^笔/ }).click();
+  const board = page.locator(".teach-studio .oll-board-runtime, .teach-studio [class*=board]").first();
+  const box = (await board.boundingBox())!;
+  const at = (x: number, y: number) => ({ x: box.x + box.width * x, y: box.y + box.height * y });
+  for (const [index, y] of [0.3, 0.4, 0.5].entries()) {
+    if (index) await page.waitForTimeout(700);
+    const from = at(0.3, y), to = at(0.6, y);
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    for (let step = 1; step <= 8; step += 1) await page.mouse.move(from.x + (to.x - from.x) * step / 8, from.y);
+    await page.mouse.up();
+  }
+  await page.waitForTimeout(300);
+  await page.getByRole("button", { name: /^停止/ }).click();
+  await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
+  const saved = await page.evaluate(() => {
+    const [draft] = JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!);
+    const ink = draft.cards[0].ink[0];
+    const svg = JSON.parse(localStorage.getItem("octos-learn:learner-ink:v1:curated-learner")!)[ink.snapshotId].svg as string;
+    return { times: ink.strokeTimesMs as number[], take: ink.take, groups: (svg.match(/data-oll-stroke="\d+"/g) ?? []).length };
+  });
+  console.log(JSON.stringify(saved));
+  expect(saved.take).toBe(1);
+  expect(saved.groups).toBe(3);
+  expect(saved.times).toHaveLength(3);
+  // Written about 0.7 s apart, in order, within the take.
+  expect(saved.times[1]! - saved.times[0]!).toBeGreaterThan(500);
+  expect(saved.times[2]! - saved.times[1]!).toBeGreaterThan(500);
+});
+
+test("the order strip: drag an action, split and join sentences, move with the keyboard, and watch from a sentence", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+      sessionStorage.setItem("seeded", "1");
+    }
+  }, recording);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${recording.id}`);
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
+  const order = () => strip.locator("[data-item]").evaluateAll((items) => items.map((item) => item.textContent?.trim()));
+  // Column by column, what is said and what is done with it; empty gaps left out.
+  const tracks = () => strip.locator("[data-slot]").evaluateAll((columns) => columns
+    .map((column) => Array.from(column.querySelectorAll("[data-item]")).map((item) => item.textContent?.trim()).join(" + ")).filter(Boolean));
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。 + 标出点 Beta", "它往上走。", "然后往右走。"]);
+
+  const dragTo = async (label: string, column: string) => {
+    const from = (await strip.locator("[data-item]", { hasText: label }).boundingBox())!;
+    const to = (await strip.locator(`[data-slot='${column}'] .teach-tracks-actions`).boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    for (let step = 1; step <= 10; step += 1) await page.mouse.move(from.x + from.width / 2 + (to.x + to.width / 2 - from.x - from.width / 2) * step / 10, from.y + from.height / 2);
+    await page.mouse.up();
+  };
+  // Drag point Beta into the pause after the last sentence, then under sentence 3: done while it is said.
+  await dragTo("标出点 Beta", "11");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await dragTo("标出点 Beta", "7");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
+
+  // The arrow keys move an action one place; the grid cannot go after the points placed on it.
+  const gridBlock = strip.locator("[data-item]", { hasText: "放上坐标网格" });
+  await gridBlock.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。", "放上坐标网格 + 标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
+  await expect(gridBlock).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(strip.getByRole("alert")).toContainText("不能放在那里");
+  expect((await tracks())[1]).toBe("放上坐标网格 + 标出点 Alpha");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
+
+  // Point Alpha one place left: under sentence 1, after the grid.
+  await strip.locator("[data-item]", { hasText: "标出点 Alpha" }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格 + 标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
+
+  // Enter inside a sentence splits it; Backspace at the start of the second part joins it back.
+  await strip.getByRole("button", { name: /^第 3 句：/ }).click();
+  const third = strip.getByRole("textbox", { name: "第 3 句" });
+  await third.press("Home");
+  await third.press("ArrowRight");
+  await third.press("Enter");
+  await expect.poll(order).toContain("它");
+  await expect.poll(order).toContain("往上走。");
+  await strip.getByRole("button", { name: /^第 4 句：往上走/ }).click();
+  const fourth = strip.getByRole("textbox", { name: "第 4 句" });
+  await fourth.press("Home");
+  await fourth.press("Backspace");
+  await expect.poll(order).toContain("它往上走。");
+
+  // Watch from sentence 2: the lesson starts there.
+  await strip.getByRole("link", { name: "从这句开始看" }).nth(1).click();
+  await expect(page).toHaveURL(/\/watch\?from=card-1-s2$/);
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const firstWords = await page.evaluate(async () => {
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 100; tick += 1) {
+      const words = caption.textContent?.trim();
+      if (words) return words;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return "";
+  });
+  // The lesson starts at sentence 2, not at the beginning.
+  expect(firstWords.startsWith("现在放第二个点")).toBe(true);
+});
+
+test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a pause joins back with its button", async ({ page }) => {
+  await installTestAccount(page);
+  const long = { ...recording, id: "rec-long", cards: [{ ...recording.cards[0]!, takes: [{ ...recording.cards[0]!.takes[0]!,
+    segments: Array.from({ length: 14 }, (_, index) => ({ startMs: index * 1_000, endMs: index * 1_000 + 600, text: `这是第 ${index + 1} 段话，用来把顺序条撑满。` })),
+    speechSpanMs: [0, 13_600] }] }, { key: "card-2", title: "下一张", kind: "teach", takes: [] }] };
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+      sessionStorage.setItem("seeded", "1");
+    }
+  }, long);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${long.id}`);
+  const track = page.locator(".teach-sequence .teach-tracks-scroll");
+  const box = (await track.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 400);
+  await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeGreaterThan(100);
+
+  // Sentences 1 and 2 were one sentence with a pause; point Alpha was placed in the pause after sentence 2.
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
+  const sentences = () => strip.locator("[data-sentence]").count();
+  expect(await sentences()).toBe(14);
+  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await expect.poll(sentences).toBe(13);
+  await expect(strip.locator("[data-item='sentence:0']")).toContainText("这是第 1 段话，用来把顺序条撑满。这是第 2 段话");
+  // Joined across the point placed between the sentences.
+  await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();
+  await expect.poll(sentences).toBe(12);
+  await expect(strip.getByRole("alert")).toHaveCount(0);
+
+  // Only the first card is recorded: it can be watched already.
+  await page.getByRole("link", { name: "看我的课" }).click();
+  await expect(page.getByText("还有 1 张没录")).toBeVisible();
+  await expect(page.getByRole("button", { name: "播放我的课" })).toBeEnabled();
+  // Saving waits in the panel under the top-right button, with the reason it cannot save yet.
+  await page.getByRole("button", { name: "保存这节课" }).click();
+  const panel = page.getByRole("dialog", { name: "保存这节课" });
+  await expect(panel.getByText("全部卡片录完、检查通过后就能保存。")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "保存到我的课" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+});
+
+test("while watching, the playing card's strip lights the sentence being said and the action just done", async ({ page }) => {
+  await installTestAccount(page);
+  await page.addInitScript((draft) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([draft]));
+  }, recording);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto(`/teach/${recording.id}/watch`);
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
+  await expect(strip.locator("[data-item]")).toHaveCount(7);
+  // Two tracks: the grid is put on while sentence 1 is said, so it sits in sentence 1's column.
+  await expect(strip.locator(".teach-tracks-column").first().locator("[data-item]")).toHaveText(["这是一个坐标网格。", "放上坐标网格"]);
+  const sound = page.getByRole("button", { name: "关掉声音" });
+  if (await sound.isVisible().catch(() => false)) await sound.click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const lit = await page.evaluate(async () => {
+    const seen: string[] = [];
+    const caption = document.querySelector(".teach-watch-caption")!;
+    for (let tick = 0; tick < 300; tick += 1) {
+      const now = Array.from(document.querySelectorAll(".teach-watch-sequence [data-lit]")).map((element) => element.textContent?.trim()).join(" + ");
+      if (now && now !== seen.at(-1)) seen.push(now);
+      if (caption.textContent?.includes("看完了")) break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return seen;
+  });
+  console.log(lit.join("\n"));
+  const first = (words: string) => lit.findIndex((entry) => entry.includes(words));
+  // In the order recorded: grid with sentence 1, point Alpha after it, point Beta with sentence 2.
+  expect(first("这是一个坐标网格。")).toBeGreaterThan(-1);
+  expect(first("放上坐标网格")).toBeGreaterThan(-1);
+  expect(first("标出点 Alpha")).toBeGreaterThan(first("这是一个坐标网格。"));
+  expect(first("现在放第二个点。")).toBeGreaterThan(first("标出点 Alpha"));
+  expect(first("标出点 Beta")).toBeGreaterThanOrEqual(first("现在放第二个点。"));
+  expect(first("然后往右走。")).toBeGreaterThan(first("它往上走。"));
+
+  // Clicking a sentence plays from there.
+  await strip.getByRole("button", { name: /^第 3 句：/ }).click();
+  await expect(page.locator(".teach-watch-caption")).toHaveText("它往上走。");
+  await expect(strip.locator("[data-lit]")).toHaveText(["它往上走。"]);
+});

@@ -1,6 +1,6 @@
 import type { LessonAuthor } from "octos-lesson-language";
 
-import { DEFAULT_AVATAR } from "./presenters";
+import { presenterAvatar } from "./presenters";
 import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent } from "./recording";
 
 /** The events of the take each card shows now, in card order. */
@@ -83,13 +83,13 @@ export function learnerReference(profileId: string, storage: Storage | null = ty
 
 /**
  * The lesson's author: the learner by an opaque reference only, presented by
- * the avatar and voice they chose from the app's catalogs (Octo and the
- * account's voice until they choose).
+ * the character they chose from the app's catalog, which speaks in its own
+ * voice (so the voice reference names the character too).
  */
 export function learnerAuthor(profileId: string, presenter: Presenter = {}): LessonAuthor {
   return {
     kind: "learner", learner_ref: `learner:${learnerReference(profileId)}`,
-    presented_by: { avatar_ref: `avatar:${presenter.avatar ?? DEFAULT_AVATAR}`, voice_ref: presenter.voice ? `voice:${presenter.voice}` : "voice:learner-default" },
+    presented_by: { avatar_ref: `avatar:${presenterAvatar(presenter.avatar).id}`, voice_ref: `voice:${presenterAvatar(presenter.avatar).id}` },
   };
 }
 

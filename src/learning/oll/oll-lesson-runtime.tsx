@@ -21,6 +21,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useExperimentalFeatures } from "@/hooks/use-experimental-features";
 import {
   useCallback,
   useEffect,
@@ -873,7 +874,7 @@ export function LearningWhiteboard({
   const inkPenWidthRef = useRef(inkPenWidth);
   const [inkWidthMenuOpen, setInkWidthMenuOpen] = useState(false);
   const [inkAvailable, setInkAvailable] = useState(false);
-  const handwritingEnabled = import.meta.env.VITE_ENABLE_HANDWRITING === "true";
+  const { airWritingEnabled: handwritingEnabled } = useExperimentalFeatures();
   const handwritingInputRef = useRef<BoardHandwritingInput | null>(null);
   const [inkError, setInkError] = useState("");
   const [writingRetry, setWritingRetry] = useState(0);

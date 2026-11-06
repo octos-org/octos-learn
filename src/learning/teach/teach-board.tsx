@@ -6,7 +6,7 @@ import { buildInteractionClusters } from "../oll/interaction-clusters";
 import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
-import type { CompiledLesson } from "./compile-recording";
+import { compiledCardActions, type CompiledLesson } from "./compile-recording";
 import type { BoardTarget, CardInk } from "./recording";
 import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
 import { segmentDrag, wrapDrag, unwrapAngle, type DragSample } from "./studio-helpers";
@@ -22,6 +22,8 @@ export interface FrozenInk {
   width: number;
   height: number;
   annotates?: CardInk["annotates"];
+  /** When each stroke was drawn (ms since the epoch), in the snapshot's stroke order, when every one was timed. */
+  strokeDrawnAt?: number[];
 }
 
 /** A box on the board, in board coordinates. */
@@ -92,8 +94,7 @@ function canonicalTarget(id: string): CanonicalTarget {
 
 /** The board IDs a recorded card ends on, as its final focus names them. */
 function cardEndTargets(compiled: CompiledLesson, key: string): string[] {
-  const beat = compiled.lesson.steps[0]?.beats.find((candidate) => candidate.key === key);
-  const focus = [...(beat?.actions ?? [])].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
+  const focus = [...compiledCardActions(compiled, key)].reverse().find((action) => action.do === "focus") as { targets?: string[] } | undefined;
   return (focus?.targets ?? []).map((target) => boardIdOf({ node: target.split("#")[0]! }));
 }
 
@@ -257,6 +258,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const tappedRef = useRef<{ target: BoardTarget; canonical: CanonicalTarget } | null>(null);
   const pointerRef = useRef<{ canonical?: CanonicalTarget; at?: { x: number; y: number }; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const onTargetRef = useRef(onTarget);
+  // The writing tool the learner picked, kept for ink that is still loading.
+  const penRef = useRef<"draw" | "erase" | "off">("off");
   const onStrokeRef = useRef(onStroke);
   useEffect(() => {
     onTargetRef.current = onTarget;
@@ -372,7 +375,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         storageKey: `octos-learn:teach-ink:${documentId}`, documentId, locale: getLocale(),
       });
       await ink.ready;
-      ink.setMode("navigate");
+      // A pen picked while the ink was still loading applies now.
+      ink.setMode(penRef.current === "off" ? "navigate" : penRef.current);
       inkRevisionRef.current = ink.state.content_revision;
       // Each js-draw command is one change and one undo step.
       ink.subscribe((state) => {
@@ -384,6 +388,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       inkRef.current = ink;
     },
     setPen(mode) {
+      penRef.current = mode;
       inkRef.current?.setMode(mode === "off" ? "navigate" : mode);
     },
     async freezeInk() {
@@ -397,7 +402,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         const snapshot = await ink.captureSelectionSnapshot();
         const { bounds } = snapshot;
         const annotates = annotationFor(mounted.elements.viewport, bounds);
-        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}) };
+        return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+          ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}) };
       } finally {
         await ink.destroy();
       }
@@ -438,7 +444,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const { bounds } = snapshot;
       const annotates = annotationFor(mounted.elements.viewport, bounds);
       const undoSteps = await quietInk(ink, inkQuietRef, inkRevisionRef, () => ink.deleteSelection());
-      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}), undoSteps };
+      return { svg: snapshot.svg, x: bounds.x, y: bounds.y, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height), ...(annotates ? { annotates } : {}),
+        ...(snapshot.component_drawn_at ? { strokeDrawnAt: snapshot.component_drawn_at } : {}), undoSteps };
     },
     onInkEdit(listener) {
       inkEditsRef.current.add(listener);

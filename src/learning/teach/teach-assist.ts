@@ -7,7 +7,7 @@ import { tr } from "@/i18n";
 import { invokeSkillAction, type SkillActionInvokeResponse } from "@/api/skill-actions";
 import { uploadFiles } from "@/api/chat";
 
-import type { CompiledLesson } from "./compile-recording";
+import { compiledCardActions, type CompiledLesson } from "./compile-recording";
 import { keptTake, currentTake, type LearnerRecording } from "./recording";
 
 export interface TeachCardSummary {
@@ -91,12 +91,11 @@ export function describeActions(actions: Action[]): string[] {
 
 /** Every recorded card as the learner said and showed it. */
 export function cardSummaries(recording: LearnerRecording, compiled: CompiledLesson | null): TeachCardSummary[] {
-  const beats = new Map((compiled?.lesson.steps[0]?.beats ?? []).map((beat) => [beat.key, beat]));
   const tasks = compiled?.lesson.lesson.tasks ?? [];
   return recording.cards.flatMap((card) => {
     const take = keptTake(card) ?? currentTake(card);
     if (!take) return [];
-    const board = describeActions((beats.get(card.key)?.actions ?? []) as unknown as Action[]);
+    const board = describeActions(compiledCardActions(compiled, card.key) as unknown as Action[]);
     const task = tasks.find((candidate) => (candidate as { as?: string }).as === `task-${card.key}`) as { completion?: { expression?: string; value?: number } } | undefined;
     if (task?.completion) board.push(`exercise for viewers: make ${task.completion.expression} equal ${task.completion.value}`);
     return [{ key: card.key, title: card.title, said: take.text ?? "", board }];

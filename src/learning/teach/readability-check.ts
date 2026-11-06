@@ -12,6 +12,7 @@ import { collectTeachingObservation, evaluateTeachingObservation } from "octos-l
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
 import type { CompiledLesson } from "./compile-recording";
+import { lessonCards } from "./lesson-cards";
 import { teachingRegionLayout } from "./teaching-board-setup";
 
 export const CHECKED_BOARDS = [
@@ -59,10 +60,12 @@ async function checkBoard(events: CanonicalEvent[], resolveAsset: ImageAssetReso
     mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     mounted.view.setRegionLayouts(teachingRegionLayout(events, board.width, board.height));
     const player = new HeadlessLessonPlayer(events);
+    // A card ends with its last beat.
+    const cardEnds = new Map(lessonCards(events).flatMap((card) => (card.beatIds.length ? [[card.beatIds.at(-1)!, card.key] as const] : [])));
     const results: CardReadability[] = [];
     for (let frame = player.advance(); frame; frame = player.advance()) {
       mounted.view.render(frame.projection.board, frame.operation);
-      if (frame.operation.type !== "beat.end" || !frame.projection.board) continue;
+      if (frame.operation.type !== "beat.end" || !frame.projection.board || !cardEnds.has(frame.operation.beat_id ?? "")) continue;
       await document.fonts?.ready;
       await settle();
       const observation = collectTeachingObservation({
@@ -70,7 +73,7 @@ async function checkBoard(events: CanonicalEvent[], resolveAsset: ImageAssetReso
         board: frame.projection.board, operation: frame.operation, cursor: frame.projection.cursor,
       });
       const problems = readabilityProblems(evaluateTeachingObservation(observation).issues.map((issue) => issue.code));
-      const card = frame.operation.beat_id?.split(":").at(-1) ?? "";
+      const card = cardEnds.get(frame.operation.beat_id ?? "")!;
       if (problems.length) results.push({ card, board: board.name, problems });
     }
     return results;
