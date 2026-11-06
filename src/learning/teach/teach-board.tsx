@@ -280,7 +280,11 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   bottomInset?: number;
   /** A recorded card to frame, as it ends; without one the board frames the latest card. */
   focusCard?: string;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard }, ref) {
+  /** Where an arrow being drawn starts: a line follows the pointer from it until the end is tapped. */
+  arrowFrom?: BoardTarget | null;
+  /** The card the take's writing will continue as it is written (null when it is a card of its own). */
+  onContinuing?: (node: string | null) => void;
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -304,6 +308,18 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   const tappedRef = useRef<{ target: BoardTarget; canonical: CanonicalTarget } | null>(null);
   const pointerRef = useRef<{ canonical?: CanonicalTarget; at?: { x: number; y: number }; timer?: ReturnType<typeof setTimeout> } | null>(null);
   const onTargetRef = useRef(onTarget);
+  const onContinuingRef = useRef(onContinuing);
+  useEffect(() => { onContinuingRef.current = onContinuing; }, [onContinuing]);
+  // The card the live writing would continue, outlined while it is written.
+  const continuingRef = useRef<string | null>(null);
+  const showContinuing = (node: string | null) => {
+    const viewport = viewportRef.current;
+    if (continuingRef.current === node || !viewport) return;
+    viewport.querySelector(".teach-continuing")?.classList.remove("teach-continuing");
+    if (node) viewport.querySelector(`.board-node[data-id="${CSS.escape(boardIdOf({ node }))}"]`)?.classList.add("teach-continuing");
+    continuingRef.current = node;
+    onContinuingRef.current?.(node);
+  };
   // The writing tool the learner picked, kept for ink that is still loading.
   const penRef = useRef<"draw" | "erase" | "off">("off");
   const onStrokeRef = useRef(onStroke);
@@ -431,6 +447,12 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         inkRevisionRef.current = state.content_revision;
         if (steps > 0) for (const listener of inkEditsRef.current) listener(steps);
       });
+      // As it is written, the writing shows which card it will continue.
+      ink.subscribe((state) => {
+        if (inkRef.current !== ink) return;
+        const bounds = state.component_count ? state.content_bounds : null;
+        showContinuing(bounds ? placeFrozen(mounted.elements.viewport, bounds).continues?.node ?? null : null);
+      });
       inkRef.current = ink;
     },
     setPen(mode) {
@@ -442,6 +464,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const mounted = mountedRef.current;
       if (!ink || !mounted) return null;
       inkRef.current = null;
+      showContinuing(null);
       try {
         if (!ink.state.component_count) return null;
         ink.selectAll();
@@ -610,6 +633,37 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     if (pointerRef.current?.canonical) mounted.view.showPointer(pointerRef.current.canonical);
     else if (pointerRef.current?.at) mounted.view.showPointerAt(pointerRef.current.at);
   }, [compiled, focusCard]);
+
+  // An arrow being drawn: a dashed line from its start to the pointer, and the card it would end on outlined.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || !arrowFrom || !("node" in arrowFrom)) return;
+    const from = viewport.querySelector<HTMLElement>(`.board-node[data-id="${CSS.escape(boardIdOf({ node: arrowFrom.node }))}"]`);
+    if (!from) return;
+    const svg = viewport.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("teach-arrow-preview");
+    svg.setAttribute("aria-hidden", "true");
+    const line = viewport.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "line");
+    svg.append(line);
+    viewport.append(svg);
+    let candidate: Element | null = null;
+    const move = (event: PointerEvent) => {
+      const box = viewport.getBoundingClientRect(), start = from.getBoundingClientRect();
+      line.setAttribute("x1", String(start.left + start.width / 2 - box.left));
+      line.setAttribute("y1", String(start.top + start.height / 2 - box.top));
+      line.setAttribute("x2", String(event.clientX - box.left));
+      line.setAttribute("y2", String(event.clientY - box.top));
+      const under = viewport.ownerDocument.elementFromPoint?.(event.clientX, event.clientY)?.closest(".board-node[data-id]") ?? null;
+      const next = under && under !== from ? under : null;
+      if (next !== candidate) { candidate?.classList.remove("teach-arrow-candidate"); next?.classList.add("teach-arrow-candidate"); candidate = next; }
+    };
+    viewport.addEventListener("pointermove", move);
+    return () => {
+      viewport.removeEventListener("pointermove", move);
+      candidate?.classList.remove("teach-arrow-candidate");
+      svg.remove();
+    };
+  }, [arrowFrom]);
 
   return (
     <div className="teach-board-frame">

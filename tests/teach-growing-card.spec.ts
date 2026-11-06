@@ -58,7 +58,18 @@ test("writing under an earlier card's handwriting continues that card where it w
   const start = { x: first.x + 20, y: first.y + first.height + 40 };
   await drawLine(page, start, 160);
   await page.waitForTimeout(300);
+  // While writing, the card it will continue is outlined and the hint says so.
+  await expect(page.locator(`.teach-studio .board-node.teach-continuing[data-id$=":node:ink-card-1"]`)).toHaveCount(1);
+  await expect(page.getByText("写在上一行下面：会接着写在虚线框住的卡片里，放在你写的位置。")).toBeVisible();
+  // An arrow being drawn follows the pointer from its start.
+  await page.getByRole("button", { name: /^箭头/ }).click();
+  const from = await cardBox(page, "ink-card-1");
+  await page.mouse.click(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.move(from.x + from.width / 2 + 120, from.y + from.height + 160, { steps: 4 });
+  await expect(page.locator(".teach-studio .teach-arrow-preview line")).toHaveCount(1);
+  expect(Number(await page.locator(".teach-studio .teach-arrow-preview line").getAttribute("x2"))).toBeGreaterThan(Number(await page.locator(".teach-studio .teach-arrow-preview line").getAttribute("x1")));
   await page.getByRole("button", { name: /^停止/ }).click();
+  await expect(page.locator(".teach-studio .teach-arrow-preview")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
 
   const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[1].ink[0], RECORDINGS);

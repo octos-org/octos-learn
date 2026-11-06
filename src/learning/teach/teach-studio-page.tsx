@@ -554,6 +554,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   };
 
   const [arrowFrom, setArrowFrom] = useState<BoardTarget | null>(null);
+  // The card the writing being written will continue, so the hint can say so.
+  const [continuing, setContinuing] = useState<string | null>(null);
   /**
    * A pointing tool used on a card, part, or stroke of writing; `at` is where
    * to show the pointer when not on a card, `mark` the ink mark a tap on
@@ -646,7 +648,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
         : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
-          : tool === "pen" ? tr("直接在白板上写。写在图上的会贴在那张图上。")
+          : tool === "pen" ? (continuing ? tr("写在上一行下面：会接着写在虚线框住的卡片里，放在你写的位置。") : tr("直接在白板上写。写在图上的会贴在那张图上；写在手写或算式下面的会接着写在那张卡片里。"))
             : null;
   const tools: Array<[Tool | "neat", string, typeof PenLine]> = [
     ["pen", tr("笔"), PenLine], ["eraser", tr("橡皮"), Eraser], ["neat", tr("整理"), Sparkles],
@@ -731,6 +733,8 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             onStroke={pointing ? onStroke : undefined}
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
             onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
+            arrowFrom={isRecording && tool === "arrow" ? arrowFrom : null}
+            onContinuing={setContinuing}
           />
           {isRecording && addOpen && (
             <AddPanel

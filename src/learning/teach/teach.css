@@ -19,6 +19,11 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 
 /* Studio: card strip, board and controls. */
 .teach-board[data-pointing="true"] { cursor: crosshair; }
+/* Live previews while recording: the arrow being drawn, and the card the writing will continue. */
+.teach-arrow-preview { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
+.teach-arrow-preview line { stroke: #6e8d86; stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; }
+.teach-board .board-node.teach-arrow-candidate { outline: 3px dashed rgba(110, 141, 134, 0.75); outline-offset: 4px; }
+.teach-board .board-node.teach-continuing { outline: 3px dashed rgba(201, 154, 62, 0.8); outline-offset: 6px; }
 .teach-step button.teach-record, .teach-controls button.teach-record { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; color: #fff; background: #c2410c; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .teach-range { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; }
 .teach-range label, .teach-label { display: grid; gap: 4px; color: #3d5a63; font-size: 13px; }
