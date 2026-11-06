@@ -1,18 +1,19 @@
-// The order of a recorded card, as a strip under the board: what the learner
-// said and what they did, block after block, in the order the lesson plays
-// them. Actions are dragged to another place (or moved with the arrow keys);
-// a sentence is edited in place, where Enter splits it and Backspace at its
-// start joins it to the one before. The strip folds away to one line.
+// The order of a recorded card, as a strip under the board, on two tracks:
+// what the learner said above, what they did below. An action sits under the
+// sentence it is done with, or in the gap between two sentences. Actions are
+// dragged to another column (or moved with the arrow keys); a sentence is
+// edited in place, where Enter splits it and Backspace at its start joins it
+// to the one before. The strip folds away to one line.
 
 import { tr } from "@/i18n";
 import {
   ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, MessageSquare, MousePointer2, MoveHorizontal,
-  Merge, PenLine, Play, Sparkles, TrendingUp, type LucideIcon,
+  Merge, PenLine, Play, Pointer, Sparkles, TrendingUp, type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Link } from "react-router-dom";
 
-import { cardSequence, joinWithPrevious, moveAction, SequenceError, splitSentence, type ActionKind, type SequenceItem } from "./card-script";
+import { cardTracks, joinWithPrevious, placeAction, SequenceError, splitSentence, type ActionKind, type TrackColumn } from "./card-script";
 import { correctSentence, type LearnerRecording, type RecordingCard } from "./recording";
 
 export const ICONS: Record<ActionKind, LucideIcon> = {
@@ -35,19 +36,42 @@ export interface SequenceBarProps {
   watchFrom?: (sentence: number) => string | undefined;
 }
 
-interface Drag { id: string; pointer: number; startX: number; startY: number; dx: number; dy: number; active: boolean; to: number }
+/** A place an action can go: a column, and how many of the column's other actions come before it. */
+interface Place { slot: number; position: number }
+
+interface Drag { id: string; pointer: number; startX: number; startY: number; dx: number; dy: number; active: boolean; to: Place }
 
 function readFolded(): boolean {
   try { return localStorage.getItem(FOLDED_KEY) === "1"; } catch { return false; }
 }
 
+/** Where the action is now. */
+function placeOf(columns: TrackColumn[], id: string): Place {
+  for (const column of columns) {
+    const position = column.actions.findIndex((action) => action.id === id);
+    if (position >= 0) return { slot: column.slot, position };
+  }
+  return { slot: -1, position: -1 };
+}
+
+/** Every place the action could go, left to right. */
+function placesFor(columns: TrackColumn[], id: string): Place[] {
+  return columns.flatMap((column) => {
+    const others = column.actions.filter((action) => action.id !== id).length;
+    return Array.from({ length: others + 1 }, (_, position) => ({ slot: column.slot, position }));
+  });
+}
+
+const samePlace = (a: Place, b: Place) => a.slot === b.slot && a.position === b.position;
+
 export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }: SequenceBarProps) {
-  const sequence = cardSequence(card) ?? [];
+  const columns = cardTracks(card, { gaps: true }) ?? [];
+  const sentences = columns.flatMap((column) => (column.sentence ? [column.sentence] : []));
   const [folded, setFolded] = useState(readFolded);
   const [problem, setProblem] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ index: number; text: string } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
-  const track = useRef<HTMLOListElement>(null);
+  const track = useRef<HTMLDivElement>(null);
   const focusAfter = useRef<string | null>(null);
 
   useEffect(() => {
@@ -103,15 +127,23 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
 
   // ---- Dragging an action
 
-  /** Where a block dropped at this x lands: how many of the other blocks are before it. */
-  const dropIndex = (id: string, x: number) => {
-    const others = Array.from(track.current?.querySelectorAll<HTMLElement>("[data-item]") ?? []).filter((element) => element.dataset.item !== id);
-    return others.filter((element) => { const box = element.getBoundingClientRect(); return box.left + box.width / 2 < x; }).length;
+  /** Where an action dropped at this x lands: the column under it, among that column's other actions. */
+  const dropPlace = (id: string, x: number): Place => {
+    const elements = Array.from(track.current?.querySelectorAll<HTMLElement>("[data-slot]") ?? []);
+    let nearest: HTMLElement | undefined, distance = Infinity;
+    for (const element of elements) {
+      const box = element.getBoundingClientRect();
+      const away = x < box.left ? box.left - x : x > box.right ? x - box.right : 0;
+      if (away < distance) { distance = away; nearest = element; }
+    }
+    if (!nearest) return placeOf(columns, id);
+    const others = Array.from(nearest.querySelectorAll<HTMLElement>("[data-action]")).filter((element) => element.dataset.item !== id);
+    return { slot: Number(nearest.dataset.slot), position: others.filter((element) => { const box = element.getBoundingClientRect(); return box.left + box.width / 2 < x; }).length };
   };
-  const onPointerDown = (item: SequenceItem) => (event: ReactPointerEvent<HTMLElement>) => {
-    if (item.kind !== "action" || event.button !== 0) return;
+  const onPointerDown = (id: string) => (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    setDrag({ id: item.id, pointer: event.pointerId, startX: event.clientX, startY: event.clientY, dx: 0, dy: 0, active: false, to: sequence.findIndex((other) => other.id === item.id) });
+    setDrag({ id, pointer: event.pointerId, startX: event.clientX, startY: event.clientY, dx: 0, dy: 0, active: false, to: placeOf(columns, id) });
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
     if (!drag || event.pointerId !== drag.pointer) return;
@@ -123,32 +155,34 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
       if (event.clientX < box.left + 40) track.current.scrollLeft -= 12;
       else if (event.clientX > box.right - 40) track.current.scrollLeft += 12;
     }
-    setDrag({ ...drag, dx, dy, active, to: active ? dropIndex(drag.id, event.clientX) : drag.to });
+    setDrag({ ...drag, dx, dy, active, to: active ? dropPlace(drag.id, event.clientX) : drag.to });
   };
   const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
     if (!drag || event.pointerId !== drag.pointer) return;
     const done = drag;
     setDrag(null);
     // Dropped where it was: nothing changes.
-    if (done.active && done.to !== sequence.findIndex((item) => item.id === done.id)) {
-      apply((current) => moveAction(current, card.key, done.id, done.to, now()));
+    if (done.active && !samePlace(done.to, placeOf(columns, done.id))) {
+      apply((current) => placeAction(current, card.key, done.id, done.to.slot, done.to.position, now()));
     }
   };
-  const onActionKey = (item: SequenceItem, position: number) => (event: ReactKeyboardEvent<HTMLElement>) => {
+  const onActionKey = (id: string) => (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    const to = event.key === "ArrowLeft" ? position - 1 : position + 1;
-    if (to < 0 || to > sequence.length - 1) return;
-    focusAfter.current = item.id;
-    if (!apply((current) => moveAction(current, card.key, item.id, to, now()))) focusAfter.current = null;
+    const places = placesFor(columns, id);
+    const here = places.findIndex((place) => samePlace(place, placeOf(columns, id)));
+    const to = places[event.key === "ArrowLeft" ? here - 1 : here + 1];
+    if (!to) return;
+    focusAfter.current = id;
+    if (!apply((current) => placeAction(current, card.key, id, to.slot, to.position, now()))) focusAfter.current = null;
   };
 
   // ---- Editing a sentence
 
   const commit = (index: number, text: string) => {
     setEditing(null);
-    const sentence = sequence.find((item) => item.kind === "sentence" && item.index === index);
-    if (sentence?.kind === "sentence" && text.trim() !== sentence.text) apply((current) => correctSentence(current, card.key, index, text, now()));
+    const sentence = sentences.find((item) => item.index === index);
+    if (sentence && text.trim() !== sentence.text) apply((current) => correctSentence(current, card.key, index, text, now()));
   };
   const onSentenceKey = (index: number) => (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     const box = event.currentTarget;
@@ -172,75 +206,91 @@ export function SequenceBar({ card, cardNumber, update, now, check, watchFrom }:
     }
   };
 
-  const others = drag?.active ? sequence.filter((item) => item.id !== drag.id) : sequence;
-  const marker = drag?.active ? drag.to : -1;
+  const target = drag?.active ? drag.to : null;
+  const title = tr("第 {{v0}} 张：说的话和动作", { v0: cardNumber });
 
   return (
-    <section className="teach-sequence" data-folded={folded || undefined} aria-label={tr("第 {{v0}} 张的顺序", { v0: cardNumber })}>
+    <section className="teach-sequence" data-folded={folded || undefined} aria-label={title}>
       <header className="teach-sequence-head">
         <button type="button" className="teach-sequence-toggle" aria-expanded={!folded} onClick={() => fold(!folded)}>
           {folded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-          {tr("第 {{v0}} 张的顺序", { v0: cardNumber })}
+          {title}
         </button>
         {!folded && (problem
           ? <p role="alert" className="teach-sequence-note" data-problem>{problem}</p>
           : <p className="teach-sequence-note">{editing
             ? tr("按回车：从光标处分成两句。在句首按退格：和前一句合并。")
-            : tr("拖动动作换位置；点你说的话可以修改；被停顿分开的一句话可以点合并按钮合回去。")}</p>)}
+            : tr("把动作拖到一句话下面，就在说这句时做；拖到两句之间，就在停顿时做。点你说的话可以修改。")}</p>)}
       </header>
       {!folded && (
-        <ol ref={track} className="teach-sequence-track">
-          {sequence.map((item, position) => {
-            const dragged = drag?.active && drag.id === item.id;
-            const slot = drag?.active ? others.findIndex((other) => other.id === item.id) : position;
-            const before = marker >= 0 && !dragged && slot === marker;
-            if (item.kind === "action") {
-              const Icon = ICONS[item.action];
-              return (
-                <li key={item.id} className="teach-sequence-slot" data-before-marker={before || undefined}>
-                  <div role="button" tabIndex={0} data-item={item.id} className="teach-sequence-block" data-action data-dragging={dragged || undefined}
-                    aria-label={tr("{{v0}}：拖动，或用左右方向键换位置", { v0: item.label })}
-                    style={dragged ? { transform: `translate(${drag!.dx}px, ${drag!.dy}px)` } : undefined}
-                    onPointerDown={onPointerDown(item)} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => setDrag(null)}
-                    onKeyDown={onActionKey(item, position)}>
-                    <Icon size={16} aria-hidden="true" /><span>{item.label}</span>
-                  </div>
-                </li>
-              );
-            }
-            const from = watchFrom?.(item.index);
-            return (
-              <li key={item.id} className="teach-sequence-slot" data-before-marker={before || undefined}>
-                <div data-item={item.id} className="teach-sequence-block" data-sentence data-editing={editing?.index === item.index || undefined}>
-                  <MessageSquare size={16} aria-hidden="true" />
-                  {editing?.index === item.index ? (
-                    <textarea autoFocus className="teach-sequence-text" value={editing.text} aria-label={tr("第 {{v0}} 句", { v0: item.index + 1 })}
-                      onChange={(event) => setEditing({ index: item.index, text: event.target.value })}
-                      onKeyDown={onSentenceKey(item.index)} onBlur={(event) => { if (editing) commit(item.index, event.currentTarget.value); }} />
-                  ) : (
-                    <button type="button" className="teach-sequence-words" title={tr("点一下修改")}
-                      aria-label={tr("第 {{v0}} 句：{{v1}}。点一下修改", { v0: item.index + 1, v1: item.text || tr("（没听清）") })}
-                      onClick={() => setEditing({ index: item.index, text: item.text })}>
-                      {item.text || <span className="academy-muted">{tr("这句没听清，点这里写下你说的话。")}</span>}
-                    </button>
-                  )}
-                  {editing?.index !== item.index && (
-                    <span className="teach-sequence-block-tools">
-                      {from && <Link className="teach-sequence-tool" to={from} aria-label={tr("从这句开始看")} title={tr("从这句开始看")}><Play size={14} aria-hidden="true" /></Link>}
-                      {item.index > 0 && (
-                        <button type="button" className="teach-sequence-tool" aria-label={tr("和前一句合并成一句")} title={tr("和前一句合并成一句")}
-                          onClick={() => apply((current) => joinWithPrevious(current, card.key, item.index, now()))}>
-                          <Merge size={14} aria-hidden="true" />
-                        </button>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-          <li className="teach-sequence-slot teach-sequence-end" data-before-marker={marker >= 0 && marker === others.length || undefined} aria-hidden="true" />
-        </ol>
+        <div className="teach-tracks" data-dragging={target ? true : undefined}>
+          <div className="teach-tracks-labels" aria-hidden="true">
+            <span><MessageSquare size={14} />{tr("说")}</span>
+            <span><Pointer size={14} />{tr("做")}</span>
+          </div>
+          <div ref={track} className="teach-tracks-scroll">
+            <ol className="teach-tracks-columns">
+              {columns.map((column) => {
+                const item = column.sentence;
+                const from = item && watchFrom?.(item.index);
+                const dropHere = target?.slot === column.slot;
+                const others = column.actions.filter((action) => action.id !== drag?.id);
+                return (
+                  <li key={column.slot} className="teach-tracks-column" data-slot={column.slot} data-place={column.place}
+                    data-empty={!item && !column.actions.length || undefined} data-drop={dropHere || undefined}>
+                    <div className="teach-tracks-speech">
+                      {item ? (
+                        <div data-item={item.id} className="teach-tracks-sentence" data-sentence data-editing={editing?.index === item.index || undefined}>
+                          {editing?.index === item.index ? (
+                            <textarea autoFocus className="teach-sequence-text" value={editing.text} aria-label={tr("第 {{v0}} 句", { v0: item.index + 1 })}
+                              onChange={(event) => setEditing({ index: item.index, text: event.target.value })}
+                              onKeyDown={onSentenceKey(item.index)} onBlur={(event) => { if (editing) commit(item.index, event.currentTarget.value); }} />
+                          ) : (
+                            <button type="button" className="teach-sequence-words" title={tr("点一下修改")}
+                              aria-label={tr("第 {{v0}} 句：{{v1}}。点一下修改", { v0: item.index + 1, v1: item.text || tr("（没听清）") })}
+                              onClick={() => setEditing({ index: item.index, text: item.text })}>
+                              {item.text || <span className="academy-muted">{tr("这句没听清，点这里写下你说的话。")}</span>}
+                            </button>
+                          )}
+                          {editing?.index !== item.index && (
+                            <span className="teach-sequence-block-tools">
+                              {from && <Link className="teach-sequence-tool" to={from} aria-label={tr("从这句开始看")} title={tr("从这句开始看")}><Play size={14} aria-hidden="true" /></Link>}
+                              {item.index > 0 && (
+                                <button type="button" className="teach-sequence-tool" aria-label={tr("和前一句合并成一句")} title={tr("和前一句合并成一句")}
+                                  onClick={() => apply((current) => joinWithPrevious(current, card.key, item.index, now()))}>
+                                  <Merge size={14} aria-hidden="true" />
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      ) : <span className="teach-tracks-pause" aria-hidden="true" />}
+                    </div>
+                    <ul className="teach-tracks-actions" data-drop-end={dropHere && target!.position === others.length || undefined}
+                      aria-label={item ? tr("说第 {{v0}} 句时做的", { v0: item.index + 1 }) : column.place === "before" ? tr("开口之前做的") : tr("两句话之间做的")}>
+                      {column.actions.map((action) => {
+                        const Icon = ICONS[action.action];
+                        const dragged = target && drag!.id === action.id;
+                        const before = dropHere && !dragged && others.indexOf(action) === target!.position;
+                        return (
+                          <li key={action.id} className="teach-tracks-slot" data-before-marker={before || undefined}>
+                            <div role="button" tabIndex={0} data-item={action.id} className="teach-tracks-action" data-action data-dragging={dragged || undefined}
+                              aria-label={tr("{{v0}}：拖动，或用左右方向键换位置", { v0: action.label })}
+                              style={dragged ? { transform: `translate(${drag!.dx}px, ${drag!.dy}px)` } : undefined}
+                              onPointerDown={onPointerDown(action.id)} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => setDrag(null)}
+                              onKeyDown={onActionKey(action.id)}>
+                              <Icon size={14} aria-hidden="true" /><span>{action.label}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </div>
       )}
     </section>
   );

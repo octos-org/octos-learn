@@ -315,7 +315,7 @@ it("turns what the learner says into the card's captions, timed from the take st
     { startMs: 3_500, endMs: 6_000, text: "Point A is at one two.", asrText: "Point A is at one two." },
   ]);
   // The words are edited in the strip under the board: one block per sentence.
-  const strip = within(screen.getByRole("region", { name: "Order of card 1" }));
+  const strip = within(screen.getByRole("region", { name: "Card 1: words and actions" }));
   expect(strip.getByRole("button", { name: /^Sentence 1: Here is a grid\./ })).toBeTruthy();
 
   // Correcting one sentence keeps the others and the card's words in step.

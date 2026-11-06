@@ -931,7 +931,7 @@ function WordsEditor({ card, take, label, update, now }: {
     return <TranscriptEditor text={take.text ?? ""} {...(label ? { label } : {})} onSave={(text) => update((current) => correctTranscript(current, card.key, text, now()))} />;
   }
   // Sentences and their order with the actions are edited in the strip under the board.
-  return <p className="academy-muted">{tr("你说的话和动作的顺序在白板下面的“顺序”条里，可以拖动和修改。")}</p>;
+  return <p className="academy-muted">{tr("你说的话和做的动作在白板下面，上下两行对齐，可以拖动和修改。")}</p>;
 }
 
 function TranscriptEditor({ text, label, onSave }: { text: string; label?: string; onSave: (text: string) => void }) {

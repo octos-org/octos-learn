@@ -172,35 +172,43 @@ test("the order strip: drag an action, split and join sentences, move with the k
   }, recording);
   await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
   await page.goto(`/teach/${recording.id}`);
-  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
   const order = () => strip.locator("[data-item]").evaluateAll((items) => items.map((item) => item.textContent?.trim()));
-  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "标出点 Beta", "现在放第二个点。", "它往上走。", "然后往右走。"]);
+  // Column by column, what is said and what is done with it; empty gaps left out.
+  const tracks = () => strip.locator("[data-slot]").evaluateAll((columns) => columns
+    .map((column) => Array.from(column.querySelectorAll("[data-item]")).map((item) => item.textContent?.trim()).join(" + ")).filter(Boolean));
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。 + 标出点 Beta", "它往上走。", "然后往右走。"]);
 
-  // Drag point Beta past the last sentence.
-  const beta = strip.locator("[data-item]", { hasText: "标出点 Beta" });
-  const last = strip.locator("[data-item]", { hasText: "然后往右走。" });
-  const from = (await beta.boundingBox())!, to = (await last.boundingBox())!;
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  for (let step = 1; step <= 10; step += 1) await page.mouse.move(from.x + (to.x + to.width + 8 - from.x) * step / 10, from.y + from.height / 2);
-  await page.mouse.up();
-  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  const dragTo = async (label: string, column: string) => {
+    const from = (await strip.locator("[data-item]", { hasText: label }).boundingBox())!;
+    const to = (await strip.locator(`[data-slot='${column}'] .teach-tracks-actions`).boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    for (let step = 1; step <= 10; step += 1) await page.mouse.move(from.x + from.width / 2 + (to.x + to.width / 2 - from.x - from.width / 2) * step / 10, from.y + from.height / 2);
+    await page.mouse.up();
+  };
+  // Drag point Beta into the pause after the last sentence, then under sentence 3: done while it is said.
+  await dragTo("标出点 Beta", "11");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await dragTo("标出点 Beta", "7");
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
 
   // The arrow keys move an action one place; the grid cannot go after the points placed on it.
   const gridBlock = strip.locator("[data-item]", { hasText: "放上坐标网格" });
   await gridBlock.focus();
   await page.keyboard.press("ArrowRight");
-  await expect.poll(order).toEqual(["这是一个坐标网格。", "放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。", "放上坐标网格 + 标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
   await expect(gridBlock).toBeFocused();
   await page.keyboard.press("ArrowRight");
   await expect(strip.getByRole("alert")).toContainText("不能放在那里");
-  expect((await order())[1]).toBe("放上坐标网格");
+  expect((await tracks())[1]).toBe("放上坐标网格 + 标出点 Alpha");
   await page.keyboard.press("ArrowLeft");
-  await expect.poll(order).toEqual(["放上坐标网格", "这是一个坐标网格。", "标出点 Alpha", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格", "标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
 
+  // Point Alpha one place left: under sentence 1, after the grid.
   await strip.locator("[data-item]", { hasText: "标出点 Alpha" }).focus();
   await page.keyboard.press("ArrowLeft");
-  await expect.poll(order).toEqual(["放上坐标网格", "标出点 Alpha", "这是一个坐标网格。", "现在放第二个点。", "它往上走。", "然后往右走。", "标出点 Beta"]);
+  await expect.poll(tracks).toEqual(["这是一个坐标网格。 + 放上坐标网格 + 标出点 Alpha", "现在放第二个点。", "它往上走。 + 标出点 Beta", "然后往右走。"]);
 
   // Enter inside a sentence splits it; Backspace at the start of the second part joins it back.
   await strip.getByRole("button", { name: /^第 3 句：/ }).click();
@@ -249,14 +257,14 @@ test("the strip scrolls sideways with the mouse wheel, and a sentence cut at a p
   }, long);
   await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
   await page.goto(`/teach/${long.id}`);
-  const track = page.locator(".teach-sequence-track");
+  const track = page.locator(".teach-sequence .teach-tracks-scroll");
   const box = (await track.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, 400);
   await expect.poll(() => track.evaluate((element) => element.scrollLeft)).toBeGreaterThan(100);
 
   // Sentences 1 and 2 were one sentence with a pause; point Alpha was placed in the pause after sentence 2.
-  const strip = page.getByRole("region", { name: "第 1 张的顺序" });
+  const strip = page.getByRole("region", { name: "第 1 张：说的话和动作" });
   const sentences = () => strip.locator("[data-sentence]").count();
   expect(await sentences()).toBe(14);
   await strip.locator("[data-item='sentence:1']").getByRole("button", { name: "和前一句合并成一句" }).click();

@@ -253,40 +253,14 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-sequence-toggle { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 36px; padding: 0 4px; border: 0; background: none; color: #1b2457; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .teach-sequence-note { flex: 1; min-width: 0; margin: 0; overflow: hidden; color: #5b6b73; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .teach-sequence-note[data-problem] { color: #9a3412; white-space: normal; }
-.teach-sequence-track { display: flex; align-items: center; gap: 0; margin: 0; padding: 4px 12px 10px; overflow-x: auto; list-style: none; scroll-padding: 0 40px; touch-action: pan-x; scrollbar-width: thin; scrollbar-color: rgba(40, 65, 67, .35) transparent; }
-/* Keep the scrollbar visible, so the strip reads as scrollable even where scrollbars hide by default. */
-.teach-sequence-track::-webkit-scrollbar { height: 8px; }
-.teach-sequence-track::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(40, 65, 67, .35); }
-.teach-sequence-slot { position: relative; display: flex; align-items: center; flex: none; padding: 0 4px; }
-/* Where a dragged action will land. */
-.teach-sequence-slot[data-before-marker]::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: -2px; width: 4px; border-radius: 2px; background: #1b2457; }
-.teach-sequence-end { min-width: 24px; align-self: stretch; }
-.teach-sequence-block { position: relative; display: flex; align-items: flex-start; gap: 6px; box-sizing: border-box; color: #1f2d33; font-size: 14px; line-height: 1.4; }
-.teach-sequence-block > svg { flex: none; margin-top: 2px; }
-/* What the learner said: a white speech card. */
-.teach-sequence-block[data-sentence] { width: max-content; min-width: 120px; max-width: 260px; min-height: 64px; padding: 8px 12px 26px; border: 1px solid rgba(40, 65, 67, .28); border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(40, 65, 67, .08); }
-.teach-sequence-block[data-sentence] > svg { color: #1b2457; }
-.teach-sequence-block[data-editing] { width: 280px; max-width: 280px; }
-/* What the learner did on the board: a small tinted step between the speech cards. */
-.teach-sequence-block[data-action] { align-items: center; min-height: 34px; padding: 4px 12px; border: 1px dashed rgba(15, 118, 110, .7); border-radius: 999px; background: #e6f4f1; color: #0f4f4a; font-size: 13px; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; }
-.teach-sequence-block[data-action] > svg { margin-top: 0; color: #0f766e; }
-.teach-sequence-block[data-action]:focus-visible, .teach-sequence-words:focus-visible, .teach-sequence-tool:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
-.teach-sequence-block[data-dragging] { z-index: 2; cursor: grabbing; box-shadow: 0 6px 18px rgba(27, 36, 87, .22); pointer-events: none; }
 .teach-sequence-words { display: -webkit-box; padding: 0; overflow: hidden; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: text; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .teach-sequence-text { flex: 1; min-height: 3.2em; padding: 2px 4px; border: 1px solid rgba(27, 36, 87, .4); border-radius: 6px; font: inherit; resize: none; }
 .teach-sequence-block-tools { position: absolute; right: 6px; bottom: 4px; display: flex; gap: 2px; }
+.teach-sequence-words:focus-visible, .teach-sequence-tool:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
 .teach-sequence-tool { display: inline-flex; padding: 3px; border: 0; border-radius: 999px; background: none; color: #3d5a63; cursor: pointer; }
 .teach-sequence-tool:hover { background: rgba(40, 65, 67, .1); }
 
 /* While watching: the sentence being said and the action just done light up. */
-.teach-watch-sequence { margin-top: 12px; }
-.teach-sequence-block[data-readonly] { cursor: default; }
-.teach-sequence-block[data-sentence] .teach-sequence-words { cursor: pointer; }
-.teach-watch-sequence .teach-sequence-block[data-sentence] { padding-bottom: 8px; min-height: 48px; }
-.teach-sequence-block[data-lit][data-sentence] { border-color: #1b2457; background: #fff7d6; box-shadow: 0 0 0 3px rgba(27, 36, 87, .18); }
-.teach-sequence-block[data-lit][data-action] { border-style: solid; border-color: #0f766e; background: #0f766e; color: #fff; }
-.teach-sequence-block[data-lit][data-action] > svg { color: #fff; }
-@media (prefers-reduced-motion: no-preference) { .teach-sequence-block { transition: background-color .2s, box-shadow .2s, border-color .2s; } }
 
 /* Watch page: saving and its options live in a panel under the top-right button. */
 .teach-watch .teach-studio-head { position: relative; }
@@ -317,7 +291,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tracks-column[data-place="during"] { min-width: 140px; max-width: 360px; }
 .teach-tracks-speech { display: flex; min-width: 0; }
 .teach-tracks-sentence { display: flex; align-items: center; flex: 1; min-width: 0; padding: 6px 12px; border: 1px solid rgba(40, 65, 67, .28); border-radius: 12px; background: #fff; color: #1f2d33; font: inherit; font-size: 14px; line-height: 1.35; text-align: left; cursor: pointer; box-shadow: 0 1px 2px rgba(40, 65, 67, .08); }
-.teach-tracks-sentence > span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.teach-tracks-words { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .teach-tracks-sentence:hover { border-color: rgba(27, 36, 87, .55); }
 .teach-tracks-sentence:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
 .teach-tracks-sentence[data-lit] { border-color: #1b2457; background: #fff7d6; box-shadow: 0 0 0 3px rgba(27, 36, 87, .18); }
@@ -331,3 +305,22 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tracks-action[data-lit] { border-style: solid; border-color: #0f766e; background: #0f766e; color: #fff; }
 .teach-tracks-action[data-lit] > svg { color: #fff; }
 @media (prefers-reduced-motion: no-preference) { .teach-tracks-sentence, .teach-tracks-action, .teach-tracks-column { transition: background-color .2s, box-shadow .2s, border-color .2s; } }
+
+/* Studio tracks: the sentence is edited in place and actions are dragged between columns. */
+.teach-studio .teach-tracks-labels, .teach-studio .teach-tracks-column { grid-template-rows: 68px 40px; }
+div.teach-tracks-sentence { position: relative; align-items: flex-start; padding: 6px 12px 24px; cursor: default; }
+div.teach-tracks-sentence[data-editing] { width: 280px; }
+div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
+.teach-tracks-column[data-place="during"]:has([data-editing]) { max-width: none; }
+.teach-tracks-column[data-empty] { min-width: 20px; }
+.teach-tracks-slot { position: relative; display: flex; flex: none; }
+.teach-tracks-action[role="button"] { cursor: grab; touch-action: none; user-select: none; }
+.teach-tracks-action[role="button"]:focus-visible { outline: 3px solid rgba(27, 36, 87, .4); outline-offset: 2px; }
+.teach-tracks-action[data-dragging] { position: relative; z-index: 2; cursor: grabbing; box-shadow: 0 6px 18px rgba(27, 36, 87, .22); pointer-events: none; }
+/* While dragging, every column shows it can take the action; the one under the pointer and the exact place are marked. */
+.teach-tracks[data-dragging] .teach-tracks-actions { min-height: 34px; border-radius: 10px; outline: 1px dashed rgba(15, 118, 110, .35); outline-offset: -1px; }
+.teach-tracks[data-dragging] .teach-tracks-column[data-empty] .teach-tracks-actions { min-width: 20px; }
+.teach-tracks-column[data-drop] { background: rgba(15, 118, 110, .08); }
+.teach-tracks-column[data-drop] .teach-tracks-actions { outline-color: #0f766e; }
+.teach-tracks-slot[data-before-marker]::before, .teach-tracks-actions[data-drop-end]::after { content: ""; flex: none; align-self: stretch; width: 4px; margin: 2px; border-radius: 2px; background: #1b2457; }
+.teach-tracks-slot[data-before-marker]::before { position: absolute; top: 0; bottom: 0; left: -6px; margin: 0; }

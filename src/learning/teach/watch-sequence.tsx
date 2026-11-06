@@ -111,7 +111,7 @@ export function WatchSequence({ recording, compiled, cards, runtime, onJump }: W
                           aria-current={lit.includes(sentence.id) ? "step" : undefined} title={tr("从这句开始看")}
                           aria-label={tr("第 {{v0}} 句：{{v1}}。从这句开始看", { v0: sentence.index + 1, v1: sentence.text || tr("（没听清）") })}
                           onClick={() => playSentence(sentence.index)}>
-                          <span>{sentence.text || <span className="academy-muted">{tr("（没听清）")}</span>}</span>
+                          <span className="teach-tracks-words">{sentence.text || <span className="academy-muted">{tr("（没听清）")}</span>}</span>
                         </button>
                       ) : <span className="teach-tracks-pause" aria-hidden="true" />}
                     </div>

@@ -119,6 +119,8 @@ type ActionItem = Extract<SequenceItem, { kind: "action" }>;
  * between sentences (before the first, or after one and before the next).
  */
 export interface TrackColumn {
+  /** Where the column is along the card: 3k+1 is sentence k, 3k+2 the gap after it, 0 the gap before the first. */
+  slot: number;
   place: "before" | "during" | "after";
   /** The sentence said, for a "during" column. */
   sentence?: SentenceItem;
@@ -131,21 +133,29 @@ export interface TrackColumn {
  * not seconds, since the lesson's voice is made again and its sentences last
  * as long as the voice takes. Undefined when the take did not keep its sentences.
  */
-export function cardTracks(card: RecordingCard): TrackColumn[] | undefined {
+export function cardTracks(card: RecordingCard, options: { gaps?: boolean } = {}): TrackColumn[] | undefined {
   const take = sequenceTake(card);
-  if (!take) return undefined;
+  return take ? tracksOf(card, take, options) : undefined;
+}
+
+/** With `gaps`, every gap between sentences has its column, empty or not (somewhere to drop an action). */
+function tracksOf(card: RecordingCard, take: Take, { gaps = false }: { gaps?: boolean }): TrackColumn[] {
   const sentences = sentencesOf(take);
   const columns = new Map<number, TrackColumn>();
   const at = (rank: number) => {
     let column = columns.get(rank);
     if (!column) {
-      column = { place: rank % 3 === DURING ? "during" : rank % 3 === AFTER ? "after" : "before", actions: [] };
+      column = { slot: rank, place: rank % 3 === DURING ? "during" : rank % 3 === AFTER ? "after" : "before", actions: [] };
       columns.set(rank, column);
     }
     return column;
   };
   // Every sentence has its column, actions or not.
-  sentences.texts.forEach((_, index) => at(3 * index + DURING));
+  sentences.texts.forEach((_, index) => {
+    if (gaps && index === 0) at(0);
+    at(3 * index + DURING);
+    if (gaps) at(3 * index + AFTER);
+  });
   for (const { item, key } of timedSequence(card, take)) {
     if (item.kind === "sentence") at(3 * item.index + DURING).sentence = item;
     else at(rankOf(sentences, key)).actions.push(item);
@@ -177,31 +187,10 @@ export class SequenceError extends RecordingError {
 }
 
 /**
- * Moves an action so it comes just before the item now at `to` in the
- * sequence without it (`to` = its length puts it last). Its time moves
- * between its new neighbours, so the lesson plays it there. Refused when
- * the sequence would come out different, for example when a later stroke
- * of writing would show before an earlier one.
+ * Gives an action (all of its strokes, for writing) a new time, keeping the
+ * take's events in time order. Returns how item ids change with it.
  */
-export function moveAction(recording: LearnerRecording, key: string, id: string, to: number, now: string): LearnerRecording {
-  const card = recording.cards.find((candidate) => candidate.key === key);
-  const take = card && sequenceTake(card);
-  if (!card || !take) throw new SequenceError("nothing");
-  const timed = timedSequence(card, take);
-  const moving = timed.find((entry) => entry.item.id === id && entry.item.kind === "action");
-  if (!moving) throw new SequenceError("nothing");
-  const rest = timed.filter((entry) => entry !== moving);
-  const wanted = [...rest.slice(0, to).map((entry) => entry.item.id), id, ...rest.slice(to).map((entry) => entry.item.id)];
-  const before = rest[to - 1];
-  const after = rest[to];
-  // Between the neighbours' times. Before a sentence is before it starts, unless what comes
-  // before is already made while the sentence is said: then it is made then too, just after.
-  const low = before ? before.key : Math.min(0, after?.start ?? after?.key ?? 0) - 1_000;
-  const high = !after ? low + 2_000 : after.start !== undefined && low < after.start ? after.start : after.key;
-  if (!(high > low)) throw new SequenceError("order");
-  const t = (low + high) / 2;
-
-  // Where each event goes when the events are put back in time order (old index → new index).
+function retime(recording: LearnerRecording, key: string, id: string, strokes: number, t: number, now: string) {
   let renumber = (itemId: string) => itemId;
   const moved = replaceTake(recording, key, now, (current, owner) => {
     if (id.startsWith("event:")) {
@@ -215,11 +204,50 @@ export function moveAction(recording: LearnerRecording, key: string, id: string,
     const match = /^ink:(.+):(\d+)$/.exec(id)!;
     const [snapshot, from] = [match[1]!, Number(match[2])];
     const ink = (owner.ink ?? []).map((piece) => (piece.snapshotId !== snapshot || !piece.strokeTimesMs ? piece
-      : { ...piece, strokeTimesMs: piece.strokeTimesMs.map((time, index) => (index >= from && index < from + moving.times.length ? t : time)) }));
+      : { ...piece, strokeTimesMs: piece.strokeTimesMs.map((time, index) => (index >= from && index < from + strokes ? t : time)) }));
     return { take: current, card: { ink } };
   });
-  const result = cardSequence(moved.cards.find((candidate) => candidate.key === key)!)!.map((item) => item.id);
-  if (result.join("\n") !== wanted.map(renumber).join("\n")) throw new SequenceError("order");
+  return { moved, renumber };
+}
+
+/**
+ * Puts an action in a column of the card's tracks (see cardTracks: a
+ * sentence, so it is done while that sentence is said, or a gap between
+ * sentences), at `position` among the column's other actions. Its time moves
+ * there, so the lesson plays it there. Refused when the tracks would come out
+ * different, for example when a later stroke of writing would show before an
+ * earlier one.
+ */
+export function placeAction(recording: LearnerRecording, key: string, id: string, slot: number, position: number, now: string): LearnerRecording {
+  const card = recording.cards.find((candidate) => candidate.key === key);
+  const take = card && sequenceTake(card);
+  if (!card || !take) throw new SequenceError("nothing");
+  const timed = timedSequence(card, take);
+  const moving = timed.find((entry) => entry.item.id === id && entry.item.kind === "action");
+  if (!moving) throw new SequenceError("nothing");
+  const spans = sentencesOf(take).spans;
+  const sentence = Math.floor(slot / 3);
+  if (slot < 0 || sentence >= spans.length || (slot % 3 === 0 && slot !== 0)) throw new SequenceError("nothing");
+
+  // The tracks as they should come out: every column's ids, with the action in its new place.
+  const tracks = tracksOf(card, take, { gaps: true }).map((column) => ({ slot: column.slot, ids: column.actions.map((action) => action.id).filter((other) => other !== id) }));
+  const target = tracks.find((column) => column.slot === slot)!;
+  const at = Math.max(0, Math.min(position, target.ids.length));
+  const keyOf = (other: string) => timed.find((entry) => entry.item.id === other)!.key;
+  // The column's own bounds: before the first sentence starts, while a sentence is said, or between two.
+  const [low, high] = slot === 0 ? [-Infinity, spans[0]![0]]
+    : slot % 3 === DURING ? [spans[sentence]![0], spans[sentence]![1]]
+      : [spans[sentence]![1], spans[sentence + 1]?.[0] ?? Infinity];
+  const prev = at > 0 ? keyOf(target.ids[at - 1]!) : low;
+  const next = at < target.ids.length ? keyOf(target.ids[at]!) : high;
+  if (!(next > prev)) throw new SequenceError("order");
+  const t = prev === -Infinity ? next - 1_000 : next === Infinity ? prev + 1_000 : (prev + next) / 2;
+  target.ids.splice(at, 0, id);
+
+  const { moved, renumber } = retime(recording, key, id, moving.times.length, t, now);
+  const result = cardTracks(moved.cards.find((candidate) => candidate.key === key)!, { gaps: true })!;
+  const wanted = tracks.map((column) => `${column.slot}:${column.ids.map(renumber).join(",")}`).join("\n");
+  if (result.map((column) => `${column.slot}:${column.actions.map((action) => action.id).join(",")}`).join("\n") !== wanted) throw new SequenceError("order");
   return moved;
 }
 
