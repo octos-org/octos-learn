@@ -29,3 +29,15 @@
 .board-handwriting-cursor i { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border: 2px solid #17745b; border-radius: 50%; background: #ffffffb3; box-shadow: 0 0 0 3px #17745b20; }
 .board-handwriting-cursor[data-down="true"] i { border-color: #ce5a3d; background: #ce5a3d25; }
 @media (max-width: 640px) { .board-handwriting-controls { width: 230px; top: 10px; right: 10px; } }
+
+.air-gesture-enabled button[data-air-command] { min-width: 56px; min-height: 56px; }
+.air-gesture-enabled button[data-air-hover] { outline: 3px solid #26836b; outline-offset: 2px; }
+.air-gesture-enabled button[data-air-pressed] { box-shadow: inset 0 0 0 3px #26836b; }
+.board-handwriting-zoom { display: flex; gap: 8px; margin-bottom: 8px; }
+.board-handwriting-controls .board-handwriting-zoom button { width: 50%; }
+.board-handwriting-controls select { display: block; width: 100%; margin: 6px 0; }
+.board-handwriting-cursor[data-phase="pending"] i { border-style: dashed; }
+.board-handwriting-cursor[data-down="true"] i { background: #ce5a3d; }
+
+.air-gesture-enabled .learning-ink-toolbar { flex-wrap: wrap; overflow: visible; }
+.air-gesture-enabled .board-handwriting-controls header { flex-wrap: wrap; }

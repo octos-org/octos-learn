@@ -15,12 +15,12 @@ function setup() {
   const viewport = document.createElement("div"); document.body.append(viewport);
   Object.defineProperty(viewport, "clientWidth", { value: 800 }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
   viewport.getBoundingClientRect = () => ({ x: 10, y: 20, left: 10, top: 20, right: 810, bottom: 620, width: 800, height: 600, toJSON() {} });
-  const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), saveNow: vi.fn(async () => null) };
+  const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), clearSelection: vi.fn(), saveNow: vi.fn(async () => null) };
   const options = { allowed: true };
   const captures: Array<{ callbacks: HandwritingCaptureCallbacks; stop: ReturnType<typeof vi.fn> }> = [];
   const states: BoardHandwritingState[] = [];
   const visual = vi.fn();
-  const input = new BoardHandwritingInput({ viewport, getInk: () => ink as unknown as InkRuntime, allowed: () => options.allowed,
+  const input = new BoardHandwritingInput({ viewport, mode: "grip", getInk: () => ink as unknown as InkRuntime, allowed: () => options.allowed,
     onState: next => states.push(next), onVisual: visual,
     createCapture: (_video, callbacks) => {
       const capture = { callbacks, stop: vi.fn() }; captures.push(capture);
@@ -74,6 +74,22 @@ describe("binding camera hand input to the existing whiteboard", () => {
     const s = setup(); const overlay = document.createElement("div"); overlay.dataset.learningBoardOcclusion = "";
     overlay.getBoundingClientRect = () => ({ left: 100, top: 100, right: 700, bottom: 600, width: 600, height: 500 } as DOMRect);
     document.body.append(overlay); await s.begin(); expect(s.events).toHaveLength(0); s.input.dispose();
+  });
+  it("delivers release when a floating control covers the cursor on that same frame", async () => {
+    const s = setup(); await s.begin();
+    [264, 297].forEach(t => s.feed(t, true));
+    [330, 363].forEach(t => s.feed(t, false));
+    const overlay = document.createElement("div"); overlay.dataset.learningBoardOcclusion = "";
+    overlay.getBoundingClientRect = () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 } as DOMRect);
+    document.body.append(overlay); s.feed(396, false); s.input.stop();
+    expect(s.events.filter(e => e.type === "pointerdown")).toHaveLength(1);
+    expect(s.events.filter(e => e.type === "pointerup")).toHaveLength(1);
+  });
+  it("clears an unfinished selection after tracking is lost", async () => {
+    const s = setup(); await s.begin(); s.ink.state.mode = "select";
+    s.captures[0]!.callbacks.onFrame({ timeMs: 264, tracked: false, confidence: 0, processingMs: 1, pipelineMs: 1 });
+    expect(s.ink.clearSelection).toHaveBeenCalledTimes(1);
+    expect(s.events.at(-1)?.type).toBe("pointerup"); s.input.dispose();
   });
   it("does not restart after disposal", async () => {
     const s = setup(); await s.begin(); s.input.dispose(); const count = s.events.length;

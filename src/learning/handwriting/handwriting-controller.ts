@@ -56,7 +56,7 @@ export class HandwritingPointerController {
   } = {}) {
     this.options = options;
     this.gestures = new HandwritingGestureFilter(options.mode);
-    this.grip = (options.mode ?? HANDWRITING_DEFAULT_MODE) === "grip" ? new HandwritingGripPointerController(options) : null;
+    this.grip = (["grip", "palm-pinch"].includes(options.mode ?? HANDWRITING_DEFAULT_MODE)) ? new HandwritingGripPointerController(options) : null;
   }
 
   reset(timeMs = 0, reason: "lost" | "stop" = "stop"): HandwritingPointerAction[] {

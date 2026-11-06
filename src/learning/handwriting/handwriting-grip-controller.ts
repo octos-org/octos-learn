@@ -1,4 +1,4 @@
-import { HandwritingGestureFilter, type HandwritingInputFrame } from "./handwriting-gesture";
+import { HandwritingGestureFilter, type HandwritingInputFrame, type HandwritingGestureMode } from "./handwriting-gesture";
 import { HandwritingPointFilter, mapHandPointToViewport, type HandwritingCameraRegion, type HandwritingViewportSize } from "./handwriting-map";
 import type { HandwritingControllerUpdate, HandwritingPointerAction } from "./handwriting-controller";
 
@@ -8,7 +8,7 @@ type Point = { x: number; y: number };
 type Sample = { point: Point; timeMs: number };
 
 export class HandwritingGripPointerController {
-  private readonly gestures = new HandwritingGestureFilter("grip");
+  private readonly gestures: HandwritingGestureFilter;
   private readonly points = new HandwritingPointFilter();
   private previous: Point | null = null;
   private cursor: Point | null = null;
@@ -21,8 +21,9 @@ export class HandwritingGripPointerController {
   private releaseAt: number | undefined;
   private readonly options: { mirrorX?: boolean; region?: HandwritingCameraRegion };
 
-  constructor(options: { mirrorX?: boolean; region?: HandwritingCameraRegion } = {}) {
+  constructor(options: { mirrorX?: boolean; region?: HandwritingCameraRegion; mode?: HandwritingGestureMode } = {}) {
     this.options = options;
+    this.gestures = new HandwritingGestureFilter(options.mode ?? "grip");
   }
 
   private commit(cutoff: number): HandwritingPointerAction[] {

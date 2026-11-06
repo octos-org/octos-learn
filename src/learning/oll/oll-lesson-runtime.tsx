@@ -2515,7 +2515,7 @@ export function LearningWhiteboard({
     let previousHandwritingCamera = mounted.view.getCameraState();
     const unsubscribeHandwritingCamera = mounted.view.subscribeCamera((camera) => {
       if (camera.panX !== previousHandwritingCamera.panX || camera.panY !== previousHandwritingCamera.panY || camera.scale !== previousHandwritingCamera.scale) {
-        handwritingInputRef.current?.pause("view");
+        handwritingInputRef.current?.viewChanged();
       }
       previousHandwritingCamera = camera;
     });
@@ -3436,6 +3436,7 @@ export function LearningWhiteboard({
   const handwriting = useHandwritingInput({
     viewportRef, inputRef: handwritingInputRef, inkRef: inkRuntimeRef, enabled: handwritingEnabled,
     ready: inkAvailable && handwritingEnabled, playing: Boolean(runtime?.playing), sessionId: inkSessionId,
+    onZoom: factor => mountedRef.current?.view.zoomBy(factor),
   });
 
   return (
@@ -3494,6 +3495,7 @@ export function LearningWhiteboard({
             type="button"
             className={inkState.mode === "navigate" ? "is-active" : ""}
             onClick={() => setInkMode("navigate")}
+            data-air-command="navigate"
             aria-label={tr("浏览白板")}
             aria-pressed={inkState.mode === "navigate"}
           >
@@ -3511,6 +3513,7 @@ export function LearningWhiteboard({
                 setInkWidthMenuOpen(false);
               }
             }}
+            data-air-command="draw"
             aria-label={tr("书写笔迹")}
             aria-pressed={inkState.mode === "draw"}
             aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
@@ -3523,6 +3526,7 @@ export function LearningWhiteboard({
             type="button"
             className={inkState.mode === "erase" ? "is-active" : ""}
             onClick={() => setInkMode("erase")}
+            data-air-command="erase"
             aria-label={tr("擦除笔迹")}
             aria-pressed={inkState.mode === "erase"}
           >
@@ -3535,6 +3539,7 @@ export function LearningWhiteboard({
               setSelectionMode("rectangle");
               setInkMode("select");
             }}
+            data-air-command="select"
             aria-label={tr("框选多个笔迹")}
             aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
             title={tr("拖动矩形，可一次选中一条或多条笔迹")}
@@ -3580,6 +3585,7 @@ export function LearningWhiteboard({
                   <button
                     key={tool.id}
                     type="button"
+                    data-air-command="selection-action"
                     className="learning-ink-quick-action"
                     onClick={() => void askSelection(
                       tool.prompt,
@@ -3594,6 +3600,7 @@ export function LearningWhiteboard({
                 ))}
                 <button
                   type="button"
+                  data-air-command="selection-question"
                   className="learning-ink-ask"
                   onClick={() => void openSelectionQuestion()}
                   aria-expanded={selectionQuestionOpen}
@@ -3616,6 +3623,7 @@ export function LearningWhiteboard({
           <button
             type="button"
             onClick={() => runInkHistory("undo")}
+            data-air-command="undo"
             aria-label={tr("撤销笔迹")}
           >
             <Undo2 size={17} />
@@ -3623,6 +3631,7 @@ export function LearningWhiteboard({
           <button
             type="button"
             onClick={() => runInkHistory("redo")}
+            data-air-command="redo"
             aria-label={tr("重做笔迹")}
           >
             <Redo2 size={17} />
@@ -3748,6 +3757,7 @@ export function LearningWhiteboard({
             ).map((tool) => (
               <button
                 key={tool.id}
+                data-air-command="selection-action"
                 type="button"
                 onClick={() => void askSelection(
                   tool.prompt,
@@ -3963,6 +3973,7 @@ export function LearningWhiteboard({
                                         },
                                       );
                                     }}
+                                    data-air-command="variable-step"
                                     aria-label={`${direction < 0 ? tr("减小") : tr("增大")}${control.label}`}
                                   >
                                     {direction < 0 ? "−" : "+"}
