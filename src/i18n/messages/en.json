@@ -3093,7 +3093,6 @@
   "放上函数图": "Put on a graph",
   "放上坐标网格": "Put on a coordinate grid",
   "放上单位圆": "Put on a unit circle",
-  "放上长方体": "Put on a box",
   "标出点 {{v0}}": "Mark point {{v0}}",
   "画一条直线": "Draw a line",
   "指一下": "Point at it",
@@ -3212,7 +3211,6 @@
   "② 转好了，点这个按钮记下来：": "② When it is turned right, tap this to keep it:",
   "就是这个角度": "This is the view",
   "看的人要自己把它转到差不多这个方向，才算做对。": "Viewers have to turn it to about this direction themselves to get it right.",
-  "第 {{v0}} 张的长方体": "Box on card {{v0}}",
   "不认识：{{v0}}。字母只用一个，比如 a、k、m。": "Not recognised: {{v0}}. Use single letters, like a, k or m.",
   "滑块：讲课时拖动它们，图像跟着变": "Sliders: drag them while you talk and the graph follows",
   "滑块 {{v0}}": "Slider {{v0}}",
@@ -3228,5 +3226,16 @@
   "重点": "Important",
   "也看看": "Also look",
   "小心": "Careful",
-  "对了": "Done"
+  "对了": "Done",
+  "放上立体": "Put a solid",
+  "第 {{v0}} 张的{{v1}}": "{{v1}} on card {{v0}}",
+  "立体": "Solid",
+  "哪种立体": "Which solid",
+  "{{v0}}的尺寸": "Size of the {{v0}}",
+  "半径": "Radius",
+  "切一刀：讲课时拖滑块，上下移动切面，看横截面": "Cut it: drag a slider while you talk to move the cut up and down and see the cross-section",
+  "圆柱": "Cylinder",
+  "圆锥": "Cone",
+  "球": "Sphere",
+  "切面高度": "Cut height"
 }

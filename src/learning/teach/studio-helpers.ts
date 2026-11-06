@@ -1,4 +1,5 @@
 import type { LessonAuthor } from "octos-lesson-language";
+import { tr } from "@/i18n";
 
 import { presenterAvatar } from "./presenters";
 import { boardTake, type LearnerRecording, type Presenter, type RecordingEvent } from "./recording";
@@ -43,6 +44,11 @@ export function nextPointLabel(recording: LearnerRecording, node: string): { poi
   }
 }
 
+/** A 3D solid's name, for the learner. */
+export function solidName(shape: "box" | "cylinder" | "cone" | "sphere"): string {
+  return { box: tr("长方体"), cylinder: tr("圆柱"), cone: tr("圆锥"), sphere: tr("球") }[shape];
+}
+
 /** Lesson variables components introduced (unit circles' angles, graphs' sliders), in insertion order. */
 export function recordingVariables(recording: LearnerRecording): string[] {
   return recordingVariableInfo(recording).map((variable) => variable.variable);
@@ -56,6 +62,7 @@ export function recordingVariableInfo(recording: LearnerRecording): Array<{ vari
     if (event.type !== "component.insert") continue;
     if (event.panel === "unit_circle") add(event.variable, "θ", true);
     if (event.panel === "graph") for (const parameter of event.parameters ?? []) add(parameter.variable, parameter.letter, false);
+    if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
   }
   return variables;
 }

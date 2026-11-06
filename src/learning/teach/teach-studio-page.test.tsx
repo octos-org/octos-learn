@@ -458,7 +458,7 @@ it("records a drag of the unit circle and a turn of the box, at the nearest name
   fireEvent.click(screen.getByRole("button", { name: /^Record card \d/ }));
   addKind("Unit circle");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
-  addKind("Box");
+  addKind("Solid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   expect(board.onVariableGesture).toBeTypeOf("function");
   time = 4_000;

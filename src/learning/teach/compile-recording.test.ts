@@ -635,3 +635,21 @@ describe("what marks mean", () => {
     expect(Object.values(state.connections)[0]).toMatchObject({ label: "makes" });
   });
 });
+
+describe("3D solids beyond the box", () => {
+  it("puts a cylinder, a cone or a sphere on the board, and a cutting plane the learner moves with a slider", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Cross-sections", type: "math_off_map" }, goals: [] }), now, [{ title: "Cut it" }]);
+    recording = record(recording, "card-1", "Move the cut up through the cone.", [
+      { t: 300, type: "component.insert", panel: "solid_3d", alias: "solid-1", shape: "cone", radius: 2, height: 4, cut: { variable: "cut" } },
+      { t: 900, type: "component.insert", panel: "solid_3d", alias: "solid-2", shape: "sphere", radius: 1.5 },
+      { t: 2_000, type: "variable.drag", variable: "cut", via: "slider", from: 0, to: 1.5, durationMs: 800 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([{ as: "cut", initial: 0, min: -2, max: 2, label: "cut height", control: { kind: "slider", step: 0.05 } }]);
+    const cone = state.nodes["l:node:solid-1"]!.content as { objects: Array<Record<string, unknown>>; sections: Array<Record<string, unknown>>; fallback: string };
+    expect(cone.objects[0]).toMatchObject({ kind: "cone", radius: 2, height: 4 });
+    expect(cone.sections[0]).toMatchObject({ axis: "z", display: "plane_and_intersection", value: 1.5 });
+    expect(cone.fallback).toBe("A cone of radius 2 and height 4.");
+    expect((state.nodes["l:node:solid-2"]!.content as { objects: Array<Record<string, unknown>> }).objects[0]).toMatchObject({ kind: "sphere", radius: 1.5 });
+  });
+});

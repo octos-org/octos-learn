@@ -45,7 +45,7 @@ import { SequenceBar } from "./sequence-bar";
 import { cardSequence } from "./card-script";
 import { loadRecordingDrafts, saveRecordingDraft } from "./recording-store";
 import { syncLessonDrafts } from "./draft-sync";
-import { isFigure, learnerAuthor, nextComponentAlias, recordingVariableInfo, type InsertForm } from "./studio-helpers";
+import { isFigure, learnerAuthor, nextComponentAlias, recordingVariableInfo, solidName, type InsertForm } from "./studio-helpers";
 import { inkChecksum, inkSnapshotResolver, loadInkSnapshots, saveInkSnapshot } from "./ink-snapshot-store";
 import { NeatFormulaPanel, OctoQuestionPanel } from "./assist-panels";
 import { currentRowCards } from "./board-rows";
@@ -1218,7 +1218,7 @@ function ViewPractice({ scenes, viewOf, onSave }: {
 /** The 3D scenes of the recording, by alias, labelled by the card they were put on. */
 function recordingScenes(recording: LearnerRecording): Array<{ alias: string; label: string }> {
   return recording.cards.flatMap((card, index) => (keptTake(card) ?? currentTake(card))?.events.flatMap((event) => (
-    event.type === "component.insert" && event.panel === "solid_3d" ? [{ alias: event.alias, label: tr("第 {{v0}} 张的长方体", { v0: index + 1 }) }] : [])) ?? []);
+    event.type === "component.insert" && event.panel === "solid_3d" ? [{ alias: event.alias, label: tr("第 {{v0}} 张的{{v1}}", { v0: index + 1, v1: solidName(event.shape) }) }] : [])) ?? []);
 }
 
 /** How the learner last turned a 3D scene in the card's take being recorded. */

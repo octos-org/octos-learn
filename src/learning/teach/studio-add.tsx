@@ -7,8 +7,8 @@ import { Box, Circle, Grid3x3, LineChart, MessageSquareText, Plus, Repeat, Splin
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
-import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole } from "./recording";
-import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, type InsertForm } from "./studio-helpers";
+import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole, Solid } from "./recording";
+import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, type InsertForm } from "./studio-helpers";
 
 
 function numberField(value: string): number | undefined {
@@ -33,7 +33,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
 }) {
   const kinds: Array<[InsertForm, string, typeof LineChart]> = [
     ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow],
-    ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("长方体"), Box],
+    ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("立体"), Box],
     ...(grids.length ? [["point", tr("放一个点"), Square] as [InsertForm, string, typeof LineChart]] : []),
     ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["line", tr("过两点画直线"), Spline] as [InsertForm, string, typeof LineChart]] : []),
   ];
@@ -95,6 +95,9 @@ function InsertPanel({
   const [expression, setExpression] = useState("2*x");
   const [range, setRange] = useState({ xMin: "-5", xMax: "5", yMin: "-5", yMax: "5" });
   const [size, setSize] = useState({ x: "4", y: "3", z: "2" });
+  const [shape, setShape] = useState<Solid["shape"]>("box");
+  const [round, setRound] = useState({ radius: "2", height: "4" });
+  const [cut, setCut] = useState(false);
   const [point, setPoint] = useState({ node: grids.at(-1) ?? "", x: "", y: "" });
   // A graph can follow a unit circle's angle (not another graph's slider).
   const variables = recordingVariableInfo(recording).filter((variable) => variable.angle).map((variable) => variable.variable);
@@ -194,21 +197,39 @@ function InsertPanel({
   }
   if (form === "solid_3d") {
     const values = [size.x, size.y, size.z].map(numberField);
-    const ready = values.every((value) => value !== undefined && value > 0);
+    const [radius, height] = [round.radius, round.height].map(numberField);
+    const solid: Solid | undefined = shape === "box"
+      ? (values.every((value) => value !== undefined && value > 0) ? { shape, size: { x: values[0]!, y: values[1]!, z: values[2]! } } : undefined)
+      : shape === "sphere" ? (radius !== undefined && radius > 0 ? { shape, radius } : undefined)
+        : radius !== undefined && radius > 0 && height !== undefined && height > 0 ? { shape, radius, height } : undefined;
     return (
       <form className="teach-step" onSubmit={(event) => {
         event.preventDefault();
-        if (ready) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, "box"), shape: "box", size: { x: values[0]!, y: values[1]!, z: values[2]! } });
+        if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
+          ...(cut ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}) });
       }}>
-        <div className="teach-range" role="group" aria-label={tr("长方体尺寸")}>
-          {(["x", "y", "z"] as const).map((axis) => (
-            <label key={axis}>{{ x: tr("长"), y: tr("宽"), z: tr("高") }[axis]}
-              <input className="teach-input" inputMode="decimal" value={size[axis]} onChange={(event) => setSize({ ...size, [axis]: event.target.value })} />
-            </label>
+        <div className="teach-note-roles" role="radiogroup" aria-label={tr("哪种立体")}>
+          {(["box", "cylinder", "cone", "sphere"] as const).map((value) => (
+            <button key={value} type="button" role="radio" aria-checked={shape === value} onClick={() => setShape(value)}>{solidName(value)}</button>
           ))}
         </div>
+        {shape === "box" ? (
+          <div className="teach-range" role="group" aria-label={tr("长方体尺寸")}>
+            {(["x", "y", "z"] as const).map((axis) => (
+              <label key={axis}>{{ x: tr("长"), y: tr("宽"), z: tr("高") }[axis]}
+                <input className="teach-input" inputMode="decimal" value={size[axis]} onChange={(event) => setSize({ ...size, [axis]: event.target.value })} />
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="teach-range" role="group" aria-label={tr("{{v0}}的尺寸", { v0: solidName(shape) })}>
+            <label>{tr("半径")}<input className="teach-input" inputMode="decimal" value={round.radius} onChange={(event) => setRound({ ...round, radius: event.target.value })} /></label>
+            {shape !== "sphere" && <label>{tr("高")}<input className="teach-input" inputMode="decimal" value={round.height} onChange={(event) => setRound({ ...round, height: event.target.value })} /></label>}
+          </div>
+        )}
+        <label className="teach-place"><input type="checkbox" checked={cut} onChange={(event) => setCut(event.target.checked)} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
         {placement}
-        <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
+        <button type="submit" disabled={!solid}>{tr("放到白板上")}</button>
       </form>
     );
   }

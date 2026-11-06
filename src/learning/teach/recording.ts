@@ -40,7 +40,9 @@ export type ComponentInsert = ComponentPlacement & (
       linkedVariable?: string }
   | { panel: "coordinate_grid"; alias: string; x: [number, number]; y: [number, number]; title?: string }
   | { panel: "unit_circle"; alias: string; variable: string; title?: string }
-  | { panel: "solid_3d"; alias: string; shape: "box"; size: { x: number; y: number; z: number }; title?: string }
+  | ({ panel: "solid_3d"; alias: string; title?: string;
+      /** A horizontal cutting plane the learner moves with a slider, showing the cross-section. */
+      cut?: { variable: string } } & Solid)
   /** Words on the board: said (from the learner's own captions) or typed. */
   | { panel: "text"; alias: string; text: string; title?: string }
   /** A short note with a meaning: a conclusion, something to be careful about, a summary or a definition. */
@@ -49,6 +51,17 @@ export type ComponentInsert = ComponentPlacement & (
   | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
+
+/** A 3D solid, centred on the origin, its height along z. */
+export type Solid =
+  | { shape: "box"; size: { x: number; y: number; z: number } }
+  | { shape: "cylinder" | "cone"; radius: number; height: number }
+  | { shape: "sphere"; radius: number };
+
+/** How tall a solid is (along z), to bound a cutting plane. */
+export function solidHeight(solid: Solid): number {
+  return solid.shape === "box" ? solid.size.z : solid.shape === "sphere" ? 2 * solid.radius : solid.height;
+}
 
 /** What a highlight means: important, also look, careful, or done. */
 export type Emphasis = "focus" | "supporting" | "warning" | "resolved";

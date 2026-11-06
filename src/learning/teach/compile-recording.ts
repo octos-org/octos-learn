@@ -12,6 +12,8 @@ import {
   type ComponentInsert,
   type LearnerRecording,
   type NoteRole,
+  type Solid,
+  solidHeight,
   type RecordingCard,
   type RecordingEvent,
   type Take,
@@ -338,6 +340,23 @@ function noteHeading(role: NoteRole, language: string): string {
   return NOTE_HEADINGS[language.toLowerCase().startsWith("zh") ? "zh" : "en"][role];
 }
 
+/** A 3D solid in words, in the lesson's language, shown under the scene (and instead of it if it cannot be drawn). */
+function solidDescription(solid: Solid, language: string): string {
+  if (language.toLowerCase().startsWith("zh")) {
+    if (solid.shape === "box") return `长 ${solid.size.x}、宽 ${solid.size.y}、高 ${solid.size.z} 的长方体。`;
+    if (solid.shape === "sphere") return `半径 ${solid.radius} 的球。`;
+    return `半径 ${solid.radius}、高 ${solid.height} 的${solid.shape === "cone" ? "圆锥" : "圆柱"}。`;
+  }
+  if (solid.shape === "box") return `A box ${solid.size.x} by ${solid.size.y} by ${solid.size.z}.`;
+  if (solid.shape === "sphere") return `A sphere of radius ${solid.radius}.`;
+  return `A ${solid.shape} of radius ${solid.radius} and height ${solid.height}.`;
+}
+
+/** The cutting plane's slider, in the lesson's language. */
+function cutLabel(language: string): string {
+  return language.toLowerCase().startsWith("zh") ? "切面高度" : "cut height";
+}
+
 /** A slider's step: about a hundredth of its range, rounded to 1, 2 or 5 times a power of ten. */
 export function sliderStep(min: number, max: number): number {
   const raw = (max - min) / 100;
@@ -486,17 +505,28 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       return { do: "write", as: alias, kind: "table", role: "observation", place: placeNext(), content: structuredClone(table) } as Action;
     }
     scenes.add(alias);
-    return {
-      do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(),
-      content: {
-        ...title,
-        fallback: `A box ${component.size.x} by ${component.size.y} by ${component.size.z}.`,
-        axes: false,
-        camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
-        objects: [{ as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: component.size }],
-        highlights: boxFaces(component.size),
-      },
-    } as Action;
+    const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
+    const object = solid.shape === "box" ? { as: "solid", kind: "box", center: { x: 0, y: 0, z: 0 }, size: solid.size }
+      : solid.shape === "sphere" ? { as: "solid", kind: "sphere", center: { x: 0, y: 0, z: 0 }, radius: solid.radius }
+        : { as: "solid", kind: solid.shape, center: { x: 0, y: 0, z: 0 }, radius: solid.radius, height: solid.height };
+    const content: Record<string, unknown> = {
+      ...title,
+      fallback: solidDescription(solid, options.language),
+      axes: false,
+      camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
+      objects: [object],
+      ...(solid.shape === "box" ? { highlights: boxFaces(solid.size) } : {}),
+    };
+    if (solid.cut) {
+      // A cutting plane across the solid, moved by a slider from its bottom to its top.
+      const half = solidHeight(solid) / 2;
+      if (variables.has(solid.cut.variable)) throw new CompileError(`Variable '${solid.cut.variable}' is already used`);
+      variables.set(solid.cut.variable, { as: solid.cut.variable, initial: 0, min: -half, max: half, label: cutLabel(options.language),
+        control: { kind: "slider", step: sliderStep(-half, half) } });
+      content.sections = [{ as: "cut", axis: "z", value: 0, targets: ["solid"], display: "plane_and_intersection", color: "orange" }];
+      content.bindings = [{ target: "cut.value", expression: solid.cut.variable }];
+    }
+    return { do: "write", as: alias, kind: "scene3d", role: "diagram", place: placeNext(), content } as Action;
   };
 
   /** A grid created with no points yet keeps a hidden origin so it is a valid diagram. */
