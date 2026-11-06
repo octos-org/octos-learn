@@ -7,6 +7,7 @@ import { Box, Circle, CircleDot, Grid3x3, Hexagon, LineChart, Minus, MessageSqua
 import { useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
+import { entryLetters, parseGraphEntry } from "./graph-entry";
 import type { ComponentInsert, GraphParameter, LearnerRecording, NoteRole, Solid } from "./recording";
 import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, type InsertForm } from "./studio-helpers";
 
@@ -473,28 +474,32 @@ export function CurveEditor({ follows, curves, letters, onAdd, onCancel }: {
 }) {
   const [expression, setExpression] = useState("");
   const full = curves >= MAX_GRAPH_CURVES;
-  const named = graphParameterLetters(expression);
-  const unknown = [...named.unknown, ...named.letters.filter((letter) => !letters.includes(letter))];
+  const entry = parseGraphEntry(expression);
+  const unknown = entry ? entryLetters(entry).filter((letter) => !letters.includes(letter) && !EXPRESSION_NAMES.has(letter)) : [];
   return (
     <form className="teach-add teach-cell-editor" role="dialog" aria-label={tr("在函数图上再画一条")} onSubmit={(event) => {
       event.preventDefault();
-      if (expression.trim() && !full && !follows && !unknown.length) onAdd(expression.trim());
+      if (entry && !full && !follows && !unknown.length) onAdd(expression.trim());
     }}>
       {follows ? <p className="academy-muted">{tr("这张图跟着单位圆的角度动，不能再加曲线。可以另放一张函数图。")}</p>
         : full ? <p className="academy-muted">{tr("这张图已经有 {{v0}} 条曲线了。", { v0: MAX_GRAPH_CURVES })}</p> : (
           <>
-            <label className="teach-label">{tr("再画一条 y =")}<input className="teach-input" value={expression} autoFocus onChange={(event) => setExpression(event.target.value)} /></label>
+            <label className="teach-label">{tr("再画一条")}<input className="teach-input" value={expression} autoFocus placeholder={tr("如 x^2、x = 2、x^2 + y^2 = 4")} onChange={(event) => setExpression(event.target.value)} /></label>
+            {expression.trim() && !entry && <p role="status" className="teach-notice">{tr("写一个函数（如 x^2），一条线（如 x = 2），或一个方程（如 x^2 + y^2 = 4）。")}</p>}
             {unknown.length > 0 && <p role="status" className="teach-notice">{tr("这张图没有 {{v0}}。", { v0: unknown.join("、") })}</p>}
             {letters.length > 0 && <p className="academy-muted">{tr("可以用这张图的滑块：{{v0}}", { v0: letters.join("、") })}</p>}
           </>
         )}
       <div className="teach-actions">
         <button type="button" className="teach-secondary" onClick={onCancel}>{tr("取消")}</button>
-        {!follows && !full && <button type="submit" disabled={!expression.trim() || unknown.length > 0}>{tr("画上")}</button>}
+        {!follows && !full && <button type="submit" disabled={!entry || unknown.length > 0}>{tr("画上")}</button>}
       </div>
     </form>
   );
 }
+
+/** Function names and constants an entry may use besides its letters. */
+const EXPRESSION_NAMES = new Set(["abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "ln", "log", "round", "sin", "sqrt", "tan", "pi", "e"]);
 
 /** The most curves the studio puts on one graph (the compiler holds the same limit). */
 const MAX_GRAPH_CURVES = 4;

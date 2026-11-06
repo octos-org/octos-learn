@@ -68,13 +68,22 @@ test("tapping a graph while talking adds a curve to compare, reading its sliders
   const graph = page.locator(".teach-studio .board-node.kind-plot");
   await expect(graph).toBeVisible();
   await graph.locator("svg").first().click();
-  await page.getByRole("textbox", { name: "再画一条 y =" }).fill("x^2+m");
+  await page.getByRole("textbox", { name: "再画一条" }).fill("x^2+m");
   await expect(page.getByText("这张图没有 m。")).toBeVisible();
-  await page.getByRole("textbox", { name: "再画一条 y =" }).fill("x^2");
+  await page.getByRole("textbox", { name: "再画一条" }).fill("x^2");
   await page.getByRole("button", { name: "画上" }).click();
   await expect(graph).toContainText("y = x^2");
+  // A guide line, and an equation drawn as a curve.
+  await graph.locator("svg").first().click();
+  await page.getByRole("textbox", { name: "再画一条" }).fill("x = 1");
+  await page.getByRole("button", { name: "画上" }).click();
+  await expect(graph).toContainText("x = 1");
+  await graph.locator("svg").first().click();
+  await page.getByRole("textbox", { name: "再画一条" }).fill("x^2 + y^2 = 4");
+  await page.getByRole("button", { name: "画上" }).click();
+  await expect(graph).toContainText("x^2+y^2 = 4");
   await page.getByRole("button", { name: /^停止/ }).click();
   await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
   const events = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
-  expect(events.at(-1)).toMatchObject({ type: "graph.add_curve", node: "graph-1", expression: "x^2" });
+  expect(events.filter((event: { type: string }) => event.type === "graph.add_curve").map((event: { expression: string }) => event.expression)).toEqual(["x^2", "x = 1", "x^2 + y^2 = 4"]);
 });

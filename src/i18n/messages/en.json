@@ -3241,7 +3241,6 @@
   "在函数图上再画一条": "Add a curve to the graph",
   "这张图跟着单位圆的角度动，不能再加曲线。可以另放一张函数图。": "This graph follows the unit circle's angle, so it can't take more curves. Put in another graph instead.",
   "这张图已经有 {{v0}} 条曲线了。": "This graph already has {{v0}} curves.",
-  "再画一条 y =": "Another curve y =",
   "画上": "Draw it",
   "点表格里的格子可以填写，点图示可以再加一步，点函数图可以再画一条。": "Tap a table cell to fill it in, a diagram to add a step, or a graph to add a curve.",
   "这张图没有 {{v0}}。": "This graph has no {{v0}}.",
@@ -3256,5 +3255,8 @@
   "圆心": "Centre",
   "几条边（3 到 48）": "Number of sides (3 to 48)",
   "边数做成滑块：讲课时拖动，看周长越来越接近圆周": "Make the number of sides a slider: drag it while you talk to watch the perimeter close in on the circle's",
-  "边数": "Sides"
+  "边数": "Sides",
+  "再画一条": "Add to the graph",
+  "如 x^2、x = 2、x^2 + y^2 = 4": "e.g. x^2, x = 2, x^2 + y^2 = 4",
+  "写一个函数（如 x^2），一条线（如 x = 2），或一个方程（如 x^2 + y^2 = 4）。": "Write a function (like x^2), a line (like x = 2) or an equation (like x^2 + y^2 = 4)."
 }

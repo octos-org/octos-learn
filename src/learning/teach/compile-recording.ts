@@ -18,6 +18,7 @@ import {
   type RecordingEvent,
   type Take,
 } from "./recording";
+import { parseGraphEntry } from "./graph-entry";
 import { lineAcross, lineLabel } from "./studio-helpers";
 
 type Action = AuthoringAction & Record<string, unknown>;
@@ -698,10 +699,22 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           if (curves.length >= MAX_CURVES) throw new CompileError(`'${event.node}' already has ${MAX_CURVES} curves`);
           // OLL cannot revise a card's bindings, so a graph following an angle keeps the curve it has.
           if (graph.content.bindings) throw new CompileError(`'${event.node}' follows an angle, so it cannot take more curves`);
+          const entry = parseGraphEntry(event.expression);
+          if (!entry) throw new CompileError(`'${event.expression}' is not a function, a line x = … or y = …, or an equation`);
           // The graph's slider letters read the same sliders in the new curve.
-          let expression = event.expression.trim();
-          for (const [letter, variable] of graph.letters) expression = expression.replace(new RegExp(`(?<![A-Za-z0-9_])${letter}(?![A-Za-z0-9_])`, "g"), variable);
-          curves.push({ as: `curve-${curves.length + 1}`, expression, label: `y = ${event.expression.trim()}` });
+          const reading = (expression: string) => {
+            let read = expression;
+            for (const [letter, variable] of graph.letters) read = read.replace(new RegExp(`(?<![A-Za-z0-9_])${letter}(?![A-Za-z0-9_])`, "g"), variable);
+            return read;
+          };
+          if (entry.kind === "guide") {
+            const guides = (graph.content.guides ??= []) as Array<Record<string, unknown>>;
+            guides.push({ as: `guide-${guides.length + 1}`, kind: entry.axis === "x" ? "vertical_line" : "horizontal_line", value: entry.value, label: `${entry.axis} = ${entry.value}` });
+          } else if (entry.kind === "equation") {
+            curves.push({ as: `curve-${curves.length + 1}`, kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
+          } else {
+            curves.push({ as: `curve-${curves.length + 1}`, expression: reading(entry.expression), label: `y = ${entry.expression}` });
+          }
           actions.push({ do: "revise", target: event.node, content: structuredClone(graph.content), reason: "the learner added a curve", when } as Action);
           focus = [event.node];
           break;

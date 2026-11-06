@@ -705,3 +705,17 @@ describe("geometry on a grid, and regular polygons", () => {
     expect(polygon).toMatchObject({ relation: "inscribed", sides: 24, show_measurements: true });
   });
 });
+
+describe("guides and equations on a graph", () => {
+  it("adds a guide line and an equation drawn as a curve", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Circles", type: "math_off_map" }, goals: [] }), now, [{ title: "Graph" }]);
+    recording = record(recording, "card-1", "A circle and a line.", [
+      { t: 100, type: "component.insert", panel: "graph", alias: "graph-1", expression: "x", x: [-4, 4], y: [-4, 4] },
+      { t: 400, type: "graph.add_curve", node: "graph-1", expression: "x = 1" },
+      { t: 700, type: "graph.add_curve", node: "graph-1", expression: "x^2 + y^2 = 4" },
+    ]);
+    const content = check(recording).state.nodes["l:node:graph-1"]!.content as { curves: Array<Record<string, unknown>>; guides: Array<Record<string, unknown>> };
+    expect(content.guides).toEqual([expect.objectContaining({ kind: "vertical_line", value: 1, label: "x = 1" })]);
+    expect(content.curves[1]).toMatchObject({ kind: "implicit", expression: "(x^2+y^2)-(4)", level: 0 });
+  });
+});
