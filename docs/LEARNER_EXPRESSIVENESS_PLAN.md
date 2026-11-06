@@ -73,6 +73,24 @@ Order of work: first bring the studio up to **everything OLL can already express
 | Verify the new Gemini key with one model feature (Octo's question or Check) | Next model call |
 | Course Playwright specs need `learn.pitun.cc` reachable (TLS fails through the local proxy) or `OCTOS_TEST_COURSE_CACHE` | Environment |
 
+## Progress (2026-11-06)
+
+Branch `claude/growing-card` (octos-learn PR #125) with OLL PR #30; not merged yet.
+
+| Item | Status | What landed |
+|---|---|---|
+| A1 growing card | Done | Writing on or under a handwriting/math card continues it at the drawn offset and size (OLL 0011 `continues`, `drawn_size`, player 0.9.0); neat math lines its "=" up; arrow and continuation previews while recording |
+| A2 words | Done | Text (typed or the last sentence said), notes (conclusion / careful / summary / definition, headed in the lesson language), tables with cells filled by tapping while talking |
+| A3 diagrams | Done | Steps and cycles, boxes added by tapping while talking, words on arrows; OLL draws arrows and lays a cycle on a ring |
+| A4 2D math | Partly | Graph letters become sliders (`y = a*x + b`, `(x-h)^2+k`); curves added to a graph while talking. Not yet: geometry tray (circle, segment, angle, regular polygon), implicit curves, guides |
+| A5 3D | Done | Box, cylinder, cone, sphere; a cutting plane on a slider shows the cross-section |
+| A6 marks | Partly | Highlight meanings (important / also look / careful / done); words on arrows. Not yet: groups, presenter reactions (needs the playback character to read `teacher.expression`), other placements |
+| A7 Your turn | Done | Drag to an answer (unit circle or any slider), type a number (numeric answer by the card), turn a 3D shape to a view |
+
+Known limits found on the way:
+- A graph that follows a unit circle's angle cannot take more curves: OLL cannot revise a card's bindings. Lifting it needs an OLL rule that allows a revise with unchanged bindings.
+- Each keyboard step of a slider is recorded as its own small drag (a pointer drag is one).
+
 ## 4. Phase A — the studio reaches OLL parity (no OLL contract change)
 
 Ordered by how much each unlocks for real lessons. Each item lists the studio interaction, the OLL it compiles to, and how it is accepted.
