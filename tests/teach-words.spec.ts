@@ -149,10 +149,13 @@ test("a highlight says what it means, and an arrow carries words", async ({ page
   await page.locator(`.teach-studio .board-node[data-id$=":node:text-1"]`).click();
   await steam.click();
   await expect(page.locator(".teach-studio").getByText("冒出", { exact: true })).toBeVisible();
+  // The presenter celebrates.
+  await page.getByRole("button", { name: "形象庆祝" }).click();
   await page.getByRole("button", { name: /^停止/ }).click();
   await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
   const events = await page.evaluate(() => JSON.parse(localStorage.getItem("octos-learn:learner-recordings:v1:curated-learner")!)[0].cards[1].takes.at(-1).events);
   expect(events.find((event: { type: string }) => event.type === "tool.highlighter")).toMatchObject({ emphasis: "warning" });
   expect(events.find((event: { type: string }) => event.type === "tool.arrow")).toMatchObject({ label: "冒出", from: { node: "text-1" }, to: { node: "text-2" } });
-  if (process.env.MARKS_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.MARKS_SHOT });
+  expect(events.find((event: { type: string }) => event.type === "presenter.react")).toMatchObject({ expression: "celebrating" });
+  if (process.env.MARKS_SHOT) await page.screenshot({ path: process.env.MARKS_SHOT });
 });

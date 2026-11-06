@@ -719,3 +719,15 @@ describe("guides and equations on a graph", () => {
     expect(content.curves[1]).toMatchObject({ kind: "implicit", expression: "(x^2+y^2)-(4)", level: 0 });
   });
 });
+
+describe("presenter reactions", () => {
+  it("plays the learner's reaction as a teacher expression at that moment", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Well done", type: "other" }, goals: [] }), now, [{ title: "Done" }]);
+    recording = record(recording, "card-1", "You got it.", [
+      { t: 300, type: "component.insert", panel: "text", alias: "text-1", text: "x = 5" },
+      { t: 900, type: "presenter.react", expression: "celebrating" },
+    ]);
+    const { lesson } = check(recording);
+    expect(lesson.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions))).toContainEqual(expect.objectContaining({ do: "expression", expression: "celebrating" }));
+  });
+});

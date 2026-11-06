@@ -3258,5 +3258,9 @@
   "边数": "Sides",
   "再画一条": "Add to the graph",
   "如 x^2、x = 2、x^2 + y^2 = 4": "e.g. x^2, x = 2, x^2 + y^2 = 4",
-  "写一个函数（如 x^2），一条线（如 x = 2），或一个方程（如 x^2 + y^2 = 4）。": "Write a function (like x^2), a line (like x = 2) or an equation (like x^2 + y^2 = 4)."
+  "写一个函数（如 x^2），一条线（如 x = 2），或一个方程（如 x^2 + y^2 = 4）。": "Write a function (like x^2), a line (like x = 2) or an equation (like x^2 + y^2 = 4).",
+  "形象的反应": "The presenter's reaction",
+  "形象鼓励一下": "Presenter encourages",
+  "形象提醒小心": "Presenter says careful",
+  "形象庆祝": "Presenter celebrates"
 }

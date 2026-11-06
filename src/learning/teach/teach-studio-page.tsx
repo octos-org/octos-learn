@@ -36,6 +36,7 @@ import {
   type CardInk,
   type InkMark,
   type Emphasis,
+  type PresenterReaction,
   type LearnerRecording,
   type RecordingCard,
   type RecordingEvent,
@@ -814,6 +815,16 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <button type="button" className="teach-tool" disabled={!isRecording || !canUndo} title={tr("撤销（⌘/Ctrl+Z）")} onClick={() => void undo()}>
               <Undo2 size={20} aria-hidden="true" />{tr("撤销")}
             </button>
+            <span className="teach-dock-divider" aria-hidden="true" />
+            {/* The presenter reacts right now: it shows on the character when the lesson plays. */}
+            <div className="teach-reactions" role="group" aria-label={tr("形象的反应")}>
+              {REACTIONS.map(([expression, emoji, label]) => (
+                <button key={expression} type="button" className="teach-tool teach-reaction" disabled={!isRecording} title={label()} aria-label={label()}
+                  onClick={() => record(withTime({ type: "presenter.react" as const, expression }))}>
+                  <span aria-hidden="true">{emoji}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1033,6 +1044,11 @@ function TranscriptEditor({ text, label, onSave }: { text: string; label?: strin
     </form>
   );
 }
+
+/** How the presenter can react while the learner talks. */
+const REACTIONS: Array<[PresenterReaction, string, () => string]> = [
+  ["encouraging", "😊", () => tr("形象鼓励一下")], ["careful", "🤔", () => tr("形象提醒小心")], ["celebrating", "🎉", () => tr("形象庆祝")],
+];
 
 /** What a highlight can mean, as the learner picks it; colour is not the only difference (OLL styles each). */
 const HIGHLIGHTS: Array<[Emphasis, () => string]> = [

@@ -65,6 +65,9 @@ export function solidHeight(solid: Solid): number {
   return solid.shape === "box" ? solid.size.z : solid.shape === "sphere" ? 2 * solid.radius : solid.height;
 }
 
+/** How the presenter can react while the learner talks. */
+export type PresenterReaction = "encouraging" | "careful" | "celebrating";
+
 /** What a highlight means: important, also look, careful, or done. */
 export type Emphasis = "focus" | "supporting" | "warning" | "resolved";
 
@@ -94,6 +97,8 @@ export type RecordingEvent =
   | { t: number; type: "ink.hide"; node: string }
   /** Words put into one cell of a table on the board (row and column count from 0, rows below the header). */
   | { t: number; type: "table.fill"; node: string; row: number; column: number; text: string }
+  /** The presenter reacts at this moment: encouraging, careful or celebrating (OLL teacher.expression). */
+  | { t: number; type: "presenter.react"; expression: PresenterReaction }
   /** A circle on a coordinate grid, around one of its points. */
   | { t: number; type: "geometry.circle"; node: string; center: string; radius: number; alias: string }
   /** A segment on a coordinate grid between two of its points. */

@@ -6,10 +6,7 @@
 // to the one before. The strip folds away to one line.
 
 import { tr } from "@/i18n";
-import {
-  ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, MessageSquare, MousePointer2, MoveHorizontal,
-  Merge, PenLine, Play, Pointer, Sparkles, TrendingUp, type LucideIcon,
-} from "lucide-react";
+import { ArrowUpRight, Box, ChevronDown, ChevronUp, Crosshair, Eraser, Grid3x3, Highlighter, type LucideIcon, Merge, MessageSquare, MousePointer2, MoveHorizontal, PenLine, Play, Pointer, Smile, Sparkles, TrendingUp } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Link } from "react-router-dom";
 
@@ -18,7 +15,7 @@ import { correctSentence, type LearnerRecording, type RecordingCard } from "./re
 
 export const ICONS: Record<ActionKind, LucideIcon> = {
   insert: Grid3x3, point: Crosshair, line: TrendingUp, laser: MousePointer2, highlight: Highlighter, arrow: ArrowUpRight,
-  drag: MoveHorizontal, rotate: Box, neat: Sparkles, hide: Eraser, write: PenLine,
+  drag: MoveHorizontal, rotate: Box, neat: Sparkles, hide: Eraser, write: PenLine, react: Smile,
 };
 
 const FOLDED_KEY = "octos-learn:teach-sequence-folded";

@@ -385,3 +385,5 @@ div.teach-tracks-sentence .teach-sequence-words { cursor: text; }
 .teach-dock-options button { min-height: 36px; padding: 0 12px; border: 1px solid rgba(40, 65, 67, 0.2); border-radius: 999px; color: #2f4a52; background: #fffef9; font: inherit; font-size: 14px; cursor: pointer; }
 .teach-dock-options button[aria-checked="true"] { border-color: #1b2457; color: #f6dfa0; background: #1b2457; }
 .teach-dock-options .teach-input { width: 220px; min-height: 36px; padding: 4px 10px; font-size: 14px; }
+.teach-reactions { display: flex; gap: 2px; }
+.teach-tool.teach-reaction { width: 44px; font-size: 22px; }

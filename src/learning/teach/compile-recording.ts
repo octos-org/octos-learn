@@ -673,6 +673,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           focus = [event.alias];
           break;
         }
+        case "presenter.react":
+          actions.push({ do: "expression", expression: event.expression, when } as Action);
+          break;
         case "geometry.circle":
         case "geometry.segment": {
           const points = geometryPoints.get(event.node);

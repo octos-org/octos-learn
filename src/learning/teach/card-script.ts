@@ -20,7 +20,7 @@ import {
 } from "./recording";
 
 /** What an action does, for its icon. */
-export type ActionKind = "insert" | "point" | "line" | "laser" | "highlight" | "arrow" | "drag" | "rotate" | "neat" | "hide" | "write";
+export type ActionKind = "insert" | "point" | "line" | "laser" | "highlight" | "arrow" | "drag" | "rotate" | "neat" | "hide" | "write" | "react";
 
 export type SequenceItem =
   | { kind: "sentence"; id: string; index: number; text: string }
@@ -38,6 +38,8 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
       }[event.panel] };
     case "table.fill":
       return { action: "insert", label: tr("填表格") };
+    case "presenter.react":
+      return { action: "react", label: { encouraging: tr("形象鼓励一下"), careful: tr("形象提醒小心"), celebrating: tr("形象庆祝") }[event.expression] };
     case "geometry.circle":
       return { action: "line", label: tr("画一个圆") };
     case "geometry.segment":
