@@ -3,8 +3,8 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { Box, Check, ChevronLeft, Circle, CircleDot, Grid3x3, Hexagon, LineChart, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BookOpen, Box, Check, ChevronLeft, Circle, CircleAlert, CircleDot, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEventHandler, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
@@ -39,25 +39,31 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   onPoint: (point: { node: string; point: string; x: number; y: number; label: string }) => void;
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
-  const solidPanel = form === "solid_3d";
-  const solidEntry = useRef<HTMLButtonElement>(null);
+  const entryButtons = useRef(new Map<InsertForm, HTMLButtonElement>());
   const back = useRef<HTMLButtonElement>(null);
-  const wasSolid = useRef(false);
+  const previous = useRef<InsertForm | null>(null);
   useEffect(() => {
-    if (solidPanel) back.current?.focus({ preventScroll: true });
-    else if (wasSolid.current) solidEntry.current?.focus({ preventScroll: true });
-    wasSolid.current = solidPanel;
-  }, [solidPanel]);
+    if (form) back.current?.focus({ preventScroll: true });
+    else entryButtons.current.get(previous.current ?? "text")?.focus({ preventScroll: true });
+    previous.current = form;
+  }, [form]);
 
-  const kinds: Array<[InsertForm, string, typeof LineChart]> = [
-    ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow],
-    ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("立体"), Box],
-    ...(grids.length ? [["point", tr("放一个点"), Square] as [InsertForm, string, typeof LineChart]] : []),
-    ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["line", tr("过两点画直线"), Spline] as [InsertForm, string, typeof LineChart]] : []),
-    ...([...gridPoints(recording).values()].some((points) => points.length >= 2) ? [["segment", tr("连线段"), Minus] as [InsertForm, string, typeof LineChart]] : []),
-    ...([...gridPoints(recording).values()].some((points) => points.length >= 1) ? [["circle", tr("画圆"), CircleDot] as [InsertForm, string, typeof LineChart]] : []),
-    ["polygon", tr("正多边形"), Hexagon],
+  type Entry = [InsertForm, string, typeof LineChart];
+  const pointsByGrid = [...gridPoints(recording).values()];
+  const hasPoint = pointsByGrid.some((points) => points.length > 0);
+  const hasTwoPoints = pointsByGrid.some((points) => points.length >= 2);
+  const groups: Array<[string, Entry[]]> = [
+    [tr("文字与图示"), [["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow]]],
+    [tr("数学图形"), [["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["polygon", tr("正多边形"), Hexagon], ["solid_3d", tr("立体"), Box]]],
+    [tr("在网格上绘制"), [
+      ...(grids.length ? [["point", tr("放一个点"), Square] as Entry] : []),
+      ...(hasTwoPoints ? [["line", tr("过两点画直线"), Spline] as Entry, ["segment", tr("连线段"), Minus] as Entry] : []),
+      ...(hasPoint ? [["circle", tr("画圆"), CircleDot] as Entry] : []),
+    ]],
   ];
+  const selected = groups.flatMap(([, entries]) => entries).find(([value]) => value === form);
+  const title = selected?.[1] ?? tr("放入");
+  const Icon = selected?.[2] ?? Plus;
   const placement = (
     <fieldset className="teach-next-to">
       <legend className="teach-group-label">{tr("放在旁边…")}</legend>
@@ -75,31 +81,20 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
       {row.length > 0 && <p className="academy-muted">{tr("也可以直接在白板上点那张卡片。")}</p>}
     </fieldset>
   );
-  if (solidPanel) {
-    return (
-      <div className="teach-add teach-add-solid" role="dialog" aria-label={tr("立体")} onKeyDown={(event) => {
-        if (event.key !== "Escape") return;
-        event.stopPropagation();
-        onClose();
-      }}>
-        <header className="teach-solid-header">
-          <button ref={back} type="button" onClick={() => onForm(null)}><ChevronLeft size={17} aria-hidden="true" />{tr("放入")}</button>
-          <h2><Box size={19} aria-hidden="true" />{tr("立体")}</h2>
-          <button type="button" aria-label={tr("关闭")} onClick={onClose}><X size={18} aria-hidden="true" /></button>
-        </header>
-        <SolidForm recording={recording} placement={placement} onInsert={(component) => onInsert(nextTo ? { ...component, nextTo } : component)} />
-      </div>
-    );
-  }
   return (
-    <div className="teach-add" role="dialog" aria-label={tr("放到白板上")}>
-      <div className="teach-group-label">{tr("放入")}</div>
-      <div className="teach-add-kinds" role="group" aria-label={tr("放入组件")}>
-        {kinds.map(([value, label, Icon]) => (
-          <button ref={value === "solid_3d" ? solidEntry : undefined} key={value} type="button" aria-pressed={form === value} onClick={() => onForm(form === value ? null : value)}><Icon size={18} aria-hidden="true" />{label}</button>
-        ))}
-      </div>
-      {form && (
+    <div className={`teach-add teach-insert${form === "solid_3d" ? " teach-add-solid" : ""}`} role="dialog" aria-label={title} onKeyDown={(event) => {
+      if (event.key !== "Escape" || event.nativeEvent.isComposing) return;
+      event.stopPropagation();
+      onClose();
+    }}>
+      <header className="teach-insert-header">
+        {form && <button ref={back} type="button" onClick={() => onForm(null)}><ChevronLeft size={17} aria-hidden="true" />{tr("放入")}</button>}
+        <h2><Icon size={19} aria-hidden="true" />{title}</h2>
+        <button type="button" aria-label={tr("关闭")} onClick={onClose}><X size={18} aria-hidden="true" /></button>
+      </header>
+      {form === "solid_3d" ? (
+        <SolidForm recording={recording} placement={placement} onInsert={(component) => onInsert(nextTo ? { ...component, nextTo } : component)} />
+      ) : form ? (
         <InsertPanel
           key={form}
           form={form}
@@ -112,8 +107,43 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
           onShape={onShape}
           {...(said ? { said } : {})}
         />
+      ) : (
+        <div className="teach-insert-body teach-insert-library">
+          {groups.filter(([, entries]) => entries.length > 0).map(([name, entries]) => (
+            <section key={name} aria-label={name}>
+              <h3>{name}</h3>
+              <div className="teach-add-kinds">
+                {entries.map(([value, label, EntryIcon]) => (
+                  <button ref={(button) => {
+                    if (button) entryButtons.current.set(value, button);
+                    else entryButtons.current.delete(value);
+                  }} key={value} type="button" onClick={() => onForm(value)}><EntryIcon size={20} aria-hidden="true" />{label}</button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+function InsertSheet({ onSubmit, disabled, action = tr("放到白板上"), summary, columns = false, children }: {
+  onSubmit: FormEventHandler<HTMLFormElement>;
+  disabled?: boolean;
+  action?: string;
+  summary?: ReactNode;
+  columns?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <form className="teach-step teach-insert-form" onSubmit={onSubmit}>
+      <div className={`teach-insert-body${columns ? " teach-solid-body" : ""}`}>{children}</div>
+      <footer className="teach-insert-footer">
+        {summary}
+        <button type="submit" disabled={disabled}><Plus size={16} aria-hidden="true" />{action}</button>
+      </footer>
+    </form>
   );
 }
 
@@ -140,23 +170,35 @@ function InsertPanel({
   const [linked, setLinked] = useState("");
   // Each letter of the graph's expression is a slider, with where it starts and its range.
   const [sliders, setSliders] = useState<Record<string, { initial: string; min: string; max: string }>>({});
-  const axes = (): { x: [number, number]; y: [number, number] } | undefined => {
+  const axes = ((): { x: [number, number]; y: [number, number] } | undefined => {
     const [xMin, xMax, yMin, yMax] = [range.xMin, range.xMax, range.yMin, range.yMax].map(numberField);
-    if ([xMin, xMax, yMin, yMax].some((value) => value === undefined) || xMin! >= xMax! || yMin! >= yMax!) return undefined;
-    return { x: [xMin!, xMax!], y: [yMin!, yMax!] };
-  };
+    if (xMin === undefined || xMax === undefined || yMin === undefined || yMax === undefined || xMin >= xMax || yMin >= yMax) return undefined;
+    return { x: [xMin, xMax], y: [yMin, yMax] };
+  })();
   const rangeFields = (
-    <div className="teach-range" role="group" aria-label={tr("坐标范围")}>
-      {(["xMin", "xMax", "yMin", "yMax"] as const).map((field) => (
-        <label key={field}>{{ xMin: tr("x 从"), xMax: tr("x 到"), yMin: tr("y 从"), yMax: tr("y 到") }[field]}
-          <input className="teach-input" inputMode="decimal" value={range[field]} onChange={(event) => setRange({ ...range, [field]: event.target.value })} />
-        </label>
-      ))}
-    </div>
+    <fieldset className="teach-insert-section">
+      <legend>{tr("坐标范围")}</legend>
+      <div className="teach-axis-ranges">
+        {(["x", "y"] as const).map((axis) => (
+          <div className="teach-axis-range" key={axis}>
+            <span className="teach-math-badge" aria-hidden="true">{axis}</span>
+            {(["Min", "Max"] as const).map((limit) => {
+              const field = `${axis}${limit}` as const;
+              return (
+                <label className="teach-label" key={field}>
+                  {limit === "Min" ? tr("从") : tr("到")}
+                  <input className="teach-input" aria-label={{ xMin: tr("x 从"), xMax: tr("x 到"), yMin: tr("y 从"), yMax: tr("y 到") }[field]} inputMode="decimal" value={range[field]} onChange={(event) => setRange({ ...range, [field]: event.target.value })} />
+                </label>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      {!axes && <p className="teach-notice" role="status">{tr("坐标范围需要两个数，起点要小于终点。")}</p>}
+    </fieldset>
   );
 
   if (form === "graph") {
-    const ready = axes();
     const { letters, unknown } = graphParameterLetters(expression);
     const taken: string[] = [];
     const parameters: Array<GraphParameter | undefined> = letters.map((letter) => {
@@ -168,28 +210,31 @@ function InsertPanel({
       return { letter, variable, initial, min, max };
     });
     const slidersReady = parameters.every(Boolean);
-    const canInsert = Boolean(ready && expression.trim() && !unknown.length && slidersReady);
+    const canInsert = Boolean(axes && expression.trim() && !unknown.length && slidersReady);
     return (
-      <form className="teach-step" onSubmit={(event) => {
+      <InsertSheet disabled={!canInsert} onSubmit={(event) => {
         event.preventDefault();
-        if (canInsert && ready) onInsert({ panel: "graph", alias: nextComponentAlias(recording, "graph"), expression: expression.trim(), ...ready, ...(linked ? { linkedVariable: linked } : {}),
+        if (canInsert && axes) onInsert({ panel: "graph", alias: nextComponentAlias(recording, "graph"), expression: expression.trim(), ...axes, ...(linked ? { linkedVariable: linked } : {}),
           ...(parameters.length ? { parameters: parameters as GraphParameter[] } : {}) });
       }}>
-        <label className="teach-label">{tr("函数 y =")}<input className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)} /></label>
+        <label className="teach-label teach-expression">
+          <span>{tr("函数表达式")}</span>
+          <span><i aria-hidden="true">y =</i><input className="teach-input" aria-label={tr("函数 y =")} value={expression} onChange={(event) => setExpression(event.target.value)} /></span>
+        </label>
         {unknown.length > 0 && <p role="status" className="teach-notice">{tr("不认识：{{v0}}。字母只用一个，比如 a、k、m。", { v0: unknown.join("、") })}</p>}
         {letters.length > 0 && (
-          <fieldset className="teach-sliders-form">
-            <legend className="teach-group-label">{tr("滑块：讲课时拖动它们，图像跟着变")}</legend>
+          <fieldset className="teach-insert-section teach-sliders-form">
+            <legend>{tr("参数滑块")}</legend>
             {letters.map((letter, index) => {
               const values = sliders[letter] ?? { initial: "1", min: "-5", max: "5" };
               const set = (field: "initial" | "min" | "max", value: string) => setSliders({ ...sliders, [letter]: { ...values, [field]: value } });
               return (
-                <div key={letter} className="teach-range" role="group" aria-label={tr("滑块 {{v0}}", { v0: letter })}>
-                  <strong className="teach-slider-letter">{letter}</strong>
+                <div key={letter} className="teach-range teach-parameter-range" role="group" aria-label={tr("滑块 {{v0}}", { v0: letter })}>
+                  <strong className="teach-math-badge">{letter}</strong>
                   <label>{tr("开始是")}<input className="teach-input" inputMode="decimal" value={values.initial} onChange={(event) => set("initial", event.target.value)} /></label>
                   <label>{tr("从")}<input className="teach-input" inputMode="decimal" value={values.min} onChange={(event) => set("min", event.target.value)} /></label>
                   <label>{tr("到")}<input className="teach-input" inputMode="decimal" value={values.max} onChange={(event) => set("max", event.target.value)} /></label>
-                  {!parameters[index] && <span className="teach-notice">{tr("开始的数要在范围里，“从”要比“到”小。")}</span>}
+                  {!parameters[index] && <p className="teach-notice" role="status">{tr("开始的数要在范围里，“从”要比“到”小。")}</p>}
                 </div>
               );
             })}
@@ -208,27 +253,26 @@ function InsertPanel({
           </label>
         )}
         {placement}
-        <button type="submit" disabled={!canInsert}>{tr("放到白板上")}</button>
-      </form>
+      </InsertSheet>
     );
   }
   if (form === "coordinate_grid") {
-    const ready = axes();
     return (
-      <form className="teach-step" onSubmit={(event) => { event.preventDefault(); if (ready) onInsert({ panel: "coordinate_grid", alias: nextComponentAlias(recording, "grid"), ...ready }); }}>
+      <InsertSheet disabled={!axes} onSubmit={(event) => { event.preventDefault(); if (axes) onInsert({ panel: "coordinate_grid", alias: nextComponentAlias(recording, "grid"), ...axes }); }}>
         {rangeFields}
         {placement}
-        <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
-      </form>
+      </InsertSheet>
     );
   }
   if (form === "unit_circle") {
     return (
-      <form className="teach-step" onSubmit={(event) => { event.preventDefault(); onInsert({ panel: "unit_circle", alias: nextComponentAlias(recording, "unit-circle"), variable: nextVariable(recording) }); }}>
-        <p className="academy-muted">{tr("单位圆带一个角度滑杆，拖动圆上的点也能改角度。")}</p>
+      <InsertSheet onSubmit={(event) => { event.preventDefault(); onInsert({ panel: "unit_circle", alias: nextComponentAlias(recording, "unit-circle"), variable: nextVariable(recording) }); }}>
+        <div className="teach-insert-figure">
+          <CircleSketch />
+          <p>{tr("单位圆带一个角度滑杆，拖动圆上的点也能改角度。")}</p>
+        </div>
         {placement}
-        <button type="submit">{tr("放到白板上")}</button>
-      </form>
+      </InsertSheet>
     );
   }
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
@@ -244,7 +288,7 @@ function InsertPanel({
   const outside = gridRange && x !== undefined && y !== undefined
     && (x < gridRange.x[0] || x > gridRange.x[1] || y < gridRange.y[0] || y > gridRange.y[1]);
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet action={tr("放到网格上")} disabled={!label || x === undefined || y === undefined || outside} onSubmit={(event) => {
       event.preventDefault();
       if (label && x !== undefined && y !== undefined && !outside) onPoint({ node: point.node, point: label.point, x, y, label: `${label.label} (${x}, ${y})` });
     }}>
@@ -255,16 +299,18 @@ function InsertPanel({
           </select>
         </label>
       )}
-      <div className="teach-range" role="group" aria-label={tr("点的坐标")}>
-        <label>x<input className="teach-input" inputMode="decimal" value={point.x} onChange={(event) => setPoint({ ...point, x: event.target.value })} /></label>
-        <label>y<input className="teach-input" inputMode="decimal" value={point.y} onChange={(event) => setPoint({ ...point, y: event.target.value })} /></label>
-      </div>
-      {label && <p className="academy-muted">{tr("这个点叫 {{v0}}", { v0: label.label })}</p>}
+      <fieldset className="teach-insert-section">
+        <legend>{tr("点的坐标")}</legend>
+        <div className="teach-range">
+          <label>x<input className="teach-input" inputMode="decimal" value={point.x} onChange={(event) => setPoint({ ...point, x: event.target.value })} /></label>
+          <label>y<input className="teach-input" inputMode="decimal" value={point.y} onChange={(event) => setPoint({ ...point, y: event.target.value })} /></label>
+        </div>
+      </fieldset>
+      {label && <p className="teach-insert-hint">{tr("这个点叫 {{v0}}", { v0: label.label })}</p>}
       {outside && gridRange && (
-        <p role="alert">{tr("这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。", { v0: gridRange.x[0], v1: gridRange.x[1], v2: gridRange.y[0], v3: gridRange.y[1] })}</p>
+        <p className="teach-notice" role="alert">{tr("这个点在网格外面：x 从 {{v0}} 到 {{v1}}，y 从 {{v2}} 到 {{v3}}。", { v0: gridRange.x[0], v1: gridRange.x[1], v2: gridRange.y[0], v3: gridRange.y[1] })}</p>
       )}
-      <button type="submit" disabled={!label || x === undefined || y === undefined || outside}>{tr("放到白板上")}</button>
-    </form>
+    </InsertSheet>
   );
 }
 
@@ -274,46 +320,74 @@ function LineForm({ recording, onLine, segment = false }: {
   segment?: boolean;
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
-  const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 2);
+  const byGrid = gridPoints(recording);
+  const all = [...byGrid].filter(([, points]) => points.length >= 2);
   const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
-  const points = gridPoints(recording).get(grid) ?? [];
+  const points = byGrid.get(grid) ?? [];
   const [first, setFirst] = useState(points[0]?.point ?? "");
   const [second, setSecond] = useState(points[1]?.point ?? "");
   const a = points.find((candidate) => candidate.point === first);
   const b = points.find((candidate) => candidate.point === second);
   const ready = Boolean(a && b && (a.x !== b.x || a.y !== b.y));
-  const choose = (value: string, set: (value: string) => void) => (
-    <select className="teach-input" value={value} onChange={(event) => set(event.target.value)}>
-      {points.map((candidate) => <option key={candidate.point} value={candidate.point}>{candidate.label}</option>)}
-    </select>
+  const choose = (label: string, value: string, set: (value: string) => void) => (
+    <label>{label}
+      <select className="teach-input" value={value} onChange={(event) => set(event.target.value)}>
+        {points.map((candidate) => <option key={candidate.point} value={candidate.point}>{candidate.label}</option>)}
+      </select>
+    </label>
   );
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet action={tr("画在网格上")} disabled={!ready} onSubmit={(event) => {
       event.preventDefault();
       if (ready) onLine({ node: grid, from: first, to: second, alias: nextComponentAlias(recording, "line") });
     }}>
       {all.length > 1 && (
         <label className="teach-label">{tr("用哪个网格的点")}
-          <select className="teach-input" value={grid} onChange={(event) => setGrid(event.target.value)}>
+          <select className="teach-input" value={grid} onChange={(event) => {
+            const next = event.target.value;
+            const candidates = byGrid.get(next) ?? [];
+            setGrid(next);
+            setFirst(candidates[0]?.point ?? "");
+            setSecond(candidates[1]?.point ?? "");
+          }}>
             {all.map(([alias]) => <option key={alias} value={alias}>{alias}</option>)}
           </select>
         </label>
       )}
-      <div className="teach-range" role="group" aria-label={segment ? tr("线段的两个端点") : tr("直线经过的两点")}>
-        {choose(first, setFirst)}
-        {choose(second, setSecond)}
-      </div>
-      {ready && !segment && <p className="academy-muted">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
-      {a && b && !ready && <p role="alert">{tr("请选两个不同的点。")}</p>}
-      <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
-    </form>
+      <fieldset className="teach-insert-section">
+        <legend>{segment ? tr("线段的两个端点") : tr("直线经过的两点")}</legend>
+        <div className="teach-range">
+          {choose(tr("第一个点"), first, setFirst)}
+          {choose(tr("第二个点"), second, setSecond)}
+        </div>
+      </fieldset>
+      {ready && !segment && <p className="teach-insert-hint">{tr("在网格上画出 {{v0}}", { v0: lineLabel(a!, b!) })}</p>}
+      {a && b && !ready && <p className="teach-notice" role="alert">{tr("请选两个不同的点。")}</p>}
+    </InsertSheet>
   );
 }
 
 
-const NOTE_ROLES: Array<[NoteRole, () => string]> = [
-  ["conclusion", () => tr("结论")], ["warning", () => tr("注意")], ["summary", () => tr("小结")], ["definition", () => tr("定义")],
+const NOTE_ROLES: Array<[NoteRole, () => string, typeof Check]> = [
+  ["conclusion", () => tr("结论"), Check], ["warning", () => tr("注意"), CircleAlert],
+  ["summary", () => tr("小结"), ListChecks], ["definition", () => tr("定义"), BookOpen],
 ];
+
+function InsertOption({ name, label, selected, onSelect, icon: Icon }: {
+  name: string;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+  icon: typeof Check;
+}) {
+  return (
+    <label className="teach-insert-option">
+      <input type="radio" name={name} checked={selected} onChange={onSelect} />
+      <Icon size={18} aria-hidden="true" />
+      <span>{label}</span>
+    </label>
+  );
+}
 
 /** Words for the board: what the learner just said, or typed; a note also says what kind of note it is. */
 function WordsForm({ kind, recording, said, onInsert }: {
@@ -326,7 +400,7 @@ function WordsForm({ kind, recording, said, onInsert }: {
   const [role, setRole] = useState<NoteRole>("conclusion");
   const words = text.trim();
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet disabled={!words} onSubmit={(event) => {
       event.preventDefault();
       if (!words) return;
       onInsert(kind === "note"
@@ -334,18 +408,25 @@ function WordsForm({ kind, recording, said, onInsert }: {
         : { panel: "text", alias: nextComponentAlias(recording, "text"), text: words });
     }}>
       {kind === "note" && (
-        <div className="teach-note-roles" role="radiogroup" aria-label={tr("这条提示是")}>
-          {NOTE_ROLES.map(([value, label]) => (
-            <button key={value} type="button" role="radio" aria-checked={role === value} data-role={value} onClick={() => setRole(value)}>{label()}</button>
-          ))}
-        </div>
+        <fieldset className="teach-insert-section">
+          <legend>{tr("这条提示是")}</legend>
+          <div className="teach-insert-options">
+            {NOTE_ROLES.map(([value, label, icon]) => (
+              <InsertOption key={value} name="teach-note-role" label={label()} selected={role === value} onSelect={() => setRole(value)} icon={icon} />
+            ))}
+          </div>
+        </fieldset>
       )}
-      <label className="teach-label">{kind === "note" ? tr("提示的内容") : tr("要写的话")}
-        <textarea className="teach-input" rows={3} value={text} maxLength={400} onChange={(event) => setText(event.target.value)} />
-      </label>
-      {said && <button type="button" className="teach-secondary" onClick={() => setText(said)}>{tr("用我刚说的话：“{{v0}}”", { v0: said.length > 24 ? `${said.slice(0, 24)}…` : said })}</button>}
-      <button type="submit" disabled={!words}>{tr("放到白板上")}</button>
-    </form>
+      <div className="teach-insert-composer">
+        <label className="teach-label">{kind === "note" ? tr("提示的内容") : tr("要写的话")}
+          <textarea className="teach-input" rows={4} value={text} maxLength={400} onChange={(event) => setText(event.target.value)} />
+        </label>
+        <div className="teach-insert-composer-meta">
+          {said && <button type="button" className="teach-secondary" onClick={() => setText(said)}><MessageSquareText size={15} aria-hidden="true" />{sayLabel(said)}</button>}
+          <span>{text.length} / 400</span>
+        </div>
+      </div>
+    </InsertSheet>
   );
 }
 
@@ -370,7 +451,7 @@ function TableForm({ recording, onInsert }: { recording: LearnerRecording; onIns
     </div>
   );
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet disabled={!ready} onSubmit={(event) => {
       event.preventDefault();
       if (ready) onInsert({ panel: "table", alias: nextComponentAlias(recording, "table"), columns, rows });
     }}>
@@ -378,21 +459,25 @@ function TableForm({ recording, onInsert }: { recording: LearnerRecording; onIns
         {stepper(tr("列"), columns.length, 1, MAX_COLUMNS, (next) => resize(next, rows.length))}
         {stepper(tr("行"), rows.length, 1, MAX_ROWS, (next) => resize(columns.length, next))}
       </div>
-      <table className="teach-table-form">
-        <thead><tr>{columns.map((column, index) => (
-          <th key={index}><input className="teach-input" aria-label={tr("第 {{v0}} 列的标题", { v0: index + 1 })} placeholder={tr("标题")} value={column}
-            onChange={(event) => setColumns(columns.map((value, at) => (at === index ? event.target.value : value)))} /></th>
-        ))}</tr></thead>
-        <tbody>{rows.map((row, rowIndex) => (
-          <tr key={rowIndex}>{row.map((cell, columnIndex) => (
-            <td key={columnIndex}><input className="teach-input" aria-label={tr("第 {{v0}} 行第 {{v1}} 列", { v0: rowIndex + 1, v1: columnIndex + 1 })} value={cell}
-              onChange={(event) => setRows(rows.map((values, at) => (at === rowIndex ? values.map((value, column) => (column === columnIndex ? event.target.value : value)) : values)))} /></td>
-          ))}</tr>
-        ))}</tbody>
-      </table>
-      <p className="academy-muted">{tr("格子可以先空着，讲到的时候点白板上的格子再填。")}</p>
-      <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
-    </form>
+      <div className="teach-table-scroll">
+        <table className="teach-table-form" style={{ minWidth: 32 + columns.length * 80 }}>
+          <thead><tr>
+            <td className="teach-table-index" aria-hidden="true">#</td>
+            {columns.map((column, index) => (
+              <th key={index} scope="col"><input className="teach-input" aria-label={tr("第 {{v0}} 列的标题", { v0: index + 1 })} placeholder={tr("标题")} value={column}
+                onChange={(event) => setColumns(columns.map((value, at) => (at === index ? event.target.value : value)))} /></th>
+            ))}
+          </tr></thead>
+          <tbody>{rows.map((row, rowIndex) => (
+            <tr key={rowIndex}><th className="teach-table-index" scope="row">{rowIndex + 1}</th>{row.map((cell, columnIndex) => (
+              <td key={columnIndex}><input className="teach-input" aria-label={tr("第 {{v0}} 行第 {{v1}} 列", { v0: rowIndex + 1, v1: columnIndex + 1 })} value={cell}
+                onChange={(event) => setRows(rows.map((values, at) => (at === rowIndex ? values.map((value, column) => (column === columnIndex ? event.target.value : value)) : values)))} /></td>
+            ))}</tr>
+          ))}</tbody>
+        </table>
+      </div>
+      <p className="teach-insert-hint">{tr("格子可以先空着，讲到的时候点白板上的格子再填。")}</p>
+    </InsertSheet>
   );
 }
 
@@ -426,27 +511,30 @@ function DiagramForm({ recording, said, onInsert }: { recording: LearnerRecordin
   const [boxes, setBoxes] = useState<string[]>(["", ""]);
   const filled = boxes.map((box) => box.trim()).filter(Boolean);
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet disabled={!filled.length} onSubmit={(event) => {
       event.preventDefault();
       if (filled.length) onInsert({ panel: "diagram", alias: nextComponentAlias(recording, "diagram"), shape, boxes: filled });
     }}>
-      <div className="teach-note-roles" role="radiogroup" aria-label={tr("图示的样子")}>
-        <button type="button" role="radio" aria-checked={shape === "steps"} onClick={() => setShape("steps")}><Workflow size={16} aria-hidden="true" />{tr("一步一步")}</button>
-        <button type="button" role="radio" aria-checked={shape === "cycle"} onClick={() => setShape("cycle")}><Repeat size={16} aria-hidden="true" />{tr("转一圈")}</button>
-      </div>
+      <fieldset className="teach-insert-section">
+        <legend>{tr("图示的样子")}</legend>
+        <div className="teach-insert-options">
+          <InsertOption name="teach-diagram-kind" label={tr("一步一步")} selected={shape === "steps"} onSelect={() => setShape("steps")} icon={Workflow} />
+          <InsertOption name="teach-diagram-kind" label={tr("转一圈")} selected={shape === "cycle"} onSelect={() => setShape("cycle")} icon={Repeat} />
+        </div>
+      </fieldset>
       <ol className="teach-diagram-boxes">
         {boxes.map((box, index) => (
           <li key={index}>
-            <input className="teach-input" aria-label={tr("第 {{v0}} 个框", { v0: index + 1 })} value={box} maxLength={60}
+            <span aria-hidden="true">{index + 1}</span>
+            <input className="teach-input" aria-label={tr("第 {{v0}} 个框", { v0: index + 1 })} placeholder={tr("第 {{v0}} 个框", { v0: index + 1 })} value={box} maxLength={60}
               onChange={(event) => setBoxes(boxes.map((value, at) => (at === index ? event.target.value : value)))} />
             {said && !box.trim() && <button type="button" className="teach-secondary" onClick={() => setBoxes(boxes.map((value, at) => (at === index ? said : value)))}>{tr("用刚说的")}</button>}
           </li>
         ))}
       </ol>
-      <button type="button" className="teach-secondary" disabled={boxes.length >= MAX_BOXES} onClick={() => setBoxes([...boxes, ""])}><Plus size={16} aria-hidden="true" />{tr("加一个框")}</button>
-      <p className="academy-muted">{tr("可以先放一两个框，讲到的时候点白板上的图示再加。")}</p>
-      <button type="submit" disabled={!filled.length}>{tr("放到白板上")}</button>
-    </form>
+      <button type="button" className="teach-secondary teach-insert-add-row" disabled={boxes.length >= MAX_BOXES} onClick={() => setBoxes([...boxes, ""])}><Plus size={16} aria-hidden="true" />{tr("加一个框")}</button>
+      <p className="teach-insert-hint">{tr("可以先放一两个框，讲到的时候点白板上的图示再加。")}</p>
+    </InsertSheet>
   );
 }
 
@@ -525,21 +613,26 @@ export function DiagramEditor({ boxes, said, onAdd, onCancel }: {
 
 /** A circle on a coordinate grid, round one of its points. */
 function CircleForm({ recording, onShape }: { recording: LearnerRecording; onShape: (shape: GridShape) => void }) {
-  const all = [...gridPoints(recording).entries()].filter(([, points]) => points.length >= 1);
+  const byGrid = gridPoints(recording);
+  const all = [...byGrid].filter(([, points]) => points.length >= 1);
   const [grid, setGrid] = useState(all.at(-1)?.[0] ?? "");
-  const points = gridPoints(recording).get(grid) ?? [];
+  const points = byGrid.get(grid) ?? [];
   const [center, setCenter] = useState(points[0]?.point ?? "");
   const [radius, setRadius] = useState("2");
   const value = numberField(radius);
   const ready = Boolean(points.some((point) => point.point === center) && value !== undefined && value > 0);
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet action={tr("画在网格上")} disabled={!ready} onSubmit={(event) => {
       event.preventDefault();
       if (ready) onShape({ type: "geometry.circle", node: grid, center, radius: value!, alias: nextComponentAlias(recording, "circle") });
     }}>
       {all.length > 1 && (
         <label className="teach-label">{tr("用哪个网格的点")}
-          <select className="teach-input" value={grid} onChange={(event) => setGrid(event.target.value)}>
+          <select className="teach-input" value={grid} onChange={(event) => {
+            const next = event.target.value;
+            setGrid(next);
+            setCenter(byGrid.get(next)?.[0]?.point ?? "");
+          }}>
             {all.map(([alias]) => <option key={alias} value={alias}>{alias}</option>)}
           </select>
         </label>
@@ -552,8 +645,27 @@ function CircleForm({ recording, onShape }: { recording: LearnerRecording; onSha
         </label>
         <label>{tr("半径")}<input className="teach-input" inputMode="decimal" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
       </div>
-      <button type="submit" disabled={!ready}>{tr("画在网格上")}</button>
-    </form>
+    </InsertSheet>
+  );
+}
+
+/** Small schematic for the inscribed polygon and angle controls. */
+function CircleSketch({ sides }: { sides?: number }) {
+  const polygon = sides ? Array.from({ length: sides }, (_, index) => {
+    const angle = Math.PI * 2 * index / sides - Math.PI / 2;
+    return `${60 + 36 * Math.cos(angle)},${52 + 36 * Math.sin(angle)}`;
+  }).join(" ") : "";
+  return (
+    <svg className="teach-circle-sketch" viewBox="0 0 120 104" aria-hidden="true">
+      {sides === undefined && <path className="teach-sketch-axis" d="M12 52h96M60 98V7m-3 4 3-4 3 4m41 38 4 3-4 3" />}
+      <circle className="teach-sketch-circle" cx="60" cy="52" r="36" />
+      {polygon && <polygon className="teach-sketch-shape" points={polygon} />}
+      {sides === undefined && <>
+        <path className="teach-sketch-shape" d="M60 52h19a19 19 0 0 0-6-14ZM60 52 85 26" />
+        <circle className="teach-sketch-point" cx="85" cy="26" r="3" />
+        <text x="84" y="45">θ</text>
+      </>}
+    </svg>
   );
 }
 
@@ -564,15 +676,18 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
   const value = numberField(sides);
   const ready = value !== undefined && Number.isInteger(value) && value >= 3 && value <= 48;
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <InsertSheet disabled={!ready} onSubmit={(event) => {
       event.preventDefault();
       if (ready) onInsert({ panel: "polygon", alias: nextComponentAlias(recording, "polygon"), sides: value!, ...(slider ? { slider: { variable: nextParameterVariable(recording, "sides") } } : {}) });
     }}>
-      <label className="teach-label">{tr("几条边（3 到 48）")}<input className="teach-input" inputMode="numeric" value={sides} onChange={(event) => setSides(event.target.value)} /></label>
+      <div className="teach-insert-figure">
+        <CircleSketch sides={ready ? value : 0} />
+        <label className="teach-label">{tr("几条边（3 到 48）")}<input className="teach-input" inputMode="numeric" value={sides} onChange={(event) => setSides(event.target.value)} /></label>
+      </div>
+      {!ready && <p className="teach-notice" role="status">{tr("请输入 3 到 48 之间的整数。")}</p>}
       <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("边数做成滑块：讲课时拖动，看周长越来越接近圆周")}</span></label>
       {placement}
-      <button type="submit" disabled={!ready}>{tr("放到白板上")}</button>
-    </form>
+    </InsertSheet>
   );
 }
 
@@ -668,75 +783,69 @@ function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecor
   const [group, options] = SOLID_GROUPS[category]!;
   const dimensions = tr("{{v0}}的尺寸", { v0: choiceName(choice) });
   return (
-    <form className="teach-step teach-solid-form" onSubmit={(event) => {
+    <InsertSheet columns disabled={!solid} summary={<span><SolidThumbnail shape={choice} />{choiceName(choice)}</span>} onSubmit={(event) => {
       event.preventDefault();
       if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
         ...(chosenSlider === "cut" ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}),
         ...(chosenSlider === "unfold" ? { unfold: { variable: nextParameterVariable(recording, "unfold") } } : {}) });
     }}>
-      <div className="teach-solid-body">
-        <div className="teach-solid-library">
-          <div className="teach-solid-categories" role="group" aria-label={tr("立体")}>
-            {SOLID_GROUPS.map(([name], index) => (
-              <button key={index} type="button" aria-pressed={category === index} onClick={() => setCategory(index)}>{name()}</button>
-            ))}
-          </div>
-          <div className="teach-solid-choices" role="radiogroup" aria-label={group()}>
-            {options.map((option) => (
-              <label className="teach-solid-choice" key={option}>
-                <input type="radio" name="teach-solid-shape" checked={choice === option} onChange={() => setChoice(option)} />
-                <SolidThumbnail shape={option} />
-                <span>{choiceName(option)}</span>
-                {choice === option && <Check className="teach-solid-tick" size={12} aria-hidden="true" />}
-              </label>
-            ))}
-          </div>
+      <div className="teach-solid-library">
+        <div className="teach-solid-categories" role="group" aria-label={tr("立体")}>
+          {SOLID_GROUPS.map(([name], index) => (
+            <button key={index} type="button" aria-pressed={category === index} onClick={() => setCategory(index)}>{name()}</button>
+          ))}
         </div>
-
-        <div className="teach-solid-settings">
-          <div className="teach-solid-dimensions">
-            <h3>{dimensions}</h3>
-            {based && (
-              <div className="teach-solid-group">
-                <span className="teach-group-label">{tr("底面")}</span>
-                <div className="teach-note-roles" role="radiogroup" aria-label={tr("底面")}>
-                  {BASE_CHOICES.map(([option, name]) => (
-                    <button key={option} type="button" role="radio" aria-checked={baseChoice === option} onClick={() => setBaseChoice(option)}>{name()}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="teach-range" role="group" aria-label={dimensions}>
-              {fields.map((field) => (
-                <label key={field}>{fieldLabel(choice, baseChoice, field)}
-                  <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
-                </label>
-              ))}
-            </div>
-            {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
-            {based && baseChoice === "triangle" && prismBase === undefined && positive("a") && positive("b") && positive("c") && <p className="teach-notice">{tr("这三条边围不成三角形：任意两边之和要大于第三边。")}</p>}
-            {choice === "truncated" && solid === undefined && (value("topScale") ?? 0) >= 1 && <p className="teach-notice">{tr("上底要比下底小：填 0 到 1 之间的数。")}</p>}
-          </div>
-          <div className="teach-solid-interaction">
-            <h3>{tr("互动方式")}</h3>
-            <label className="teach-place">
-              <input type="checkbox" checked={chosenSlider === "cut"} onChange={(event) => setSlider(event.target.checked ? "cut" : "none")} />
-              <span><strong>{tr("切一刀")}</strong><small>{tr("拖动滑块观察横截面。")}</small></span>
+        <div className="teach-solid-choices" role="radiogroup" aria-label={group()}>
+          {options.map((option) => (
+            <label className="teach-solid-choice" key={option}>
+              <input type="radio" name="teach-solid-shape" checked={choice === option} onChange={() => setChoice(option)} />
+              <SolidThumbnail shape={option} />
+              <span>{choiceName(option)}</span>
+              {choice === option && <Check className="teach-solid-tick" size={12} aria-hidden="true" />}
             </label>
-            {unfolds && (
-              <label className="teach-place">
-                <input type="checkbox" checked={chosenSlider === "unfold"} onChange={(event) => setSlider(event.target.checked ? "unfold" : "none")} />
-                <span><strong>{tr("展开成平面图")}</strong><small>{tr("拖动滑块展开各个面。")}</small></span>
-              </label>
-            )}
-          </div>
-          {placement}
+          ))}
         </div>
       </div>
-      <footer className="teach-solid-footer">
-        <span><SolidThumbnail shape={choice} />{choiceName(choice)}</span>
-        <button type="submit" disabled={!solid}><Plus size={16} aria-hidden="true" />{tr("放到白板上")}</button>
-      </footer>
-    </form>
+
+      <div className="teach-solid-settings">
+        <div className="teach-solid-dimensions">
+          <h3>{dimensions}</h3>
+          {based && (
+            <div className="teach-solid-group">
+              <span className="teach-group-label">{tr("底面")}</span>
+              <div className="teach-note-roles" role="radiogroup" aria-label={tr("底面")}>
+                {BASE_CHOICES.map(([option, name]) => (
+                  <button key={option} type="button" role="radio" aria-checked={baseChoice === option} onClick={() => setBaseChoice(option)}>{name()}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="teach-range" role="group" aria-label={dimensions}>
+            {fields.map((field) => (
+              <label key={field}>{fieldLabel(choice, baseChoice, field)}
+                <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
+              </label>
+            ))}
+          </div>
+          {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
+          {based && baseChoice === "triangle" && prismBase === undefined && positive("a") && positive("b") && positive("c") && <p className="teach-notice">{tr("这三条边围不成三角形：任意两边之和要大于第三边。")}</p>}
+          {choice === "truncated" && solid === undefined && (value("topScale") ?? 0) >= 1 && <p className="teach-notice">{tr("上底要比下底小：填 0 到 1 之间的数。")}</p>}
+        </div>
+        <div className="teach-solid-interaction">
+          <h3>{tr("互动方式")}</h3>
+          <label className="teach-place">
+            <input type="checkbox" checked={chosenSlider === "cut"} onChange={(event) => setSlider(event.target.checked ? "cut" : "none")} />
+            <span><strong>{tr("切一刀")}</strong><small>{tr("拖动滑块观察横截面。")}</small></span>
+          </label>
+          {unfolds && (
+            <label className="teach-place">
+              <input type="checkbox" checked={chosenSlider === "unfold"} onChange={(event) => setSlider(event.target.checked ? "unfold" : "none")} />
+              <span><strong>{tr("展开成平面图")}</strong><small>{tr("拖动滑块展开各个面。")}</small></span>
+            </label>
+          )}
+        </div>
+        {placement}
+      </div>
+    </InsertSheet>
   );
 }

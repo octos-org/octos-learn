@@ -47,7 +47,7 @@ test("a cone with a cut: the slider moves the cutting plane and its cross-sectio
   if (process.env.SOLID_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.SOLID_SHOT });
 });
 
-test("a regular polygon's sides on a slider, and a circle round a point of a grid", async ({ page }) => {
+test("a regular polygon and unit circle, and points, a line, a segment and a circle on a grid", async ({ page }) => {
   await installTestAccount(page);
   const draft = {
     schema: "octos.learner-recording.v1", id: "rec-polygon", createdAt: now, updatedAt: now,
@@ -63,6 +63,13 @@ test("a regular polygon's sides on a slider, and a circle round a point of a gri
   await page.getByRole("button", { name: "录第 1 张" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "正多边形" }).click();
+  const polygonForm = page.getByRole("dialog", { name: "正多边形" });
+  const sideCount = polygonForm.getByRole("textbox", { name: "几条边（3 到 48）" });
+  await sideCount.fill("3");
+  expect((await polygonForm.locator("polygon").getAttribute("points"))?.split(" ")).toHaveLength(3);
+  await sideCount.fill("2");
+  await expect(polygonForm.getByRole("button", { name: "放到白板上" })).toBeDisabled();
+  await sideCount.fill("6");
   await page.getByRole("button", { name: "放到白板上" }).click();
   const polygon = page.locator(".teach-studio .board-node.kind-geometry polygon").first();
   await expect(polygon).toHaveAttribute("data-sides", "6");
@@ -75,6 +82,10 @@ test("a regular polygon's sides on a slider, and a circle round a point of a gri
   // A grid with a point, and a circle round it.
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "坐标网格" }).click();
+  const xStart = page.getByRole("textbox", { name: "x 从" });
+  await xStart.fill("6");
+  await expect(page.getByRole("button", { name: "放到白板上" })).toBeDisabled();
+  await xStart.fill("-5");
   await page.getByRole("button", { name: "放到白板上" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "放一个点" }).click();
@@ -86,10 +97,28 @@ test("a regular polygon's sides on a slider, and a circle round a point of a gri
   await page.getByRole("textbox", { name: "半径" }).fill("3");
   await page.getByRole("button", { name: "画在网格上" }).click();
   await expect(page.locator(".teach-studio .board-node.kind-geometry").last()).toContainText("r = 3");
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "放一个点" }).click();
+  await page.getByRole("textbox", { name: "x" }).fill("2");
+  await page.getByRole("textbox", { name: "y" }).fill("1");
+  await page.getByRole("button", { name: "放到网格上" }).click();
+  for (const name of ["过两点画直线", "连线段"]) {
+    await page.getByRole("button", { name: /^放入/ }).click();
+    await page.getByRole("button", { name }).click();
+    const sheet = page.getByRole("dialog", { name });
+    await expect(sheet.getByRole("combobox", { name: "第一个点" })).toBeVisible();
+    await expect(sheet.getByRole("combobox", { name: "第二个点" })).toBeVisible();
+    await sheet.getByRole("button", { name: "画在网格上" }).click();
+  }
+  await page.getByRole("button", { name: /^放入/ }).click();
+  await page.getByRole("button", { name: "单位圆" }).click();
+  await page.getByRole("button", { name: "放到白板上" }).click();
   await page.getByRole("button", { name: /^停止/ }).click();
   await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
   const events = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
   expect(events.find((event: { type: string }) => event.type === "geometry.circle")).toMatchObject({ radius: 3 });
+  expect(events.map((event: { type: string }) => event.type)).toEqual(expect.arrayContaining(["line_tool.draw", "geometry.segment"]));
+  expect(events.at(-1)).toMatchObject({ type: "component.insert", panel: "unit_circle" });
   if (process.env.SOLID_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.SOLID_SHOT });
 });
 
