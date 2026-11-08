@@ -3,12 +3,13 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { Box, Circle, CircleDot, Grid3x3, Hexagon, LineChart, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Box, Check, ChevronLeft, Circle, CircleDot, Grid3x3, Hexagon, LineChart, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
 import { baseCorners, solidUnfolds, type ComponentInsert, type GraphParameter, type LearnerRecording, type NoteRole, type Solid, type SolidBase, type SolidShape } from "./recording";
+import { SolidThumbnail, type SolidChoice } from "./solid-thumbnail";
 import { graphParameterLetters, gridPoints, gridRanges, isFigure, lineLabel, nextComponentAlias, nextParameterVariable, nextPointLabel, nextVariable, recordingVariableInfo, solidName, compositeName, type InsertForm } from "./studio-helpers";
 
 
@@ -21,7 +22,7 @@ function numberField(value: string): number | undefined {
 export type GridShape = { type: "geometry.circle"; node: string; center: string; radius: number; alias: string }
   | { type: "geometry.segment"; node: string; from: string; to: string; alias: string };
 
-export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onInsert, onPoint, onLine, onShape, said }: {
+export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm, onClose, onInsert, onPoint, onLine, onShape, said }: {
   onShape: (shape: GridShape) => void;
   recording: LearnerRecording;
   /** The last sentence the learner said in this take, to put on the board as words. */
@@ -33,10 +34,21 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   onNextTo: (alias: string | null) => void;
   form: InsertForm | null;
   onForm: (form: InsertForm | null) => void;
+  onClose: () => void;
   onInsert: (component: ComponentInsert) => void;
   onPoint: (point: { node: string; point: string; x: number; y: number; label: string }) => void;
   onLine: (line: { node: string; from: string; to: string; alias: string }) => void;
 }) {
+  const solidPanel = form === "solid_3d";
+  const solidEntry = useRef<HTMLButtonElement>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  const wasSolid = useRef(false);
+  useEffect(() => {
+    if (solidPanel) back.current?.focus({ preventScroll: true });
+    else if (wasSolid.current) solidEntry.current?.focus({ preventScroll: true });
+    wasSolid.current = solidPanel;
+  }, [solidPanel]);
+
   const kinds: Array<[InsertForm, string, typeof LineChart]> = [
     ["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow],
     ["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["solid_3d", tr("立体"), Box],
@@ -63,12 +75,28 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
       {row.length > 0 && <p className="academy-muted">{tr("也可以直接在白板上点那张卡片。")}</p>}
     </fieldset>
   );
+  if (solidPanel) {
+    return (
+      <div className="teach-add teach-add-solid" role="dialog" aria-label={tr("立体")} onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        onClose();
+      }}>
+        <header className="teach-solid-header">
+          <button ref={back} type="button" onClick={() => onForm(null)}><ChevronLeft size={17} aria-hidden="true" />{tr("放入")}</button>
+          <h2><Box size={19} aria-hidden="true" />{tr("立体")}</h2>
+          <button type="button" aria-label={tr("关闭")} onClick={onClose}><X size={18} aria-hidden="true" /></button>
+        </header>
+        <SolidForm recording={recording} placement={placement} onInsert={(component) => onInsert(nextTo ? { ...component, nextTo } : component)} />
+      </div>
+    );
+  }
   return (
     <div className="teach-add" role="dialog" aria-label={tr("放到白板上")}>
       <div className="teach-group-label">{tr("放入")}</div>
       <div className="teach-add-kinds" role="group" aria-label={tr("放入组件")}>
         {kinds.map(([value, label, Icon]) => (
-          <button key={value} type="button" aria-pressed={form === value} onClick={() => onForm(form === value ? null : value)}><Icon size={18} aria-hidden="true" />{label}</button>
+          <button ref={value === "solid_3d" ? solidEntry : undefined} key={value} type="button" aria-pressed={form === value} onClick={() => onForm(form === value ? null : value)}><Icon size={18} aria-hidden="true" />{label}</button>
         ))}
       </div>
       {form && (
@@ -92,7 +120,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
 function InsertPanel({
   form, recording, grids, placement, onInsert, onPoint, onLine, onShape, said,
 }: {
-  form: InsertForm;
+  form: Exclude<InsertForm, "solid_3d">;
   said?: string;
   onShape: (shape: GridShape) => void;
   /** "Put it next to…", shown before the button of a form that adds a figure. */
@@ -203,7 +231,6 @@ function InsertPanel({
       </form>
     );
   }
-  if (form === "solid_3d") return <SolidForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "line") return <LineForm recording={recording} onLine={onLine} />;
   if (form === "segment") return <LineForm recording={recording} segment onLine={(line) => onShape({ type: "geometry.segment", node: line.node, from: line.from, to: line.to, alias: nextComponentAlias(recording, "segment") })} />;
   if (form === "circle") return <CircleForm recording={recording} onShape={onShape} />;
@@ -551,7 +578,6 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
 
 /** The solids offered, in groups, with the sizes each needs. Cube is a box with equal edges; a truncated pyramid is a pyramid with its top cut off. */
 type CompositeParts = Extract<Solid, { shape: "composite" }>["parts"];
-type SolidChoice = Exclude<SolidShape, "composite"> | "cube" | "truncated" | CompositeParts;
 const SOLID_GROUPS: Array<[() => string, SolidChoice[]]> = [
   [() => tr("常见的立体"), ["box", "cube", "cylinder", "cone", "sphere", "hemisphere", "ellipsoid", "frustum", "torus"]],
   [() => tr("棱柱和棱锥"), ["prism", "pyramid", "truncated"]],
@@ -601,6 +627,7 @@ function choiceName(option: SolidChoice): string {
 
 /** A 3D solid: which one, its sizes, and optionally a cutting plane or a net on a slider. */
 function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
+  const [category, setCategory] = useState(0);
   const [choice, setChoice] = useState<SolidChoice>("box");
   const [baseChoice, setBaseChoice] = useState<BaseChoice>("regular");
   const [sizes, setSizes] = useState<Record<SizeField, string>>(DEFAULT_SIZES);
@@ -638,48 +665,78 @@ function SolidForm({ recording, placement, onInsert }: { recording: LearnerRecor
   })();
   const unfolds = solid !== undefined ? solidUnfolds(solid) : ["box", "cube", "cylinder", "cone", "prism", "pyramid", "truncated"].includes(choice);
   const chosenSlider = slider === "unfold" && !unfolds ? "none" : slider;
-  const named = (option: SolidChoice) => choiceName(option);
+  const [group, options] = SOLID_GROUPS[category]!;
+  const dimensions = tr("{{v0}}的尺寸", { v0: choiceName(choice) });
   return (
-    <form className="teach-step" onSubmit={(event) => {
+    <form className="teach-step teach-solid-form" onSubmit={(event) => {
       event.preventDefault();
       if (solid) onInsert({ panel: "solid_3d", alias: nextComponentAlias(recording, solid.shape === "box" ? "box" : "solid"), ...solid,
         ...(chosenSlider === "cut" ? { cut: { variable: nextParameterVariable(recording, "cut") } } : {}),
         ...(chosenSlider === "unfold" ? { unfold: { variable: nextParameterVariable(recording, "unfold") } } : {}) });
     }}>
-      {SOLID_GROUPS.map(([group, options]) => (
-        <div key={options[0]} className="teach-solid-group">
-          <span className="teach-group-label">{group()}</span>
-          <div className="teach-note-roles" role="radiogroup" aria-label={group()}>
+      <div className="teach-solid-body">
+        <div className="teach-solid-library">
+          <div className="teach-solid-categories" role="group" aria-label={tr("立体")}>
+            {SOLID_GROUPS.map(([name], index) => (
+              <button key={index} type="button" aria-pressed={category === index} onClick={() => setCategory(index)}>{name()}</button>
+            ))}
+          </div>
+          <div className="teach-solid-choices" role="radiogroup" aria-label={group()}>
             {options.map((option) => (
-              <button key={option} type="button" role="radio" aria-checked={choice === option} onClick={() => setChoice(option)}>{named(option)}</button>
+              <label className="teach-solid-choice" key={option}>
+                <input type="radio" name="teach-solid-shape" checked={choice === option} onChange={() => setChoice(option)} />
+                <SolidThumbnail shape={option} />
+                <span>{choiceName(option)}</span>
+                {choice === option && <Check className="teach-solid-tick" size={12} aria-hidden="true" />}
+              </label>
             ))}
           </div>
         </div>
-      ))}
-      {based && (
-        <div className="teach-solid-group">
-          <span className="teach-group-label">{tr("底面")}</span>
-          <div className="teach-note-roles" role="radiogroup" aria-label={tr("底面")}>
-            {BASE_CHOICES.map(([option, name]) => (
-              <button key={option} type="button" role="radio" aria-checked={baseChoice === option} onClick={() => setBaseChoice(option)}>{name()}</button>
-            ))}
+
+        <div className="teach-solid-settings">
+          <div className="teach-solid-dimensions">
+            <h3>{dimensions}</h3>
+            {based && (
+              <div className="teach-solid-group">
+                <span className="teach-group-label">{tr("底面")}</span>
+                <div className="teach-note-roles" role="radiogroup" aria-label={tr("底面")}>
+                  {BASE_CHOICES.map(([option, name]) => (
+                    <button key={option} type="button" role="radio" aria-checked={baseChoice === option} onClick={() => setBaseChoice(option)}>{name()}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="teach-range" role="group" aria-label={dimensions}>
+              {fields.map((field) => (
+                <label key={field}>{fieldLabel(choice, baseChoice, field)}
+                  <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
+                </label>
+              ))}
+            </div>
+            {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
+            {based && baseChoice === "triangle" && prismBase === undefined && positive("a") && positive("b") && positive("c") && <p className="teach-notice">{tr("这三条边围不成三角形：任意两边之和要大于第三边。")}</p>}
+            {choice === "truncated" && solid === undefined && (value("topScale") ?? 0) >= 1 && <p className="teach-notice">{tr("上底要比下底小：填 0 到 1 之间的数。")}</p>}
           </div>
+          <div className="teach-solid-interaction">
+            <h3>{tr("互动方式")}</h3>
+            <label className="teach-place">
+              <input type="checkbox" checked={chosenSlider === "cut"} onChange={(event) => setSlider(event.target.checked ? "cut" : "none")} />
+              <span><strong>{tr("切一刀")}</strong><small>{tr("拖动滑块观察横截面。")}</small></span>
+            </label>
+            {unfolds && (
+              <label className="teach-place">
+                <input type="checkbox" checked={chosenSlider === "unfold"} onChange={(event) => setSlider(event.target.checked ? "unfold" : "none")} />
+                <span><strong>{tr("展开成平面图")}</strong><small>{tr("拖动滑块展开各个面。")}</small></span>
+              </label>
+            )}
+          </div>
+          {placement}
         </div>
-      )}
-      <div className="teach-range" role="group" aria-label={tr("{{v0}}的尺寸", { v0: named(choice) })}>
-        {fields.map((field) => (
-          <label key={field}>{fieldLabel(choice, baseChoice, field)}
-            <input className="teach-input" inputMode={field === "sides" ? "numeric" : "decimal"} value={sizes[field]} onChange={(event) => setSizes({ ...sizes, [field]: event.target.value })} />
-          </label>
-        ))}
       </div>
-      {choice === "torus" && solid === undefined && positive("tube") !== undefined && <p className="teach-notice">{tr("管的半径要比环的半径小。")}</p>}
-      {based && baseChoice === "triangle" && prismBase === undefined && positive("a") && positive("b") && positive("c") && <p className="teach-notice">{tr("这三条边围不成三角形：任意两边之和要大于第三边。")}</p>}
-      {choice === "truncated" && solid === undefined && (value("topScale") ?? 0) >= 1 && <p className="teach-notice">{tr("上底要比下底小：填 0 到 1 之间的数。")}</p>}
-      <label className="teach-place"><input type="checkbox" checked={chosenSlider === "cut"} onChange={(event) => setSlider(event.target.checked ? "cut" : "none")} /><span>{tr("切一刀：讲课时拖滑块，上下移动切面，看横截面")}</span></label>
-      {unfolds && <label className="teach-place"><input type="checkbox" checked={chosenSlider === "unfold"} onChange={(event) => setSlider(event.target.checked ? "unfold" : "none")} /><span>{tr("展开成平面图：讲课时拖滑块，把它慢慢打开，看表面积")}</span></label>}
-      {placement}
-      <button type="submit" disabled={!solid}>{tr("放到白板上")}</button>
+      <footer className="teach-solid-footer">
+        <span><SolidThumbnail shape={choice} />{choiceName(choice)}</span>
+        <button type="submit" disabled={!solid}><Plus size={16} aria-hidden="true" />{tr("放到白板上")}</button>
+      </footer>
     </form>
   );
 }

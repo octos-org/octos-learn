@@ -36,10 +36,43 @@ async function addSolid(page: Page, choose: () => Promise<void>) {
 
 const takeEvents = (page: Page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
 
+test("the solid picker keeps its action visible on a narrow screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openStudio(page, "rec-solid-picker");
+  const add = page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true });
+  await add.click();
+  const solidEntry = page.getByRole("button", { name: "立体", exact: true });
+  await solidEntry.click();
+  const picker = page.getByRole("dialog", { name: "立体", exact: true });
+  await expect(picker.getByRole("button", { name: "放入", exact: true })).toBeFocused();
+  await picker.getByRole("button", { name: "放入", exact: true }).click();
+  await expect(solidEntry).toBeFocused();
+  await solidEntry.press("Enter");
+  const box = picker.getByRole("radio", { name: "长方体", exact: true });
+  const cube = picker.getByRole("radio", { name: "正方体", exact: true });
+  await box.press("ArrowRight");
+  await expect(cube).toBeChecked();
+  await expect(picker.getByRole("heading", { name: "正方体的尺寸" })).toBeVisible();
+  const insert = picker.getByRole("button", { name: "放到白板上" });
+  await expect(insert).toBeInViewport({ ratio: 1 });
+  if (process.env.NET_SHOT) await picker.screenshot({ path: `${process.env.NET_SHOT}-mobile.png` });
+  await picker.getByRole("textbox", { name: "棱长" }).fill("5");
+  await picker.getByRole("button", { name: "正多面体" }).click();
+  await expect(picker.getByRole("radio", { name: "正二十面体" })).toBeVisible();
+  await picker.getByRole("button", { name: "常见的立体" }).click();
+  await expect(cube).toBeChecked();
+  await expect(picker.getByRole("textbox", { name: "棱长" })).toHaveValue("5");
+  await expect(insert).toBeInViewport({ ratio: 1 });
+  await cube.press("Escape");
+  await expect(picker).toBeHidden();
+  await expect(add).toBeFocused();
+});
+
 test("a cube opens into its net as the learner drags the slider", async ({ page }) => {
   await openStudio(page, "rec-net");
   await addSolid(page, async () => {
     await page.getByRole("radio", { name: "正方体", exact: true }).click();
+    if (process.env.NET_SHOT) await page.getByRole("dialog", { name: "立体", exact: true }).screenshot({ path: `${process.env.NET_SHOT}-desktop.png` });
     await page.getByRole("checkbox", { name: /^展开成平面图/ }).check();
   });
   const scene = page.locator(".teach-studio .board-node.kind-scene3d");
@@ -212,6 +245,7 @@ test("a cylinder's cap and curved side can be marked separately before and after
 test("unfolding a prism exposes independently selectable flat faces", async ({ page }) => {
   await openStudio(page, "rec-prism-faces");
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "棱柱和棱锥", exact: true }).click();
     await page.getByRole("radio", { name: "棱柱", exact: true }).click();
     await page.getByRole("checkbox", { name: /^展开成平面图/ }).check();
   });
@@ -343,6 +377,7 @@ test("the highlighter preserves the board camera while marking two unfolded soli
 test("a truncated pyramid on a triangle, an ellipsoid and a stacked solid", async ({ page }) => {
   await openStudio(page, "rec-shapes");
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "棱柱和棱锥", exact: true }).click();
     await page.getByRole("radio", { name: "棱台", exact: true }).click();
     await page.getByRole("radio", { name: "三角形（三边）", exact: true }).click();
     await page.getByLabel("边 c").fill("9");
@@ -355,6 +390,7 @@ test("a truncated pyramid on a triangle, an ellipsoid and a stacked solid", asyn
   await expect(page.locator(".teach-studio .board-node.kind-scene3d").first()).toContainText("底面是三边长 4、3、5 的三角形的棱台");
   await addSolid(page, async () => { await page.getByRole("radio", { name: "椭球", exact: true }).click(); });
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "组合体", exact: true }).click();
     await page.getByRole("radio", { name: "圆柱 + 圆锥", exact: true }).click();
     await expect(page.getByRole("checkbox", { name: /^展开成平面图/ })).toHaveCount(0);
     await page.getByRole("checkbox", { name: /^切一刀/ }).check();

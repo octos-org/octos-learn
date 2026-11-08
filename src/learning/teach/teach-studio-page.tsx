@@ -143,6 +143,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const stopSelecting = useRef<(() => void) | null>(null);
   const [checkRun, setCheckRun] = useState<CheckRun | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const addButton = useRef<HTMLButtonElement>(null);
   const [advanced, setAdvanced] = useState(false);
   // Who presents the lesson: chosen before recording, changeable any time it is not recording.
   const speech = useSpeechService();
@@ -803,6 +804,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
               onNextTo={setNextTo}
               form={form}
               onForm={(next) => { setForm(next); setNextTo(null); }}
+              onClose={() => { closeAdd(); addButton.current?.focus({ preventScroll: true }); }}
               onInsert={(component) => { record(withTime({ type: "component.insert" as const, ...component })); closeAdd(); }}
               onPoint={(point) => { record(withTime({ type: "point_tool.place" as const, ...point })); closeAdd(); }}
               onLine={(line) => { record(withTime({ type: "line_tool.draw" as const, ...line })); closeAdd(); }}
@@ -844,7 +846,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             <span className="teach-dock-divider" aria-hidden="true" />
             {pointers.map(dockButton)}
             <span className="teach-dock-divider" aria-hidden="true" />
-            <button type="button" className="teach-tool teach-tool-add" disabled={!isRecording} aria-pressed={addOpen} onClick={() => (addOpen ? closeAdd() : openAdd())}>
+            <button ref={addButton} type="button" className="teach-tool teach-tool-add" disabled={!isRecording} aria-pressed={addOpen} onClick={() => (addOpen ? closeAdd() : openAdd())}>
               <Plus size={20} aria-hidden="true" />{tr("放入")}
             </button>
             <span className="teach-dock-divider" aria-hidden="true" />
