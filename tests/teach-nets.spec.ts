@@ -68,6 +68,36 @@ test("the solid picker keeps its action visible on a narrow screen", async ({ pa
   await expect(add).toBeFocused();
 });
 
+test("a long placement label fits the solid picker without horizontal scrolling", async ({ page }) => {
+  const formula = "2 × (4 × 3 + 4 × 2 + 3 × 2) = 52 平方厘米，这就是纸盒的表面积。";
+  await loadStudio(page, "rec-solid-placement", [
+    {
+      key: "card-1", title: "算纸盒的表面积", kind: "teach",
+      takes: [{ take: 1, status: "kept", startedAt: now, durationMs: 4000, text: "把各面的面积加起来。", events: [
+        { t: 100, type: "component.insert", panel: "solid_3d", alias: "box-1", shape: "box", size: { x: 4, y: 3, z: 2 } },
+        { t: 600, type: "component.insert", panel: "text", alias: "text-1", text: formula },
+      ] }],
+    },
+    { key: "card-2", title: "换一个纸盒", kind: "teach", takes: [] },
+  ]);
+  await page.getByRole("button", { name: /^2 · / }).click();
+  await page.getByRole("button", { name: "录第 2 张" }).click();
+  await page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true }).click();
+  await page.getByRole("button", { name: "立体", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "立体", exact: true });
+  const placement = picker.getByRole("radio", { name: /^2 × \(4 × 3/ });
+  await expect(placement).toBeVisible();
+  const horizontalOverflow = () => picker.locator(".teach-solid-body").evaluate((body) => body.scrollWidth - body.clientWidth);
+  await expect.poll(horizontalOverflow).toBe(0);
+  await expect(picker.getByRole("textbox", { name: "高", exact: true })).toBeInViewport({ ratio: 1 });
+  const placementText = picker.locator(".teach-place-label").filter({ hasText: formula });
+  expect(await placementText.evaluate((label) => label.scrollWidth > label.clientWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(horizontalOverflow).toBe(0);
+  await placement.check();
+  await expect(placement).toBeChecked();
+});
+
 test("a cube opens into its net as the learner drags the slider", async ({ page }) => {
   await openStudio(page, "rec-net");
   await addSolid(page, async () => {
