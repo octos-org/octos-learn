@@ -25,6 +25,7 @@ import {
   keptTake,
   recordingComplete,
   renameCard,
+  sameBoardTarget,
   setCardKind,
   setOllOverride,
   setOctoQuestion,
@@ -580,14 +581,36 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
    * writing added. The laser points for a moment; the highlighter's mark
    * stays (the board draws it from the recording).
    */
-  const onTarget = (target: BoardTarget, at?: { x: number; y: number }, mark?: string) => {
+  const onTarget = (target: BoardTarget, { at, mark, solid }: { at?: { x: number; y: number }; mark?: string; solid?: BoardTarget } = {}) => {
     const pointer = at ? { at } : target;
     const marks = (...selections: Array<string | undefined>) => ({ inkMarks: selections.filter((selection): selection is string => Boolean(selection)) });
     if (tool === "laser") {
       record(withTime({ type: "tool.laser" as const, target }), marks(mark));
       boardRef.current?.showPointer(pointer);
     }
-    if (tool === "highlighter") record(withTime({ type: "tool.highlighter" as const, target, ...(highlight !== "focus" ? { emphasis: highlight } : {}) }), marks(mark));
+    if (tool === "highlighter") {
+      const draft = latest.current;
+      const currentCard = draft?.cards.find((candidate) => candidate.key === card?.key);
+      const events = currentCard && currentTake(currentCard)?.events.slice().reverse();
+      const active = (part: BoardTarget) => {
+        const previous = events?.find((event) => event.type === "tool.highlighter" && sameBoardTarget(event.target, part));
+        return previous?.type === "tool.highlighter" && previous.emphasis !== "none";
+      };
+      const emphasis = active(target) ? "none" : highlight;
+      const change: RecordingEvent = { t: elapsed(), type: "tool.highlighter", target, ...(emphasis !== "focus" ? { emphasis } : {}) };
+      const clears: RecordingEvent[] = [];
+      if ("node" in target && target.part?.endsWith("-face")) {
+        const coarse = [{ node: target.node }, solid ?? { node: target.node, part: "solid" }].filter(active);
+        // Older takes can carry a mark on the shared solid. Clear it as part
+        // of the first individual face tap so it cannot mask that face.
+        if (coarse.length && draft?.cards.some((entry) => boardTake(entry)?.events.some((event) => (
+          event.type === "component.insert" && event.panel === "solid_3d" && event.alias === target.node
+        )))) {
+          for (const target of coarse) clears.push({ type: "tool.highlighter", target, emphasis: "none", t: change.t });
+        }
+      }
+      record([...clears, change], marks(mark));
+    }
     if (tool === "arrow") {
       // An arrow joins cards: a tap on part of a card means the card.
       const end: BoardTarget = "node" in target ? { node: target.node } : target;
@@ -614,10 +637,17 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const onStroke = (box: BoardBox) => {
     if (!card || !recordingTake) return;
     const key = card.key;
+    const existing = tool === "highlighter" && unassignedMarks(key).reverse().find(({ box: mark }) => (
+      mark.x === box.x && mark.y === box.y && mark.width === box.width && mark.height === box.height
+    ));
+    if (existing) {
+      onTarget({ inkSelection: existing.selection }, { at: centre(box) });
+      return;
+    }
     const marks = latest.current?.cards.find((candidate) => candidate.key === key)?.takes.at(-1)?.inkMarks ?? [];
     const selection = `sel-${key}-t${recordingTake.take}-m${marks.length + 1}`;
     update((current) => addInkMark(current, key, { selection, box }, now()));
-    onTarget({ inkSelection: selection }, centre(box), selection);
+    onTarget({ inkSelection: selection }, { at: centre(box), mark: selection });
   };
   // The highlighter's marks on writing that is still live; frozen writing shows its marks from the lesson.
   const liveTake = card ? currentTake(card) : undefined;
@@ -625,7 +655,12 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
     const board = boardRef.current;
     if (!board) return;
     const frozen = new Set((liveTake?.ink ?? []).flatMap((ink) => ink.selections));
-    const highlighted = new Set((liveTake?.events ?? []).flatMap((event) => (event.type === "tool.highlighter" && "inkSelection" in event.target ? [event.target.inkSelection] : [])));
+    const highlighted = new Set<string>();
+    for (const event of liveTake?.events ?? []) {
+      if (event.type !== "tool.highlighter" || !("inkSelection" in event.target)) continue;
+      if (event.emphasis === "none") highlighted.delete(event.target.inkSelection);
+      else highlighted.add(event.target.inkSelection);
+    }
     board.markInk((liveTake?.inkMarks ?? [])
       .filter((mark) => highlighted.has(mark.selection) && !frozen.has(mark.selection) && board.hasStrokeAt(centre(mark.box)))
       .map((mark) => mark.box));
@@ -665,7 +700,7 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
   const hint = !isRecording ? null
     : addOpen ? null
       : tool === "laser" ? tr("激光笔：点一下卡片、它的一部分或你写的字，红点会闪一下，像用手指着说“看这里”。")
-        : tool === "highlighter" ? tr("荧光笔：点图上的一个点、一条线，或你写的字，只有它会一直标黄；点卡片的空白处，整张卡片标黄。")
+        : tool === "highlighter" ? tr("荧光笔：点卡片、图形的一部分或手写内容来高亮，再点同一处就取消。")
         : tool === "arrow" ? (arrowFrom ? tr("再点箭头指向的地方。") : tr("先点箭头从哪里出发。"))
           : tool === "none" && isRecording && hasTable ? tr("点表格里的格子可以填写，点图示可以再加一步，点函数图可以再画一条。")
           : tool === "pen" ? (continuing ? tr("写在上一行下面：会接着写在虚线框住的卡片里，放在你写的位置。") : tr("直接在白板上写。写在图上的会贴在那张图上；写在手写或算式下面的会接着写在那张卡片里。"))
@@ -747,12 +782,13 @@ export function TeachStudioPage({ clock = () => Date.now() }: { clock?: () => nu
             resolveAsset={resolveAsset}
             bottomInset={DOCK_SPACE}
             {...(!isRecording && kept && selected ? { focusCard: selected } : {})}
-            onTarget={pointing ? (target) => onTarget(target)
+            highlighting={isRecording && tool === "highlighter"}
+            onTarget={pointing ? (target, solid) => onTarget(target, { solid })
               : row.length ? (target) => { if ("node" in target && row.some((entry) => entry.alias === target.node)) setNextTo(target.node); }
                 : undefined}
             onStroke={pointing ? onStroke : undefined}
             onVariableGesture={isRecording && tool === "none" ? onVariableGesture : undefined}
-            onSceneGesture={isRecording && tool === "none" ? onSceneGesture : undefined}
+            onSceneGesture={isRecording && (tool === "none" || tool === "highlighter") ? onSceneGesture : undefined}
             arrowFrom={isRecording && tool === "arrow" ? arrowFrom : null}
             onTableCell={isRecording && tool === "none" && !addOpen ? (cell) => { setDiagramEdit(null); setCurveEdit(null); setCellEdit(cell); } : undefined}
             onDiagram={isRecording && tool === "none" && !addOpen ? (node, kind) => { setCellEdit(null); setDiagramEdit(kind === "diagram" ? node : null); setCurveEdit(kind === "plot" ? node : null); } : undefined}

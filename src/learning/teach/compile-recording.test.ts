@@ -70,6 +70,8 @@ describe("compileRecording", () => {
       { t: 0, type: "component.insert", panel: "unit_circle", alias: "circle", variable: "theta" },
       { t: 2_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
       { t: 3_000, type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+      { t: 3_200, type: "tool.highlighter", target: { node: "circle", part: "foot" } },
+      { t: 3_400, type: "tool.highlighter", target: { node: "circle", part: "foot" }, emphasis: "none" },
     ]);
     recording = record(recording, "card-2", "Now look at the foot.", [
       { t: 1_000, type: "tool.highlighter", target: { node: "circle", part: "foot" } },
@@ -77,6 +79,7 @@ describe("compileRecording", () => {
     recording = record(recording, "card-3", "That is all.", []);
     const { lesson, state } = check(recording);
     const beats = lesson.steps.map((step) => step.beats[0]!.actions as Array<{ do: string; target?: string; emphasis?: string; when?: string }>);
+    expect(beats[0]!.filter((action) => action.target === "circle#foot").map((action) => action.emphasis)).toEqual(["focus", "none"]);
     expect(beats[1]!.filter((action) => action.do === "emphasize")).toEqual([
       { do: "emphasize", target: "circle#point-p", emphasis: "none", when: "before_speech" },
       expect.objectContaining({ target: "circle#foot", emphasis: "focus" }),
@@ -795,8 +798,9 @@ describe("bases, composites and nets", () => {
     ]));
     expect(lesson.lesson.variables!.find((variable) => variable.as === "open_1")).toMatchObject({ initial: 0, min: 0, max: 1, label: "unfold" });
     expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "box", unfold: 0 });
-    // The box's faces are not pointed at while it opens.
-    expect((state.nodes["l:node:solid-1"]!.content as { highlights?: unknown[] }).highlights).toBeUndefined();
+    const faces = state.nodes["l:node:solid-1"]!.content.highlights as unknown[];
+    expect(faces).toHaveLength(6);
+    expect(faces).toContainEqual(expect.objectContaining({ label: "top\n3 × 2", shown: "when_emphasized" }));
     expect(deriveExecutionRequirements(events).requiredCapabilities).toContain("scene3d:unfold");
     const opened = setLessonVariable(state, "open_2", 0.5);
     expect(objects(opened, "solid-2")[0]!.unfold).toBe(0.5);

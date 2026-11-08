@@ -7,7 +7,7 @@ import "octos-lesson-language/web-runtime/styles.css";
 
 import { teachingCameraCeiling, teachingCameraFloor } from "../oll/board-chrome-insets";
 import { compiledCardActions, type CompiledLesson } from "./compile-recording";
-import type { BoardTarget, CardInk } from "./recording";
+import { sameBoardTarget, type BoardTarget, type CardInk } from "./recording";
 import { boardIdOf, boardTargetFromId, STUDIO_LESSON_ID } from "./studio-board-ids";
 import { segmentDrag, wrapDrag, unwrapAngle, type DragSample } from "./studio-helpers";
 import { teachingRegionLayout } from "./teaching-board-setup";
@@ -150,9 +150,6 @@ function nearestPart(node: HTMLElement, x: number, y: number): HTMLElement | SVG
   return best;
 }
 
-function sameTarget(a: BoardTarget, b: BoardTarget): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
 /**
@@ -273,7 +270,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   compiled: CompiledLesson | null;
   resolveAsset: ImageAssetResolver;
   /** Called with what the learner tapped when a pointing tool is active. */
-  onTarget?: (target: BoardTarget) => void;
+  onTarget?: (target: BoardTarget, solid?: BoardTarget) => void;
+  highlighting?: boolean;
   /** Called with the box of a stroke of the take's own writing the learner tapped with a pointing tool. */
   onStroke?: (stroke: BoardBox) => void;
   /** While set, the learner can drag variables and turn 3D scenes; each finished gesture is reported. */
@@ -291,7 +289,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
   onTableCell?: (cell: TableCell) => void;
   /** While set, tapping a diagram or a graph on the board reports it, to add a box or a curve. */
   onDiagram?: (node: string, kind: "diagram" | "plot") => void;
-}>(function TeachBoard({ compiled, resolveAsset, onTarget, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell, onDiagram }, ref) {
+}>(function TeachBoard({ compiled, resolveAsset, onTarget, highlighting, onStroke, onVariableGesture, onSceneGesture, bottomInset = 0, focusCard, arrowFrom, onContinuing, onTableCell, onDiagram }, ref) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const inkRef = useRef<InkRuntime | null>(null);
@@ -387,10 +385,25 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       const element = (node && nearestPart(node, event.clientX, event.clientY)) || hit;
       const target = boardTargetFromId(element?.dataset.id);
       if (!target || !element?.dataset.id) return;
+      // The base polygons of a legacy box share a solid ID. A miss in a
+      // drawing with face targets must never fall back to the whole solid.
+      if (viewport.hasAttribute("data-highlighting") && !element.matches(".scene3d-highlight-face, .scene3d-selectable-face, .scene3d-intersection")
+        && node?.dataset.id && tapped?.closest(".scene3d-runtime")) {
+        const objects = boardStateRef.current?.nodes[node.dataset.id]?.content.objects;
+        if (Array.isArray(objects) && objects.some((object) => object.face_targets === true
+          || (object.kind === "box" && typeof object.unfold === "number"))) return;
+      }
       tappedRef.current = { target, canonical: canonicalTarget(element.dataset.id) };
-      onTargetRef.current(target);
+      onTargetRef.current(target, boardTargetFromId(element.dataset.scene3dObjectId));
     };
     viewport.addEventListener("click", handleClick);
+    const keepSceneStillForHighlight = (event: PointerEvent) => {
+      if (event.button === 0 && viewport.hasAttribute("data-highlighting") && (event.target as Element | null)?.closest(".scene3d-runtime svg")) {
+        // Leave the tap on the face instead of letting the orbit control capture it.
+        event.stopPropagation();
+      }
+    };
+    viewport.addEventListener("pointerdown", keepSceneStillForHighlight, true);
 
     const showVariable = (alias: string, value: number) => {
       const state = boardStateRef.current;
@@ -431,6 +444,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     variableInputRef.current = (alias, value, event) => variableInput(alias, value, event);
     mounted.view.setScene3dInputHandler((nodeId, view, event) => {
       if (!gesturesRef.current.onSceneGesture) return;
+      if (viewport.hasAttribute("data-highlighting") && (event.control === "orbit" || event.control === "zoom")) return;
       mounted.view.setScene3dViews({ [nodeId]: view });
       const target = boardTargetFromId(nodeId);
       if (event.phase === "commit" && target) gesturesRef.current.onSceneGesture({ node: target.node, yaw: view.yaw, pitch: view.pitch });
@@ -441,6 +455,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       clearTimeout(pointerRef.current?.timer);
       pointerRef.current = null;
       viewport.removeEventListener("click", handleClick);
+      viewport.removeEventListener("pointerdown", keepSceneStillForHighlight, true);
       unsubscribeLocale();
       marksRef.current = null;
       for (const { layer } of slidersRef.current.values()) layer.remove();
@@ -566,7 +581,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
         return;
       }
       const tapped = tappedRef.current;
-      const canonical = tapped && sameTarget(tapped.target, target) ? tapped.canonical
+      const canonical = tapped && sameBoardTarget(tapped.target, target) ? tapped.canonical
         : "node" in target ? canonicalTarget(boardIdOf(target)) : undefined;
       if (!canonical) { clearTimeout(timer); view.showPointer(undefined); return; }
       pointerRef.current = { canonical, timer };
@@ -654,7 +669,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
     mounted.view.render(state);
     placeSliders(mounted, state, clusters);
     const framed = focusCard ? cardEndTargets(compiled, focusCard) : state.focus;
-    if (framed.length) mounted.view.focusTargets(framed);
+    const markingScene = viewport.hasAttribute("data-highlighting") && framed.some((id) => state.nodes[id]?.kind === "scene3d");
+    if (framed.length && !markingScene) mounted.view.focusTargets(framed);
     // A redraw hides the pointer; the learner's tap still shows until it fades.
     if (pointerRef.current?.canonical) mounted.view.showPointer(pointerRef.current.canonical);
     else if (pointerRef.current?.at) mounted.view.showPointerAt(pointerRef.current.at);
@@ -693,7 +709,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
 
   return (
     <div className="teach-board-frame">
-      <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} data-interactive={onVariableGesture ? "true" : undefined} />
+      <div ref={viewportRef} className="teach-board" data-testid="teach-board" data-pointing={onTarget ? "true" : undefined} data-highlighting={highlighting || undefined} data-interactive={onVariableGesture ? "true" : undefined} />
     </div>
   );
 });

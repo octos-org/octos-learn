@@ -19,6 +19,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 
 /* Studio: card strip, board and controls. */
 .teach-board[data-pointing="true"] { cursor: crosshair; }
+.teach-board[data-highlighting] .scene3d-section { pointer-events: none; }
 /* Live previews while recording: the arrow being drawn, and the card the writing will continue. */
 .teach-arrow-preview { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .teach-arrow-preview line { stroke: #6e8d86; stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; }
@@ -88,7 +89,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 .teach-tool:disabled { cursor: default; }
 .teach-tool-add { width: 72px; }
 .teach-dock-divider { width: 1px; height: 36px; background: rgba(40, 65, 67, 0.15); }
-.teach-dock-hint { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; }
+.teach-dock-hint { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); max-width: 80%; margin: 0; padding: 8px 14px; border-radius: 12px; color: #fffef9; background: rgba(27, 36, 87, 0.88); font-size: 14px; text-align: center; pointer-events: none; }
 
 .teach-add { position: absolute; right: 20px; bottom: 92px; z-index: 5; display: grid; gap: 12px; width: 400px; max-height: calc(100% - 120px); overflow: auto; box-sizing: border-box; padding: 18px; border: 1px solid rgba(40, 65, 67, 0.16); border-radius: 18px; background: #fff; box-shadow: 0 18px 40px rgba(31, 45, 51, 0.18); }
 .teach-add-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -241,9 +242,7 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
    playback of a learner lesson show the same mark. */
 .teach-studio .board-node.emphasis-focus { border-color: #e0a800; box-shadow: 0 0 0 4px #ffd84d, 0 0 0 10px rgba(255, 216, 77, 0.32); background-image: linear-gradient(rgba(255, 224, 102, 0.2), rgba(255, 224, 102, 0.2)); }
 /* A highlighted part of a card (a point, a line, a label) glows yellow on its own. */
-.teach-studio .board-node [data-id].emphasis-focus { filter: drop-shadow(0 0 2px #ffc400) drop-shadow(0 0 5px #ffd84d) drop-shadow(0 0 9px rgba(255, 216, 77, 0.8)); }
-/* A highlighted face of a 3D box is filled like the highlighter's other marks. */
-.teach-studio .board-node .scene3d-highlight-face.emphasis-focus { fill: #ffd84d; fill-opacity: .6; stroke: #e0a800; stroke-opacity: 1; }
+.teach-studio .board-node [data-id].emphasis-focus:not(.scene3d-selectable-face, .scene3d-highlight-face) { filter: drop-shadow(0 0 2px #ffc400) drop-shadow(0 0 5px #ffd84d) drop-shadow(0 0 9px rgba(255, 216, 77, 0.8)); }
 .teach-studio .board-node circle[data-id].emphasis-focus { stroke: #f0b400; stroke-width: 5px; paint-order: stroke; }
 .teach-ink-marks { position: absolute; inset: 0; pointer-events: none; }
 .teach-ink-marks > div { position: absolute; border-radius: 8px; background: rgba(255, 214, 51, 0.38); mix-blend-mode: multiply; }
