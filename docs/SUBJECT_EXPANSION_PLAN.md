@@ -199,6 +199,12 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 
 ### P1 · Mathematics becomes the first plugin
 
+**Status (2026-11-09):** in progress on the draft contract (decision 0012). learning-coach #42 adds the byte-identity check: 1,680 request digests plus the lesson each run produces. learning-coach #43 moves Coach's recipe registry, recipe prompt rules, compilers, section facts and schema fragments into `math`, `physics` and `shared` plugin modules inside Coach, with every request and lesson unchanged. Still to do:
+- validation and lowering hooks for the remaining recipe special cases;
+- moving the modules to OLL `packages/plugin-*`;
+- Studio panels;
+- the OLL extension point.
+
 - Move the 13 recipes, the hard-coded rules and the section facts into `plugin-math` and `plugin-shared`, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
 - Add the extension point to OLL core (§4.4), with no new features yet.
