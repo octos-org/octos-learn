@@ -33,4 +33,12 @@ await build({
     minify: true,
   },
 });
-console.log("Avatar capture worker, verified model and WASM assets prepared.");
+await build({
+  root, configFile: false, publicDir: false, logLevel: "warn",
+  build: {
+    emptyOutDir: false, outDir: out, target: "es2020",
+    lib: { entry: path.join(root, "src/learning/handwriting/handwriting-capture.worker.ts"), name: "OctosHandwritingCapture", formats: ["iife"], fileName: () => "handwriting-capture.worker.js" },
+    minify: true,
+  },
+});
+console.log("Avatar and handwriting capture workers, verified models and WASM assets prepared.");

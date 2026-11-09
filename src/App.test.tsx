@@ -45,6 +45,10 @@ vi.mock("./settings/settings-page", () => ({
   AdminSettingsPage: () => <div>settings-page</div>,
 }));
 
+vi.mock("./learning/handwriting/handwriting-lab-page", () => ({
+  HandwritingLabPage: () => <div>handwriting-lab-page</div>,
+}));
+
 function LocationProbe() {
   const location = useLocation();
   return (
@@ -120,6 +124,11 @@ describe("Octos Learn routes", () => {
 
     renderRoute("/settings?tab=skills");
     expect(screen.getByText("settings-page")).toBeTruthy();
+  });
+
+  it("opens the camera handwriting prototype", async () => {
+    renderRoute("/handwriting-lab");
+    expect(await screen.findByText("handwriting-lab-page")).toBeTruthy();
   });
 
   it("does not expose inherited product routes", async () => {

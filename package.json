@@ -29,6 +29,8 @@
     "test:history": "node --test services/learning-history/*.test.mjs services/learner-lessons/*.test.mjs services/product-server.test.mjs",
     "byok:serve": "node services/byok/start.mjs",
     "test:unit:watch": "vitest",
+    "test:handwriting": "vitest run src/learning/handwriting",
+    "simulate:handwriting": "vite-node scripts/handwriting-trajectory-sim.ts",
     "test:e2e:smoke": "playwright test tests/learning-smoke.spec.ts",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

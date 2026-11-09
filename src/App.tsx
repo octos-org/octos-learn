@@ -30,6 +30,8 @@ import { lazy, Suspense } from "react";
 const AvatarLabPage = lazy(() => import("./learning/avatar/avatar-lab-page"));
 const IllustratedAvatarPage = lazy(() => import("./learning/avatar/illustrated-avatar-page"));
 const LearnerPackageViewer = lazy(() => import("./learning/teach/learner-package-viewer"));
+const HandwritingLabPage = lazy(() => import("./learning/handwriting/handwriting-lab-page")
+  .then((module) => ({ default: module.HandwritingLabPage })));
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -95,6 +97,7 @@ export function AppRoutes() {
         <Route path="/teach/lessons/:id/play" element={<TeachLessonPlayerPage />} />
         <Route path="/teach/:id" element={<TeachStudioPage />} />
         <Route path="/teach/:id/watch" element={<TeachWatchPage />} />
+        <Route path="/handwriting-lab" element={<Suspense fallback={null}><HandwritingLabPage /></Suspense>} />
         <Route path="/report" element={<Navigate to="/records?tab=week" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
