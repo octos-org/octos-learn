@@ -52,11 +52,12 @@
 
 ## 产品与规划
 
-- [产品需求文档（英文）](PRD.md) / [简体中文版](PRD.zh-CN.md)：产品目标、范围、独立需求与验收标准、用户需要追溯、发布决策及质量门槛。
+- [产品需求文档（英文）](PRD.md) / [简体中文版](PRD.zh-CN.md)：v2.0 规格说明，涵盖 AI 导师伴学模式、学生当老师录课工作台（Studio）、2D 虚拟形象动捕驱动、离线课包与儿童隐私安全规范。
 
 - [产品纲要与未来规划](PRODUCT_OUTLINE_AND_ROADMAP.md)：产品定位、功能模块现状、未来规划汇总。
 - [介绍与规划（对外）](ROADMAP_INVESTOR.md)：面向外部介绍的项目背景、现状与打算。
 - [开发路线图](ROADMAP_DEV.md)：开发向排期、里程碑、backlog 与来源索引。
+- [Subject Expansion Plan](SUBJECT_EXPANSION_PLAN.md)：英文草案，学科插件架构（数学为首个插件、课程保持声明式）、按请求选择插件、并入 Studio Phase B、路线图与验收指标。
 
 ## 专题计划
 
@@ -86,6 +87,8 @@
 - [二维星狐嘴型与头发/耳朵边缘修正](LEARNER_AVATAR_RESPONSE_FIX.md)：扩大相机张嘴响应与可见行程，撤销头部顶部/两侧的固定约束，附同输入前后对比与既有识别动作回放；保留源图裁切和缺失侧脸限制。
 
 - [学生讲师虚拟形象完整交接](LEARNER_AVATAR_HANDOFF.md)：当前接手入口；四角色/最新耳廓转向、交接提交范围、代码/素材/验证与复现、用户认可边界，以及 M6 目录/动态播放/v2 保存缺口。
+
+- [耳朵、头发与嘴巴局部绑定再评估](LEARNER_AVATAR_LOCAL_RIG_RESEARCH.md)：核对 PR #119 与最新代码后，分析整图网格限制，比较 Live2D/Spine 等制作方法；建议先验证星狐单耳/单束头发的素材、遮挡与局部绑定，口腔清晰度和发音口型分开处理。本轮为研究，未改运行代码。
 
 - [学生动态头像实施方案](LEARNER_AVATAR_ANIMATION_PLAN.md)：以 Memoji 体验为目标的星狐三维绑定、多来源捕捉、合成配音嘴型、电视适配与分阶段验收；已开始工程验证，验收状态见实施进度。
 - [学生动态头像实施进度](LEARNER_AVATAR_ANIMATION_PROGRESS.md)：电脑工程原型、资源、验证结果与待办；附 [Apple 捕捉验证说明](LEARNER_AVATAR_CAPTURE_IOS.md)。
