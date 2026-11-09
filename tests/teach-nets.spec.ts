@@ -296,7 +296,8 @@ test("the highlighter preserves the board camera while marking two unfolded soli
   const world = board.locator(".world");
   const highlighter = page.getByRole("button", { name: "荧光笔", exact: true });
   const settledTransform = () => world.evaluate(async (element) => {
-    getComputedStyle(element).transform;
+    // Flush the transition's computed style before waiting for its animation.
+    void getComputedStyle(element).transform;
     await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
     return getComputedStyle(element).transform;
   });
