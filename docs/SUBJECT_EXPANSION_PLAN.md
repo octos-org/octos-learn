@@ -189,7 +189,7 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 
 ### P0 · Contract and baseline
 
-**Status (2026-11-09):** done pending review. OLL pins aligned (learning-coach #39, octos-course-library #10). Payload ceilings, routing cases and the live baseline are in learning-coach #40 (`docs/P0_BASELINE_2026-11-09.md`): first playable p50 8.4 s and p95 16.7 s over 109 lessons. Decision 0012 is proposed in OLL #33. Found along the way, outside plugin scope: optional practice questions that fail a lesson already playing (4 of 5 failures), exact-equality answer checks on rounded science answers, and the gate falsely asking for clarification on clear follow-ups.
+**Status (2026-11-09):** done pending review. OLL pins aligned (learning-coach #39, octos-course-library #10). Payload ceilings, routing cases and the live baseline are in learning-coach #40 (`docs/P0_BASELINE_2026-11-09.md`): first playable p50 8.4 s and p95 16.7 s over 109 lessons. Decision 0012 is proposed in OLL #33. Found along the way, outside plugin scope: optional typed questions that fail a lesson already playing (4 of 5 failures) and exact-equality answer checks on rounded science answers, both fixed in learning-coach #41. Two clear follow-ups pass the gate only through its pass-through rule, so any change to the gate's questions must recheck them.
 
 - Agree the plugin contract (§4) and record OLL decision 0012.
 - Align the OLL pins in Coach, Learn and Course Library.
