@@ -3,6 +3,7 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
+import { buildCirclePolygons, buildUnitCircle } from "octos-lesson-language/plugin-math";
 import { normalizeLocale, tr } from "@/i18n";
 
 import {
@@ -329,6 +330,16 @@ function neatWrite(alias: string, latex: string, ink: string, selection: string,
 
 /** A diagram of boxes joined by arrows; each box after the first may carry words on the arrow into it. */
 interface Diagram { shape: "steps" | "cycle"; title: string; boxes: Array<{ label: string; link?: string }> }
+/**
+ * Part names Studio gave these visuals before the math plugin built them.
+ * Saved recordings may point at them, so compiling maps them to the
+ * builder's names.
+ */
+export const UNIT_CIRCLE_LEGACY_PARTS: Readonly<Record<string, string>> = {
+  "point-p": "moving-point", foot: "projection-foot", circle: "unit-circle", height: "projection",
+};
+export const CIRCLE_POLYGON_LEGACY_PARTS: Readonly<Record<string, string>> = { origin: "center", polygon: "inscribed" };
+
 /** The most sides the studio offers a regular polygon (OLL allows 384). */
 export const MAX_POLYGON_SIDES = 48;
 const polygonLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "正多边形" : "regular polygon");
@@ -486,6 +497,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   // Each table's content as filled so far, so filling a cell revises the whole table.
   const tables = new Map<string, { title: string; columns: string[]; rows: string[][] }>();
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
+  // Part names a recording saved before its visual came from a plugin builder.
+  const legacyParts = new Map<string, Readonly<Record<string, string>>>();
   const inkOfSelection = new Map<string, string>(); // selection id -> ink alias
   const hidden = new Set<string>();
   // Cards written so far (in earlier cards' steps or this card's actions), which writing may continue.
@@ -507,7 +520,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       if (!resolved) throw new CompileError(`Selection '${value.inkSelection}' is not part of this lesson's ink`);
       return resolved;
     }
-    return value.part ? `${value.node}#${value.part}` : value.node;
+    if (!value.part) return value.node;
+    return `${value.node}#${legacyParts.get(value.node)?.[value.part] ?? value.part}`;
   };
   const owner = (reference: string) => reference.split("#")[0]!;
   const pointsAtMissingInk = (value: BoardTarget) => "inkSelection" in value && !inkSelections.has(value.inkSelection);
@@ -559,30 +573,13 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       if (variables.has(variable)) throw new CompileError(`Variable '${variable}' is already used`);
       variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, wrap: true, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
       angleControlled.add(variable);
-      return {
-        do: "write", as: alias, kind: "geometry", role: "diagram", place: placeNext(),
-        content: {
-          ...title,
-          axes: { x: { min: -1.25, max: 1.25, label: "x" }, y: { min: -1.25, max: 1.25, label: "y" }, equal_scale: true },
-          points: [
-            { as: "origin", x: 0, y: 0, label: "O" },
-            { as: "point-p", x: 1, y: 0, label: "P", interaction: { kind: "angle_control", variable, center: "origin" } },
-            { as: "foot", x: 1, y: 0, label: "" },
-          ],
-          circles: [{ as: "circle", center: "origin", radius: 1, label: "r = 1" }],
-          segments: [
-            { as: "radius", from: "origin", to: "point-p", label: "1", style: "solid" },
-            { as: "height", from: "point-p", to: "foot", label: "sin θ", style: "projection" },
-          ],
-          arcs: [{ as: "angle", center: "origin", radius: 0.28, start_angle: 0, end_angle: 0, label: "θ" }],
-          bindings: [
-            { target: "point-p.x", expression: `cos(${variable})` },
-            { target: "point-p.y", expression: `sin(${variable})` },
-            { target: "foot.x", expression: `cos(${variable})` },
-            { target: "angle.end_angle", expression: variable },
-          ],
-        },
-      } as Action;
+      legacyParts.set(alias, UNIT_CIRCLE_LEGACY_PARTS);
+      // The math plugin's builder, which Coach's AI lessons also use.
+      return buildUnitCircle({
+        as: alias, role: "diagram", place: placeNext(),
+        angle: { variable, expression: variable, initial: 0 },
+        text: { ...title, point_label: "P", radius_label: "1", foot_label: "" },
+      }).actions[0] as Action;
     }
     if (component.panel === "text" || component.panel === "note") {
       // Words keep only a title the learner gave them: the card's title would repeat what is said.
@@ -600,19 +597,18 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       // its number of sides may be a slider the learner drags while talking.
       const sides = Math.round(component.sides);
       if (!(sides >= 3 && sides <= MAX_POLYGON_SIDES)) throw new CompileError(`A regular polygon has 3 to ${MAX_POLYGON_SIDES} sides`);
-      const content: Record<string, unknown> = {
-        ...title,
-        axes: { x: { min: -1.3, max: 1.3, label: "x" }, y: { min: -1.3, max: 1.3, label: "y" }, equal_scale: true },
-        points: [{ as: "origin", x: 0, y: 0, label: "O" }],
-        circles: [{ as: "circle", center: "origin", radius: 1, label: "r = 1" }],
-        regular_polygons: [{ as: "polygon", center: "origin", radius: 1, sides, relation: "inscribed", show_measurements: true, label: polygonLabel(options.language) }],
-      };
       if (component.slider) {
         if (variables.has(component.slider.variable)) throw new CompileError(`Variable '${component.slider.variable}' is already used`);
         variables.set(component.slider.variable, { as: component.slider.variable, initial: sides, min: 3, max: MAX_POLYGON_SIDES, label: sidesLabel(options.language), control: { kind: "slider", step: 1 } });
-        content.bindings = [{ target: "polygon.sides", expression: component.slider.variable }];
       }
-      return { do: "write", as: alias, kind: "geometry", role: "diagram", content, place: placeNext() } as Action;
+      legacyParts.set(alias, CIRCLE_POLYGON_LEGACY_PARTS);
+      // The math plugin's builder, which Coach's AI lessons also use.
+      return buildCirclePolygons({
+        as: alias, role: "diagram", place: placeNext(), radius: 1,
+        sides: component.slider ? { expression: component.slider.variable, initial: sides } : sides,
+        circumscribed: false,
+        text: { ...title, inscribed_label: polygonLabel(options.language) },
+      }).actions[0] as Action;
     }
     if (component.panel === "diagram") {
       const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
