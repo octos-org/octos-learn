@@ -54,6 +54,8 @@ export class EmptyLessonError extends CompileError {
 export interface CompileOptions {
   author: LessonAuthor;
   language: string;
+  /** Reproduce the original solid content when checking a saved OLL edit's fingerprint. */
+  legacyFaceTargets?: boolean;
   /** Show the take being recorded instead of the card's kept take, for the live board. */
   includeTakeInProgress?: boolean;
   /**
@@ -283,14 +285,17 @@ function nearestPreset(yaw: number, pitch: number): "front" | "top" | "side" | "
  * the origin, so the box stays put). Each is drawn only once the learner
  * highlights it, and can be tapped while it faces the viewer.
  */
-function boxFaces(size: { x: number; y: number; z: number }, language: string, unfolds: boolean) {
+function boxFaces(size: { x: number; y: number; z: number }, language: string, unfolds: boolean, legacy = false) {
   const [hx, hy, hz] = [size.x / 2, size.y / 2, size.z / 2];
   const locale = normalizeLocale(language);
-  const face = (as: string, name: string, a: number, b: number, points: Array<[number, number, number]>) => ({
-    as, kind: "face", shown: "when_emphasized",
-    label: `${tr(name, {}, locale)}${unfolds ? "\n" : " "}${a} × ${b}`,
-    points: points.map(([x, y, z]) => ({ x, y, z })),
-  });
+  const face = (as: string, name: string, a: number, b: number, corners: Array<[number, number, number]>) => {
+    const points = corners.map(([x, y, z]) => ({ x, y, z }));
+    if (legacy) return { as, kind: "face", label: `${as.slice(0, -5)} ${a} × ${b}`, shown: "when_emphasized", points };
+    return {
+      as, kind: "face", shown: "when_emphasized",
+      label: `${tr(name, {}, locale)}${unfolds ? "\n" : " "}${a} × ${b}`, points,
+    };
+  };
   return [
     face("top-face", "顶面", size.x, size.y, [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]),
     face("bottom-face", "底面", size.x, size.y, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz]]),
@@ -622,7 +627,10 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     scenes.add(alias);
     const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
-    const objects = solidObjects(solid).map((object) => solid.shape !== "box" || solid.unfold ? { ...object, face_targets: true } : object);
+    const objects = solidObjects(solid);
+    if (!options.legacyFaceTargets && (solid.shape !== "box" || solid.unfold)) {
+      for (const object of objects) object.face_targets = true;
+    }
     if (solid.cut && solid.unfold) throw new CompileError("A solid is either cut or unfolded, not both");
     if (solid.unfold && !solidUnfolds(solid)) throw new CompileError(`A ${solid.shape} has no net to unfold`);
     const content: Record<string, unknown> = {
@@ -631,7 +639,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       axes: false,
       camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
       objects: solid.unfold ? objects.map((object) => ({ ...object, unfold: 0 })) : objects,
-      ...(solid.shape === "box" ? { highlights: boxFaces(solid.size, options.language, Boolean(solid.unfold)) } : {}),
+      ...(solid.shape === "box" && !(options.legacyFaceTargets && solid.unfold)
+        ? { highlights: boxFaces(solid.size, options.language, Boolean(solid.unfold), options.legacyFaceTargets) } : {}),
     };
     if (solid.unfold) {
       // The net opens from 0 (the closed solid) to 1 (lying flat).

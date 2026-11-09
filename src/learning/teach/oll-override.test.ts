@@ -47,6 +47,27 @@ it("says why hand-edited OLL cannot be used", () => {
   expect(checkOllEdit(JSON.stringify(broken), compiled)).toMatchObject({ error: expect.any(String) });
 });
 
+it("keeps an OLL edit saved before face targets until the recording changes", () => {
+  let recording = planCards(createRecording({ id: "rec-solid", now, topic: { text: "Solids", type: "math_off_map" }, goals: [] }), now, [{ title: "The solids" }]);
+  recording = startTake(recording, "card-1", now);
+  recording = appendEvent(recording, "card-1", { t: 0, type: "component.insert", panel: "solid_3d", alias: "box", shape: "box", size: { x: 4, y: 3, z: 2 } }, now);
+  recording = appendEvent(recording, "card-1", { t: 100, type: "component.insert", panel: "solid_3d", alias: "net", shape: "box", size: { x: 4, y: 3, z: 2 }, unfold: { variable: "unfold" } }, now);
+  recording = appendEvent(recording, "card-1", { t: 200, type: "component.insert", panel: "solid_3d", alias: "cylinder", shape: "cylinder", radius: 2, height: 4 }, now);
+  recording = finishTake(recording, "card-1", now, { durationMs: 3000, asrText: "Here are three solids.", speechSpanMs: [0, 3000] });
+  const options = { author, language: "zh-CN" };
+  // Captured with the compiler on main before this change (bd986b62).
+  const basedOn = "2a0-tr4yun";
+  const edited = compileRecording(recording, { ...options, legacyFaceTargets: true }).lesson;
+  expect(lessonFingerprint(edited)).toBe(basedOn);
+  edited.steps[0]!.beats[0]!.say = "Compare the three solids.";
+  const overridden = setOllOverride(recording, { lesson: edited, basedOn, editedAt: now }, now);
+  const current = compileRecording(overridden, options);
+  expect(lessonFingerprint(current.lesson)).not.toBe(basedOn);
+  expect(effectiveLesson(overridden, current)).toMatchObject({ override: "active", compiled: { lesson: edited } });
+  const renamed = renameCard(overridden, "card-1", "Compare solids", now);
+  expect(effectiveLesson(renamed, compileRecording(renamed, options)).override).toBe("stale");
+});
+
 it("renames a card, refusing an empty or overlong name", () => {
   const recording = lesson();
   expect(renameCard(recording, "card-1", "  Meet the circle ", now).cards[0]!.title).toBe("Meet the circle");

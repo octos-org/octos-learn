@@ -221,13 +221,15 @@ test("a legacy whole-solid laser point still lands on the solid in playback", as
   await page.getByRole("button", { name: "播放我的课" }).click();
   const stage = page.locator(".teach-watch-stage");
   await expect.poll(() => stage.evaluate((element) => {
-    const pointer = element.querySelector(".teacher-pointer:not([hidden])")?.getBoundingClientRect();
-    if (!pointer) return false;
-    const x = pointer.x + pointer.width / 2, y = pointer.y + pointer.height / 2;
-    return [...element.querySelectorAll("[data-scene3d-object-id]")].some((face) => {
-      const box = face.getBoundingClientRect();
-      return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
-    });
+    const pointer = element.querySelector<HTMLElement>(".teacher-pointer");
+    const face = element.querySelector("[data-scene3d-object-id]");
+    const card = face?.closest<HTMLElement>(".board-node");
+    if (!pointer || !face || !card) return false;
+    const drawn = card.getBoundingClientRect(), box = face.getBoundingClientRect();
+    const x = parseFloat(card.style.left) + (box.x + box.width / 2 - drawn.x) * card.offsetWidth / drawn.width;
+    const y = parseFloat(card.style.top) + (box.y + box.height / 2 - drawn.y) * card.offsetHeight / drawn.height;
+    // The pointer's board position survives when its brief pulse is hidden.
+    return Math.abs(parseFloat(pointer.style.left) + 13 - x) < 2 && Math.abs(parseFloat(pointer.style.top) + 13 - y) < 2;
   })).toBe(true);
 });
 
@@ -332,6 +334,11 @@ test("the highlighter preserves the board camera while marking two unfolded soli
   await expect(frustum.locator(".scene3d-selectable-face.emphasis-focus")).toHaveCount(8);
   const cylinderTop = cylinder.locator('[data-id$=":solid-top-face"]');
   const frustumTop = frustum.locator('[data-id$=":solid-top-face"]');
+  const beforeWheel = await frustumTop.getAttribute("points");
+  await frustumTop.hover();
+  await page.mouse.wheel(0, -350);
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect(frustumTop).toHaveAttribute("points", beforeWheel!);
   const panTo = async (face: typeof cylinderTop) => {
     const stage = (await board.boundingBox())!;
     const bounds = (await face.boundingBox())!;

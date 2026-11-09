@@ -5,7 +5,7 @@
 
 import { assertAuthoringSchema, normalizeAuthoringLesson, reduceCanonicalEvents, validateAuthoringLesson } from "octos-lesson-language";
 
-import type { CompiledLesson } from "./compile-recording";
+import { compileRecording, type CompiledLesson } from "./compile-recording";
 import type { LearnerRecording } from "./recording";
 
 /** A short, stable fingerprint of a lesson made from the recording. */
@@ -21,7 +21,15 @@ export type OverrideState = "none" | "active" | "stale";
 /** The lesson to play and save: the learner's edit while it is current, else the recording's. */
 export function effectiveLesson(recording: LearnerRecording, compiled: CompiledLesson): { compiled: CompiledLesson; override: OverrideState } {
   if (!recording.oll) return { compiled, override: "none" };
-  if (recording.oll.basedOn !== lessonFingerprint(compiled.lesson)) return { compiled, override: "stale" };
+  if (recording.oll.basedOn !== lessonFingerprint(compiled.lesson)) {
+    const { author, language } = compiled.lesson.lesson;
+    const hasSolid = compiled.lesson.steps.some((step) => step.beats.some((beat) =>
+      beat.actions.some((action) => action.do === "write" && action.kind === "scene3d")));
+    // A renderer upgrade must not invalidate an edit made against the same recording.
+    if (!author || !hasSolid || recording.oll.basedOn !== lessonFingerprint(
+      compileRecording(recording, { author, language, legacyFaceTargets: true }).lesson,
+    )) return { compiled, override: "stale" };
+  }
   return { compiled: { ...compiled, lesson: recording.oll.lesson as CompiledLesson["lesson"] }, override: "active" };
 }
 
