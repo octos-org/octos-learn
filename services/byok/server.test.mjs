@@ -78,6 +78,17 @@ test("ASR and Jev use their own saved credentials and fixed transports", async (
   assert.equal(calls[0].options.headers["X-Api-Sequence"], "-1");
   assert.equal(calls[1].options.headers.authorization, "Bearer synthetic-jev");
   assert.equal(calls[1].url, SERVICE_FIELDS.admission.endpoint);
+  assert.equal(calls[1].options.headers["TypeSafe-Danger-Zone-Images"], undefined);
+});
+test("a Jev request with image assets opts in to Jev image input; others do not", async () => {
+  const env = envFor(key); env.OCTOS_LEARN_JEV_API_KEY = "synthetic-jev";
+  await putProfile("alice", env);
+  const image = { type: "image", format: "png", data_base64: "iVBORw0KGgo=" };
+  await call("/admission/relay", "POST", { provider: "typesafe", params: { model: "jev-latest" }, payload: { state: { learner_request: "help", image: "capture" }, questions: {}, assets: { capture: image } } });
+  await call("/admission/relay", "POST", { provider: "typesafe", params: { model: "jev-latest" }, payload: { state: {}, questions: {}, assets: {} } });
+  assert.equal(calls[0].options.headers["TypeSafe-Danger-Zone-Images"], "true");
+  assert.equal(JSON.parse(calls[0].options.body).assets.capture.data_base64, image.data_base64);
+  assert.equal(calls[1].options.headers["TypeSafe-Danger-Zone-Images"], undefined);
 });
 test("explicit unsaved key tests neither persist nor borrow the saved key", async () => {
   const response = await call("/tts/relay", "POST", { provider: "volcano", params, key: "synthetic-draft", payload: {} });
