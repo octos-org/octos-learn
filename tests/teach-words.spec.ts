@@ -38,7 +38,7 @@ test("a wide table scrolls inside the insert panel on a phone", async ({ page })
   const insert = panel.getByRole("button", { name: "放到白板上" });
   await expect(insert).toBeEnabled();
   await expect(insert).toBeInViewport({ ratio: 1 });
-  await panel.getByRole("button", { name: "放入", exact: true }).click();
+  await panel.getByRole("button", { name: "返回放入列表" }).click();
   await expect(tableEntry).toBeFocused();
 });
 

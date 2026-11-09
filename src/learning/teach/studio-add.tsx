@@ -44,7 +44,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   const previous = useRef<InsertForm | null>(null);
   useEffect(() => {
     if (form) back.current?.focus({ preventScroll: true });
-    else entryButtons.current.get(previous.current ?? "text")?.focus({ preventScroll: true });
+    else entryButtons.current.get(previous.current ?? "text")?.focus();
     previous.current = form;
   }, [form]);
 
@@ -82,13 +82,9 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
     </fieldset>
   );
   return (
-    <div className={`teach-add teach-insert${form === "solid_3d" ? " teach-add-solid" : ""}`} role="dialog" aria-label={title} onKeyDown={(event) => {
-      if (event.key !== "Escape" || event.nativeEvent.isComposing) return;
-      event.stopPropagation();
-      onClose();
-    }}>
+    <div className={`teach-add teach-insert${form === "solid_3d" ? " teach-add-solid" : ""}`} role="dialog" aria-label={title}>
       <header className="teach-insert-header">
-        {form && <button ref={back} type="button" onClick={() => onForm(null)}><ChevronLeft size={17} aria-hidden="true" />{tr("放入")}</button>}
+        {form && <button ref={back} type="button" aria-label={tr("返回放入列表")} onClick={() => onForm(null)}><ChevronLeft size={17} aria-hidden="true" />{tr("放入")}</button>}
         <h2><Icon size={19} aria-hidden="true" />{title}</h2>
         <button type="button" aria-label={tr("关闭")} onClick={onClose}><X size={18} aria-hidden="true" /></button>
       </header>
@@ -219,7 +215,7 @@ function InsertPanel({
       }}>
         <label className="teach-label teach-expression">
           <span>{tr("函数表达式")}</span>
-          <span><i aria-hidden="true">y =</i><input className="teach-input" aria-label={tr("函数 y =")} value={expression} onChange={(event) => setExpression(event.target.value)} /></span>
+          <span><i aria-hidden="true">y =</i><input className="teach-input" value={expression} onChange={(event) => setExpression(event.target.value)} /></span>
         </label>
         {unknown.length > 0 && <p role="status" className="teach-notice">{tr("不认识：{{v0}}。字母只用一个，比如 a、k、m。", { v0: unknown.join("、") })}</p>}
         {letters.length > 0 && (

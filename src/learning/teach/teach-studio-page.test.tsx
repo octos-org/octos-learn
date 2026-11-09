@@ -523,7 +523,7 @@ it("lists each grid point once while a card with points is re-recorded", async (
   fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
   addKind("Line through two points");
   expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["A (1, 2)", "B (2, 4)", "A (1, 2)", "B (2, 4)"]);
-  fireEvent.click(within(screen.getByRole("dialog", { name: "Line through two points" })).getByRole("button", { name: "Add", exact: true }));
+  fireEvent.click(within(screen.getByRole("dialog", { name: "Line through two points" })).getByRole("button", { name: "Back to the Add menu" }));
   fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
   expect(screen.getByText("This point is called C")).toBeTruthy();
 });
