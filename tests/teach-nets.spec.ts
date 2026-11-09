@@ -209,6 +209,28 @@ test("a cylinder's cap and curved side can be marked separately before and after
   await expect(replay).toHaveAttribute("data-id", /:solid-bottom-face$/);
 });
 
+test("a legacy whole-solid laser point still lands on the solid in playback", async ({ page }) => {
+  await loadStudio(page, "rec-solid-laser", [{
+    key: "card-1", title: "看圆柱", kind: "teach",
+    takes: [{ take: 1, status: "kept", startedAt: now, durationMs: 5000, text: "请看圆柱。", events: [
+      { t: 0, type: "component.insert", panel: "solid_3d", alias: "cylinder", shape: "cylinder", radius: 2, height: 4 },
+      { t: 1000, type: "tool.laser", target: { node: "cylinder", part: "solid" } },
+    ] }],
+  }]);
+  await page.getByRole("link", { name: "看我的课" }).click();
+  await page.getByRole("button", { name: "播放我的课" }).click();
+  const stage = page.locator(".teach-watch-stage");
+  await expect.poll(() => stage.evaluate((element) => {
+    const pointer = element.querySelector(".teacher-pointer:not([hidden])")?.getBoundingClientRect();
+    if (!pointer) return false;
+    const x = pointer.x + pointer.width / 2, y = pointer.y + pointer.height / 2;
+    return [...element.querySelectorAll("[data-scene3d-object-id]")].some((face) => {
+      const box = face.getBoundingClientRect();
+      return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+    });
+  })).toBe(true);
+});
+
 test("unfolding a prism exposes independently selectable flat faces", async ({ page }) => {
   await openStudio(page, "rec-prism-faces");
   await addSolid(page, async () => {
