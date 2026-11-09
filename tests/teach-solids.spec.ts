@@ -39,11 +39,26 @@ test("a cone with a cut: the slider moves the cutting plane and its cross-sectio
   for (let step = 0; step < 15; step += 1) await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(500);
   expect(await cutAt()).not.toBe(before);
+  await page.getByRole("button", { name: "荧光笔", exact: true }).click();
+  const plane = scene.locator(".scene3d-section");
+  const planeTap = await plane.evaluate((element: SVGPolygonElement) => {
+    const transform = element.getScreenCTM()!;
+    const length = element.getTotalLength();
+    for (let step = 1; step < 100; step += 1) {
+      const { x, y } = element.getPointAtLength(length * step / 100).matrixTransform(transform);
+      if (document.elementFromPoint(x, y) === element) return { x, y };
+    }
+    return null;
+  });
+  expect(planeTap).not.toBeNull();
+  await page.mouse.click(planeTap!.x, planeTap!.y);
+  await expect(plane).toHaveClass(/emphasis-focus/);
   await page.getByRole("button", { name: /^停止/ }).click();
   await expect(page.getByRole("button", { name: "重录我的话" }).first()).toBeVisible();
   const events = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
   expect(events[0]).toMatchObject({ panel: "solid_3d", shape: "cone", radius: 2, height: 4, cut: { variable: "cut" } });
-  expect(events.at(-1)).toMatchObject({ type: "variable.drag", variable: "cut" });
+  expect(events).toContainEqual(expect.objectContaining({ type: "variable.drag", variable: "cut" }));
+  expect(events.at(-1)).toMatchObject({ type: "tool.highlighter", target: { part: "cut" } });
   if (process.env.SOLID_SHOT) await page.locator(".teach-stage").screenshot({ path: process.env.SOLID_SHOT });
 });
 

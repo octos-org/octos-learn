@@ -797,7 +797,7 @@ describe("bases, composites and nets", () => {
       { shape: "pyramid", base: { kind: "right_triangle", a: 3, b: 4 }, height: 2, unfold: { variable: "open_3" } },
     ]));
     expect(lesson.lesson.variables!.find((variable) => variable.as === "open_1")).toMatchObject({ initial: 0, min: 0, max: 1, label: "unfold" });
-    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "box", unfold: 0 });
+    expect(objects(state, "solid-1")[0]).toMatchObject({ kind: "box", unfold: 0, face_targets: true });
     const faces = state.nodes["l:node:solid-1"]!.content.highlights as unknown[];
     expect(faces).toHaveLength(6);
     expect(faces).toContainEqual(expect.objectContaining({ label: "top\n3 × 2", shown: "when_emphasized" }));

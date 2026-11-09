@@ -19,7 +19,8 @@ textarea.teach-input { min-height: 88px; resize: vertical; }
 
 /* Studio: card strip, board and controls. */
 .teach-board[data-pointing="true"] { cursor: crosshair; }
-.teach-board[data-highlighting] .scene3d-section { pointer-events: none; }
+/* Let the dashed outline mark the cut without covering selectable faces. */
+.teach-board[data-highlighting] .scene3d-section { pointer-events: visibleStroke; }
 /* Live previews while recording: the arrow being drawn, and the card the writing will continue. */
 .teach-arrow-preview { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .teach-arrow-preview line { stroke: #6e8d86; stroke-width: 2.5; stroke-dasharray: 7 6; stroke-linecap: round; }
