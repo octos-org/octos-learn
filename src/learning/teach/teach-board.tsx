@@ -398,13 +398,15 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       onTargetRef.current(target, boardTargetFromId(element.dataset.scene3dObjectId));
     };
     viewport.addEventListener("click", handleClick);
-    const keepSceneStillForHighlight = (event: PointerEvent) => {
-      if (event.button === 0 && viewport.hasAttribute("data-highlighting") && (event.target as Element | null)?.closest(".scene3d-runtime svg")) {
-        // Leave the tap on the face instead of letting the orbit control capture it.
+    const keepSceneStillForHighlight = (event: PointerEvent | WheelEvent) => {
+      if (viewport.hasAttribute("data-highlighting") && (event.target as Element | null)?.closest(".scene3d-runtime svg")) {
+        // Leave the face in place instead of starting an unrecorded orbit or zoom.
+        if (event.type === "wheel") event.preventDefault();
         event.stopPropagation();
       }
     };
     viewport.addEventListener("pointerdown", keepSceneStillForHighlight, true);
+    viewport.addEventListener("wheel", keepSceneStillForHighlight, { capture: true, passive: false });
 
     const showVariable = (alias: string, value: number) => {
       const state = boardStateRef.current;
@@ -457,6 +459,7 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       pointerRef.current = null;
       viewport.removeEventListener("click", handleClick);
       viewport.removeEventListener("pointerdown", keepSceneStillForHighlight, true);
+      viewport.removeEventListener("wheel", keepSceneStillForHighlight, true);
       unsubscribeLocale();
       marksRef.current = null;
       for (const { layer } of slidersRef.current.values()) layer.remove();
