@@ -170,11 +170,17 @@ export async function inkPng(svg: string, width: number, height: number): Promis
 
 /** Reads the learner's handwritten math as LaTeX, exactly as written, for them to confirm. */
 export async function inkToMath(recording: LearnerRecording, ink: { svg: string; width: number; height: number }, language: string): Promise<InkToMath> {
+  return recognizeInkMath(teachAssistSessionId(recording), ink, language, turnId(recording, "ink"));
+}
+
+/** The same transcription on the learner's whiteboard (the finger-snap tidy-up). */
+export async function recognizeInkMath(sessionId: string, ink: { svg: string; width: number; height: number }, language: string,
+  requestTurnId = `ink-neat-${crypto.randomUUID()}`): Promise<InkToMath> {
   const png = await inkPng(ink.svg, ink.width, ink.height);
   const [path] = await uploadFiles([new File([png], "handwriting.png", { type: "image/png" })], "upload");
   if (!path) throw new Error("The handwriting could not be uploaded");
-  const response = await invokeSkillAction(teachAssistSessionId(recording), "learning.teach.ink-to-math", {
-    paths: [path], turn_id: turnId(recording, "ink"), lesson: { language },
+  const response = await invokeSkillAction(sessionId, "learning.teach.ink-to-math", {
+    paths: [path], turn_id: requestTurnId, lesson: { language },
   });
   const result = metadata(response, "teach_ink_to_math") as unknown as InkToMath;
   if (typeof result.latex !== "string" || typeof result.readable !== "boolean") throw new Error("The handwriting could not be read");
