@@ -176,7 +176,7 @@ it("records a card: a grid, a point, a pointer tap, then the learner's captions"
   fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: "1" } });
   fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "2" } });
   expect(screen.getByText("This point is called A")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+  fireEvent.click(screen.getByRole("button", { name: "Add to the grid" }));
   time = 5_000;
   fireEvent.click(screen.getByRole("button", { name: /Laser pointer/ }));
   expect(board.onTarget).toBeTypeOf("function");
@@ -319,7 +319,7 @@ it("refuses a point outside the grid and says where the grid ends", () => {
   fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: "4" } });
   fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: "8" } });
   expect(screen.getByRole("alert").textContent).toBe("This point is outside the grid: x goes from -5 to 5, y from -5 to 5.");
-  expect((screen.getByRole("button", { name: "Put on the board" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Add to the grid" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("freezes the take's handwriting onto the card, as an annotation when written on a component", async () => {
@@ -488,7 +488,7 @@ function placeGridWithPoints(points: Array<[string, string]>) {
     addKind("Place a point");
     fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: x } });
     fireEvent.change(screen.getAllByRole("textbox")[1]!, { target: { value: y } });
-    fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to the grid" }));
   }
 }
 
@@ -523,6 +523,7 @@ it("lists each grid point once while a card with points is re-recorded", async (
   fireEvent.click(await screen.findByRole("button", { name: "Re-record my words" }));
   addKind("Line through two points");
   expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["A (1, 2)", "B (2, 4)", "A (1, 2)", "B (2, 4)"]);
+  fireEvent.click(within(screen.getByRole("dialog", { name: "Line through two points" })).getByRole("button", { name: "Back to the Add menu" }));
   fireEvent.click(screen.getByRole("button", { name: "Place a point" }));
   expect(screen.getByText("This point is called C")).toBeTruthy();
 });

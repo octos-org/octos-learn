@@ -22,7 +22,7 @@ test("letters of a graph become sliders the learner drags while talking", async 
   await page.getByRole("button", { name: "录第 1 张" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "函数图" }).click();
-  await page.getByRole("textbox", { name: "函数 y =" }).fill("a*x+b");
+  await page.getByRole("textbox", { name: "函数表达式" }).fill("a*x+b");
   await expect(page.getByRole("group", { name: "滑块 a" })).toBeVisible();
   await expect(page.getByRole("group", { name: "滑块 b" })).toBeVisible();
   await page.getByRole("group", { name: "滑块 b" }).getByRole("textbox", { name: "开始是" }).fill("0");
@@ -63,7 +63,7 @@ test("tapping a graph while talking adds a curve to compare, reading its sliders
   await page.getByRole("button", { name: "录第 1 张" }).click();
   await page.getByRole("button", { name: /^放入/ }).click();
   await page.getByRole("button", { name: "函数图" }).click();
-  await page.getByRole("textbox", { name: "函数 y =" }).fill("x^2+k");
+  await page.getByRole("textbox", { name: "函数表达式" }).fill("x^2+k");
   await page.getByRole("button", { name: "放到白板上" }).click();
   const graph = page.locator(".teach-studio .board-node.kind-plot");
   await expect(graph).toBeVisible();

@@ -6,6 +6,42 @@ import { installTestAccount } from "./helpers/course-test-account";
 
 const now = "2026-11-06T08:00:00.000Z";
 
+test("a wide table scrolls inside the insert panel on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 740 });
+  await installTestAccount(page);
+  await page.addInitScript((createdAt) => {
+    localStorage.setItem("octos-locale", "zh-CN");
+    localStorage.setItem("octos-learn:learner-recordings:v1:curated-learner", JSON.stringify([{
+      schema: "octos.learner-recording.v1", id: "rec-wide-table", createdAt, updatedAt: createdAt,
+      topic: { text: "观察记录", type: "other" }, goals: ["记录观察"],
+      cards: [{ key: "card-1", title: "记录", kind: "teach", takes: [] }],
+    }]));
+  }, now);
+  await page.route("**/api/learn/lessons**", (route) => route.fulfill({ json: { lessons: [] } }));
+  await page.goto("/teach/rec-wide-table");
+  await page.getByRole("button", { name: "录第 1 张" }).click();
+  await page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true }).click();
+  const tableEntry = page.getByRole("button", { name: "表格", exact: true });
+  await tableEntry.click();
+  const panel = page.getByRole("dialog", { name: "表格", exact: true });
+  const moreColumns = panel.getByRole("group", { name: "列", exact: true }).getByRole("button", { name: "多一个" });
+  const moreRows = panel.getByRole("group", { name: "行", exact: true }).getByRole("button", { name: "多一个" });
+  for (let column = 2; column < 5; column += 1) await moreColumns.click();
+  for (let row = 2; row < 6; row += 1) await moreRows.click();
+  for (let column = 1; column <= 5; column += 1) {
+    await panel.getByRole("textbox", { name: `第 ${column} 列的标题` }).fill(`标题 ${column}`);
+  }
+  const lastCell = panel.getByRole("textbox", { name: "第 6 行第 5 列" });
+  await lastCell.scrollIntoViewIfNeeded();
+  await lastCell.fill("观察结果");
+  await expect(lastCell).toBeInViewport({ ratio: 1 });
+  const insert = panel.getByRole("button", { name: "放到白板上" });
+  await expect(insert).toBeEnabled();
+  await expect(insert).toBeInViewport({ ratio: 1 });
+  await panel.getByRole("button", { name: "返回放入列表" }).click();
+  await expect(tableEntry).toBeFocused();
+});
+
 test("a card of words: a text card, a table filled cell by cell while talking, and a note", async ({ page }) => {
   await installTestAccount(page);
   const draft = {

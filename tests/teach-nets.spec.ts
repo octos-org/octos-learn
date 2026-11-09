@@ -36,10 +36,89 @@ async function addSolid(page: Page, choose: () => Promise<void>) {
 
 const takeEvents = (page: Page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key)!)[0].cards[0].takes.at(-1).events, RECORDINGS);
 
+test("the solid picker keeps its action visible on a narrow screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openStudio(page, "rec-solid-picker");
+  const add = page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true });
+  await add.click();
+  const solidEntry = page.getByRole("button", { name: "立体", exact: true });
+  await solidEntry.click();
+  const picker = page.getByRole("dialog", { name: "立体", exact: true });
+  const back = picker.getByRole("button", { name: "返回放入列表" });
+  await expect(back).toBeFocused();
+  await back.click();
+  await expect(solidEntry).toBeFocused();
+  await solidEntry.press("Enter");
+  const box = picker.getByRole("radio", { name: "长方体", exact: true });
+  const cube = picker.getByRole("radio", { name: "正方体", exact: true });
+  await box.press("ArrowRight");
+  await expect(cube).toBeChecked();
+  await expect(picker.getByRole("heading", { name: "正方体的尺寸" })).toBeVisible();
+  const insert = picker.getByRole("button", { name: "放到白板上" });
+  await expect(insert).toBeInViewport({ ratio: 1 });
+  if (process.env.NET_SHOT) await picker.screenshot({ path: `${process.env.NET_SHOT}-mobile.png` });
+  await picker.getByRole("textbox", { name: "棱长" }).fill("5");
+  await picker.getByRole("button", { name: "正多面体" }).click();
+  await expect(picker.getByRole("radio", { name: "正二十面体" })).toBeVisible();
+  await picker.getByRole("button", { name: "常见的立体" }).click();
+  await expect(cube).toBeChecked();
+  await expect(picker.getByRole("textbox", { name: "棱长" })).toHaveValue("5");
+  await expect(insert).toBeInViewport({ ratio: 1 });
+  await cube.press("Escape");
+  await expect(picker).toBeHidden();
+  await expect(add).toBeFocused();
+  await add.press("Enter");
+  await solidEntry.press("Enter");
+  await page.getByRole("button", { name: "移动", exact: true }).press("Enter");
+  await add.press("Enter");
+  await expect(solidEntry).toBeVisible();
+  await solidEntry.press("Enter");
+  await add.focus();
+  await page.keyboard.press("Escape");
+  await expect(picker).toBeHidden();
+  await expect(add).toBeFocused();
+  await add.press("Enter");
+  await solidEntry.press("Enter");
+  await insert.press("Enter");
+  await expect(picker).toBeHidden();
+  await expect(add).toBeFocused();
+});
+
+test("a long placement label fits the solid picker without horizontal scrolling", async ({ page }) => {
+  const formula = "2 × (4 × 3 + 4 × 2 + 3 × 2) = 52 平方厘米，这就是纸盒的表面积。";
+  await loadStudio(page, "rec-solid-placement", [
+    {
+      key: "card-1", title: "算纸盒的表面积", kind: "teach",
+      takes: [{ take: 1, status: "kept", startedAt: now, durationMs: 4000, text: "把各面的面积加起来。", events: [
+        { t: 100, type: "component.insert", panel: "solid_3d", alias: "box-1", shape: "box", size: { x: 4, y: 3, z: 2 } },
+        { t: 600, type: "component.insert", panel: "text", alias: "text-1", text: formula },
+      ] }],
+    },
+    { key: "card-2", title: "换一个纸盒", kind: "teach", takes: [] },
+  ]);
+  await page.getByRole("button", { name: /^2 · / }).click();
+  await page.getByRole("button", { name: "录第 2 张" }).click();
+  await page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true }).click();
+  await page.getByRole("button", { name: "立体", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "立体", exact: true });
+  const placement = picker.getByRole("radio", { name: /^2 × \(4 × 3/ });
+  await expect(placement).toBeVisible();
+  const horizontalOverflow = () => picker.locator(".teach-solid-body").evaluate((body) => body.scrollWidth - body.clientWidth);
+  await expect.poll(horizontalOverflow).toBe(0);
+  await expect(picker.getByRole("textbox", { name: "高", exact: true })).toBeInViewport({ ratio: 1 });
+  const placementText = picker.locator(".teach-place-label").filter({ hasText: formula });
+  expect(await placementText.evaluate((label) => label.scrollWidth > label.clientWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(horizontalOverflow).toBe(0);
+  await placement.check();
+  await expect(placement).toBeChecked();
+});
+
 test("a cube opens into its net as the learner drags the slider", async ({ page }) => {
   await openStudio(page, "rec-net");
   await addSolid(page, async () => {
     await page.getByRole("radio", { name: "正方体", exact: true }).click();
+    if (process.env.NET_SHOT) await page.getByRole("dialog", { name: "立体", exact: true }).screenshot({ path: `${process.env.NET_SHOT}-desktop.png` });
     await page.getByRole("checkbox", { name: /^展开成平面图/ }).check();
   });
   const scene = page.locator(".teach-studio .board-node.kind-scene3d");
@@ -236,6 +315,7 @@ test("a legacy whole-solid laser point still lands on the solid in playback", as
 test("unfolding a prism exposes independently selectable flat faces", async ({ page }) => {
   await openStudio(page, "rec-prism-faces");
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "棱柱和棱锥", exact: true }).click();
     await page.getByRole("radio", { name: "棱柱", exact: true }).click();
     await page.getByRole("checkbox", { name: /^展开成平面图/ }).check();
   });
@@ -373,6 +453,7 @@ test("the highlighter preserves the board camera while marking two unfolded soli
 test("a truncated pyramid on a triangle, an ellipsoid and a stacked solid", async ({ page }) => {
   await openStudio(page, "rec-shapes");
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "棱柱和棱锥", exact: true }).click();
     await page.getByRole("radio", { name: "棱台", exact: true }).click();
     await page.getByRole("radio", { name: "三角形（三边）", exact: true }).click();
     await page.getByLabel("边 c").fill("9");
@@ -385,6 +466,7 @@ test("a truncated pyramid on a triangle, an ellipsoid and a stacked solid", asyn
   await expect(page.locator(".teach-studio .board-node.kind-scene3d").first()).toContainText("底面是三边长 4、3、5 的三角形的棱台");
   await addSolid(page, async () => { await page.getByRole("radio", { name: "椭球", exact: true }).click(); });
   await addSolid(page, async () => {
+    await page.getByRole("button", { name: "组合体", exact: true }).click();
     await page.getByRole("radio", { name: "圆柱 + 圆锥", exact: true }).click();
     await expect(page.getByRole("checkbox", { name: /^展开成平面图/ })).toHaveCount(0);
     await page.getByRole("checkbox", { name: /^切一刀/ }).check();
