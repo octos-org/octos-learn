@@ -622,7 +622,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     }
     scenes.add(alias);
     const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
-    const objects = solidObjects(solid).map((object) => solid.shape === "box" ? object : { ...object, face_targets: true });
+    const objects = solidObjects(solid).map((object) => solid.shape !== "box" || solid.unfold ? { ...object, face_targets: true } : object);
     if (solid.cut && solid.unfold) throw new CompileError("A solid is either cut or unfolded, not both");
     if (solid.unfold && !solidUnfolds(solid)) throw new CompileError(`A ${solid.shape} has no net to unfold`);
     const content: Record<string, unknown> = {

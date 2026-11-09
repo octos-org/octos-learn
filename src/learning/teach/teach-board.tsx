@@ -387,7 +387,8 @@ export const TeachBoard = forwardRef<TeachBoardHandle, {
       if (!target || !element?.dataset.id) return;
       // The base polygons of a legacy box share a solid ID. A miss in a
       // drawing with face targets must never fall back to the whole solid.
-      if (viewport.hasAttribute("data-highlighting") && !element.matches(".scene3d-highlight-face, .scene3d-selectable-face, .scene3d-intersection")
+      const wholeSolid = !target.part || element.matches(":is(.scene3d-solid, .scene3d-face):not(.scene3d-selectable-face)");
+      if (viewport.hasAttribute("data-highlighting") && wholeSolid
         && node?.dataset.id && tapped?.closest(".scene3d-runtime")) {
         const objects = boardStateRef.current?.nodes[node.dataset.id]?.content.objects;
         if (Array.isArray(objects) && objects.some((object) => object.face_targets === true
