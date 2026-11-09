@@ -37,7 +37,7 @@ Mathematics already behaves like a single plugin, but its pieces are spread over
 | Studio | Has its own panel compilers in `src/learning/teach/compile-recording.ts`; the insert panels are listed at `studio-add.tsx:54–56`. Unit circle and polygon logic duplicates Coach's recipes. | Studio tools should come from plugins and share each plugin's compiler. |
 | Learner packages | The `.olesson` manifest records no player version. Its `requiredCapabilities` is a closed list of avatar features (`learner-package.ts:30`). OLL requirements are found only at playback. | Add a declaration of OLL and plugin requirements. |
 | CoursePacks | The manifest has `subject`, `minimumPlayerVersion` and `requiredCapabilities` (`octos-course-library/packages/course-pack/src/types.ts:40–44`). The validator and loader check them (`validator.ts:354`, `browser.ts:277`). All 11 packs are mathematics. | Plugin features join the existing declaration. |
-| Jev admission gate | Learn calls Jev before every text and voice lesson request and awaits the answer, with a default timeout of 2 s (`src/learning/admission-fast-gate.ts`; `src/learning/learning-workspace.tsx:1533`, `:3020`; `src/api/typesafe-client.ts:65`). It already asks for a `subject` (`math`, `physics`, `general_science`, `language_humanities`, `other`), with per-choice probabilities. The answer is shown only in the debug panel; Coach never receives it. Jev sees text only, not camera or selection images. | Jev becomes the subject signal for plugin selection (§5) with no added model round trip. |
+| Jev admission gate | Learn calls Jev before every text and voice lesson request and awaits the answer, with a default timeout of 2 s (`src/learning/admission-fast-gate.ts`; `src/learning/learning-workspace.tsx:1533`, `:3020`; `src/api/typesafe-client.ts:65`). It already asks for a `subject` (`math`, `physics`, `general_science`, `language_humanities`, `other`), with per-choice probabilities. The answer is shown only in the debug panel; Coach never receives it. The gate sends text only today. Jev 1.13+ can also read an attached image, once Learn's relay sends Jev's image opt-in header (#132). | Jev becomes the subject signal for plugin selection (§5) with no added model round trip. |
 | OLL versions | Each repository pins a different OLL: Learn `2128dc5` (player 0.10.0), Coach `7aec858` (0.5.0), Course Library `1a46385` (0.3.0). | Course Library can't currently publish packs that need player features newer than 0.3.0. Align the pins before the first plugin ships runtime code. |
 
 Measured fixed payload of the normal first request (text/voice, from the bundled `lesson-plan.js` and the prompt sources at `be05941`):
@@ -113,14 +113,14 @@ Learn already waits for Jev before sending a text or voice lesson request (§3).
   - Select the top plugin when its probability reaches threshold T1.
   - Also select the second plugin when its probability reaches T2. This handles mixed-subject requests.
   - Below T1, or when `unclear` wins, select nothing.
-  - Tune T1 and T2 on the fixture set (§9).
+  - Start at T1 0.6 / T2 0.05, the P0 baseline's best setting: 70 of 78 lesson requests scoped correctly, 7 broad, 1 reroute, no unneeded plugin. Confirm on held-out requests before switching scoping on (§9).
 - **Context can supply the subject instead:**
   - the plugins recorded for the lesson already on the board (§4.5)
   - the Studio or CoursePack subject
   - the application context of requests that skip the gate (`learning-workspace.tsx:3019`)
 
   When Jev and the context disagree, Jev's answer about the new request wins if it is confident. Otherwise use both.
-- **Camera and selection requests:** Jev sees only the text. Use its answer when the text alone yields a confident subject, for example "explain this physics problem". Otherwise use the context subject. With neither, send the broad request.
+- **Camera and selection requests:** attach the frozen camera frame or ink selection to the Jev request (`assets`, through #132). In P0, Jev identified the subject for 9 of 9 readable images and returned clarify for a blurred one. Without the image it answers "unclear" for requests like "help me with this one". TypeSafe labels image input experimental, so if the image call fails, fall back to the text-only answer, then to the context subject, then to the broad request.
 - **Hand-off to Coach:** Learn sends `plugins` (selected IDs), `plugin_confidence` and `plugin_source` (`jev`, `context` or `none`) with the lesson request. Coach adds these fields to its input allow-list (`learning-coach/src/main.ts:404–419`), and Octos passes them through unchanged. Coach rejects unknown plugin IDs.
 - **No keyword routing.** The subject is a semantic judgement by Jev, in line with the existing admission prompts.
 
@@ -188,6 +188,8 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 ## 8. Roadmap
 
 ### P0 · Contract and baseline
+
+**Status (2026-11-09):** done pending review. OLL pins aligned (learning-coach #39, octos-course-library #10). Payload ceilings, routing cases and the live baseline are in learning-coach #40 (`docs/P0_BASELINE_2026-11-09.md`): first playable p50 8.4 s and p95 16.7 s over 109 lessons. Decision 0012 is proposed in OLL #33. Found along the way, outside plugin scope: optional practice questions that fail a lesson already playing (4 of 5 failures), exact-equality answer checks on rounded science answers, and the gate falsely asking for clarification on clear follow-ups.
 
 - Agree the plugin contract (§4) and record OLL decision 0012.
 - Align the OLL pins in Coach, Learn and Course Library.
