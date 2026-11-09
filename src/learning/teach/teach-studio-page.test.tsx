@@ -857,7 +857,7 @@ it("the highlighter's mark stays, unlike the laser's brief dot", async () => {
   addKind("Coordinate grid");
   fireEvent.click(screen.getByRole("button", { name: "Put on the board" }));
   fireEvent.click(screen.getByRole("button", { name: /Highlighter/ }));
-  expect(screen.getByText(/only that stays yellow/)).toBeTruthy();
+  expect(screen.getByText(/tap the same spot again to clear it/i)).toBeTruthy();
   const pointersBefore = board.pointers.length;
   act(() => board.onTarget!({ node: "grid-1" }));
   // No laser dot: the lesson itself shows the highlight, now and in playback.

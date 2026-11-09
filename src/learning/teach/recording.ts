@@ -26,6 +26,11 @@ export interface NodeTarget {
   part?: string;
 }
 
+export function sameBoardTarget(a: BoardTarget, b: BoardTarget): boolean {
+  if ("inkSelection" in a) return "inkSelection" in b && a.inkSelection === b.inkSelection;
+  return "node" in b && a.node === b.node && a.part === b.part;
+}
+
 export type BoardTarget = InkTarget | NodeTarget;
 
 /** Components the insert panel offers, with the settings the learner chose. */
@@ -145,8 +150,8 @@ export type ComponentPanel = ComponentInsert["panel"];
 /** One board action of a take, `t` milliseconds after the take started. */
 export type RecordingEvent =
   | { t: number; type: "tool.laser"; target: BoardTarget }
-  /** A lasting mark; `emphasis` is what it means (important when absent). */
-  | { t: number; type: "tool.highlighter"; target: BoardTarget; emphasis?: Emphasis }
+  /** A lasting mark (important when absent) or an explicit removal. */
+  | { t: number; type: "tool.highlighter"; target: BoardTarget; emphasis?: Emphasis | "none" }
   | { t: number; type: "tool.arrow"; from: BoardTarget; to: BoardTarget; label?: string }
   | ({ t: number; type: "component.insert" } & ComponentInsert)
   | { t: number; type: "point_tool.place"; node: string; point: string; x: number; y: number; label: string }

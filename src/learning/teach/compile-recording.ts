@@ -3,6 +3,7 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
+import { normalizeLocale, tr } from "@/i18n";
 
 import {
   keptTake,
@@ -53,6 +54,8 @@ export class EmptyLessonError extends CompileError {
 export interface CompileOptions {
   author: LessonAuthor;
   language: string;
+  /** Reproduce the original solid content when checking a saved OLL edit's fingerprint. */
+  legacyFaceTargets?: boolean;
   /** Show the take being recorded instead of the card's kept take, for the live board. */
   includeTakeInProgress?: boolean;
   /**
@@ -282,19 +285,25 @@ function nearestPreset(yaw: number, pitch: number): "front" | "top" | "side" | "
  * the origin, so the box stays put). Each is drawn only once the learner
  * highlights it, and can be tapped while it faces the viewer.
  */
-function boxFaces(size: { x: number; y: number; z: number }) {
+function boxFaces(size: { x: number; y: number; z: number }, language: string, unfolds: boolean, legacy = false) {
   const [hx, hy, hz] = [size.x / 2, size.y / 2, size.z / 2];
-  const face = (as: string, label: string, points: Array<[number, number, number]>) =>
-    ({ as, kind: "face", label, shown: "when_emphasized", points: points.map(([x, y, z]) => ({ x, y, z })) });
-  const area = (a: number, b: number) => `${a} × ${b}`;
+  const locale = normalizeLocale(language);
+  const face = (as: string, name: string, a: number, b: number, corners: Array<[number, number, number]>) => {
+    const points = corners.map(([x, y, z]) => ({ x, y, z }));
+    if (legacy) return { as, kind: "face", label: `${as.slice(0, -5)} ${a} × ${b}`, shown: "when_emphasized", points };
+    return {
+      as, kind: "face", shown: "when_emphasized",
+      label: `${tr(name, {}, locale)}${unfolds ? "\n" : " "}${a} × ${b}`, points,
+    };
+  };
   return [
-    face("top-face", `top ${area(size.x, size.y)}`, [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]),
-    face("bottom-face", `bottom ${area(size.x, size.y)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz]]),
+    face("top-face", "顶面", size.x, size.y, [[-hx, -hy, hz], [hx, -hy, hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("bottom-face", "底面", size.x, size.y, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, hy, -hz], [-hx, hy, -hz]]),
     // The viewer looks from +y (OLL's "front" preset), so the front face is the +y one.
-    face("front-face", `front ${area(size.x, size.z)}`, [[-hx, hy, -hz], [hx, hy, -hz], [hx, hy, hz], [-hx, hy, hz]]),
-    face("back-face", `back ${area(size.x, size.z)}`, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz]]),
-    face("left-face", `left ${area(size.y, size.z)}`, [[-hx, -hy, -hz], [-hx, hy, -hz], [-hx, hy, hz], [-hx, -hy, hz]]),
-    face("right-face", `right ${area(size.y, size.z)}`, [[hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], [hx, -hy, hz]]),
+    face("front-face", "前面", size.x, size.z, [[-hx, hy, -hz], [hx, hy, -hz], [hx, hy, hz], [-hx, hy, hz]]),
+    face("back-face", "后面", size.x, size.z, [[-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz]]),
+    face("left-face", "左侧面", size.y, size.z, [[-hx, -hy, -hz], [-hx, hy, -hz], [-hx, hy, hz], [-hx, -hy, hz]]),
+    face("right-face", "右侧面", size.y, size.z, [[hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], [hx, -hy, hz]]),
   ];
 }
 
@@ -619,6 +628,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
     scenes.add(alias);
     const solid = component as Extract<ComponentInsert, { panel: "solid_3d" }>;
     const objects = solidObjects(solid);
+    if (!options.legacyFaceTargets && (solid.shape !== "box" || solid.unfold)) {
+      for (const object of objects) object.face_targets = true;
+    }
     if (solid.cut && solid.unfold) throw new CompileError("A solid is either cut or unfolded, not both");
     if (solid.unfold && !solidUnfolds(solid)) throw new CompileError(`A ${solid.shape} has no net to unfold`);
     const content: Record<string, unknown> = {
@@ -627,8 +639,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       axes: false,
       camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
       objects: solid.unfold ? objects.map((object) => ({ ...object, unfold: 0 })) : objects,
-      // A box's faces can be pointed at, unless they move as it opens.
-      ...(solid.shape === "box" && !solid.unfold ? { highlights: boxFaces(solid.size) } : {}),
+      ...(solid.shape === "box" && !(options.legacyFaceTargets && solid.unfold)
+        ? { highlights: boxFaces(solid.size, options.language, Boolean(solid.unfold), options.legacyFaceTargets) } : {}),
     };
     if (solid.unfold) {
       // The net opens from 0 (the closed solid) to 1 (lying flat).
@@ -670,7 +682,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   // How many things had to be brought ahead of when they happened, because something used them earlier.
   let forwarded = 0;
   // What the highlighter marked on the previous card: a mark belongs to the card it was made on.
-  let highlighted: string[] = [];
+  const highlighted = new Set<string>();
   let reachedLast = false;
   for (const card of recording.cards) {
     if (reachedLast) break;
@@ -684,7 +696,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       if (hidden.has(owner(marked))) continue;
       actions.push({ do: "emphasize", target: marked, emphasis: "none", when: 0 } as unknown as Action);
     }
-    highlighted = [];
+    highlighted.clear();
     // Writing on a component, with the stages it was written in (when timed).
     const annotations: Array<{ action: Action; stages?: Array<{ rank: number; shown: number }>; snapshot: string }> = [];
     let focus: string[] = [];
@@ -842,12 +854,15 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           actions.push({ do: "point", target: target(event.target), when } as Action);
           focus = [owner(target(event.target))];
           break;
-        case "tool.highlighter":
+        case "tool.highlighter": {
           if (pointsAtMissingInk(event.target)) break;
-          actions.push({ do: "emphasize", target: target(event.target), emphasis: event.emphasis ?? "focus", when } as Action);
-          if (!highlighted.includes(target(event.target))) highlighted.push(target(event.target));
-          focus = [owner(target(event.target))];
+          const marked = target(event.target);
+          actions.push({ do: "emphasize", target: marked, emphasis: event.emphasis ?? "focus", when } as Action);
+          if (event.emphasis === "none") highlighted.delete(marked);
+          else highlighted.add(marked);
+          focus = [owner(marked)];
           break;
+        }
         case "tool.arrow": {
           if (pointsAtMissingInk(event.from) || pointsAtMissingInk(event.to)) break;
           const from = target(event.from); const to = target(event.to);

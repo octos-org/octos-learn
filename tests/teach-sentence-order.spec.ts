@@ -213,6 +213,7 @@ test("the order strip: drag an action, split and join sentences, move with the k
   // Enter inside a sentence splits it; Backspace at the start of the second part joins it back.
   await strip.getByRole("button", { name: /^第 3 句：/ }).click();
   const third = page.getByRole("dialog", { name: "第 3 句" }).getByRole("textbox", { name: "第 3 句" });
+  await expect(third).toHaveCSS("color", "rgb(27, 36, 87)");
   await third.press("Home");
   await third.press("ArrowRight");
   await third.press("Enter");
