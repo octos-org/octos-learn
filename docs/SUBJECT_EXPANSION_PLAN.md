@@ -199,11 +199,17 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 
 ### P1 · Mathematics becomes the first plugin
 
-**Status (2026-11-09):** in progress on the draft contract (decision 0012). learning-coach #42 adds the byte-identity check: 1,680 request digests plus the lesson each run produces. learning-coach #43 moves Coach's recipe registry, recipe prompt rules, compilers, section facts and schema fragments into `math`, `physics` and `shared` plugin modules inside Coach, with every request and lesson unchanged. Still to do:
-- validation and lowering hooks for the remaining recipe special cases;
-- moving the modules to OLL `packages/plugin-*`;
-- Studio panels;
-- the OLL extension point.
+**Status (2026-11-09):** in progress. Decision 0012 is revised (OLL #33) so each plugin has two layers:
+- **Shared layer**, in OLL `packages/plugin-<id>`: manifest, Jev subject line, and recipe builders that take neutral input and are used by Coach, Studio and Course Library.
+- **Generation layer**, in Coach `src/plugins/`: prompt rules, schema fragments, section facts and generation hooks, for Coach only.
+
+Done so far:
+- learning-coach #42: the byte-identity check, covering 1,680 request digests and the lesson each run produces.
+- learning-coach #43 and #44: Coach's generation layer for `math`, `physics` and `shared`. Core Coach files no longer name any recipe.
+- OLL #34: `plugin-math` with the unit circle and polygon builders.
+- learning-coach #45 and octos-learn #133: Coach and Studio both use these builders. Coach's requests and lessons are byte-identical, and Studio maps its older part names so saved recordings still resolve.
+
+Still to do: builders for the other recipes, Studio's remaining panels, and the OLL extension point.
 
 - Move the 13 recipes, the hard-coded rules and the section facts into `plugin-math` and `plugin-shared`, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
