@@ -63,6 +63,7 @@
 - [产品纲要与未来规划](PRODUCT_OUTLINE_AND_ROADMAP.md)：产品定位、功能模块现状、未来规划汇总。
 - [介绍与规划（对外）](ROADMAP_INVESTOR.md)：面向外部介绍的项目背景、现状与打算。
 - [开发路线图](ROADMAP_DEV.md)：开发向排期、里程碑、backlog 与来源索引。
+- [学科插件计划（英文）](SUBJECT_EXPANSION_PLAN.md)：数学与各学科统一为插件（课程保持声明式）、Jev 识别学科后按插件裁剪生成请求并设载荷上限、并入 Studio Phase B、路线图与验收指标。
 
 ## 专题计划
 
