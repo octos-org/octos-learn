@@ -207,7 +207,7 @@ Done (all pending review):
 - **Byte-identity check:** learning-coach #42, covering 1,680 request digests plus each run's lesson.
 - **Coach's generation layer** for `math`, `physics` and `shared`: learning-coach #43 and #44. Core Coach files no longer name any recipe.
 - **Shared layers in OLL:**
-  - `plugin-math`: all 12 math recipes plus Studio's 3D solids (OLL #34, #35, #36, #38);
+  - `plugin-math`: all 11 math recipes plus Studio's 3D solids (OLL #34, #35, #36, #38);
   - `plugin-shared`: the process diagram (#35);
   - `plugin-physics`: the spring (#37).
 - **Coach builds every recipe with these builders,** with requests and lessons byte-identical: learning-coach #45 to #48.
@@ -219,7 +219,7 @@ Still open:
 - Course Library validating with the composed feature table.
 - Coach adopting Studio's solids for AI lessons, which is a deliberate output change.
 
-- Move the 13 recipes, the hard-coded rules and the section facts into `plugin-math` and `plugin-shared`, with no change in behaviour.
+- Move the 13 recipes (11 math, `spring_and_mass` to `physics`, `process_diagram` to `shared`), the hard-coded rules and the section facts into their plugins, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
 - Add the extension point to OLL core (§4.4), with no new features yet.
 
@@ -271,7 +271,9 @@ Math and science items are developed in parallel (decision S5).
 - Gates:
   - P1: math is byte-identical.
   - Afterwards: a scoped request contains nothing from unselected plugins, and adding a plugin leaves other subjects' scoped payloads unchanged.
-  - **Hard ceilings (decision S6).** Fixed byte and token limits for the full request body, schema included, apply to three cases: a scoped single-plugin request, a scoped two-plugin request and the broad request. Set them in P0 from the measured baseline. Every plugin carries a budget for its own cards, guidance and schema fragments.
+  - **Hard ceilings (decision S6).** Fixed byte and token limits for the full request body, schema included, apply to three cases: a scoped single-plugin request, a scoped two-plugin request and the broad request. Every plugin carries a budget for its own cards, guidance and schema fragments.
+    - *Done in P0:* byte ceilings per input route and request path, measured offline over the course fixtures (system prompt, prompt and response schema; learning-coach `eval/payload-ceilings.json`). These cover today's broad request.
+    - *Pending:* a token budget for the full request body, from the provider's token counter, and the ceilings for the scoped single- and two-plugin requests, set in P2 when scoped requests exist.
   - A test computes every entry point's payload and fails the build when a ceiling or a plugin budget is exceeded. Raising a ceiling requires an explicit change to the plan and a fresh live speed comparison. The broad request has a ceiling too: once all plugins no longer fit, plugins must shrink their cards and guidance; they don't get to raise the limit.
 
 **Subject identification, measured offline against Jev:**
