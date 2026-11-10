@@ -82,6 +82,27 @@ describe("compileRecording", () => {
     expect(poly.bindings.map((binding) => binding.target.split(":").at(-1))).toEqual(["inscribed.sides"]);
   });
 
+  it("builds graphs with the math plugin, mapping saved curve and point names", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Waves", type: "math_off_map" }, goals: [] }), now, [{ title: "Graphs" }]);
+    recording = record(recording, "card-1", "The point follows the wave.", [
+      { t: 0, type: "component.insert", panel: "unit_circle", alias: "circle", variable: "theta" },
+      { t: 100, type: "component.insert", panel: "graph", alias: "wave", expression: "sin(x)", x: [0, 6.3], y: [-1.2, 1.2], linkedVariable: "theta" },
+      { t: 200, type: "component.insert", panel: "graph", alias: "lines", expression: "x", x: [-3, 3], y: [-3, 3] },
+      { t: 300, type: "graph.add_curve", node: "lines", expression: "2*x" },
+      { t: 1_000, type: "tool.highlighter", target: { node: "wave", part: "current" } },
+      { t: 1_500, type: "tool.highlighter", target: { node: "wave", part: "curve" } },
+      { t: 2_000, type: "tool.highlighter", target: { node: "lines", part: "curve-2" } },
+    ]);
+    const { lesson, state } = check(recording);
+    const actions = lesson.steps[0]!.beats[0]!.actions as Array<{ do: string; target?: string }>;
+    expect(actions.filter((action) => action.do === "emphasize").map((action) => action.target))
+      .toEqual(["wave#moving-point", "wave#primary-curve", "lines#curve-02"]);
+    const wave = state.nodes["l:node:wave"]!.content as { bindings: Array<{ target: string; expression: string }> };
+    expect(wave.bindings.map((binding) => [binding.target.split(":").at(-1), binding.expression])).toEqual([["moving-point.x", "theta"], ["moving-point.y", "sin(theta)"]]);
+    const lines = state.nodes["l:node:lines"]!.content as { curves: Array<{ id: string }> };
+    expect(lines.curves.map((curve) => curve.id.split(":").at(-1))).toEqual(["primary-curve", "curve-02"]);
+  });
+
   it("ends a card's highlights when the next card starts", () => {
     let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Sine", type: "math_off_map" }, goals: [] }), now, [{ title: "Circle" }, { title: "Cosine" }, { title: "More" }]);
     recording = record(recording, "card-1", "The height of P is sine.", [
@@ -565,10 +586,13 @@ describe("diagrams of steps and cycles", () => {
     const content = state.nodes["l:node:diagram-1"]!.content as { title: string; elements: Array<{ label: string }>; edges: Array<{ id: string; from: string; to: string; label?: string }> };
     expect(content.title).toBe("Round and round");
     expect(content.elements.map((element) => element.label)).toEqual(["Sea", "Water vapour", "Clouds", "Rain"]);
-    const box = (n: number) => `l:node:diagram-1:fragment:box-${n}`;
+    // Steps are named by the shared plugin's builder; the highlight above saved Studio's older "box-4".
+    const box = (n: number) => `l:node:diagram-1:fragment:step-0${n}`;
     expect(content.edges.map((edge) => [edge.from, edge.to, edge.label ?? ""])).toEqual([
       [box(1), box(2), ""], [box(2), box(3), ""], [box(3), box(4), "falls"], [box(4), box(1), ""],
     ]);
+    const marks = (state.nodes["l:node:diagram-1"]!.emphasis ?? []) as Array<{ target: { fragment_id?: string } }>;
+    expect(marks.map((mark) => mark.target.fragment_id)).toContain(box(4));
 
     let steps = planCards(createRecording({ id: "rec", now, topic: { text: "Steps", type: "other" }, goals: [] }), now, [{ title: "How" }]);
     steps = record(steps, "card-1", "First this, then that.", [

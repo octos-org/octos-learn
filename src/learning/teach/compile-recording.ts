@@ -3,7 +3,8 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
-import { buildCirclePolygons, buildUnitCircle } from "octos-lesson-language/plugin-math";
+import { buildCirclePolygons, buildFunctionPlot, buildUnitCircle, functionCurveId } from "octos-lesson-language/plugin-math";
+import { PROCESS_CYCLE_EDGE_ID, processDiagramContent, processEdgeId, processStepId } from "octos-lesson-language/plugin-shared";
 import { normalizeLocale, tr } from "@/i18n";
 
 import {
@@ -339,6 +340,15 @@ export const UNIT_CIRCLE_LEGACY_PARTS: Readonly<Record<string, string>> = {
   "point-p": "moving-point", foot: "projection-foot", circle: "unit-circle", height: "projection",
 };
 export const CIRCLE_POLYGON_LEGACY_PARTS: Readonly<Record<string, string>> = { origin: "center", polygon: "inscribed" };
+export const GRAPH_LEGACY_PARTS: Readonly<Record<string, string>> = {
+  curve: "primary-curve", current: "moving-point",
+  ...Object.fromEntries([2, 3, 4, 5, 6, 7, 8].map((n) => [`curve-${n}`, functionCurveId(n - 1)])),
+};
+export const DIAGRAM_LEGACY_PARTS: Readonly<Record<string, string>> = {
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [`box-${n}`, processStepId(n)])),
+  ...Object.fromEntries([2, 3, 4, 5, 6, 7, 8].map((n) => [`link-${n}`, processEdgeId(n - 1)])),
+  "link-close": PROCESS_CYCLE_EDGE_ID,
+};
 
 /** The most sides the studio offers a regular polygon (OLL allows 384). */
 export const MAX_POLYGON_SIDES = 48;
@@ -355,12 +365,12 @@ export const MAX_DIAGRAM_BOXES = 8;
  * first; a cycle's last arrow (link-close) goes from the newest box back to the first.
  */
 function diagramContent(diagram: Diagram): Record<string, unknown> {
-  const elements = diagram.boxes.map((box, index) => ({ as: `box-${index + 1}`, label: box.label }));
-  const edges: Array<Record<string, unknown>> = diagram.boxes.slice(1).map((box, index) => ({
-    as: `link-${index + 2}`, from: `box-${index + 1}`, to: `box-${index + 2}`, ...(box.link ? { label: box.link } : {}),
-  }));
-  if (diagram.shape === "cycle" && diagram.boxes.length > 2) edges.push({ as: "link-close", from: `box-${diagram.boxes.length}`, to: "box-1" });
-  return { title: diagram.title, elements, edges };
+  // The shared plugin's builder, which Coach's AI lessons also use.
+  return processDiagramContent({
+    title: diagram.title,
+    steps: diagram.boxes.map((box) => ({ label: box.label, ...(box.link ? { link: box.link } : {}) })),
+    shape: diagram.shape === "cycle" ? "cycle" : "chain",
+  });
 }
 
 const NOTE_HEADINGS: Record<"zh" | "en", Record<NoteRole, string>> = {
@@ -542,22 +552,24 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           label: parameter.letter, control: { kind: "slider", step: sliderStep(parameter.min, parameter.max) } });
         expression = expression.replace(new RegExp(`(?<![A-Za-z0-9_])${parameter.letter}(?![A-Za-z0-9_])`, "g"), parameter.variable);
       }
-      const content: Record<string, unknown> = {
-        ...title,
-        axes: { x: { min: component.x[0], max: component.x[1] }, y: { min: component.y[0], max: component.y[1] } },
-        curves: [{ as: "curve", expression, label: `y = ${component.expression}` }],
-      };
+      let linked: string | undefined;
       if (component.linkedVariable) {
         if (!variables.has(component.linkedVariable)) throw new CompileError(`Graph is linked to unknown variable '${component.linkedVariable}'`);
-        const variable = component.linkedVariable;
-        content.points = [{ as: "current", x: component.x[0], y: 0, label: "now" }];
-        content.bindings = [
-          { target: "current.x", expression: variable },
-          { target: "current.y", expression: component.expression.replace(/\bx\b/g, variable) },
-        ];
+        linked = component.linkedVariable;
       }
-      graphs.set(alias, { content, letters: new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable])) });
-      return { do: "write", as: alias, kind: "plot", role: "diagram", content: structuredClone(content), place: placeNext() } as Action;
+      legacyParts.set(alias, GRAPH_LEGACY_PARTS);
+      // The math plugin's builder, which Coach's AI lessons also use. A linked
+      // graph's point follows the curve as the sliders read it.
+      const built = buildFunctionPlot({
+        as: alias, role: "diagram", place: placeNext(), ...title,
+        axes: { x: { min: component.x[0], max: component.x[1] }, y: { min: component.y[0], max: component.y[1] } },
+        curves: [{ expression, label: `y = ${component.expression}` }],
+        ...(linked ? { samples: [{ x: component.x[0], y: 0, label: "now", x_expression: linked }] } : {}),
+      });
+      const written = built.actions[0] as Action & { content: Record<string, unknown> };
+      const content = written.content;
+      graphs.set(alias, { content: structuredClone(content), letters: new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable])) });
+      return written;
     }
     if (component.panel === "coordinate_grid") {
       geometryPoints.set(alias, []);
@@ -614,6 +626,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
       for (const box of component.boxes) diagram.boxes.push({ label: box.trim() });
       diagrams.set(alias, diagram);
+      legacyParts.set(alias, DIAGRAM_LEGACY_PARTS);
       return { do: "write", as: alias, kind: "diagram", role: "diagram", place: placeNext(), content: diagramContent(diagram) } as Action;
     }
     if (component.panel === "table") {
@@ -809,9 +822,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
             const guides = (graph.content.guides ??= []) as Array<Record<string, unknown>>;
             guides.push({ as: `guide-${guides.length + 1}`, kind: entry.axis === "x" ? "vertical_line" : "horizontal_line", value: entry.value, label: `${entry.axis} = ${entry.value}` });
           } else if (entry.kind === "equation") {
-            curves.push({ as: `curve-${curves.length + 1}`, kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
+            curves.push({ as: functionCurveId(curves.length), kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
           } else {
-            curves.push({ as: `curve-${curves.length + 1}`, expression: reading(entry.expression), label: `y = ${entry.expression}` });
+            curves.push({ as: functionCurveId(curves.length), expression: reading(entry.expression), label: `y = ${entry.expression}` });
           }
           actions.push({ do: "revise", target: event.node, content: structuredClone(graph.content), reason: "the learner added a curve", when } as Action);
           focus = [event.node];
