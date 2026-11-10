@@ -67,6 +67,8 @@
 
 ## 专题计划
 
+- [圆与正多边形周长夹逼](ARCHIMEDES_POLYGON_BOUNDS.md)：割圆术（`circle_polygon_bounds` / OLL `regular_polygons`）的设计、2026-10-18 公网发布记录与浏览器回归测试。
+
 - [学习白板的隔空手势交互设计](AIR_GESTURE_INTERACTION_DESIGN.md) 包含 Apple 手势调研、输入分派和验证门槛。
 
 - [录课摄像头动作接入课程](LEARNER_AVATAR_CAMERA_PERFORMANCE.md)：录课时可选摄像头带动形象；表情/转头按最终配音重新对齐进课包，播放时与配音嘴型合成；隐私与校验边界。
