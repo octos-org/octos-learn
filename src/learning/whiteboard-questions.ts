@@ -17,6 +17,8 @@ export interface WhiteboardQuestionRecord {
   answerPresentation?: "card" | "board-writing" | "lesson";
   error?: string;
   errorCode?: string;
+  /** Compilation provenance for the course delivered in this turn. */
+  lessonPlugins?: Record<string, string>;
   /** Exact session-scoped camera frame submitted with this question. */
   imagePath?: string;
   /** Profile that owned imagePath at upload time. */
@@ -32,6 +34,16 @@ export interface WhiteboardQuestionRecord {
 }
 
 const STORAGE_PREFIX = "octos-learning-questions:v1:";
+
+export function parseLessonPlugins(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return;
+  const plugins = Object.entries(value);
+  if (plugins.some(([id, version]) =>
+    !/^[a-z][a-z0-9_-]{0,31}$/.test(id)
+    || typeof version !== "string"
+    || !/^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(version))) return;
+  return Object.fromEntries(plugins);
+}
 
 export function whiteboardQuestionsStorageKey(sessionId: string): string {
   return `${STORAGE_PREFIX}${sessionId}`;
@@ -68,6 +80,7 @@ function validQuestion(
     || !["pending", "answered", "failed"].includes(String(question.status))
   ) return false;
   if (question.errorCode !== undefined && typeof question.errorCode !== "string") return false;
+  if (question.lessonPlugins !== undefined && !parseLessonPlugins(question.lessonPlugins)) return false;
   if (question.error !== undefined && typeof question.error !== "string") {
     return false;
   }
