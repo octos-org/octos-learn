@@ -1,6 +1,8 @@
 import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
 import { useHandwritingInput } from "../handwriting/use-handwriting-input";
 import { HandwritingControls, HandwritingInputButton } from "../handwriting/handwriting-controls";
+import { useSnapNeat } from "../gesture/use-snap-neat";
+import { SnapNeatControls } from "../gesture/snap-neat-controls";
 import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
@@ -3445,6 +3447,12 @@ export function LearningWhiteboard({
         control === "slider" ? sliderTaskSnapDistance(runtimeRef.current, alias, width)
           : geometryTaskSnapDistance(viewportRef.current!, runtimeRef.current, alias), control) },
   });
+  const snapNeat = useSnapNeat({
+    inkRef: inkRuntimeRef, sessionId: inkSessionId,
+    available: handwritingEnabled && inkAvailable && handwriting.state.status !== "off" && handwriting.state.status !== "failed",
+    playing: Boolean(runtime?.playing), selected: inkState.mode === "select" && inkState.selected_count > 0,
+    selectionRevision: inkState.selection_revision,
+  });
 
   return (
     <div className="learning-oll-board-shell">
@@ -3457,7 +3465,9 @@ export function LearningWhiteboard({
       />
       {overlay}
       {handwritingEnabled && inkSessionId && inkAvailable ? <>
-        <HandwritingControls {...handwriting} canResume={!runtime?.playing} />
+        <HandwritingControls {...handwriting} canResume={!runtime?.playing}>
+          <SnapNeatControls snap={snapNeat} />
+        </HandwritingControls>
         {gestureToggleHost ? createPortal(<HandwritingInputButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} />, gestureToggleHost) : null}
       </> : null}
       {!runtime
