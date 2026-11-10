@@ -1,6 +1,8 @@
 # Octos Learn subject plugin plan
 
-**Status** — Draft for product-owner review, 2026-11-08. Replaces the earlier discussion draft of this file. Code references were checked at learning-coach `be05941`, octos-lesson-language (OLL) `350d5e0`, octos-learn `e453bd8` and octos-course-library `0781f74` (each repository's `origin/main` on that date).
+**Status** — Revised plan accepted 2026-11-09. Replaces the earlier discussion draft of this file. Code references were checked at learning-coach `be05941`, octos-lesson-language (OLL) `350d5e0`, octos-learn `e453bd8` and octos-course-library `0781f74` (each repository's `origin/main` on that date).
+
+**Review (2026-11-09)** — after P0 and the P1 migration merged, the plan was reviewed against `origin/main` of all four repositories and the P0 baseline. The work that follows from it is listed in §13. The product owner accepted the review's changes the same day (decisions S6 revised, S10–S15 in §11): P1 gets a close-out list, P2 starts with a payload experiment and runs in shadow mode, the first science capabilities move forward, the ceilings get headroom, and the plan gains an Earth and space science plugin, a "none of these" subject choice, a grade-level input and an accuracy approach for subjects the program cannot compute.
 
 ## 1. Goals
 
@@ -108,10 +110,14 @@ There is no subject field today. The model reads camera and selection images onl
 
 Learn already waits for Jev before sending a text or voice lesson request (§3). Customers configure Jev with their own key (BYOK, decision S9), so it is the main subject signal. Using its answer adds no model round trip.
 
-- **Choices come from the plugins.** Build the Jev `subject` question from the installed plugins' subject descriptions (§4.1), plus `unclear`. This replaces today's fixed five choices, which merge chemistry and biology into `general_science`. The `shared` plugin is never a choice because it is always included.
+- **Choices come from the plugins.** Build the Jev `subject` question from the installed plugins' subject descriptions (§4.1), plus `none` and `unclear`. This replaces today's fixed five choices, which merge chemistry and biology into `general_science`. The `shared` plugin is never a choice because it is always included.
+  - `none` means Jev is confident the request belongs to no installed subject, such as history or language. It selects the `shared` plugin alone (decision S13). §5.4's reroute still applies if the lesson turns out to need a subject tool.
+  - `unclear` means Jev cannot tell. It selects nothing, which gives the broad request.
+  - The subject plugins are `math`, `physics`, `chemistry`, `biology` and `earth_space` (decision S12). Earth and space science is one of the three core science strands in US K–12 standards, and the Phase A guide lesson "water cycle" belongs to it.
 - **Selection from probabilities:**
   - Select the top plugin when its probability reaches threshold T1.
   - Also select the second plugin when its probability reaches T2. This handles mixed-subject requests.
+  - When `none` reaches T1, select `shared` alone.
   - Below T1, or when `unclear` wins, select nothing.
   - Start at T1 0.6 / T2 0.05, the P0 baseline's best setting: 70 of 78 lesson requests scoped correctly, 7 broad, 1 reroute, no unneeded plugin. Confirm on held-out requests before switching scoping on (§9).
 - **Context can supply the subject instead:**
@@ -125,6 +131,10 @@ Learn already waits for Jev before sending a text or voice lesson request (§3).
 - **No keyword routing.** The subject is a semantic judgement by Jev, in line with the existing admission prompts.
 
 ### 5.3 Scoped and broad requests
+
+**Order of work (decision S6, revised 2026-11-09).** Coach first receives the selected plugins in *shadow mode*: it logs them and still sends the broad request. Scoped requests and the reroute of §5.4 are built only when one of two triggers fires: the payload experiment in P2 shows that request size costs first-playable time, or the broad request comes within its headroom of the ceiling (§9). The design below is what gets built then.
+
+Jev is optional and uses the customer's own key, so a customer without Jev always gets the broad request. The broad request therefore has to stay good and fast in its own right, and the share of lesson requests that arrive with a Jev answer is recorded (§9).
 
 - **Scoped request,** when at least one plugin is selected. It includes only the `shared` plugin and the selected plugins:
   - recipe cards
@@ -183,6 +193,8 @@ Each Phase B item now lands in a plugin. "Recipe" means it compiles to existing 
 | B10 Fraction and area models | math | Runtime | Grades 3–6 |
 | B11 Geometry constructions | math | Runtime | Polygons by vertices, transformations |
 
+`earth_space` and `biology` start with no runtime code of their own. They carry a subject line, recipe cards and authoring guidance over the shared tools (B1 pictures and labels, B3 diagrams, B6 charts), plus their picture assets. Five of the twelve rows above land in `shared`, which every request carries, so `shared` has its own payload budget (§9).
+
 Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (fixed amplitude, phase-only control, no units) are listed as work for B4. `process_diagram` goes to `shared`. All the rest go to `math`.
 
 ## 8. Roadmap
@@ -199,56 +211,66 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 
 ### P1 · Mathematics becomes the first plugin
 
-**Status (2026-11-09):** in progress. Decision 0012 is revised (OLL #33) so each plugin has two layers:
+**Status:** closed under the local acceptance scope in §13.1. Decision 0012 is accepted (OLL #40) and describes two layers for each plugin:
 - **Shared layer**, in OLL `packages/plugin-<id>`: manifest, Jev subject line, and recipe builders that take neutral input and are used by Coach, Studio and Course Library.
 - **Generation layer**, in Coach `src/plugins/`: prompt rules, schema fragments, section facts and generation hooks, for Coach only.
 
-Done (all pending review):
+Merged:
 - **Byte-identity check:** learning-coach #42, covering 1,680 request digests plus each run's lesson.
-- **Coach's generation layer** for `math`, `physics` and `shared`: learning-coach #43 and #44. Core Coach files no longer name any recipe.
+- **Coach's generation layer** for `math`, `physics` and `shared`: learning-coach #43 and #44. The compiler dispatches through the installed recipe registry after the close-out.
 - **Shared layers in OLL:**
   - `plugin-math`: all 11 math recipes plus Studio's 3D solids (OLL #34, #35, #36, #38);
   - `plugin-shared`: the process diagram (#35);
   - `plugin-physics`: the spring (#37).
 - **Coach builds every recipe with these builders,** with requests and lessons byte-identical: learning-coach #45 to #48.
-- **Studio uses the builders** for the unit circle, polygon, graph, diagram and 3D solids: octos-learn #133 and #134. Saved recordings and hand-edited OLL keep working.
+- **Studio uses the builders** for the unit circle, polygon, graph, diagram and 3D solids: octos-learn #133 and #134. Current Studio recordings and hand-edited OLL use the same authoring workflow.
 - **OLL extension point:** OLL #39. Plugin features (`plugin:<id>/<name>@<major>`), `requiredPlugins`, and refusal of a missing or outdated plugin before playback.
 
 Still open:
 - Hosts passing installed extensions to the player; this comes with P3's first runtime extension.
-- Course Library validating with the composed feature table.
 - Coach adopting Studio's solids for AI lessons, which is a deliberate output change.
+
+**Close-out.** The implementation, merge order and local acceptance evidence are recorded in §13.1. Coach's math-only answer path remains a known exception outside the recipe compiler.
 
 - Move the 13 recipes (11 math, `spring_and_mass` to `physics`, `process_diagram` to `shared`), the hard-coded rules and the section facts into their plugins, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
 - Add the extension point to OLL core (§4.4), with no new features yet.
 
-**Exit** — for every math fixture and every entry point, the provider schema hash and the prompt hash equal the baseline. All 11 CoursePacks and saved learner lessons replay unchanged.
+**Exit** — for every math fixture and every entry point, the provider schema hash and the prompt hash equal the baseline. All 11 CoursePacks replay unchanged, and current Studio recordings can be saved, exported and played. Development recordings predating the change are outside the P1 acceptance scope. Camera and selection paths are checked with automated fixtures. Physical camera and live Jev verification are tracked separately.
 
-### P2 · Plugin selection in Coach
+### P2 · Subject signal in shadow mode
 
-- Build the plugin-based Jev subject question and pass `plugins`, `plugin_confidence` and `plugin_source` to Coach (§5.2).
-- Implement scoped and broad requests, reroute recovery and the single permitted set (§5.3–5.5), behind a config switch.
-- Measure Jev's subject accuracy and tune T1 and T2 before switching scoping on.
-- Create an empty `physics` plugin holding `spring_and_mass` plus a constant-speed motion recipe built on `shared` graphs.
-- Pilot lesson: *How does distance change over time at constant speed?* All three paths are possible with today's tools (the Studio graph panel already supports slider letters). This proves physics routing to a shared tool and parity across the three paths.
+Revised 2026-11-09 (decisions S6 and S10).
 
-**Exit** — the routing fixtures pass, the reroute rate is measured, and the speed gate passes with Jev on and with Jev off.
+1. **Payload experiment, before anything else.** The baseline cannot say whether request size costs time: at most 4.5 KB of a 17 KB first request is recipe-specific, no request hit the prompt cache, and the model spends 7.8 s (p50) writing about 1,170 output tokens. Pad the first request's recipe guidance and schema by about 2, 4 and 8 KB and compare first-playable time against the unpadded request, interleaved, at least 40 pairs per size. The result sets the ceilings' headroom (§9) and decides whether scoped requests are built now or later.
+2. **The plugin-based Jev question** (§5.2), including `none`, `unclear` and the image attachment, replaces today's five choices. Recheck the two follow-ups that pass the gate only through its pass-through rule.
+3. **Hand-off in shadow mode.** Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Coach validates and logs them and keeps sending the broad request. Each trace records what a scoped request would have contained and whether the lesson used a recipe outside it. That measures route correctness on real requests with no risk to lessons.
+4. **Held-out routing check.** Confirm T1 and T2 on requests that were not used to tune them.
+5. **Physics pilot on shared tools.** Add a constant-speed motion recipe built on `shared` graphs. Pilot lesson: *How does distance change over time at constant speed?* through all three paths.
 
-### P3 · First runtime extension: vectors and forces (B4)
+Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery and the single permitted set (§5.3–5.5), behind a config switch.
 
-- Build the vector node in `plugin-physics`, with a namespaced execution feature, the Studio tool and the Coach recipe.
-- Pilot lesson: the Phase A guide "force and acceleration with a slider graph", built with real vectors.
-- This is the first lesson that needs a feature an older player lacks. It exercises the version and plugin checks in the live, Studio and CoursePack paths.
+**Exit** — the experiment's result is recorded and the ceilings are re-set from it; the routing fixtures pass; shadow-mode route correctness and the share of requests with a Jev answer are reported; the speed gate passes with Jev on and with Jev off.
 
-**Exit** — the three paths agree on canonical state at equal slider values. An older player, or one without the plugin, refuses the lesson with a clear message before playback.
+### P3 · First science capabilities: vectors (B4) and free-layout diagrams (B3)
+
+Moved forward on 2026-11-09 (decision S11) to run in parallel with P2. The baseline's main finding was that science lessons lack real visuals: chemistry and biology used only notes, formula cards and step diagrams, and the water cycle was drawn as a straight list. Neither item depends on scoping.
+
+- **B4, vectors and forces,** in `plugin-physics`: the vector node with a namespaced execution feature, the Studio tool and the Coach recipe. This is the first runtime extension, so hosts start passing installed extensions to the player here.
+  - Pilot lesson: the Phase A guide "force and acceleration with a slider graph", built with real vectors.
+  - This is the first lesson that needs a feature an older player lacks. It exercises the version and plugin checks in the live, Studio and CoursePack paths.
+- **B3, free-layout diagram,** in `plugin-shared`: grid positions and labelled arrows, so cycles are drawn as cycles and food webs as webs.
+  - Pilot lesson: the Phase A guide "water cycle", routed to `earth_space`.
+- AI lessons adopt each capability only after it passes the speed gate, as a separate change (E5).
+
+**Exit** — the three paths agree on canonical state at equal slider values. An older player, or one without the plugin, refuses the vector lesson with a clear message before playback. The water cycle lesson shows a closed cycle in all three paths.
 
 ### P4 onwards · Breadth
 
 Follow the Phase B order:
 
-1. shared B1 → B2 (label first) → B3
-2. physics B4 → B7 → B8
+1. shared B1 → B2 (label first); B3 is in P3
+2. physics B7 → B8; B4 is in P3
 3. chemistry B5
 4. shared B6
 5. math B9 → B10 → B11
@@ -273,7 +295,8 @@ Math and science items are developed in parallel (decision S5).
   - Afterwards: a scoped request contains nothing from unselected plugins, and adding a plugin leaves other subjects' scoped payloads unchanged.
   - **Hard ceilings (decision S6).** Fixed byte and token limits for the full request body, schema included, apply to three cases: a scoped single-plugin request, a scoped two-plugin request and the broad request. Every plugin carries a budget for its own cards, guidance and schema fragments.
     - *Done in P0:* byte ceilings per input route and request path, measured offline over the course fixtures (system prompt, prompt and response schema; learning-coach `eval/payload-ceilings.json`). These cover today's broad request.
-    - *Pending:* a token budget for the full request body, from the provider's token counter, and the ceilings for the scoped single- and two-plugin requests, set in P2 when scoped requests exist.
+    - *Pending:* a token budget for the full request body, from the provider's token counter, and the ceilings for the scoped single- and two-plugin requests, set when scoped requests exist.
+    - *Headroom (decision S14).* The P0 ceilings are the measured maxima, so the first new recipe would break the broad ceiling. After the P2 payload experiment, re-set each ceiling to the measured maximum plus the largest increase that showed no loss of first-playable p50. Split the broad ceiling into a budget for `shared` and a budget per subject plugin. Building scoped requests is triggered when the broad request has used 80% of its headroom.
   - A test computes every entry point's payload and fails the build when a ceiling or a plugin budget is exceeded. Raising a ceiling requires an explicit change to the plan and a fresh live speed comparison. The broad request has a ceiling too: once all plugins no longer fit, plugins must shrink their cards and guidance; they don't get to raise the limit.
 
 **Subject identification, measured offline against Jev:**
@@ -297,11 +320,12 @@ Math and science items are developed in parallel (decision S5).
   - local rejections per part
   - fallback from the first request to the outline-only call
   - reroute rate, and the first-playable time of rerouted requests
-  - whether Jev was available, and the selected plugins and their source
+  - whether Jev was available, and the selected plugins and their source; from these, the share of lesson requests that arrive with a Jev answer
+  - in shadow mode: whether the lesson used a recipe outside the plugins Jev selected
   - outcome (lesson, clarify, ignore, unsupported)
   - route correctness against the expected plugins
 - First playable: the first `lesson-prefix-published` event plus the client timing. The p50 is the gate; p95 is a diagnostic.
-- Quality: a blinded rubric covering goal match, whether the visual shows the right relationship, agreement between narration and visual, subject accuracy, and request coverage.
+- Quality: a blinded rubric covering goal match, whether the visual shows the right relationship, agreement between narration and visual, subject accuracy, level fit and request coverage. Review at least 10 lessons per subject; the reviewer does not know which condition produced a lesson. The P0 review covered 12 lessons and was not blinded, so it is an indication, not a baseline.
 
 **Compatibility:**
 
@@ -310,7 +334,18 @@ Math and science items are developed in parallel (decision S5).
 
 **Rollout:** the config switch stays reversible until the live comparison passes. Plugins are enabled one by one.
 
-## 10. Decisions for the product owner
+## 10. Level and accuracy outside mathematics
+
+Program-owned correctness (§2) covers what a program can compute. Much of chemistry, biology and Earth science is stated fact, and the P0 sample showed the gap: an invented figure ("500 billion liters"), narration that gave a speed the slider no longer showed, and the Calvin cycle offered in answer to "How do plants make their own food?". Decision S15 adds three measures.
+
+- **Grade level is an input.** Learn sends the learner's grade band (K–2, 3–5, 6–8, 9–12) with the lesson request when the profile has one. Coach puts it in the request, and plugin guidance may state what each band covers. Without a grade band, Coach fits the level to the wording of the question. This adds no model call.
+- **Narration follows board state.** Wherever a lesson value comes from a variable, the narration refers to the variable and the program fills in the number, as math lessons already do. The plan check that rejects narration contradicting a visual (`check_plan`) extends to physics quantities.
+- **Stated facts are checked where a program can check them, and measured where it cannot.**
+  - Checkable: chemical equations balance, units agree, a quantity in the narration matches its computed value. These are plugin checks and add no model call.
+  - Not checkable: figures and claims with no source in the request. Plugin guidance tells the model not to state specific figures it was not given. The quality rubric's subject-accuracy score is tracked per subject, and a plugin is enabled for AI lessons only when its sample has no factual error (§9, rollout).
+  - Curated material carries the facts where it can: labelled pictures (B1) and CoursePacks are reviewed once and reused.
+
+## 11. Decisions for the product owner
 
 **Decided (2026-11-08)**
 
@@ -326,12 +361,24 @@ Math and science items are developed in parallel (decision S5).
 | --- | --- | --- |
 | S4 | Where do plugins live? | Start as packages in the OLL repository (§4.3) |
 | S5 | Order of math and science | Develop math (B9–B11) and science items in parallel (§8) |
-| S6 | Payload gate | "A scoped request contains nothing from unselected plugins", plus hard ceilings on payload size (§9) |
+| S6 | Payload gate | "A scoped request contains nothing from unselected plugins", plus hard ceilings on payload size (§9). Revised later the same day: see the review decisions below |
 | S7 | Learner package format | Add the `oll` requirements block to the `.olesson` manifest (§4.5) |
 | S8 | Third-party plugins | First-party plugins only for now |
 | S9 | How Jev is provided | Jev stays BYOK: each customer uses their own Jev key, managed through Octos like ASR and TTS. No shared platform credential is shipped. |
 
-## 11. Where to start reading
+**Decided after the plan review (2026-11-09)**
+
+| # | Question | Decision |
+| --- | --- | --- |
+| S6 (revised) | When are scoped requests built? | Coach first receives the subject in shadow mode and keeps sending the broad request. Scoped requests and reroute are built when the payload experiment shows a cost or the broad request nears its ceiling (§5.3). Hard ceilings stay |
+| S10 | What comes first in P2? | A payload experiment that measures first-playable time against request size (§8, P2) |
+| S11 | When do science capabilities start? | B4 vectors and B3 free-layout diagrams move forward and run in parallel with P2 (§8, P3) |
+| S12 | Earth and space science | Add an `earth_space` plugin (§5.2) |
+| S13 | Requests outside every subject | A `none` choice in the Jev question selects `shared` alone (§5.2) |
+| S14 | Ceiling headroom | Re-set the ceilings from the experiment, with a separate budget for `shared` (§9) |
+| S15 | Level and accuracy outside math | Grade band as an input, narration tied to board state, program checks where possible and a per-subject accuracy gate (§10) |
+
+## 12. Where to start reading
 
 | Repository | Source |
 | --- | --- |
@@ -339,3 +386,71 @@ Math and science items are developed in parallel (decision S5).
 | `octos-lesson-language` | `decisions/0004-interactive-whiteboard-mvp-boundaries.md`, `packages/core/src/capabilities.ts`, `packages/core/src/execution-requirements.ts`, `packages/player-core/src/index.ts`, `SPEC.md` |
 | `octos-learn` | [Studio expressiveness plan](LEARNER_EXPRESSIVENESS_PLAN.md) (Phase B, decisions E1–E5), `src/learning/admission-fast-gate.ts` (Jev), `src/learning/learning-workspace.tsx`, `src/learning/teach/compile-recording.ts`, `studio-add.tsx`, `learner-package.ts`, `src/learning/course-pack/course-pack-loader.ts` |
 | `octos-course-library` | `packages/course-pack/src/types.ts`, `validator.ts`, `browser.ts` |
+
+## 13. TODO list
+
+P1 close-out and its local acceptance scope are recorded below. The later phases remain planned work.
+
+### 13.1 P1 close-out
+
+The owner approved merge and local acceptance, with physical camera and Jev checks tracked separately. Older Studio recordings are excluded from the development compatibility gate.
+
+| Repository | Change | Evidence |
+| --- | --- | --- |
+| [OLL #40](https://github.com/alan0x/octos-lesson-language/pull/40) | Decision 0012 accepted. Math declares its shared plugin dependency. P1 pin: `7c12c9c`. | 455 tests |
+| [Course Library #11](https://github.com/alan0x/octos-course-library/pull/11) | One OLL pin. Pack validation and the browser reader use the installed execution extensions when the host supplies them. | 21 tests, type check, 11 matching replay digests |
+| [Coach #50](https://github.com/alan0x/learning-coach/pull/50) | Version 0.24.3. Registry dispatch and OLL-owned manifests and subject lines. Plugin IDs and versions travel in the completed job's structured metadata. | 251 tests. 1,680 request digests and the lesson digests match the baseline. |
+| [Learn #135](https://github.com/octos-org/octos-learn/pull/135) | New `.olesson` packages declare player requirements. Learn persists the plugin versions on the generating question for future context routing. | Type check, lint, build, 2,013 unit tests, 107 service tests, 18 Chromium tests |
+
+Coach, Learn and Course Library were verified on OLL `7c12c9c`. Coach 0.24.3 was installed in the normal local Octos profile. The automated acceptance covers Studio recording and playback, package export and validation, camera capture and selection routing. The replay and function plot issues found during the manual pass predate P1 and are tracked separately.
+
+- [ ] Follow-up manual coverage: physical camera teaching and live Jev image relay.
+- [ ] When publishing the new package writer, deploy the learner-lessons service that accepts the `oll` block before the app. Production deployment is outside this close-out.
+
+### 13.2 P2 · Subject signal in shadow mode
+
+- [ ] **Payload experiment.** Write the padding harness in Coach (pad recipe guidance and schema by about 2, 4 and 8 KB). Needs the product owner's approval of the spend first: at least 40 interleaved pairs per size is about 240 live lesson generations on the owner's key.
+- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
+- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
+- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection.
+- [ ] Recheck the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+- [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
+- [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
+- [ ] Report the share of lesson requests that arrive with a Jev answer.
+- [ ] Write held-out routing cases (not the 93 used for tuning) and confirm T1 0.6 / T2 0.05 on them.
+- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [ ] Constant-speed motion recipe in `physics`, built on `shared` graphs. Pilot lesson through Coach, Studio and a CoursePack.
+- [ ] Speed gate with Jev on and with Jev off (interleaved pairs; needs spend approval).
+
+Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
+
+### 13.3 P3 · Vectors (B4) and free-layout diagrams (B3)
+
+For each of the two capabilities:
+
+- [ ] OLL decision record (0013 vectors, 0014 free-layout diagram).
+- [ ] Schema, reducer, web renderer, headless golden and execution feature. B4 is `plugin:physics/vectors@1` in `plugin-physics`; B3 goes in `plugin-shared`.
+- [ ] Recipe builder in the OLL plugin package.
+- [ ] Studio tool that calls the builder.
+- [ ] Coach recipe (card, guidance, schema fragment, compiler), adopted for AI lessons only after it passes the speed gate (E5).
+
+Once for P3:
+
+- [ ] Learn, the learner-package viewer and Course Library pass installed extensions to the player (first runtime extension).
+- [ ] Pilot lesson "force and acceleration with a slider graph" with real vectors, through all three paths.
+- [ ] Pilot lesson "water cycle" as a closed cycle, routed to `earth_space`, through all three paths.
+- [ ] Check that an older player, and a player without the plugin, refuse the vector lesson before playback in the live, Studio and CoursePack paths.
+
+### 13.4 Level and accuracy (§10)
+
+- [ ] Decide where the grade band comes from in the learner profile, and whether Learn asks for it. Learn sends it; Coach adds it to the input allow-list and the request.
+- [ ] Extend `check_plan` so narration that contradicts a physics quantity on the board is rejected.
+- [ ] Plugin guidance: no specific figures that the request did not supply.
+- [ ] Chemistry checks: equations balance, units agree (with B5).
+- [ ] Blinded quality review, at least 10 lessons per subject, with level fit and subject accuracy scored. Use it as the gate for enabling each subject's plugin in AI lessons.
+
+### 13.5 Open questions for the product owner
+
+- [ ] Approve or adjust the payload experiment's spend (§13.2).
+- [ ] Whether Coach's math-only answer path (plot, implicit plot, 3D) should move into the plugin model, and when.
+- [ ] How many customers have Jev configured today. If few, the broad request is the main path and deserves the first quality work.
