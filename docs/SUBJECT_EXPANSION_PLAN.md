@@ -203,13 +203,21 @@ Existing recipes move as they are. Physics gets `spring_and_mass`; its limits (f
 - **Shared layer**, in OLL `packages/plugin-<id>`: manifest, Jev subject line, and recipe builders that take neutral input and are used by Coach, Studio and Course Library.
 - **Generation layer**, in Coach `src/plugins/`: prompt rules, schema fragments, section facts and generation hooks, for Coach only.
 
-Done so far:
-- learning-coach #42: the byte-identity check, covering 1,680 request digests and the lesson each run produces.
-- learning-coach #43 and #44: Coach's generation layer for `math`, `physics` and `shared`. Core Coach files no longer name any recipe.
-- OLL #34: `plugin-math` with the unit circle and polygon builders.
-- learning-coach #45 and octos-learn #133: Coach and Studio both use these builders. Coach's requests and lessons are byte-identical, and Studio maps its older part names so saved recordings still resolve.
+Done (all pending review):
+- **Byte-identity check:** learning-coach #42, covering 1,680 request digests plus each run's lesson.
+- **Coach's generation layer** for `math`, `physics` and `shared`: learning-coach #43 and #44. Core Coach files no longer name any recipe.
+- **Shared layers in OLL:**
+  - `plugin-math`: all 12 math recipes plus Studio's 3D solids (OLL #34, #35, #36, #38);
+  - `plugin-shared`: the process diagram (#35);
+  - `plugin-physics`: the spring (#37).
+- **Coach builds every recipe with these builders,** with requests and lessons byte-identical: learning-coach #45 to #48.
+- **Studio uses the builders** for the unit circle, polygon, graph, diagram and 3D solids: octos-learn #133 and #134. Saved recordings and hand-edited OLL keep working.
+- **OLL extension point:** OLL #39. Plugin features (`plugin:<id>/<name>@<major>`), `requiredPlugins`, and refusal of a missing or outdated plugin before playback.
 
-Still to do: builders for the other recipes, Studio's remaining panels, and the OLL extension point.
+Still open:
+- Hosts passing installed extensions to the player; this comes with P3's first runtime extension.
+- Course Library validating with the composed feature table.
+- Coach adopting Studio's solids for AI lessons, which is a deliberate output change.
 
 - Move the 13 recipes, the hard-coded rules and the section facts into `plugin-math` and `plugin-shared`, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
