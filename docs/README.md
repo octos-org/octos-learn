@@ -4,6 +4,10 @@
 
 ## 当前使用
 
+- [白板响指整理彩蛋](SNAP_NEAT_EASTER_EGG.md)：隔空书写后框选公式，手型＋响指触发原地机器排版替换；0.079 声音门槛、一次撤销恢复、保存与验证边界。
+
+- [响指手型试验](GESTURE_SNAP_TRIAL.md)：本机 `/gesture-lab`，摄像头骨架、中指/食指捏合对照，以及可选的短促声音配对；无需 ASR。
+
 - [隔空书写接入白板](HANDWRITING_BOARD_INTEGRATION_PLAN.md)：从最新 main 独立开发的 `/board` 试用入口、摄像头用途隔离、验证结果与待真人验收项；[手势实验页](HANDWRITING_CAMERA_LAB.md)保留动作说明与调参背景。
 
 - [中英文本地化实施与验收](I18N_IMPLEMENTATION.md)：语言切换、实时课程与旁白语言、三仓库提交、回归结果、真实中英文课程与语音播放验证。
