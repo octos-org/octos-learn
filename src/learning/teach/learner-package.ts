@@ -5,7 +5,7 @@
 // every file. It never contains the learner's voice, face or real name.
 
 import { unzipSync, zipSync } from "fflate";
-import type { CanonicalEvent } from "octos-lesson-language";
+import { ExecutionCapabilityError, assertDeclarationPlayable, assertExecutionDeclaration, deriveExecutionRequirements, type CanonicalEvent } from "octos-lesson-language";
 import type { ImageAssetResolver } from "octos-lesson-language/web-runtime";
 
 import { inkSnapshotResolver, type StoredInkSnapshot } from "./ink-snapshot-store";
@@ -28,6 +28,13 @@ export interface LearnerPackageManifest {
   schema: typeof LEARNER_PACKAGE_SCHEMA | typeof LEARNER_MOUTH_PACKAGE_SCHEMA;
   /** Mouth motion alone, or with the learner's camera performance (expression and head, re-timed onto the narration). */
   requiredCapabilities?: ["avatar-lip-sync-v1"] | ["avatar-lip-sync-v1", "avatar-performance-v1"];
+  /**
+   * What the lesson needs from the OLL player: its lowest version and the
+   * features used, plugin features included (`plugin:<id>/<name>@<major>`).
+   * A player checks this before it reads the lesson. Packages made before the
+   * block existed have none and are checked from the lesson itself.
+   */
+  oll?: { minimumPlayerVersion: string; requiredCapabilities: string[] };
   lessonId: string;
   title: string;
   language: string;
@@ -100,6 +107,11 @@ export function lessonNarration(events: CanonicalEvent[]): Array<{ beatId: strin
   return events.flatMap((event) => event.step?.beats ?? []).flatMap((beat) => (beat.narration?.text.trim() ? [{ beatId: beat.id, text: beat.narration.text.trim() }] : []));
 }
 
+function ollRequirements(events: CanonicalEvent[]): NonNullable<LearnerPackageManifest["oll"]> {
+  const { minimumPlayerVersion, requiredCapabilities } = deriveExecutionRequirements(events);
+  return { minimumPlayerVersion, requiredCapabilities };
+}
+
 /** Builds the package archive. Every card that speaks needs its clip. */
 export async function buildLearnerPackage(input: {
   lessonId: string;
@@ -170,6 +182,7 @@ export async function buildLearnerPackage(input: {
     ...(withMouth ? { requiredCapabilities: withPerformance ? ["avatar-lip-sync-v1", "avatar-performance-v1"] as ["avatar-lip-sync-v1", "avatar-performance-v1"]
       : ["avatar-lip-sync-v1"] as ["avatar-lip-sync-v1"], lipSync } : {}),
     ...(withPerformance ? { performance } : {}),
+    oll: ollRequirements(input.events),
     lessonId: input.lessonId, title: input.title, language: input.language, createdAt: input.createdAt,
     author: author(input.events), lesson, ink, narration, files, contentSha256: await listDigest(files),
   };
@@ -199,6 +212,7 @@ export interface LoadedLearnerPackage {
 
 const AUDIO_TYPES = new Set(["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4"]);
 const HASH = /^[a-f0-9]{64}$/;
+const OLL_VERSION = /^\d{1,4}\.\d{1,4}\.\d{1,4}$/;
 function decodeManifest(raw: unknown): LearnerPackageManifest {
   const fail = (): never => { throw new LearnerPackageError("Invalid lesson package manifest"); };
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return fail();
@@ -208,6 +222,10 @@ function decodeManifest(raw: unknown): LearnerPackageManifest {
     || !value.author || ![value.author.learner_ref, value.author.avatar_ref, value.author.voice_ref].every((text) => typeof text === "string" && text.length > 0)
     || !Array.isArray(value.files) || !value.files.length || value.files.length > 512 || !Array.isArray(value.ink) || !Array.isArray(value.narration)
     || !HASH.test(value.contentSha256)) return fail();
+  if (value.oll !== undefined && (!value.oll || typeof value.oll !== "object" || Array.isArray(value.oll)
+    || typeof value.oll.minimumPlayerVersion !== "string" || !OLL_VERSION.test(value.oll.minimumPlayerVersion)
+    || !Array.isArray(value.oll.requiredCapabilities) || value.oll.requiredCapabilities.length > 128
+    || value.oll.requiredCapabilities.some((name) => typeof name !== "string" || !name || name.length > 96))) return fail();
   const animated = value.schema === LEARNER_MOUTH_PACKAGE_SCHEMA;
   if (animated) {
     const capabilities = Array.isArray(value.requiredCapabilities) ? value.requiredCapabilities.join() : "";
@@ -279,6 +297,11 @@ export async function readLearnerPackage(archive: ArrayBuffer | Uint8Array): Pro
   let manifest: LearnerPackageManifest;
   try { manifest = decodeManifest(JSON.parse(new TextDecoder().decode(manifestBytes))); }
   catch (error) { if (error instanceof LearnerPackageError) throw error; throw new LearnerPackageError("Invalid lesson package manifest"); }
+  // Refuse a lesson this player cannot play before reading it.
+  if (manifest.oll) {
+    try { assertDeclarationPlayable(manifest.oll); }
+    catch (error) { if (error instanceof ExecutionCapabilityError) throw new LearnerPackageError("This lesson package needs a newer app"); throw error; }
+  }
   const listed = new Set(manifest.files.map((file) => file.path));
   if (Object.keys(files).some((path) => path !== "manifest.json" && !listed.has(path))) throw new LearnerPackageError("The package holds files its manifest does not list");
   for (const file of manifest.files) {
@@ -288,6 +311,11 @@ export async function readLearnerPackage(archive: ArrayBuffer | Uint8Array): Pro
   if (await listDigest(manifest.files) !== manifest.contentSha256) throw new LearnerPackageError("The package content hash does not match");
   const source = new TextDecoder().decode(files[manifest.lesson]!);
   const events = source.split("\n").filter(Boolean).map((line) => JSON.parse(line) as CanonicalEvent);
+  if (manifest.oll) {
+    // The declaration may not leave out anything the lesson uses.
+    try { assertExecutionDeclaration(events, manifest.oll); }
+    catch (error) { if (error instanceof ExecutionCapabilityError) throw new LearnerPackageError("The package metadata does not match its lesson"); throw error; }
+  }
   const lines = lessonNarration(events);
   const expectedAuthor = author(events);
   if (lines.length !== manifest.narration.length || new Set(lines.map((line) => line.beatId)).size !== lines.length

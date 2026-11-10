@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { unzipSync, zipSync } from "fflate";
-import { normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
+import { deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents } from "octos-lesson-language";
 import { describe, expect, it } from "vitest";
 
 import { compileRecording } from "./compile-recording";
@@ -97,6 +97,32 @@ describe("learner lesson package", () => {
     await expect(buildLearnerPackage(missing)).rejects.toThrow("mouth track");
     const duplicate = await withMouth(); duplicate.narration.push(duplicate.narration[0]!);
     await expect(buildLearnerPackage(duplicate)).rejects.toThrow("Duplicate narration clips");
+  });
+
+  it("declares what the lesson needs from the OLL player, and refuses a lesson it cannot play before reading it", async () => {
+    const { events, snapshots, narration } = await lessonEvents();
+    const { archive, manifest } = await buildLearnerPackage({ lessonId: "rec-1", title: "Slope", language: "en-US", createdAt: now, events, snapshots, narration });
+    expect(manifest.oll).toEqual(deriveExecutionRequirements(events));
+    expect(manifest.oll!.requiredCapabilities.length).toBeGreaterThan(0);
+    expect(() => checkLearnerPackage(Buffer.from(archive), "rec-1")).not.toThrow();
+
+    const rewrite = (change: (manifest: LearnerPackageManifest) => void) => {
+      const files = unzipSync(archive), edited = JSON.parse(new TextDecoder().decode(files["manifest.json"]!)) as LearnerPackageManifest;
+      change(edited);
+      files["manifest.json"] = new TextEncoder().encode(JSON.stringify(edited));
+      return zipSync(files);
+    };
+    // A package made before the block existed still loads.
+    await expect(readLearnerPackage(rewrite((edited) => { delete edited.oll; }))).resolves.toBeTruthy();
+    expect(() => checkLearnerPackage(Buffer.from(rewrite((edited) => { delete edited.oll; })), "rec-1")).not.toThrow();
+    // A newer player, an unknown feature or a missing plugin: refused by name of the problem, not by a failed lesson.
+    await expect(readLearnerPackage(rewrite((edited) => { edited.oll!.minimumPlayerVersion = "99.0.0"; }))).rejects.toThrow("needs a newer app");
+    await expect(readLearnerPackage(rewrite((edited) => { edited.oll!.requiredCapabilities.push("plugin:physics/vectors@1"); }))).rejects.toThrow("needs a newer app");
+    // A declaration that leaves out what the lesson uses.
+    await expect(readLearnerPackage(rewrite((edited) => { edited.oll = { minimumPlayerVersion: "0.1.0", requiredCapabilities: [] }; }))).rejects.toThrow("does not match its lesson");
+    // Malformed blocks.
+    await expect(readLearnerPackage(rewrite((edited) => { (edited.oll as unknown as { minimumPlayerVersion: number }).minimumPlayerVersion = 1; }))).rejects.toThrow("Invalid lesson package manifest");
+    expect(() => checkLearnerPackage(Buffer.from(rewrite((edited) => { (edited.oll as unknown as Record<string, unknown>).code = "x"; })), "rec-1")).toThrow("Invalid player requirements");
   });
 
   // Rebuild integrity hashes as a file editor could. Semantic binding must

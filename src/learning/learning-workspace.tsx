@@ -143,6 +143,7 @@ import {
 import {
   isCourseWhiteboardQuestion,
   loadWhiteboardQuestions,
+  parseLessonPlugins,
   saveWhiteboardQuestions,
   type WhiteboardQuestionRecord,
   type WhiteboardQuestionStatus,
@@ -264,19 +265,21 @@ function lessonJobError(job: SkillActionJob): string {
   return tr("课程生成失败，请重试。");
 }
 
+function lessonJobMetadata(job: SkillActionJob): Record<string, unknown> | undefined {
+  const result = job.result;
+  if (!result || typeof result !== "object" || Array.isArray(result)) return;
+  const metadata = (result as Record<string, unknown>).structured_metadata;
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+    return metadata as Record<string, unknown>;
+  }
+}
+
 function lessonJobNonLessonResponse(job: SkillActionJob): {
   disposition: "clarify" | "ignore" | "unsupported";
   learnerResponse: string;
 } | null {
-  if (!job.result || typeof job.result !== "object" || Array.isArray(job.result)) {
-    return null;
-  }
-  const result = job.result as Record<string, unknown>;
-  const metadata = result.structured_metadata;
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return null;
-  }
-  const record = metadata as Record<string, unknown>;
+  const record = lessonJobMetadata(job);
+  if (!record) return null;
   const disposition = record.lesson_disposition;
   if (disposition !== "clarify" && disposition !== "ignore" && disposition !== "unsupported") {
     return null;
@@ -684,6 +687,7 @@ export function LearningWorkspace({
       | "status"
       | "error"
       | "errorCode"
+      | "lessonPlugins"
       | "imagePath"
       | "imageProfileId"
       | "source"
@@ -699,6 +703,7 @@ export function LearningWorkspace({
           && updated.status === question.status
           && updated.error === question.error
           && updated.errorCode === question.errorCode
+          && updated.lessonPlugins === question.lessonPlugins
           && updated.imagePath === question.imagePath
           && updated.imageProfileId === question.imageProfileId
           && updated.source?.sourceId === question.source?.sourceId
@@ -2167,7 +2172,11 @@ export function LearningWorkspace({
           setSendError(message);
           return;
         }
-        setWhiteboardQuestionStatus(pending.turnId, "answered");
+        const lessonPlugins = parseLessonPlugins(lessonJobMetadata(job)?.lesson_plan_plugins);
+        updateWhiteboardQuestion(pending.turnId, {
+          status: "answered",
+          ...(lessonPlugins ? { lessonPlugins } : {}),
+        });
         handleTurnComplete(pending.turnId);
         return;
       }

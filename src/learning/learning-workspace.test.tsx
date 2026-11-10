@@ -28,7 +28,7 @@ import { LearningWorkspace } from "./learning-workspace";
 import { saveSelectionEnhancementState } from "./selection-enhancements";
 import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
 import { SelectionRequestState } from "./selection-request-state";
-import { saveWhiteboardQuestions } from "./whiteboard-questions";
+import { loadWhiteboardQuestions, saveWhiteboardQuestions } from "./whiteboard-questions";
 import * as admissionFastGate from "./admission-fast-gate";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
@@ -1749,6 +1749,7 @@ describe("LearningWorkspace", () => {
           result: {
             success: true,
             output: "Validated OLL lesson generated.",
+            structured_metadata: { lesson_plan_plugins: { math: "0.1.0", shared: "0.1.0" } },
             artifacts: [{
               handle: "ws/generated-lesson",
               display_name: `${turnId}.octos-lesson.json`,
@@ -1763,6 +1764,9 @@ describe("LearningWorkspace", () => {
     });
     expect(await screen.findByText(tr("已回答"))).toBeTruthy();
     expect(await screen.findByText("勾股定理")).toBeTruthy();
+    expect(loadWhiteboardQuestions("learn-direct-lesson")).toEqual([
+      expect.objectContaining({ id: turnId, lessonPlugins: { math: "0.1.0", shared: "0.1.0" } }),
+    ]);
     await waitFor(() => expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "answer_delivered", questionId: turnId, data: expect.objectContaining({ text: "我们来看勾股定理。" }) })));
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",

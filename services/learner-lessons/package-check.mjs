@@ -47,7 +47,7 @@ const ROLES = Object.freeze({
   "lip-sync": { path: /^mouth\/[1-9]\d{0,3}\.json$/, mediaType: () => "application/json", mouthOnly: true },
   performance: { path: /^performance\/[1-9]\d{0,3}\.json$/, mediaType: () => "application/json", mouthOnly: true },
 });
-const MANIFEST_KEYS = new Set(["schema", "requiredCapabilities", "lessonId", "title", "language", "createdAt", "author", "lesson", "ink", "narration", "lipSync", "performance", "files", "contentSha256"]);
+const MANIFEST_KEYS = new Set(["schema", "requiredCapabilities", "oll", "lessonId", "title", "language", "createdAt", "author", "lesson", "ink", "narration", "lipSync", "performance", "files", "contentSha256"]);
 const REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const HASH = /^[a-f0-9]{64}$/;
 
@@ -127,6 +127,14 @@ export function checkLearnerPackage(archive, lessonId) {
   try { manifest = JSON.parse(manifestBytes.toString("utf8")); } catch { fail("The package manifest is not JSON"); }
   if (!object(manifest) || ![LEARNER_PACKAGE_SCHEMA, LEARNER_MOUTH_PACKAGE_SCHEMA].includes(manifest.schema)) fail("Unknown lesson package schema");
   if (Object.keys(manifest).some(key => !MANIFEST_KEYS.has(key))) fail("The package manifest has unknown fields");
+  // The OLL player requirements are optional: packages made before the block existed have none.
+  if (manifest.oll !== undefined) {
+    const oll = manifest.oll;
+    if (!object(oll) || Object.keys(oll).some(key => key !== "minimumPlayerVersion" && key !== "requiredCapabilities")
+      || typeof oll.minimumPlayerVersion !== "string" || !/^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(oll.minimumPlayerVersion)
+      || !Array.isArray(oll.requiredCapabilities) || oll.requiredCapabilities.length > 128
+      || oll.requiredCapabilities.some(name => typeof name !== "string" || !/^[a-z0-9][a-z0-9:/@._-]{0,95}$/.test(name))) fail("Invalid player requirements in the package");
+  }
   const animated = manifest.schema === LEARNER_MOUTH_PACKAGE_SCHEMA;
   const capabilities = Array.isArray(manifest.requiredCapabilities) ? manifest.requiredCapabilities.join() : "";
   const moving = capabilities === "avatar-lip-sync-v1,avatar-performance-v1";
