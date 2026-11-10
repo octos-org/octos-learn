@@ -368,8 +368,10 @@ export const MAX_CURVES = 4;
 export const MAX_DIAGRAM_BOXES = 8;
 
 /**
- * OLL diagram content: boxes box-1…, arrows link-2… into each box after the
- * first; a cycle's last arrow (link-close) goes from the newest box back to the first.
+ * OLL diagram content, built by the shared plugin: steps step-01…, edges
+ * edge-01… from each step to the next; a cycle's last edge (edge-close) goes
+ * from the newest step back to the first. Recordings saved with the older
+ * box-N / link-N names are mapped (DIAGRAM_LEGACY_PARTS).
  */
 function diagramContent(diagram: Diagram): Record<string, unknown> {
   // The shared plugin's builder, which Coach's AI lessons also use.
