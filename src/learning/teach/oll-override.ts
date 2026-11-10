@@ -25,10 +25,16 @@ export function effectiveLesson(recording: LearnerRecording, compiled: CompiledL
     const { author, language } = compiled.lesson.lesson;
     const hasSolid = compiled.lesson.steps.some((step) => step.beats.some((beat) =>
       beat.actions.some((action) => action.do === "write" && action.kind === "scene3d")));
-    // A renderer upgrade must not invalidate an edit made against the same recording.
-    if (!author || !hasSolid || recording.oll.basedOn !== lessonFingerprint(
-      compileRecording(recording, { author, language, legacyFaceTargets: true }).lesson,
-    )) return { compiled, override: "stale" };
+    // A renderer upgrade must not invalidate an edit made against the same
+    // recording: try the lesson as each earlier Studio compiled it.
+    const earlier = [
+      ...(hasSolid ? [{ legacyFaceTargets: true }] : []),
+      { prePluginPanels: true },
+      ...(hasSolid ? [{ legacyFaceTargets: true, prePluginPanels: true }] : []),
+    ];
+    if (!author || !earlier.some((compat) => recording.oll!.basedOn === lessonFingerprint(
+      compileRecording(recording, { author, language, ...compat }).lesson,
+    ))) return { compiled, override: "stale" };
   }
   return { compiled: { ...compiled, lesson: recording.oll.lesson as CompiledLesson["lesson"] }, override: "active" };
 }
