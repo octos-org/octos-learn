@@ -61,78 +61,13 @@ export type ComponentInsert = ComponentPlacement & (
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
-/** A prism's or pyramid's base other than a regular polygon: a rectangle, a right triangle by its legs, or a triangle by its three sides. */
-export type SolidBase =
-  | { kind: "rectangle"; length: number; width: number }
-  | { kind: "right_triangle"; a: number; b: number }
-  | { kind: "triangle"; a: number; b: number; c: number };
-
-/** Two solids stacked: a cylinder with a cone or a hemisphere on top, a box with a pyramid roof, or a smaller cylinder on a larger one. */
-export type CompositeSolid =
-  | { shape: "composite"; parts: "cylinder_cone"; radius: number; height: number; topHeight: number }
-  | { shape: "composite"; parts: "cylinder_hemisphere"; radius: number; height: number }
-  | { shape: "composite"; parts: "box_pyramid"; width: number; height: number; topHeight: number }
-  | { shape: "composite"; parts: "two_cylinders"; radius: number; height: number; topRadius: number; topHeight: number };
-
-/** A 3D solid, centred on the origin, its height along z (a hemisphere's flat face on the origin). */
-export type Solid =
-  | { shape: "box"; size: { x: number; y: number; z: number } }
-  | { shape: "cylinder" | "cone"; radius: number; height: number }
-  /** A regular base of `sides` in a circle of `radius`; a pyramid with topScale (0 < k < 1) is truncated. */
-  | { shape: "prism" | "pyramid"; sides: number; radius: number; height: number; topScale?: number }
-  | { shape: "prism" | "pyramid"; base: SolidBase; height: number; topScale?: number }
-  | { shape: "ellipsoid"; radii: { x: number; y: number; z: number } }
-  | CompositeSolid
-  | { shape: "frustum"; radius: number; topRadius: number; height: number }
-  | { shape: "torus"; radius: number; tube: number }
-  | { shape: "sphere" | "hemisphere" | "tetrahedron" | "octahedron" | "dodecahedron" | "icosahedron"; radius: number };
-
-export type SolidShape = Solid["shape"];
-
-/** How high a regular polyhedron of circumradius 1 reaches above (and below) its centre. */
-const POLYHEDRON_REACH: Record<string, number> = { tetrahedron: 1 / Math.sqrt(3), octahedron: 1, dodecahedron: 0.7947, icosahedron: 0.8507 };
-
-/** Where a solid is along z, from its bottom to its top, to bound a cutting plane. */
-export function solidZRange(solid: Solid): [number, number] {
-  switch (solid.shape) {
-    case "box": return [-solid.size.z / 2, solid.size.z / 2];
-    case "sphere": return [-solid.radius, solid.radius];
-    case "hemisphere": return [0, solid.radius];
-    case "torus": return [-solid.tube, solid.tube];
-    case "ellipsoid": return [-solid.radii.z, solid.radii.z];
-    case "composite": { const total = compositeHeight(solid); return [-total / 2, total / 2]; }
-    case "tetrahedron": case "octahedron": case "dodecahedron": case "icosahedron": {
-      const reach = solid.radius * POLYHEDRON_REACH[solid.shape]!;
-      return [-reach, reach];
-    }
-    default: return [-solid.height / 2, solid.height / 2];
-  }
-}
-
-/** A composite solid's total height, bottom to top. */
-export function compositeHeight(solid: CompositeSolid): number {
-  return solid.parts === "cylinder_hemisphere" ? solid.height + solid.radius : solid.height + solid.topHeight;
-}
-
-/** Whether a solid opens into a net (a box, prism, pyramid, cylinder or cone). */
-export function solidUnfolds(solid: Solid): boolean {
-  return ["box", "prism", "pyramid", "cylinder", "cone"].includes(solid.shape);
-}
-
-/** A base as its corners, going round counter-clockwise (the player centres it on its centroid). */
-export function baseCorners(base: SolidBase): Array<{ x: number; y: number }> | undefined {
-  switch (base.kind) {
-    case "rectangle": return [{ x: 0, y: 0 }, { x: base.length, y: 0 }, { x: base.length, y: base.width }, { x: 0, y: base.width }];
-    case "right_triangle": return [{ x: 0, y: 0 }, { x: base.a, y: 0 }, { x: 0, y: base.b }];
-    case "triangle": {
-      // Side a along the bottom; c from its left end and b from its right end meet at the top corner.
-      const { a, b, c } = base;
-      if (!(a + b > c && b + c > a && a + c > b)) return undefined;
-      const x = (a * a + c * c - b * b) / (2 * a);
-      return [{ x: 0, y: 0 }, { x: a, y: 0 }, { x, y: Math.sqrt(c * c - x * x) }];
-    }
-  }
-}
+// 3D solids are the math plugin's shared layer (OLL decision 0012), which
+// builds Studio's 3D panel and can build Coach's AI lessons.
+export {
+  baseCorners, compositeHeight, solidUnfolds, solidZRange,
+  type CompositeSolid, type Solid, type SolidBase, type SolidShape,
+} from "octos-lesson-language/plugin-math";
+import type { Solid } from "octos-lesson-language/plugin-math";
 
 /** How the presenter can react while the learner talks. */
 export type PresenterReaction = "encouraging" | "careful" | "celebrating";
