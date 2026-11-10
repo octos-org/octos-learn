@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 
 import { compileRecording } from "./compile-recording";
 import { checkOllEdit, effectiveLesson, lessonFingerprint } from "./oll-override";
-import { appendEvent, createRecording, finishTake, planCards, renameCard, setOllOverride, startTake } from "./recording";
+import { appendEvent, createRecording, finishTake, planCards, renameCard, setOllOverride, startTake, type LearnerRecording } from "./recording";
 import { decodeRecording } from "./recording-store";
 
 const now = "2026-11-04T12:00:00.000Z";
@@ -73,4 +73,47 @@ it("renames a card, refusing an empty or overlong name", () => {
   expect(renameCard(recording, "card-1", "  Meet the circle ", now).cards[0]!.title).toBe("Meet the circle");
   expect(() => renameCard(recording, "card-1", "  ", now)).toThrow();
   expect(() => renameCard(recording, "card-1", "x".repeat(81), now)).toThrow();
+});
+
+
+/** A recording using every panel the OLL plugins now build, with highlights on Studio's older part names. */
+function pluginPanelsRecording(withSolid: boolean): LearnerRecording {
+  const now = "2026-11-09T00:00:00.000Z";
+  let r = planCards(createRecording({ id: "rec-panels", now, topic: { text: "Panels", type: "math_off_map" }, goals: [] }), now, [{ title: "Panels" }]);
+  r = startTake(r, "card-1", now);
+  const events: Array<Record<string, unknown>> = [
+    { type: "component.insert", panel: "unit_circle", alias: "circle", variable: "theta" },
+    { type: "component.insert", panel: "polygon", alias: "poly", sides: 6, slider: { variable: "n" } },
+    { type: "component.insert", panel: "graph", alias: "wave", expression: "a*sin(x)", x: [0, 6.3], y: [-2, 2], linkedVariable: "theta",
+      parameters: [{ letter: "a", variable: "amp", initial: 1, min: 0.5, max: 2 }] },
+    { type: "component.insert", panel: "graph", alias: "lines", expression: "x", x: [-3, 3], y: [-3, 3] },
+    { type: "graph.add_curve", node: "lines", expression: "2*x" },
+    { type: "component.insert", panel: "diagram", alias: "cycle", shape: "cycle", boxes: ["Sea", "Cloud", "Rain"] },
+    { type: "diagram.add", node: "cycle", label: "River", link: "flows" },
+    ...(withSolid ? [{ type: "component.insert", panel: "solid_3d", alias: "box", shape: "box", size: { x: 4, y: 3, z: 2 }, unfold: { variable: "u" } }] : []),
+    { type: "tool.highlighter", target: { node: "circle", part: "point-p" } },
+    { type: "tool.highlighter", target: { node: "poly", part: "polygon" } },
+    { type: "tool.highlighter", target: { node: "wave", part: "current" } },
+    { type: "tool.highlighter", target: { node: "lines", part: "curve-2" } },
+    { type: "tool.highlighter", target: { node: "cycle", part: "box-4" } },
+  ];
+  events.forEach((event, index) => { r = appendEvent(r, "card-1", { t: index * 200, ...event } as never, now); });
+  return finishTake(r, "card-1", now, { durationMs: 4000, asrText: "All the panels.", speechSpanMs: [0, 4000] });
+}
+
+it("keeps an OLL edit saved before the plugins built Studio's panels", () => {
+  // The author the fingerprints below were captured with.
+  const options = { author: { kind: "learner" as const, learner_ref: "learner:demo", presented_by: { avatar_ref: "avatar:owl", voice_ref: "voice:x" } }, language: "zh-CN" };
+  // Captured with the compiler on main before the plugins built these panels (0017219b).
+  const before = { plain: "3pz-10mbvy0", solid: "501-1kbv8u3", solidLegacyFaces: "449-1d148ow" };
+  for (const [withSolid, basedOn, legacyFaceTargets] of [[false, before.plain, false], [true, before.solid, false], [true, before.solidLegacyFaces, true]] as const) {
+    const recording = pluginPanelsRecording(withSolid);
+    const edited = compileRecording(recording, { ...options, legacyFaceTargets, prePluginPanels: true }).lesson;
+    expect(lessonFingerprint(edited)).toBe(basedOn);
+    const current = compileRecording(recording, options);
+    expect(lessonFingerprint(current.lesson)).not.toBe(basedOn);
+    edited.steps[0]!.beats[0]!.say = "My own words.";
+    const overridden = setOllOverride(recording, { lesson: edited, basedOn, editedAt: now }, now);
+    expect(effectiveLesson(overridden, compileRecording(overridden, options))).toMatchObject({ override: "active", compiled: { lesson: edited } });
+  }
 });
