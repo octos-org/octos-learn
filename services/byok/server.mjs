@@ -130,6 +130,11 @@ async function limitedBytes(response, limit, signal) {
   } catch (error) { await reader.cancel().catch(() => {}); throw error; }
   return Buffer.concat(chunks);
 }
+/** A Jev request that attaches images through its top-level `assets` map. */
+export function hasImageAssets(payload) {
+  return object(payload) && object(payload.assets) && Object.values(payload.assets).some(asset => object(asset) && asset.type === "image");
+}
+
 async function readJson(request) {
   const chunks = []; let size = 0;
   for await (const chunk of request) {
@@ -262,7 +267,11 @@ export function createByokHandler({ octosBaseUrl = "http://127.0.0.1:50080", reg
         response.on("close", cancelled);
         try {
           const headers = azure ? azure.headers : { "content-type": "application/json" };
-          if (azure) { /* azureRequest built the supplier headers */ } else if (capability === "admission") headers.authorization = `Bearer ${draft.key.trim()}`;
+          if (azure) { /* azureRequest built the supplier headers */ } else if (capability === "admission") {
+            headers.authorization = `Bearer ${draft.key.trim()}`;
+            // Jev reads images only from an `assets` map and only with this opt-in (Jev 1.13+).
+            if (hasImageAssets(body.payload)) headers["TypeSafe-Danger-Zone-Images"] = "true";
+          }
           else {
             headers["X-Api-Key"] = draft.key.trim(); headers["X-Api-Resource-Id"] = draft.params.resource_id;
             headers["X-Api-Request-Id"] = randomUUID();
