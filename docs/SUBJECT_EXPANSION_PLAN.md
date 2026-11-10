@@ -2,7 +2,7 @@
 
 **Status** — Draft for product-owner review, 2026-11-08. Replaces the earlier discussion draft of this file. Code references were checked at learning-coach `be05941`, octos-lesson-language (OLL) `350d5e0`, octos-learn `e453bd8` and octos-course-library `0781f74` (each repository's `origin/main` on that date).
 
-**Review (2026-11-09)** — after P0 and P1 merged, the plan was reviewed against `origin/main` of all four repositories and the P0 baseline. The product owner accepted the review's changes the same day (decisions S6 revised, S10–S15 in §10): P1 gets a close-out list, P2 starts with a payload experiment and runs in shadow mode, the first science capabilities move forward, the ceilings get headroom, and the plan gains an Earth and space science plugin, a "none of these" subject choice, a grade-level input and an accuracy approach for subjects the program cannot compute.
+**Review (2026-11-09)** — after P0 and P1 merged, the plan was reviewed against `origin/main` of all four repositories and the P0 baseline. The work that follows from it is listed in §13. The product owner accepted the review's changes the same day (decisions S6 revised, S10–S15 in §10): P1 gets a close-out list, P2 starts with a payload experiment and runs in shadow mode, the first science capabilities move forward, the ceilings get headroom, and the plan gains an Earth and space science plugin, a "none of these" subject choice, a grade-level input and an accuracy approach for subjects the program cannot compute.
 
 ## 1. Goals
 
@@ -244,6 +244,8 @@ Still open:
 | Replay evidence for the exit | No recorded run; replay all 11 CoursePacks and every saved Studio recording, and record the result. Studio is the path whose output changed on purpose (it took Coach's part names) |
 | Coach's answer path | The plot, implicit-plot and 3D answers in `learning-coach/src/main.ts` are math-only and sit outside the plugin model. Left as is for now; listed so it is a known exception |
 
+Progress on this list and everything that follows is tracked in the TODO list (§13).
+
 - Move the 13 recipes (11 math, `spring_and_mass` to `physics`, `process_diagram` to `shared`), the hard-coded rules and the section facts into their plugins, with no change in behaviour.
 - Move the Studio math panels to the shared compilers.
 - Add the extension point to OLL core (§4.4), with no new features yet.
@@ -398,3 +400,79 @@ Program-owned correctness (§2) covers what a program can compute. Much of chemi
 | `octos-lesson-language` | `decisions/0004-interactive-whiteboard-mvp-boundaries.md`, `packages/core/src/capabilities.ts`, `packages/core/src/execution-requirements.ts`, `packages/player-core/src/index.ts`, `SPEC.md` |
 | `octos-learn` | [Studio expressiveness plan](LEARNER_EXPRESSIVENESS_PLAN.md) (Phase B, decisions E1–E5), `src/learning/admission-fast-gate.ts` (Jev), `src/learning/learning-workspace.tsx`, `src/learning/teach/compile-recording.ts`, `studio-add.tsx`, `learner-package.ts`, `src/learning/course-pack/course-pack-loader.ts` |
 | `octos-course-library` | `packages/course-pack/src/types.ts`, `validator.ts`, `browser.ts` |
+
+## 13. TODO list
+
+As of 2026-11-09. Nothing in this list is merged. Items marked "branch" have code on an unmerged branch with no pull request; everything else has not been started.
+
+### 13.1 Finish P1 (close-out)
+
+Branch work so far, all on a branch named `claude/p1-closeout` in each repository:
+
+| Repository | Head | What it holds | Checked |
+| --- | --- | --- | --- |
+| octos-lesson-language | `d84fcb2`, pushed | Decision 0012 set to Accepted. `plugin-math` now depends on `plugin-shared` (it did not, while Coach's copy of the manifest said it did), with a test | Full test suite, 455 pass |
+| octos-course-library | `6ae2f64`, pushed | `packages/course-pack` uses the root's OLL pin. `pnpm courses:replay` replays every course headlessly and compares with `courses/replay-digests.json`; it runs in CI | 11 courses replay identically on OLL `350d5e0` (before plugins) and `0c9676b` |
+| learning-coach | `db1fdce`, pushed, version 0.24.3 | The compiler looks recipes up in `src/plugins/compilers.ts`. Manifests and Jev subject lines come from the OLL packages. A compiled lesson reports its plugins and versions (`plugins`, `lesson_plan_plugins`) | Full test suite, 251 pass; every request and lesson digest unchanged |
+| octos-learn | `892f5108`, local commit, not pushed (worktree `octos-learn-closeout`) | `.olesson` manifests carry `oll: { minimumPlayerVersion, requiredCapabilities }`; the reader refuses an unplayable lesson before reading it; the learner-lessons service accepts the block | Package and service tests only. The full type check, lint and unit suite have **not** been run |
+
+To do:
+
+- [ ] Run octos-learn's type check, lint and full unit suite on the `.olesson` change; push the branch.
+- [ ] Review and open pull requests for the four branches. Merge OLL first.
+- [ ] After OLL merges, re-pin Coach and Learn from the branch commit `d84fcb2` to the merge commit, and move Course Library from `0c9676b` to the same commit. Re-run `pnpm courses:replay`.
+- [ ] Deploy the learner-lessons service before any app build that writes the `oll` block. The deployed service rejects manifest fields it does not know.
+- [ ] Install Coach 0.24.3 locally and restart Octos before testing it.
+- [ ] Replay every saved Studio recording (the product owner's guide lessons 1–5 and the Phase A guides) on current `main` and record the result. Only one old draft has been checked by hand.
+- [ ] Store the lesson's plugins in Learn. Coach now returns `lesson_plan_plugins`, but nothing reads it yet; §5.2 needs it as the context subject for follow-ups.
+- [ ] Course Library validates with the composed feature table (carried over from the P1 open items).
+- [ ] Finish the manual E2E checklist (`p1-e2e-main/E2E_CHECKLIST.md`): camera lesson and board-selection lesson are still open.
+- [ ] Update the P1 status in §8 once the above is merged, and mark P1's exit as met.
+
+### 13.2 P2 · Subject signal in shadow mode
+
+- [ ] **Payload experiment.** Write the padding harness in Coach (pad recipe guidance and schema by about 2, 4 and 8 KB). Needs the product owner's approval of the spend first: at least 40 interleaved pairs per size is about 240 live lesson generations on the owner's key.
+- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
+- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
+- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection.
+- [ ] Recheck the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+- [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
+- [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
+- [ ] Report the share of lesson requests that arrive with a Jev answer.
+- [ ] Write held-out routing cases (not the 93 used for tuning) and confirm T1 0.6 / T2 0.05 on them.
+- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [ ] Constant-speed motion recipe in `physics`, built on `shared` graphs. Pilot lesson through Coach, Studio and a CoursePack.
+- [ ] Speed gate with Jev on and with Jev off (interleaved pairs; needs spend approval).
+
+Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
+
+### 13.3 P3 · Vectors (B4) and free-layout diagrams (B3)
+
+For each of the two capabilities:
+
+- [ ] OLL decision record (0013 vectors, 0014 free-layout diagram).
+- [ ] Schema, reducer, web renderer, headless golden and execution feature. B4 is `plugin:physics/vectors@1` in `plugin-physics`; B3 goes in `plugin-shared`.
+- [ ] Recipe builder in the OLL plugin package.
+- [ ] Studio tool that calls the builder.
+- [ ] Coach recipe (card, guidance, schema fragment, compiler), adopted for AI lessons only after it passes the speed gate (E5).
+
+Once for P3:
+
+- [ ] Learn, the learner-package viewer and Course Library pass installed extensions to the player (first runtime extension).
+- [ ] Pilot lesson "force and acceleration with a slider graph" with real vectors, through all three paths.
+- [ ] Pilot lesson "water cycle" as a closed cycle, routed to `earth_space`, through all three paths.
+- [ ] Check that an older player, and a player without the plugin, refuse the vector lesson before playback in the live, Studio and CoursePack paths.
+
+### 13.4 Level and accuracy (§10)
+
+- [ ] Decide where the grade band comes from in the learner profile, and whether Learn asks for it. Learn sends it; Coach adds it to the input allow-list and the request.
+- [ ] Extend `check_plan` so narration that contradicts a physics quantity on the board is rejected.
+- [ ] Plugin guidance: no specific figures that the request did not supply.
+- [ ] Chemistry checks: equations balance, units agree (with B5).
+- [ ] Blinded quality review, at least 10 lessons per subject, with level fit and subject accuracy scored. Use it as the gate for enabling each subject's plugin in AI lessons.
+
+### 13.5 Open questions for the product owner
+
+- [ ] Approve or adjust the payload experiment's spend (§13.2).
+- [ ] Whether Coach's math-only answer path (plot, implicit plot, 3D) should move into the plugin model, and when.
+- [ ] How many customers have Jev configured today. If few, the broad request is the main path and deserves the first quality work.
