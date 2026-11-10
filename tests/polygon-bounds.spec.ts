@@ -33,7 +33,8 @@ test('side-count controls both regular polygons while the circle stays fixed, in
   expect(captionBox!.y + captionBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height);
   await page.evaluate(() => {
     localStorage.setItem('another-course-progress','preserve');
-    (window as any).polygonRegression.seedLegacy();
+    const fixture = window as Window & { polygonRegression: { seedLegacy(): void } };
+    fixture.polygonRegression.seedLegacy();
   });
   await page.reload();
   await expect(shapes).toHaveCount(2);
