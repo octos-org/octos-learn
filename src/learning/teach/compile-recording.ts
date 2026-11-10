@@ -26,6 +26,7 @@ import {
   type Take,
 } from "./recording";
 import { parseGraphEntry } from "./graph-entry";
+import { prePluginCurveId, prePluginDiagramContent, prePluginGraphContent, prePluginPolygon, prePluginUnitCircle } from "./legacy-panels";
 import { lineAcross, lineLabel } from "./studio-helpers";
 
 type Action = AuthoringAction & Record<string, unknown>;
@@ -58,6 +59,12 @@ export interface CompileOptions {
   language: string;
   /** Reproduce the original solid content when checking a saved OLL edit's fingerprint. */
   legacyFaceTargets?: boolean;
+  /**
+   * Reproduce how the unit circle, polygon, graph and diagram panels compiled
+   * before they came from the OLL plugins, when checking a saved OLL edit's
+   * fingerprint (legacy-panels.ts). Part names are not mapped.
+   */
+  prePluginPanels?: boolean;
   /** Show the take being recorded instead of the card's kept take, for the live board. */
   includeTakeInProgress?: boolean;
   /**
@@ -509,6 +516,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const inkSelections = new Map<string, string>(); // selection id -> "ink-alias#fragment"
   // Part names a recording saved before its visual came from a plugin builder.
   const legacyParts = new Map<string, Readonly<Record<string, string>>>();
+  const curveId = options.prePluginPanels ? prePluginCurveId : functionCurveId;
+  const diagramContentOf = options.prePluginPanels ? prePluginDiagramContent : diagramContent;
   const inkOfSelection = new Map<string, string>(); // selection id -> ink alias
   const hidden = new Set<string>();
   // Cards written so far (in earlier cards' steps or this card's actions), which writing may continue.
@@ -557,6 +566,12 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         if (!variables.has(component.linkedVariable)) throw new CompileError(`Graph is linked to unknown variable '${component.linkedVariable}'`);
         linked = component.linkedVariable;
       }
+      const letters = new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable]));
+      if (options.prePluginPanels) {
+        const content = prePluginGraphContent(expression, component.expression, component.x, component.y, linked, title);
+        graphs.set(alias, { content, letters });
+        return { do: "write", as: alias, kind: "plot", role: "diagram", content: structuredClone(content), place: placeNext() } as Action;
+      }
       legacyParts.set(alias, GRAPH_LEGACY_PARTS);
       // The math plugin's builder, which Coach's AI lessons also use. A linked
       // graph's point follows the curve as the sliders read it.
@@ -568,7 +583,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       });
       const written = built.actions[0] as Action & { content: Record<string, unknown> };
       const content = written.content;
-      graphs.set(alias, { content: structuredClone(content), letters: new Map((component.parameters ?? []).map((parameter) => [parameter.letter, parameter.variable])) });
+      graphs.set(alias, { content: structuredClone(content), letters });
       return written;
     }
     if (component.panel === "coordinate_grid") {
@@ -585,6 +600,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       if (variables.has(variable)) throw new CompileError(`Variable '${variable}' is already used`);
       variables.set(variable, { as: variable, initial: 0, min: 0, max: FULL_TURN, wrap: true, label: "θ", unit: "rad", control: { kind: "slider", step: 0.01 } });
       angleControlled.add(variable);
+      if (options.prePluginPanels) return prePluginUnitCircle(alias, variable, title, placeNext()) as Action;
       legacyParts.set(alias, UNIT_CIRCLE_LEGACY_PARTS);
       // The math plugin's builder, which Coach's AI lessons also use.
       return buildUnitCircle({
@@ -613,6 +629,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         if (variables.has(component.slider.variable)) throw new CompileError(`Variable '${component.slider.variable}' is already used`);
         variables.set(component.slider.variable, { as: component.slider.variable, initial: sides, min: 3, max: MAX_POLYGON_SIDES, label: sidesLabel(options.language), control: { kind: "slider", step: 1 } });
       }
+      if (options.prePluginPanels) return prePluginPolygon(alias, sides, component.slider?.variable, polygonLabel(options.language), title, placeNext()) as Action;
       legacyParts.set(alias, CIRCLE_POLYGON_LEGACY_PARTS);
       // The math plugin's builder, which Coach's AI lessons also use.
       return buildCirclePolygons({
@@ -626,8 +643,8 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
       for (const box of component.boxes) diagram.boxes.push({ label: box.trim() });
       diagrams.set(alias, diagram);
-      legacyParts.set(alias, DIAGRAM_LEGACY_PARTS);
-      return { do: "write", as: alias, kind: "diagram", role: "diagram", place: placeNext(), content: diagramContent(diagram) } as Action;
+      if (!options.prePluginPanels) legacyParts.set(alias, DIAGRAM_LEGACY_PARTS);
+      return { do: "write", as: alias, kind: "diagram", role: "diagram", place: placeNext(), content: diagramContentOf(diagram) } as Action;
     }
     if (component.panel === "table") {
       const table = { ...title, columns: component.columns.map((column) => column.trim()), rows: component.rows.map((row) => row.map((cell) => cell.trim())) };
@@ -822,9 +839,9 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
             const guides = (graph.content.guides ??= []) as Array<Record<string, unknown>>;
             guides.push({ as: `guide-${guides.length + 1}`, kind: entry.axis === "x" ? "vertical_line" : "horizontal_line", value: entry.value, label: `${entry.axis} = ${entry.value}` });
           } else if (entry.kind === "equation") {
-            curves.push({ as: functionCurveId(curves.length), kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
+            curves.push({ as: curveId(curves.length), kind: "implicit", expression: reading(entry.expression), level: 0, label: entry.label });
           } else {
-            curves.push({ as: functionCurveId(curves.length), expression: reading(entry.expression), label: `y = ${entry.expression}` });
+            curves.push({ as: curveId(curves.length), expression: reading(entry.expression), label: `y = ${entry.expression}` });
           }
           actions.push({ do: "revise", target: event.node, content: structuredClone(graph.content), reason: "the learner added a curve", when } as Action);
           focus = [event.node];
@@ -835,7 +852,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           if (!diagram) throw new CompileError(`'${event.node}' is not a diagram of steps or a cycle`);
           if (diagram.boxes.length >= MAX_DIAGRAM_BOXES) throw new CompileError(`'${event.node}' already has ${MAX_DIAGRAM_BOXES} boxes`);
           diagram.boxes.push({ label: event.label.trim(), ...(event.link?.trim() ? { link: event.link.trim() } : {}) });
-          actions.push({ do: "revise", target: event.node, content: diagramContent(diagram), reason: "the learner added a box", when } as Action);
+          actions.push({ do: "revise", target: event.node, content: diagramContentOf(diagram), reason: "the learner added a box", when } as Action);
           focus = [event.node];
           break;
         }
