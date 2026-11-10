@@ -187,6 +187,7 @@ export default function AvatarLabPage() {
         <AcademyHeader />
         <div className="avatar-lab-heading"><div><Link to="/teach">{tr("← 回到录课")}</Link><h1>{tr("二维虚拟形象互动试验室")}</h1></div><span>{tr("技术预览")}</span></div>
         <p className="avatar-lab-intro">{tr("选择你的小讲师，跟随表情和轻微头动。摄像头、手动调节和动作回放使用同一套控制。手臂暂不启用。")}</p>
+        <p><Link to="/gesture-lab">{tr("试试响指手型识别 →")}</Link></p>
         <div className="avatar-lab-characters" role="group" aria-label={tr("选择虚拟形象")}>
           {PAINTED_CHARACTERS.map(character=><button key={character.id} type="button" aria-pressed={characterId===character.id} disabled={recording} onClick={()=>{setCharacterId(character.id);setError(previous=>previous==='graphics'?null:previous);setMetrics(null);}}>
             <img src={`${import.meta.env.BASE_URL}${character.assets.extended}`} alt="" /><span>{character.name()}</span>
