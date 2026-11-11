@@ -477,8 +477,13 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
     - Offering the recipe adds 81 prompt tokens.
     - It was chosen for 10 of 10 constant-speed requests and 0 of 10 others.
     - 45 model calls.
-  - [ ] CoursePack path: a physics test pack (like `contract-smoke`, with no generated narration) checks that the course library validator, Learn's loader and player, and the launcher handle a non-mathematics pack. The owner held off generating a published physics course (2026-11-11); that belongs with the per-subject quality review (§13.4).
-  - [ ] Adopt the recipe in AI lessons (move it from the trial list to the catalog) once its speed gate passes, as a separate change.
+  - [x] CoursePack path: the physics test pack `octos-course-library/courses/physics-smoke` (like `contract-smoke`: placeholder audio, no generated narration, not published).
+    - It is compiled through Learn's `oll:materialize`.
+    - The course library validator accepts it with its pinned OLL: player 0.2.0, no plugin feature.
+    - In Learn it loads through the real archive reader, passes the parity check and plays to the end on the board.
+    - The launcher names its subject.
+    - The owner held off generating a published physics course (2026-11-11); that belongs with the per-subject quality review (§13.4).
+  - [ ] Adopt the recipe in AI lessons (move it from the trial list to the catalog) as a separate change. The owner decided on 2026-11-11 to wait until the per-subject quality review (§13.4) passes for physics, even though the speed gate has passed.
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
 
