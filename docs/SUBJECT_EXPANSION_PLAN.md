@@ -417,10 +417,11 @@ Coach, Learn and Course Library were verified on OLL `7c12c9c`. Coach 0.24.3 was
 
 Other manual results:
 - Studio drafts recorded before the migration are excluded, as agreed.
-- The signed rounding questions grade the rounded value exactly (`2.2`, `-2.2`). The owner confirmed this is the intended behaviour.
+- The signed rounding questions in that pass graded the rounded value exactly (`2.2`, `-2.2`). On 2026-11-10 the owner decided that rounding questions also accept the unrounded value (see below).
 
-- [ ] Follow-up manual coverage: physical camera teaching and live Jev image relay.
-- [ ] Rounding questions accept the unrounded value only when the model's `check` differs from its `answer`. Make "write the rounded value" deterministic for rounding tasks.
+- [ ] Follow-up manual coverage: physical camera teaching and live Jev image relay. Deferred by the owner (2026-11-10).
+- [x] Rounding questions accept the unrounded value (owner decision, 2026-11-10). [Coach #53](https://github.com/alan0x/learning-coach/pull/53) reads the rounding request from the prompt ("保留一位小数", "round to the nearest tenth"). The answer accepts anything that rounds to it, whatever the model wrote in `check`. Other questions stay exact.
+- [x] `log` is the common logarithm (base 10) and `ln` the natural logarithm (owner decision, 2026-11-10). This is in [OLL #43](https://github.com/alan0x/octos-lesson-language/pull/43) (`44357bd`), which Learn and Coach pin. No CoursePack or saved lesson changes meaning.
 - [ ] Plot display redesign (owner-approved 2026-11-10):
   - A deterministic teaching view planner in Coach: curve features, the states the lesson shows, natural domains for quantities, and repair of model-written ranges.
   - OLL presentation: a card-height band, one tick step under equal units, π ticks, adaptive sampling and edge indicators.
