@@ -3497,5 +3497,8 @@
   "走多少秒": "Seconds of motion",
   "速度（米/秒）": "Speed (m/s)",
   "时间和速度都要大于 0（时间最多 3600 秒，速度最多 1000 米/秒）。": "Time and speed must both be above 0 (time at most 3600 s, speed at most 1000 m/s).",
-  "速度也做成滑块：讲课时调快调慢，看直线变陡变缓": "Make the speed a slider too: speed up or slow down while teaching and watch the line get steeper or flatter"
+  "速度也做成滑块：讲课时调快调慢，看直线变陡变缓": "Make the speed a slider too: speed up or slow down while teaching and watch the line get steeper or flatter",
+  "化学": "Chemistry",
+  "生物": "Biology",
+  "地球与宇宙": "Earth and space"
 }
