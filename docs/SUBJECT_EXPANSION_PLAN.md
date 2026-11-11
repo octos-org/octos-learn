@@ -242,7 +242,7 @@ Still open:
 
 Revised 2026-11-09 (decisions S6 and S10).
 
-1. **Payload experiment, before anything else.** The baseline cannot say whether request size costs time: at most 4.5 KB of a 17 KB first request is recipe-specific, no request hit the prompt cache, and the model spends 7.8 s (p50) writing about 1,170 output tokens. Pad the first request's recipe guidance and schema by about 2, 4 and 8 KB and compare first-playable time against the unpadded request, interleaved, at least 40 pairs per size. The result sets the ceilings' headroom (§9) and decides whether scoped requests are built now or later.
+1. **Payload experiment, before anything else.** The baseline cannot say whether request size costs time: at most 4.5 KB of a 17 KB first request is recipe-specific, no request hit the prompt cache, and the model spends 7.8 s (p50) writing about 1,170 output tokens. Scaled down by the product owner on 2026-11-10: pad the first request's recipe guidance and schema by about 8 KB only and compare the first request's time against the unpadded request, interleaved, on the production model route. Measure only the first request (it decides first playable), not whole lessons. Stop at 20 pairs when the result is clear, otherwise run 40; 40 pairs detect a slowdown of about 1 s. Test 2 and 4 KB only if 8 KB shows a slowdown. The result sets the ceilings' headroom (§9) and decides whether scoped requests are built now or later.
 2. **The plugin-based Jev question** (§5.2), including `none`, `unclear` and the image attachment, replaces today's five choices. Recheck the two follow-ups that pass the gate only through its pass-through rule.
 3. **Hand-off in shadow mode.** Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Coach validates and logs them and keeps sending the broad request. Each trace records what a scoped request would have contained and whether the lesson used a recipe outside it. That measures route correctness on real requests with no risk to lessons.
 4. **Held-out routing check.** Confirm T1 and T2 on requests that were not used to tune them.
@@ -296,7 +296,7 @@ Math and science items are developed in parallel (decision S5).
   - **Hard ceilings (decision S6).** Fixed byte and token limits for the full request body, schema included, apply to three cases: a scoped single-plugin request, a scoped two-plugin request and the broad request. Every plugin carries a budget for its own cards, guidance and schema fragments.
     - *Done in P0:* byte ceilings per input route and request path, measured offline over the course fixtures (system prompt, prompt and response schema; learning-coach `eval/payload-ceilings.json`). These cover today's broad request.
     - *Pending:* a token budget for the full request body, from the provider's token counter, and the ceilings for the scoped single- and two-plugin requests, set when scoped requests exist.
-    - *Headroom (decision S14).* The P0 ceilings are the measured maxima, so the first new recipe would break the broad ceiling. After the P2 payload experiment, re-set each ceiling to the measured maximum plus the largest increase that showed no loss of first-playable p50. Split the broad ceiling into a budget for `shared` and a budget per subject plugin. Building scoped requests is triggered when the broad request has used 80% of its headroom.
+    - *Headroom (decision S14).* The P0 ceilings are the measured maxima, so the first new recipe would break the broad ceiling. After the P2 payload experiment, re-set each ceiling to the measured maximum plus the largest increase that showed no loss of first-playable p50. The scaled-down experiment tests 8 KB only, so a clean result gives 8 KB of headroom; a slowdown leads to testing 2 and 4 KB. Split the broad ceiling into a budget for `shared` and a budget per subject plugin. Building scoped requests is triggered when the broad request has used 80% of its headroom.
   - A test computes every entry point's payload and fails the build when a ceiling or a plugin budget is exceeded. Raising a ceiling requires an explicit change to the plan and a fresh live speed comparison. The broad request has a ceiling too: once all plugins no longer fit, plugins must shrink their cards and guidance; they don't get to raise the limit.
 
 **Subject identification, measured offline against Jev:**
@@ -430,18 +430,44 @@ Other manual results:
 
 ### 13.2 P2 · Subject signal in shadow mode
 
-- [ ] **Payload experiment.** Write the padding harness in Coach (pad recipe guidance and schema by about 2, 4 and 8 KB). Needs the product owner's approval of the spend first: at least 40 interleaved pairs per size is about 240 live lesson generations on the owner's key.
-- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
-- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
-- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection.
-- [ ] Recheck the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step 2 waits for the owner's approval. Step 3 follows the measurements. The payload experiment no longer comes first, because shadow mode changes no lesson and needs its result for nothing.
+
+**Step 1 · No spending (in progress)**
+
+- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection. If the image call fails, fall back to the text-only answer, then the context subject, then the broad request.
+- [ ] Select plugins from Jev's probabilities (T1 0.6 / T2 0.05, §5.2), or from the board, Studio or CoursePack context when Jev is unavailable.
 - [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
 - [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
 - [ ] Report the share of lesson requests that arrive with a Jev answer.
-- [ ] Write held-out routing cases (not the 93 used for tuning) and confirm T1 0.6 / T2 0.05 on them.
-- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [x] Write held-out routing cases (not the 93 used for tuning), with expected plugins: 46 cases in Coach `eval/subject-routing-heldout.json` (Coach #54).
+- [x] Prepare the recheck of the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+
+**Step 2 · Needs the owner's approval of the spend**
+
+- [x] Run the held-out routing cases and the two follow-up rechecks against Jev, and confirm T1 0.6 / T2 0.05. This uses the owner's Jev key, roughly one call per case. Owner-authorized and run 2026-11-11 (Coach `docs/SUBJECT_ROUTING_HELDOUT_2026-11-11.md`):
+  - 47 of 48 correct. The one miss is a three-subject request beyond the two-plugin limit.
+  - T1 0.6 / T2 0.05 confirmed: the lowest winning probability was 0.63; chosen second subjects were at 0.11 or more, and second subjects left out at 0.01 or less.
+  - Both follow-ups now route confidently.
+- [x] **Payload experiment** (scaled down and approved by the owner, 2026-11-10; result accepted 2026-11-11). Write the padding harness in Coach. Pad recipe guidance and schema by about 8 KB and measure only the first request on the production route, interleaved with the unpadded request. 20 pairs, or 40 if the result is borderline: 40–80 model calls, about USD 0.25–0.50. Test 2 and 4 KB only if 8 KB shows a slowdown.
+- [x] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred. [Coach #55](https://github.com/alan0x/learning-coach/pull/55), `docs/PAYLOAD_EXPERIMENT_2026-11-11.md`.
+  - **Result:** +8,368 B (+1,331 prompt tokens) showed no measurable cost over 20 interleaved pairs. First-playable p50 was 8.85 s unpadded and 8.87 s padded; the paired difference rules out a slowdown above about 1.3 s.
+  - **Decision:** scoped requests stay deferred.
+- [x] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included. In Coach #55:
+  - First-request ceilings: P0 maxima plus 8,368 B.
+  - Text first-request prompt tokens: 3,875 (the provider's usage count; whether Gemini counts the response schema in it is not documented).
+  - Plugin budgets: footprint plus share (shared and physics 2,000 B each, others 1,000 B each), enforced by the ceiling test.
+- [x] Speed gate with Jev on and with Jev off (interleaved pairs). Scaled down and approved by the owner on 2026-11-11 to 20 pairs measured to first playable. **Passed:** [Coach #56](https://github.com/alan0x/learning-coach/pull/56), `docs/SHADOW_SPEED_GATE_2026-11-11.md`.
+  - Baseline Coach 0.25.1 against candidate 0.26.0, each run through the real tool process. Learn's Jev gate request was checked byte for byte.
+  - Jev on: p50 10.77 s against 11.02 s; paired median −0.11 s.
+  - Jev off: paired median −0.32 s.
+  - Jev gate p50 678 ms with the old question against 676 ms with the new one.
+  - First-request prompt tokens are identical in every pair; the spread comes from repair runs in both arms.
+  - Not covered: attaching images to the gate, which still needs its own speed check.
+
+**Step 3 · After the measurements**
+
 - [ ] Constant-speed motion recipe in `physics`, built on `shared` graphs. Pilot lesson through Coach, Studio and a CoursePack.
-- [ ] Speed gate with Jev on and with Jev off (interleaved pairs; needs spend approval).
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
 
