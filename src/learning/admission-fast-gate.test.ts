@@ -303,3 +303,59 @@ describe("admission-fast-gate", () => {
     expect(result.source).toBe("passthrough");
   });
 });
+
+describe("admission-fast-gate subject plugins (subject plan P2)", () => {
+  const key = "ts-test-key-54321";
+  const response = {
+    answers: {
+      disposition: { choice: "generate_lesson", probabilities: { generate_lesson: 0.95, clarify: 0.03, ignore: 0.02 }, confidence: 0.93 },
+      subject: { choice: "earth_space", probabilities: { earth_space: 0.88, biology: 0.08, none: 0.04 }, confidence: 0.8 },
+      is_self_contained: { noul: 0.9 },
+    },
+    model: "jev-latest",
+  };
+  const ok = () => ({ ok: true, json: vi.fn().mockResolvedValue(response) });
+
+  it("asks Jev to choose among the installed plugins and returns its full subject answer", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(ok());
+    const result = await evaluateAdmissionFastGate(
+      { text: "Why does it rain?", modality: "text", subjectPlugins: ["math", "physics", "earth_space", "shared"], language: "en-US" },
+      { fetchFn: fetchFn as unknown as typeof fetch, apiKey: key },
+    );
+    const body = JSON.parse(fetchFn.mock.calls[0]![1].body);
+    expect(Object.keys(body.questions.subject.criteria)).toEqual(["math", "physics", "earth_space", "none", "unclear"]);
+    expect(body.assets).toBeUndefined();
+    expect(result.subject).toBe("earth_space");
+    expect(result.subjectAnswer?.probabilities.earth_space).toBe(0.88);
+  });
+
+  it("keeps the fixed subject question when the installed Learning Coach declares no plugins", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(ok());
+    await evaluateAdmissionFastGate({ text: "Why does it rain?", modality: "text" }, { fetchFn: fetchFn as unknown as typeof fetch, apiKey: key });
+    expect(Object.keys(JSON.parse(fetchFn.mock.calls[0]![1].body).questions.subject.criteria)).toContain("general_science");
+  });
+
+  it("attaches an image by reference and falls back to text only when the image call fails", async () => {
+    const image = { type: "image" as const, format: "png" as const, data_base64: "iVBORw0KGgo=" };
+    const seen = vi.fn().mockResolvedValue(ok());
+    const withImage = await evaluateAdmissionFastGate(
+      { text: "help me with this one", modality: "voice", hasCameraFrame: true, subjectPlugins: ["math", "shared"], image },
+      { fetchFn: seen as unknown as typeof fetch, apiKey: key },
+    );
+    const body = JSON.parse(seen.mock.calls[0]![1].body);
+    expect(body.state.image).toBe("request_image");
+    expect(body.assets.request_image).toEqual(image);
+    expect(seen.mock.calls[0]![1].headers["TypeSafe-Danger-Zone-Images"]).toBe("true");
+    expect(withImage.imageSeen).toBe(true);
+
+    const failing = vi.fn().mockRejectedValueOnce(new Error("image input unavailable")).mockResolvedValueOnce(ok());
+    const textOnly = await evaluateAdmissionFastGate(
+      { text: "help me with this one", modality: "voice", hasCameraFrame: true, subjectPlugins: ["math", "shared"], image },
+      { fetchFn: failing as unknown as typeof fetch, apiKey: key },
+    );
+    expect(failing).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(failing.mock.calls[1]![1].body).assets).toBeUndefined();
+    expect(textOnly.imageSeen).toBe(false);
+    expect(textOnly.source).toBe("jev_direct");
+  });
+});

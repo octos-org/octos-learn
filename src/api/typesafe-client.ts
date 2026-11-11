@@ -39,8 +39,17 @@ export interface NoulAnswer {
 
 export type Answer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
 
+/** An image Jev can read (Jev 1.13+), referenced by its ID from `state`. */
+export interface SystemOneImageAsset {
+  type: "image";
+  format: "png" | "jpeg";
+  data_base64: string;
+}
+
 export interface SystemOneRequest {
   state: unknown;
+  /** Image assets by ID; the BYOK relay opts in to Jev image input when present. */
+  assets?: Record<string, SystemOneImageAsset>;
   model?: string;
   questions: Record<string, Question>;
 }
@@ -108,6 +117,10 @@ export async function evaluateSystemOne(
     if (apiKey?.trim()) {
       headers["Authorization"] = `Bearer ${apiKey.trim()}`;
     }
+    // Jev reads image assets only when the request opts in (Jev 1.13+).
+    if (requestPayload.assets && Object.keys(requestPayload.assets).length) {
+      headers["TypeSafe-Danger-Zone-Images"] = "true";
+    }
 
     const response = await fetchFn(baseUrl, {
       method: "POST",
@@ -118,6 +131,7 @@ export async function evaluateSystemOne(
         state: requestPayload.state,
         model: requestPayload.model ?? DEFAULT_TYPESAFE_MODEL,
         questions: requestPayload.questions,
+        ...(requestPayload.assets && Object.keys(requestPayload.assets).length ? { assets: requestPayload.assets } : {}),
       }),
       signal: mergedSignal,
     });

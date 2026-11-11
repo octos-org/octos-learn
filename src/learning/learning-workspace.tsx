@@ -165,6 +165,8 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { resolveSubjectSignal, subjectPluginSupport, subjectSignalFields } from "./subject-signal";
+import type { ChoiceAnswer } from "@/api/typesafe-client";
 import { buildCurrentLessonContext } from "./current-lesson-context";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
@@ -660,6 +662,16 @@ export function LearningWorkspace({
   const [courseRegions, setCourseRegions] = useState<CourseRegionRecord[]>(
     () => loadCourseRegions(sessionId),
   );
+  // The subjects of this board's latest lesson: the context fallback for the
+  // subject signal when Jev is unavailable or unsure (subject plan §5.2).
+  const whiteboardQuestionsRef = useRef(whiteboardQuestions);
+  useEffect(() => { whiteboardQuestionsRef.current = whiteboardQuestions; }, [whiteboardQuestions]);
+  const boardLessonPlugins = useCallback((): string[] => {
+    const latest = whiteboardQuestionsRef.current
+      .filter((question) => question.lessonPlugins && Object.keys(question.lessonPlugins).length)
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+    return latest?.lessonPlugins ? Object.keys(latest.lessonPlugins) : [];
+  }, []);
   useEffect(() => {
     saveWhiteboardQuestions(sessionId, whiteboardQuestions);
   }, [sessionId, whiteboardQuestions]);
@@ -1113,6 +1125,8 @@ export function LearningWorkspace({
   }, []);
   // The gate may count "the reflection question" as clear only when the lesson
   // it starts (from text, the camera or a selection) will receive the same context.
+  const gateSubjectPlugins = useCallback((source: "text" | "camera" | "selection") => subjectPluginFields.current
+    .get(source === "camera" ? "learning.lesson.generate-from-camera" : source === "selection" ? "learning.lesson.generate-from-selection" : "learning.lesson.generate"), []);
   const gateLessonContext = useCallback((source: "text" | "camera" | "selection") => lessonContextFields.current
     .get(source === "camera" ? "learning.lesson.generate-from-camera" : source === "selection" ? "learning.lesson.generate-from-selection" : "learning.lesson.generate")
     ?.has("current_lesson") ? currentLesson() : undefined, [currentLesson]);
@@ -1220,6 +1234,10 @@ export function LearningWorkspace({
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
+  // Subject plugins each lesson action declares (subject plan P2), and each
+  // turn's Jev subject answer until its lesson request is sent.
+  const subjectPluginFields = useRef(new Map<string, string[]>());
+  const subjectAnswers = useRef(new Map<string, ChoiceAnswer | undefined>());
   const languageAwareActions = useRef(new Set<string>());
   const classroomBusyRef = useRef(historyClassroomBusy);
   const backgroundStaleRef = useRef(false);
@@ -1235,6 +1253,7 @@ export function LearningWorkspace({
         .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
         .then((lists) => { if (!cancelled && read === latest) {
           lessonContextFields.current = lessonContextSupport(lists.flat());
+          subjectPluginFields.current = subjectPluginSupport(lists.flat());
           languageAwareActions.current = new Set(lists.flat().filter(action => "language" in ((action.input_schema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {})).map(action => action.id));
         } })
         .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
@@ -1312,6 +1331,13 @@ export function LearningWorkspace({
     setPendingLessonTeacher(contextFields?.has("teacher_profile") ? lessonTeacher : null);
     setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
+    // Subject plan P2 (shadow mode): Jev's answer for this turn, or the board's
+    // latest lesson subjects, or none. Sent only when the action declares it.
+    const subjectPlugins = subjectPluginFields.current.get(actionId);
+    const subjectSignal = subjectPlugins
+      ? resolveSubjectSignal({ answer: subjectAnswers.current.get(turnId) }, boardLessonPlugins(), subjectPlugins)
+      : undefined;
+    subjectAnswers.current.delete(turnId);
     const invocationStartedAt = Date.now();
     learnTrace.recordOnce(`${turnId}:skill-invocation-started`, {
       turnId,
@@ -1323,6 +1349,7 @@ export function LearningWorkspace({
         action_id: actionId,
         input_modality: inputModality,
         request_source: requestSource === "camera" ? "current_image" : requestSource,
+        ...(subjectSignal ? { plugin_source: subjectSignal.plugin_source, plugins: subjectSignal.plugins } : {}),
       },
     });
     try {
@@ -1338,6 +1365,7 @@ export function LearningWorkspace({
           ...(teacherProfileText ? { teacher_profile: teacherProfileText } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
+          ...(subjectSignal ? subjectSignalFields(subjectSignal) : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1399,7 +1427,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, rememberLessonTeacher, learnerBackground, teacher, currentLesson]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, rememberLessonTeacher, learnerBackground, teacher, currentLesson, boardLessonPlugins]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || tr("课程生成失败，请稍后再试");
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
@@ -1541,7 +1569,10 @@ export function LearningWorkspace({
               hasCameraFrame: Boolean(context.currentFramePath),
               hasSelection,
               currentLesson: gateLessonContext(hasSelection ? "selection" : context.currentFramePath ? "camera" : "text"),
+              subjectPlugins: gateSubjectPlugins(hasSelection ? "selection" : context.currentFramePath ? "camera" : "text"),
+              language: requestLanguage,
             });
+            subjectAnswers.current.set(context.turnId, admission.subjectAnswer);
 
             if (admission.disposition === "ignore") {
               learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
@@ -1705,6 +1736,7 @@ export function LearningWorkspace({
     },
     [
       gateLessonContext,
+      gateSubjectPlugins,
       conversationOptions,
       handleTurnComplete,
       handleVoiceTurnError,
@@ -3025,6 +3057,7 @@ export function LearningWorkspace({
       setSendErrorCode(undefined);
       const references = composerBoardReferences;
       const hasSelection = references.length > 0 || Boolean(activeVoiceInkSelectionCaptureRef.current);
+      let subjectAnswer: ChoiceAnswer | undefined;
       if (!applicationContext?.trim()) {
         const admission = await evaluateAdmissionFastGate({
           text,
@@ -3032,7 +3065,10 @@ export function LearningWorkspace({
           hasCameraFrame: Boolean(conv.cameraActive),
           hasSelection,
           currentLesson: gateLessonContext(hasSelection ? "selection" : conv.cameraActive ? "camera" : "text"),
+          subjectPlugins: gateSubjectPlugins(hasSelection ? "selection" : conv.cameraActive ? "camera" : "text"),
+          language: requestLanguage,
         });
+        subjectAnswer = admission.subjectAnswer;
         if (admission.disposition === "ignore") {
           return;
         }
@@ -3043,6 +3079,7 @@ export function LearningWorkspace({
       }
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
+      subjectAnswers.current.set(turnId, subjectAnswer);
       learnTrace.recordOnce(`${turnId}:request-submitted`, {
         turnId,
         source: "octos-web",
@@ -3231,6 +3268,7 @@ export function LearningWorkspace({
     },
     [
       gateLessonContext,
+      gateSubjectPlugins,
       buildTurnText,
       aiUnavailable,
       aiUnavailableMessage,

@@ -7,7 +7,8 @@ import {
 } from "@/api/typesafe-client";
 import { getService, hasServiceCredential, setServiceStatus } from "@/byok/services";
 import { directJson, serviceFailure, validateService } from "@/byok/providers";
-import type { SystemOneRequest, SystemOneResponse } from "@/api/typesafe-client";
+import type { SystemOneImageAsset, SystemOneRequest, SystemOneResponse } from "@/api/typesafe-client";
+import { subjectQuestion } from "./subject-signal";
 
 export interface AdmissionFastGateInput {
   text: string;
@@ -17,6 +18,15 @@ export interface AdmissionFastGateInput {
   /** What this board just taught (`buildCurrentLessonContext`), so a request
    * that points back at it ("the reflection question") counts as complete. */
   currentLesson?: string;
+  /** Subject plugins the installed Learning Coach declares (subject plan P2).
+   * With them, Jev chooses among their subject lines plus none and unclear;
+   * without them the gate keeps its fixed subject choices. */
+  subjectPlugins?: readonly string[];
+  /** Lesson language, for the subject lines. */
+  language?: string;
+  /** The camera frame or ink selection the request refers to. If the image
+   * call fails, the gate retries with text only. */
+  image?: SystemOneImageAsset;
 }
 
 export type AdmissionDisposition = "generate_lesson" | "clarify" | "ignore";
@@ -30,7 +40,11 @@ export type AdmissionSubjectDomain =
 export interface AdmissionFastGateResult {
   disposition: AdmissionDisposition;
   confidence: number;
-  subject?: AdmissionSubjectDomain;
+  subject?: AdmissionSubjectDomain | string;
+  /** Jev's full subject answer, for plugin selection. */
+  subjectAnswer?: ChoiceAnswer;
+  /** Whether Jev saw the attached image (false after a text-only retry). */
+  imageSeen?: boolean;
   isSelfContained: boolean;
   clarificationPrompt?: string;
   reason?: string;
@@ -182,16 +196,19 @@ export async function evaluateAdmissionFastGate(
         return result;
       } finally { clearTimeout(timeout); }
     };
-    const response = await evaluate(
-      apiKey,
-      {
+    const pluginSubjects = input.subjectPlugins?.length
+      ? subjectQuestion(input.subjectPlugins, input.language ?? "zh-CN")
+      : undefined;
+    const request = (image?: SystemOneImageAsset): SystemOneRequest => ({
         state: {
           learner_request: trimmed,
           input_modality: input.modality,
           has_camera_frame: Boolean(input.hasCameraFrame),
           has_selection: Boolean(input.hasSelection),
           ...(input.currentLesson ? { current_lesson: input.currentLesson } : {}),
+          ...(image ? { image: "request_image" } : {}),
         },
+        ...(image ? { assets: { request_image: image } } : {}),
         questions: {
           disposition: {
             type: "choice",
@@ -204,7 +221,7 @@ export async function evaluateAdmissionFastGate(
               ignore: "仅为语气词、口头填充、停顿、唤醒词或无实际教学意图的噪音（如'呃'、'啊对'、'嗯'、'好'）",
             },
           },
-          subject: {
+          subject: pluginSubjects ?? {
             type: "choice",
             instructions: "如果该内容涉及学习主题，判断其最可能所属的主学科领域",
             criteria: {
@@ -220,12 +237,18 @@ export async function evaluateAdmissionFastGate(
             instructions: `该输入是否无需额外依赖上下文即可独立理解并直接展开一堂课？${input.currentLesson ? "（state.current_lesson 不算额外上下文）" : ""}`,
           },
         },
-      },
-      {
-        timeoutMs,
-        fetchFn: options.fetchFn,
-      },
-    );
+    });
+    const settings = { timeoutMs, fetchFn: options.fetchFn };
+    let imageSeen = Boolean(input.image);
+    let response: SystemOneResponse;
+    try {
+      response = await evaluate(apiKey, request(input.image), settings);
+    } catch (error) {
+      // Jev image input is experimental: fall back to the text-only answer.
+      if (!input.image) throw error;
+      imageSeen = false;
+      response = await evaluate(apiKey, request(), settings);
+    }
 
     const dispAnswer = response.answers.disposition as ChoiceAnswer | undefined;
     const subjectAnswer = response.answers.subject as ChoiceAnswer | undefined;
@@ -248,7 +271,9 @@ export async function evaluateAdmissionFastGate(
       return finish(input, {
         disposition: "generate_lesson",
         confidence,
-        subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
+        subject: subjectAnswer?.choice,
+        subjectAnswer,
+        ...(input.image ? { imageSeen } : {}),
         isSelfContained,
         reason: tr("意图边界模糊（排课概率 {{v0}}%），降级直通排课流程", { v0: Math.round(lessonProbability * 100) }),
         source: "passthrough",
@@ -270,7 +295,9 @@ export async function evaluateAdmissionFastGate(
       return finish(input, {
         disposition: "generate_lesson",
         confidence,
-        subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
+        subject: subjectAnswer?.choice,
+        subjectAnswer,
+        ...(input.image ? { imageSeen } : {}),
         isSelfContained,
         reason: tr("文字预判无法读取视觉上下文，交由选区或图片处理流程判断"),
         source: "passthrough",
@@ -292,7 +319,9 @@ export async function evaluateAdmissionFastGate(
     return finish(input, {
       disposition,
       confidence,
-      subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
+      subject: subjectAnswer?.choice,
+      subjectAnswer,
+      ...(input.image ? { imageSeen } : {}),
       isSelfContained,
       clarificationPrompt,
       reason: clarificationPrompt,
