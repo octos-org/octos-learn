@@ -1,6 +1,12 @@
 import type { ChoiceAnswer } from "@/api/typesafe-client";
 import type { SkillActionDefinition } from "@/api/skill-actions";
-import { subjectDescription } from "octos-lesson-language/plugin-subjects";
+import {
+  SUBJECT_THRESHOLDS,
+  selectSubjectPlugins as selectFromProbabilities,
+  subjectQuestion,
+} from "octos-lesson-language/plugin-subjects";
+
+export { subjectQuestion };
 
 /**
  * The subject signal sent with a lesson request (subject plan §5.2, P2 shadow
@@ -13,12 +19,6 @@ export interface SubjectSignal {
   plugin_confidence?: number;
   plugin_source: "jev" | "context" | "none";
 }
-
-/** Probability thresholds from the P0 baseline (70 of 78 scoped correctly). */
-export const SUBJECT_THRESHOLDS = { top: 0.6, second: 0.05 } as const;
-
-const NONE = "none";
-const UNCLEAR = "unclear";
 
 /**
  * The subject plugin IDs each lesson action accepts, from its `plugins` enum.
@@ -36,49 +36,10 @@ export function subjectPluginSupport(actions: readonly SkillActionDefinition[]):
   return support;
 }
 
-/** Subject plugins Jev can choose: the declared plugins that have a subject line (`shared` has none). */
-export function subjectChoices(pluginIds: readonly string[], language: string): Array<{ id: string; description: string }> {
-  return pluginIds.flatMap((id) => {
-    const description = subjectDescription(id, language);
-    return description ? [{ id, description }] : [];
-  });
-}
-
-/** The Jev subject question built from the plugins, with `none` and `unclear`. */
-export function subjectQuestion(pluginIds: readonly string[], language: string) {
-  const criteria: Record<string, string> = {};
-  for (const choice of subjectChoices(pluginIds, language)) criteria[choice.id] = choice.description;
-  criteria[NONE] = "不属于以上任何学科，例如历史、语言、文学、艺术或日常生活问题";
-  criteria[UNCLEAR] = "无法判断属于哪个学科，例如只说'这道题'而看不到题目内容";
-  return {
-    type: "choice" as const,
-    instructions: "判断这个学习请求属于哪个学科。请求结合图片或 state.current_lesson 才能看懂时，按它们判断",
-    criteria,
-  };
-}
-
-/**
- * Plugins from Jev's probabilities (§5.2): the top subject at or above T1,
- * plus the second subject at or above T2; `none` at or above T1 selects the
- * shared tools alone. Below T1, or when `unclear` wins, Jev selects nothing.
- */
-export function selectSubjectPlugins(
-  answer: ChoiceAnswer | undefined,
-  pluginIds: readonly string[],
-  thresholds: { top: number; second: number } = SUBJECT_THRESHOLDS,
-): SubjectSignal | undefined {
-  const probabilities = answer?.probabilities;
-  if (!probabilities) return undefined;
-  const ranked = Object.entries(probabilities)
-    .filter(([, probability]) => typeof probability === "number" && Number.isFinite(probability))
-    .sort(([, a], [, b]) => b - a);
-  const [top] = ranked;
-  if (!top || top[1] < thresholds.top || top[0] === UNCLEAR) return undefined;
-  if (top[0] === NONE) return { plugins: ["shared"], plugin_confidence: top[1], plugin_source: "jev" };
-  if (!pluginIds.includes(top[0])) return undefined;
-  const second = ranked.slice(1).find(([id]) => pluginIds.includes(id) && id !== NONE && id !== UNCLEAR);
-  const plugins = second && second[1] >= thresholds.second ? [top[0], second[0]] : [top[0]];
-  return { plugins, plugin_confidence: top[1], plugin_source: "jev" };
+/** Jev's selection (OLL plugin-subjects: T1 0.6, T2 0.05, `none` selects shared alone). */
+export function selectSubjectPlugins(answer: ChoiceAnswer | undefined, pluginIds: readonly string[]): SubjectSignal | undefined {
+  const selection = selectFromProbabilities(answer?.probabilities, pluginIds);
+  return selection ? { plugins: selection.plugins, plugin_confidence: selection.confidence, plugin_source: "jev" } : undefined;
 }
 
 /**
