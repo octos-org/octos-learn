@@ -3500,5 +3500,22 @@
   "速度也做成滑块：讲课时调快调慢，看直线变陡变缓": "Make the speed a slider too: speed up or slow down while teaching and watch the line get steeper or flatter",
   "化学": "Chemistry",
   "生物": "Biology",
-  "地球与宇宙": "Earth and space"
+  "地球与宇宙": "Earth and space",
+  "放上数轴": "Put a number line",
+  "数轴": "Number line",
+  "每格分成": "Split each unit into",
+  "不分": "No splitting",
+  "{{v0}} 份": "{{v0}} parts",
+  "起点（可不填）": "Start (optional)",
+  "移动多少（可不填）": "Move by (optional)",
+  "一格一跳：讲课时能一格一格地数": "One hop per part: count the parts while teaching",
+  "移动做成滑块：讲课时拖动，看跳到哪里": "Make the move a slider: drag it while teaching and see where it lands",
+  "数轴的两端要是整数，从小到大，最多相差 {{v0}}。": "The ends of the line are whole numbers, smaller first, at most {{v0}} apart.",
+  "每格分成的份数不在可选范围里。": "That number of parts is not one of the choices.",
+  "刻度太多了：请缩短数轴，或者每格少分几份。": "Too many ticks: shorten the line or split each unit into fewer parts.",
+  "起点要是数轴范围里的数或分数，例如 3 或 3/4。": "The start is a number or fraction on the line, such as 3 or 3/4.",
+  "要先有起点，才能画移动。": "Add a start before a move.",
+  "移动多少要是不为 0 的数或分数，例如 −5 或 1/4。": "The move is a number or fraction other than 0, such as −5 or 1/4.",
+  "移动后要停在数轴范围里。": "The move must end on the line.",
+  "一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。": "Hop by hop, the move is a whole number of parts, at most {{v0}} hops."
 }

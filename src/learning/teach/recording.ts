@@ -65,6 +65,14 @@ export type ComponentInsert = ComponentPlacement & (
    */
   | { panel: "constant_speed"; alias: string; time: { variable: string; max: number };
       speed: { initial: number; slider?: { variable: string; max: number } }; title?: string }
+  /**
+   * A number line (math plugin, OLL decision 0013): a range with each unit split
+   * into equal parts, an optional start point (a number or an exact fraction
+   * such as "3/4"), and an optional jump from it, drawn hop by hop if asked; the
+   * jump's size may be a slider.
+   */
+  | { panel: "number_line"; alias: string; range: [number, number]; subdivisions: number; start?: string;
+      jump?: { by: string; hops: boolean; slider?: { variable: string } }; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 
