@@ -432,14 +432,14 @@ Other manual results:
 
 Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step 2 waits for the owner's approval. Step 3 follows the measurements. The payload experiment no longer comes first, because shadow mode changes no lesson and needs its result for nothing.
 
-**Step 1 · No spending (in progress)**
+**Step 1 · No spending (done 2026-11-11: OLL #44, Coach #54, Learn #142)**
 
-- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
-- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection. If the image call fails, fall back to the text-only answer, then the context subject, then the broad request.
-- [ ] Select plugins from Jev's probabilities (T1 0.6 / T2 0.05, §5.2), or from the board, Studio or CoursePack context when Jev is unavailable.
-- [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
-- [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
-- [ ] Report the share of lesson requests that arrive with a Jev answer.
+- [x] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [x] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection. If the image call fails, fall back to the text-only answer, then the context subject, then the broad request. *The gate supports images with the text-only retry; attaching them at the call sites stays deferred until an image speed check, because the gate blocks lesson start.*
+- [x] Select plugins from Jev's probabilities (T1 0.6 / T2 0.05, §5.2), or from the board, Studio or CoursePack context when Jev is unavailable. *Board context is built. Studio and CoursePack context stay deferred: all current packs are mathematics and Studio recordings carry no subject yet.*
+- [x] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through (still to be confirmed in a live lesson); Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
+- [x] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
+- [ ] Report the share of lesson requests that arrive with a Jev answer. The report script is in Coach (`scripts/report-plugin-signal.mjs`); it needs traces from real use.
 - [x] Write held-out routing cases (not the 93 used for tuning), with expected plugins: 46 cases in Coach `eval/subject-routing-heldout.json` (Coach #54).
 - [x] Prepare the recheck of the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
 
@@ -465,9 +465,16 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
   - First-request prompt tokens are identical in every pair; the spread comes from repair runs in both arms.
   - Not covered: attaching images to the gate, which still needs its own speed check.
 
-**Step 3 · After the measurements**
+**Step 3 · After the measurements (started 2026-11-11)**
 
 - [ ] Constant-speed motion recipe in `physics`, built on `shared` graphs. Pilot lesson through Coach, Studio and a CoursePack.
+  - [x] OLL builder `buildConstantSpeedMotion` in `plugin-physics`. It uses existing geometry and plot features only, so it needs no player feature. The same change fixes geometry axis labels, which the zoomable view had dropped.
+  - [x] Coach recipe `constant_speed_motion` (card, guidance, schema fragment, compiler) as a **trial recipe**: installed and tested, but offered to the model only when `LEARNING_COACH_TRIAL_RECIPES` names it, so live requests stay byte-identical until it passes the speed gate (E5).
+  - [x] Studio tool: Insert → Physics → constant-speed motion (time slider, optional speed slider), built with the same OLL builder.
+  - [x] CoursePack brief, learner request and metadata (`octos-course-library/authoring/constant-speed-motion`), the first physics pack. The course launcher names science subjects.
+  - [ ] **Needs the owner's approval of the spend.** Speed gate for the trial recipe: 20 interleaved pairs measured to first playable, the same Coach build with the recipe offered and not offered; half the requests fit the recipe. 40–60 model calls, about USD 0.25–0.50.
+  - [ ] **Needs the owner's approval of the spend.** CoursePack candidates through the production Coach path with the trial on (about 3 full lessons), the owner's review, then Volcengine narration for the chosen candidate.
+  - [ ] Adopt the recipe in AI lessons (move it from the trial list to the catalog) once its speed gate passes, as a separate change.
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
 
