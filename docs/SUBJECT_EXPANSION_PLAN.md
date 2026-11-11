@@ -457,7 +457,13 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
   - First-request ceilings: P0 maxima plus 8,368 B.
   - Text first-request prompt tokens: 3,875 (the provider's usage count; whether Gemini counts the response schema in it is not documented).
   - Plugin budgets: footprint plus share (shared and physics 2,000 B each, others 1,000 B each), enforced by the ceiling test.
-- [ ] Speed gate with Jev on and with Jev off (interleaved pairs).
+- [x] Speed gate with Jev on and with Jev off (interleaved pairs). Scaled down and approved by the owner on 2026-11-11 to 20 pairs measured to first playable. **Passed:** [Coach #56](https://github.com/alan0x/learning-coach/pull/56), `docs/SHADOW_SPEED_GATE_2026-11-11.md`.
+  - Baseline Coach 0.25.1 against candidate 0.26.0, each run through the real tool process. Learn's Jev gate request was checked byte for byte.
+  - Jev on: p50 10.77 s against 11.02 s; paired median −0.11 s.
+  - Jev off: paired median −0.32 s.
+  - Jev gate p50 678 ms with the old question against 676 ms with the new one.
+  - First-request prompt tokens are identical in every pair; the spread comes from repair runs in both arms.
+  - Not covered: attaching images to the gate, which still needs its own speed check.
 
 **Step 3 · After the measurements**
 
