@@ -35,6 +35,7 @@ function describe(event: RecordingEvent): { action: ActionKind; label: string } 
       return { action: "insert", label: {
         graph: tr("放上函数图"), coordinate_grid: tr("放上坐标网格"), unit_circle: tr("放上单位圆"), solid_3d: tr("放上立体"),
         text: tr("写上一段话"), note: tr("写上一条提示"), table: tr("放上表格"), diagram: tr("放上图示"), polygon: tr("放上正多边形"),
+        constant_speed: tr("放上匀速运动"),
       }[event.panel] };
     case "table.fill":
       return { action: "insert", label: tr("填表格") };

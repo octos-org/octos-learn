@@ -4,6 +4,7 @@
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
 import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildSolid, buildUnitCircle, describeSolid, functionCurveId, solidUnfolds, solidZRange } from "octos-lesson-language/plugin-math";
+import { buildConstantSpeedMotion } from "octos-lesson-language/plugin-physics";
 import { PROCESS_CYCLE_EDGE_ID, processDiagramContent, processEdgeId, processStepId } from "octos-lesson-language/plugin-shared";
 import { normalizeLocale, tr } from "@/i18n";
 
@@ -329,6 +330,25 @@ export const MAX_POLYGON_SIDES = 48;
 const polygonLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "正多边形" : "regular polygon");
 const sidesLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "边数" : "sides");
 
+/** The longest run a constant-speed motion panel offers, in seconds, and its fastest speed in metres per second. */
+export const MAX_MOTION_TIME = 3600;
+export const MAX_MOTION_SPEED = 1000;
+/** The constant-speed motion panel's labels, in the lesson's language. */
+function motionText(language: string, title: string) {
+  const zh = language.toLowerCase().startsWith("zh");
+  return {
+    title,
+    start: zh ? "起点" : "start", object: zh ? "物体" : "object",
+    distance_readout: zh ? "物体 s = " : "object s = ", distance_unit: "m",
+    distance_axis: zh ? "路程 s（m）" : "distance s (m)", time_axis: zh ? "时间 t（s）" : "time t (s)",
+    plot_title: zh ? "路程随时间变化" : "Distance against time", curve_label: "s = v t",
+    current_state: zh ? "此刻" : "now", link_label: zh ? "同一时刻" : "same moment",
+    group_label: zh ? "匀速运动与路程—时间图像" : "constant-speed motion and its distance–time graph",
+  };
+}
+const motionVariableLabel = (language: string, quantity: "time" | "speed") =>
+  language.toLowerCase().startsWith("zh") ? (quantity === "time" ? "时间 t" : "速度 v") : (quantity === "time" ? "time t" : "speed v");
+
 /** The most curves the studio puts on one graph. */
 export const MAX_CURVES = 4;
 /** The most boxes OLL lays out as steps (and the studio offers for a cycle). */
@@ -432,7 +452,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
   const owner = (reference: string) => reference.split("#")[0]!;
   const pointsAtMissingInk = (value: BoardTarget) => "inkSelection" in value && !inkSelections.has(value.inkSelection);
 
-  const insert = (component: ComponentInsert, cardTitle: string): Action => {
+  const insert = (component: ComponentInsert, cardTitle: string): Action | Action[] => {
     const alias = requireAlias(component.alias, "Component");
     // A component the learner did not name carries the card's title.
     const title = { title: component.title?.trim() || cardTitle };
@@ -525,6 +545,31 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         circumscribed: false,
         text: { ...title, inscribed_label: polygonLabel(options.language) },
       }).actions[0] as Action;
+    }
+    if (component.panel === "constant_speed") {
+      // The physics plugin's builder, which Coach's AI lessons also use: a track
+      // and a distance–time graph, linked and grouped under the component's alias.
+      const { time, speed } = component;
+      if (!(time.max > 0 && time.max <= MAX_MOTION_TIME)) throw new CompileError(`A motion runs for more than 0 and at most ${MAX_MOTION_TIME} seconds`);
+      if (!(speed.initial > 0 && speed.initial <= MAX_MOTION_SPEED)) throw new CompileError(`A speed is above 0 and at most ${MAX_MOTION_SPEED} m/s`);
+      if (speed.slider && !(speed.slider.max >= speed.initial && speed.slider.max <= MAX_MOTION_SPEED)) {
+        throw new CompileError("The speed slider's largest value must hold the starting speed");
+      }
+      for (const variable of [time.variable, speed.slider?.variable]) {
+        if (variable && variables.has(variable)) throw new CompileError(`Variable '${variable}' is already used`);
+      }
+      variables.set(time.variable, { as: time.variable, initial: 0, min: 0, max: time.max, label: motionVariableLabel(options.language, "time"), unit: "s",
+        control: { kind: "slider", step: sliderStep(0, time.max) } });
+      if (speed.slider) {
+        variables.set(speed.slider.variable, { as: speed.slider.variable, initial: speed.initial, min: 0, max: speed.slider.max,
+          label: motionVariableLabel(options.language, "speed"), unit: "m/s", control: { kind: "slider", step: sliderStep(0, speed.slider.max) } });
+      }
+      return buildConstantSpeedMotion({
+        as: alias, role: "diagram", place: placeNext(),
+        time: { expression: time.variable, initial: 0, max: time.max },
+        speed: speed.slider ? { expression: speed.slider.variable, initial: speed.initial, max: speed.slider.max } : { initial: speed.initial, max: speed.initial },
+        text: motionText(options.language, title.title),
+      }).actions as Action[];
     }
     if (component.panel === "diagram") {
       const diagram: Diagram = { shape: component.shape, title: title.title, boxes: [] };
@@ -680,10 +725,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const when = rankOf(sentences, event.t) as unknown as Phase;
       switch (event.type) {
         case "component.insert": {
-          const action = insert(event, card.title);
+          const made = insert(event, card.title);
           // Put next to a card in the current row: it joins that row beside it.
           const beside = event.nextTo ? { place: { relation: "right_of", anchor: event.nextTo }, role: "supporting_visual" } : {};
-          actions.push({ ...action, ...beside, when } as Action);
+          // A component built from several cards (motion and its graph) places its first card; the rest follow it.
+          (Array.isArray(made) ? made : [made]).forEach((action, index) => actions.push({ ...action, ...(index === 0 ? beside : {}), when } as Action));
           lastNode = event.alias;
           focus = [event.alias];
           break;

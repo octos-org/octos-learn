@@ -3,8 +3,10 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { BookOpen, Box, Check, ChevronLeft, Circle, CircleAlert, CircleDot, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
+import { BookOpen, Box, Check, ChevronLeft, Circle, CircleAlert, CircleDot, Gauge, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEventHandler, type ReactNode } from "react";
+import { niceAxisMax } from "octos-lesson-language/plugin-physics";
+import { MAX_MOTION_SPEED, MAX_MOTION_TIME } from "./compile-recording";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
@@ -55,6 +57,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   const groups: Array<[string, Entry[]]> = [
     [tr("文字与图示"), [["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow]]],
     [tr("数学图形"), [["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["polygon", tr("正多边形"), Hexagon], ["solid_3d", tr("立体"), Box]]],
+    [tr("物理"), [["constant_speed", tr("匀速运动"), Gauge]]],
     [tr("在网格上绘制"), [
       ...(grids.length ? [["point", tr("放一个点"), Square] as Entry] : []),
       ...(hasTwoPoints ? [["line", tr("过两点画直线"), Spline] as Entry, ["segment", tr("连线段"), Minus] as Entry] : []),
@@ -275,6 +278,7 @@ function InsertPanel({
   if (form === "segment") return <LineForm recording={recording} segment onLine={(line) => onShape({ type: "geometry.segment", node: line.node, from: line.from, to: line.to, alias: nextComponentAlias(recording, "segment") })} />;
   if (form === "circle") return <CircleForm recording={recording} onShape={onShape} />;
   if (form === "polygon") return <PolygonForm recording={recording} placement={placement} onInsert={onInsert} />;
+  if (form === "constant_speed") return <ConstantSpeedForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "text" || form === "note") return <WordsForm kind={form} recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
   if (form === "table") return <TableForm recording={recording} onInsert={onInsert} />;
   if (form === "diagram") return <DiagramForm recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
@@ -684,6 +688,52 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
       <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("边数做成滑块：讲课时拖动，看周长越来越接近圆周")}</span></label>
       {placement}
     </InsertSheet>
+  );
+}
+
+/** An object moving at constant speed with its distance–time graph: time is a slider, and the speed may be one. */
+function ConstantSpeedForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
+  const [seconds, setSeconds] = useState("10");
+  const [speed, setSpeed] = useState("2");
+  const [slider, setSlider] = useState(true);
+  const time = numberField(seconds);
+  const value = numberField(speed);
+  const ready = time !== undefined && time > 0 && time <= MAX_MOTION_TIME && value !== undefined && value > 0 && value <= MAX_MOTION_SPEED;
+  return (
+    <InsertSheet disabled={!ready} onSubmit={(event) => {
+      event.preventDefault();
+      if (!ready) return;
+      const timeVariable = nextParameterVariable(recording, "t");
+      onInsert({
+        panel: "constant_speed", alias: nextComponentAlias(recording, "motion"),
+        time: { variable: timeVariable, max: time! },
+        speed: { initial: value!, ...(slider ? { slider: { variable: nextParameterVariable(recording, "v", [timeVariable]), max: Math.min(MAX_MOTION_SPEED, niceAxisMax(value! * 2)) } } : {}) },
+      });
+    }}>
+      <div className="teach-insert-figure">
+        <MotionSketch />
+        <p>{tr("物体沿直线匀速前进，旁边是它的路程—时间图像。拖动时间滑杆，物体和图上的点一起走。")}</p>
+      </div>
+      <div className="teach-range">
+        <label>{tr("走多少秒")}<input className="teach-input" inputMode="decimal" value={seconds} onChange={(event) => setSeconds(event.target.value)} /></label>
+        <label>{tr("速度（米/秒）")}<input className="teach-input" inputMode="decimal" value={speed} onChange={(event) => setSpeed(event.target.value)} /></label>
+      </div>
+      {!ready && <p className="teach-notice" role="status">{tr("时间和速度都要大于 0（时间最多 3600 秒，速度最多 1000 米/秒）。")}</p>}
+      <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("速度也做成滑块：讲课时调快调慢，看直线变陡变缓")}</span></label>
+      {placement}
+    </InsertSheet>
+  );
+}
+
+/** Small schematic of the track and its distance–time line. */
+function MotionSketch() {
+  return (
+    <svg className="teach-circle-sketch" viewBox="0 0 120 104" aria-hidden="true">
+      <path className="teach-sketch-axis" d="M8 30h50M70 96h44M70 96V8" />
+      <circle className="teach-sketch-point" cx="40" cy="30" r="4" />
+      <path className="teach-sketch-shape" d="M8 30h32M70 96 112 20" />
+      <circle className="teach-sketch-point" cx="96" cy="49" r="3" />
+    </svg>
   );
 }
 

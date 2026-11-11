@@ -3487,5 +3487,15 @@
   "手型命中只表示看到了准备动作，不表示已经打出响指。先对比张手、食指捏合、中指捏合，再试真正打响指。": "A hand-shape match only means the ready position was seen, not that a snap happened. Compare an open hand, an index pinch and a middle-finger pinch first, then try a real snap.",
   "清空计数": "Reset counts",
   "最近识别事件": "Recent detection events",
-  "试试响指手型识别 →": "Try snap hand detection →"
+  "试试响指手型识别 →": "Try snap hand detection →",
+  "物理": "Physics",
+  "匀速运动": "Constant speed",
+  "放上匀速运动": "Put constant-speed motion",
+  "时间 t": "time t",
+  "速度 v": "speed v",
+  "物体沿直线匀速前进，旁边是它的路程—时间图像。拖动时间滑杆，物体和图上的点一起走。": "An object moves along a line at constant speed, next to its distance–time graph. Drag the time slider and the object and the point on the graph move together.",
+  "走多少秒": "Seconds of motion",
+  "速度（米/秒）": "Speed (m/s)",
+  "时间和速度都要大于 0（时间最多 3600 秒，速度最多 1000 米/秒）。": "Time and speed must both be above 0 (time at most 3600 s, speed at most 1000 m/s).",
+  "速度也做成滑块：讲课时调快调慢，看直线变陡变缓": "Make the speed a slider too: speed up or slow down while teaching and watch the line get steeper or flatter"
 }
