@@ -472,8 +472,12 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
   - [x] Coach recipe `constant_speed_motion` (card, guidance, schema fragment, compiler) as a **trial recipe**: installed and tested, but offered to the model only when `LEARNING_COACH_TRIAL_RECIPES` names it, so live requests stay byte-identical until it passes the speed gate (E5).
   - [x] Studio tool: Insert → Physics → constant-speed motion (time slider, optional speed slider), built with the same OLL builder.
   - [x] CoursePack brief, learner request and metadata (`octos-course-library/authoring/constant-speed-motion`), the first physics pack. The course launcher names science subjects.
-  - [ ] **Needs the owner's approval of the spend.** Speed gate for the trial recipe: 20 interleaved pairs measured to first playable, the same Coach build with the recipe offered and not offered; half the requests fit the recipe. 40–60 model calls, about USD 0.25–0.50.
-  - [ ] **Needs the owner's approval of the spend.** CoursePack candidates through the production Coach path with the trial on (about 3 full lessons), the owner's review, then Volcengine narration for the chosen candidate.
+  - [x] Speed gate for the trial recipe (approved by the owner 2026-11-11). **Passed:** Coach `docs/TRIAL_RECIPE_SPEED_2026-11-11.md`.
+    - 20 interleaved pairs to first playable: no slowdown (paired median −1.28 s, caused by slow baseline runs).
+    - Offering the recipe adds 81 prompt tokens.
+    - It was chosen for 10 of 10 constant-speed requests and 0 of 10 others.
+    - 45 model calls.
+  - [ ] CoursePack path: a physics test pack (like `contract-smoke`, with no generated narration) checks that the course library validator, Learn's loader and player, and the launcher handle a non-mathematics pack. The owner held off generating a published physics course (2026-11-11); that belongs with the per-subject quality review (§13.4).
   - [ ] Adopt the recipe in AI lessons (move it from the trial list to the catalog) once its speed gate passes, as a separate change.
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
