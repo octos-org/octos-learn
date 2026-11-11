@@ -446,9 +446,14 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
 **Step 2 · Needs the owner's approval of the spend**
 
 - [ ] Run the held-out routing cases and the two follow-up rechecks against Jev, and confirm T1 0.6 / T2 0.05. This uses the owner's Jev key, roughly one call per case.
-- [ ] **Payload experiment** (scaled down and approved by the owner, 2026-11-10). Write the padding harness in Coach. Pad recipe guidance and schema by about 8 KB and measure only the first request on the production route, interleaved with the unpadded request. 20 pairs, or 40 if the result is borderline: 40–80 model calls, about USD 0.25–0.50. Test 2 and 4 KB only if 8 KB shows a slowdown.
-- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
-- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
+- [x] **Payload experiment** (scaled down and approved by the owner, 2026-11-10; result accepted 2026-11-11). Write the padding harness in Coach. Pad recipe guidance and schema by about 8 KB and measure only the first request on the production route, interleaved with the unpadded request. 20 pairs, or 40 if the result is borderline: 40–80 model calls, about USD 0.25–0.50. Test 2 and 4 KB only if 8 KB shows a slowdown.
+- [x] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred. [Coach #55](https://github.com/alan0x/learning-coach/pull/55), `docs/PAYLOAD_EXPERIMENT_2026-11-11.md`.
+  - **Result:** +8,368 B (+1,331 prompt tokens) showed no measurable cost over 20 interleaved pairs. First-playable p50 was 8.85 s unpadded and 8.87 s padded; the paired difference rules out a slowdown above about 1.3 s.
+  - **Decision:** scoped requests stay deferred.
+- [x] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included. In Coach #55:
+  - First-request ceilings: P0 maxima plus 8,368 B.
+  - Text first-request prompt tokens: 3,875 (the provider's usage count; whether Gemini counts the response schema in it is not documented).
+  - Plugin budgets: footprint plus share (shared and physics 2,000 B each, others 1,000 B each), enforced by the ceiling test.
 - [ ] Speed gate with Jev on and with Jev off (interleaved pairs).
 
 **Step 3 · After the measurements**
