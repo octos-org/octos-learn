@@ -2,6 +2,8 @@
 
 **Status** — Revised plan accepted 2026-11-09. Replaces the earlier discussion draft of this file. Code references were checked at learning-coach `be05941`, octos-lesson-language (OLL) `350d5e0`, octos-learn `e453bd8` and octos-course-library `0781f74` (each repository's `origin/main` on that date).
 
+**Reprioritized (2026-11-11, decision S16)** — this work began because the math visuals were not expressive enough. P0–P2 built the route a new capability takes (shared builders, budgets, speed gates, trial recipes), but added no new kind of math visual. Grades 3–8 math visuals now come first: number line (B9), fraction and area models (B10), then data charts (B6) are the new P3. Vectors and free-layout diagrams move to P4. No further infrastructure work is planned: the remaining P2 items collect data from real use.
+
 **Review (2026-11-09)** — after P0 and the P1 migration merged, the plan was reviewed against `origin/main` of all four repositories and the P0 baseline. The work that follows from it is listed in §13. The product owner accepted the review's changes the same day (decisions S6 revised, S10–S15 in §11): P1 gets a close-out list, P2 starts with a payload experiment and runs in shadow mode, the first science capabilities move forward, the ceilings get headroom, and the plan gains an Earth and space science plugin, a "none of these" subject choice, a grade-level input and an accuracy approach for subjects the program cannot compute.
 
 ## 1. Goals
@@ -227,7 +229,7 @@ Merged:
 - **OLL extension point:** OLL #39. Plugin features (`plugin:<id>/<name>@<major>`), `requiredPlugins`, and refusal of a missing or outdated plugin before playback.
 
 Still open:
-- Hosts passing installed extensions to the player; this comes with P3's first runtime extension.
+- Hosts passing installed extensions to the player; this comes with the first runtime extension (P3, the number line).
 - Coach adopting Studio's solids for AI lessons, which is a deliberate output change.
 
 **Close-out.** The implementation, merge order and local acceptance evidence are recorded in §13.1. Coach's math-only answer path remains a known exception outside the recipe compiler.
@@ -252,11 +254,33 @@ Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery and t
 
 **Exit** — the experiment's result is recorded and the ceilings are re-set from it; the routing fixtures pass; shadow-mode route correctness and the share of requests with a Jev answer are reported; the speed gate passes with Jev on and with Jev off.
 
-### P3 · First science capabilities: vectors (B4) and free-layout diagrams (B3)
+### P3 · Grades 3–8 mathematics: number line (B9), fraction and area models (B10), data charts (B6)
 
-Moved forward on 2026-11-09 (decision S11) to run in parallel with P2. The baseline's main finding was that science lessons lack real visuals: chemistry and biology used only notes, formula cards and step diagrams, and the water cycle was drawn as a straight list. Neither item depends on scoping.
+Reprioritized on 2026-11-11 (decision S16). The plan started from the finding that the math visuals were not expressive enough. OLL is strong in algebra, functions, trigonometry and 3D, but has little for the K–8 math most US learners meet (E2). P0–P2 added no new math visual.
 
-- **B4, vectors and forces,** in `plugin-physics`: the vector node with a namespaced execution feature, the Studio tool and the Coach recipe. This is the first runtime extension, so hosts start passing installed extensions to the player here.
+- **B9, number line,** in `plugin-math`. It is the first item because it is the smallest, covers integers, fractions and decimals across grades 3–7, and an example already fakes one with a diagram (`learner-context-number-line-v2`).
+  - Range and ticks, including fraction and decimal ticks.
+  - Labelled points, jumps drawn as arrows (adding and subtracting), and open and closed intervals.
+  - Points bindable to variables.
+  - It is the first runtime extension, so hosts start passing installed extensions to the player here.
+  - Pilot lesson: adding and subtracting integers on a number line. The example's faked number line is rebuilt with it.
+- **B10, fraction and area models,** in `plugin-math`.
+  - Bar, circle and area partitions with shaded parts.
+  - Comparing two fractions, and equivalent fractions by splitting parts.
+  - The area model for multiplication.
+  - Pilot lesson: why 2/3 equals 4/6.
+- **B6, data charts,** in `plugin-shared`, because statistics and science experiments both need them.
+  - Bar, line, scatter and dot plots from a small table, with values revisable during the lesson, and a line of best fit.
+  - Pilot lesson: reading a dot plot, and mean against median.
+- Each item starts with an OLL decision record for the product owner's review. It then follows the route the physics pilot proved: runtime support, a shared builder, a Studio tool, then a Coach trial recipe and its speed gate. Mathematics is already live in AI lessons, so a math recipe is adopted once its speed gate passes, as a separate change (E5).
+
+**Exit** — each capability works through Coach, Studio and a CoursePack. An older player, or one without the plugin, refuses a lesson that needs it, with a clear message, before playback.
+
+### P4 · First science capabilities: vectors (B4) and free-layout diagrams (B3)
+
+Moved forward on 2026-11-09 (decision S11) to run in parallel with P2; moved behind the grades 3–8 math visuals on 2026-11-11 (decision S16). The baseline's main finding was that science lessons lack real visuals: chemistry and biology used only notes, formula cards and step diagrams, and the water cycle was drawn as a straight list. Neither item depends on scoping.
+
+- **B4, vectors and forces,** in `plugin-physics`: the vector node with a namespaced execution feature, the Studio tool and the Coach recipe.
   - Pilot lesson: the Phase A guide "force and acceleration with a slider graph", built with real vectors.
   - This is the first lesson that needs a feature an older player lacks. It exercises the version and plugin checks in the live, Studio and CoursePack paths.
 - **B3, free-layout diagram,** in `plugin-shared`: grid positions and labelled arrows, so cycles are drawn as cycles and food webs as webs.
@@ -265,15 +289,14 @@ Moved forward on 2026-11-09 (decision S11) to run in parallel with P2. The basel
 
 **Exit** — the three paths agree on canonical state at equal slider values. An older player, or one without the plugin, refuses the vector lesson with a clear message before playback. The water cycle lesson shows a closed cycle in all three paths.
 
-### P4 onwards · Breadth
+### P5 onwards · Breadth
 
 Follow the Phase B order:
 
-1. shared B1 → B2 (label first); B3 is in P3
-2. physics B7 → B8; B4 is in P3
+1. shared B1 → B2 (label first); B3 is in P4
+2. physics B7 → B8; B4 is in P4
 3. chemistry B5
-4. shared B6
-5. math B9 → B10 → B11
+4. math B11; B9, B10 and B6 are in P3
 
 Choosing the next capability depends on:
 
@@ -377,6 +400,7 @@ Program-owned correctness (§2) covers what a program can compute. Much of chemi
 | S13 | Requests outside every subject | A `none` choice in the Jev question selects `shared` alone (§5.2) |
 | S14 | Ceiling headroom | Re-set the ceilings from the experiment, with a separate budget for `shared` (§9) |
 | S15 | Level and accuracy outside math | Grade band as an input, narration tied to board state, program checks where possible and a per-subject accuracy gate (§10) |
+| S16 (2026-11-11) | What comes next after P2? | Grades 3–8 math visuals first: number line (B9), fraction and area models (B10), data charts (B6) as P3. Vectors and free-layout diagrams become P4. No further infrastructure work; the remaining P2 items collect data from real use. Supersedes the ordering in S5 and S11 |
 
 ## 12. Where to start reading
 
@@ -487,24 +511,40 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
 
-### 13.3 P3 · Vectors (B4) and free-layout diagrams (B3)
+### 13.3 P3 · Grades 3–8 mathematics (decision S16)
+
+In order: B9 number line, then B10 fraction and area models, then B6 data charts. For each:
+
+- [ ] OLL decision record, reviewed by the product owner before any code (0013 number line, 0014 fraction and area models, 0015 data charts).
+- [ ] Schema, reducer, web renderer, headless golden and execution feature. B9 and B10 go in `plugin-math` (namespaced features such as `plugin:math/number-line@1`); B6 goes in `plugin-shared`.
+- [ ] Recipe builder in the OLL plugin package.
+- [ ] Studio tool that calls the builder.
+- [ ] Coach trial recipe (card, guidance, schema fragment, compiler) and its speed gate; adopted in AI lessons once the gate passes, as a separate change (E5).
+- [ ] Pilot lesson through Coach, Studio and a CoursePack test pack.
+
+Once for P3:
+
+- [ ] Learn, the learner-package viewer and Course Library pass installed extensions to the player (first runtime extension).
+- [ ] Check that an older player, and a player without the plugin, refuse a number-line lesson before playback in the live, Studio and CoursePack paths.
+- [ ] Rebuild the example `learner-context-number-line-v2` with the real number line.
+
+### 13.4 P4 · Vectors (B4) and free-layout diagrams (B3)
 
 For each of the two capabilities:
 
-- [ ] OLL decision record (0013 vectors, 0014 free-layout diagram).
+- [ ] OLL decision record (numbered after P3's).
 - [ ] Schema, reducer, web renderer, headless golden and execution feature. B4 is `plugin:physics/vectors@1` in `plugin-physics`; B3 goes in `plugin-shared`.
 - [ ] Recipe builder in the OLL plugin package.
 - [ ] Studio tool that calls the builder.
 - [ ] Coach recipe (card, guidance, schema fragment, compiler), adopted for AI lessons only after it passes the speed gate (E5).
 
-Once for P3:
+Once for P4:
 
-- [ ] Learn, the learner-package viewer and Course Library pass installed extensions to the player (first runtime extension).
 - [ ] Pilot lesson "force and acceleration with a slider graph" with real vectors, through all three paths.
 - [ ] Pilot lesson "water cycle" as a closed cycle, routed to `earth_space`, through all three paths.
 - [ ] Check that an older player, and a player without the plugin, refuse the vector lesson before playback in the live, Studio and CoursePack paths.
 
-### 13.4 Level and accuracy (§10)
+### 13.5 Level and accuracy (§10)
 
 - [ ] Decide where the grade band comes from in the learner profile, and whether Learn asks for it. Learn sends it; Coach adds it to the input allow-list and the request.
 - [ ] Extend `check_plan` so narration that contradicts a physics quantity on the board is rejected.
@@ -512,8 +552,8 @@ Once for P3:
 - [ ] Chemistry checks: equations balance, units agree (with B5).
 - [ ] Blinded quality review, at least 10 lessons per subject, with level fit and subject accuracy scored. Use it as the gate for enabling each subject's plugin in AI lessons.
 
-### 13.5 Open questions for the product owner
+### 13.6 Open questions for the product owner
 
-- [ ] Approve or adjust the payload experiment's spend (§13.2).
+- [x] Approve or adjust the payload experiment's spend (§13.2). Approved, scaled down, 2026-11-10.
 - [ ] Whether Coach's math-only answer path (plot, implicit plot, 3D) should move into the plugin model, and when.
 - [ ] How many customers have Jev configured today. If few, the broad request is the main path and deserves the first quality work.

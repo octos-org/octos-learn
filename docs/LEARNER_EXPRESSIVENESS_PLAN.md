@@ -159,7 +159,7 @@ Ordered by how much each unlocks for real lessons. Each item lists the studio in
 
 Each extension: an OLL decision record, schema + reducer + web runtime + headless golden, capability flag and execution-version gate, then the studio tool. AI lessons gain them too, but only after the speed gate passes (E5).
 
-Priority (E1, E2): **physics, chemistry and biology first**, then grades 3–8 math.
+Priority (revised 2026-11-11, E6): **grades 3–8 math first** (B9 number line, B10 fraction and area models, B6 data charts), then physics, chemistry and biology. Phase B is now tracked in the [subject plugin plan](SUBJECT_EXPANSION_PLAN.md) (P3 onwards).
 
 | # | Extension | Subjects | Sketch |
 |---|---|---|---|
@@ -175,7 +175,7 @@ Priority (E1, E2): **physics, chemistry and biology first**, then grades 3–8 m
 | B10 | **Fraction and area models** | Grades 3–6 math | `fraction_model`: bar/circle/area partitions, shaded parts, compare two; area model for multiplication |
 | B11 | **Timeline, geometry constructions** | Later | Timelines (processes, history of science); polygons by vertices, perpendicular/parallel, transformations |
 
-Order: B1 → B2 (label first) → B3 → B4 → B5 → B6 → B7 → B8, then B9 → B10 → B11; revisited after Phase A shows what kids actually reach for.
+Order (revised 2026-11-11, E6): B9 → B10 → B6, then B4 → B3, then B1 → B2 (label first) → B7 → B8 → B5 → B11; revisited after Phase A shows what kids actually reach for.
 
 ## 6. Sequencing
 
@@ -216,3 +216,4 @@ A2–A3 come early because they open non-math subjects at once; A4–A5 deepen m
 | E3 | Pictures | Curated library only until accounts/consent exist; no uploads, no camera photos |
 | E4 | Text input for young kids | Speak-to-text from the learner's own captions by default; keyboard as alternative |
 | E5 | Should AI lessons adopt Phase B kinds at the same time? | Only after each passes the speed gate, as a separate change |
+| E6 (2026-11-11) | Is science still first? | No. The product owner moved grades 3–8 math visuals (B9, B10, then B6) ahead of science, because the work began from math visuals not being expressive enough and the subject plugin work had added none. Supersedes the order in E1 (subject plugin plan decision S16) |
