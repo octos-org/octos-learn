@@ -430,18 +430,30 @@ Other manual results:
 
 ### 13.2 P2 · Subject signal in shadow mode
 
-- [ ] **Payload experiment.** Write the padding harness in Coach (pad recipe guidance and schema by about 2, 4 and 8 KB). Needs the product owner's approval of the spend first: at least 40 interleaved pairs per size is about 240 live lesson generations on the owner's key.
-- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
-- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
-- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection.
-- [ ] Recheck the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step 2 waits for the owner's approval. Step 3 follows the measurements. The payload experiment no longer comes first, because shadow mode changes no lesson and needs its result for nothing.
+
+**Step 1 · No spending (in progress)**
+
+- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [ ] Build the Jev subject question from the installed plugins' subject lines, with `none` and `unclear`, in `admission-fast-gate.ts`. Attach the camera frame or ink selection. If the image call fails, fall back to the text-only answer, then the context subject, then the broad request.
+- [ ] Select plugins from Jev's probabilities (T1 0.6 / T2 0.05, §5.2), or from the board, Studio or CoursePack context when Jev is unavailable.
 - [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
 - [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
 - [ ] Report the share of lesson requests that arrive with a Jev answer.
-- [ ] Write held-out routing cases (not the 93 used for tuning) and confirm T1 0.6 / T2 0.05 on them.
-- [ ] Add the `earth_space`, `chemistry` and `biology` plugins as manifest, subject line and empty recipe set, in OLL and Coach, so Jev can choose them.
+- [ ] Write held-out routing cases (not the 93 used for tuning), with expected plugins.
+- [ ] Prepare the recheck of the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+
+**Step 2 · Needs the owner's approval of the spend**
+
+- [ ] Run the held-out routing cases and the two follow-up rechecks against Jev, and confirm T1 0.6 / T2 0.05. This uses the owner's Jev key, roughly one call per case.
+- [ ] **Payload experiment.** Write the padding harness in Coach (pad recipe guidance and schema by about 2, 4 and 8 KB). At least 40 interleaved pairs per size is about 240 live lesson generations on the owner's key.
+- [ ] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred.
+- [ ] Re-set `eval/payload-ceilings.json` from the result: measured maximum plus tested headroom, with a separate budget for `shared` and one per subject plugin (S14). Add the provider token count for the full request, schema included.
+- [ ] Speed gate with Jev on and with Jev off (interleaved pairs).
+
+**Step 3 · After the measurements**
+
 - [ ] Constant-speed motion recipe in `physics`, built on `shared` graphs. Pilot lesson through Coach, Studio and a CoursePack.
-- [ ] Speed gate with Jev on and with Jev off (interleaved pairs; needs spend approval).
 
 Deferred until a trigger in §5.3 fires: scoped requests, reroute recovery, the single permitted set.
 
