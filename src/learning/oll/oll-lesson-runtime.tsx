@@ -2,7 +2,8 @@ import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
 import { useHandwritingInput } from "../handwriting/use-handwriting-input";
 import { HandwritingControls, HandwritingInputButton } from "../handwriting/handwriting-controls";
 import { useSnapNeat } from "../gesture/use-snap-neat";
-import { SnapNeatControls } from "../gesture/snap-neat-controls";
+import { SnapNeatZone } from "../gesture/snap-neat-controls";
+import type { HandwritingGestureTarget } from "../handwriting/board-handwriting-input";
 import { getLocale, localizedCatalog, subscribeLocale, tr, translateStatus } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { indexedInkStore } from "../learning-document-store";
@@ -1998,7 +1999,7 @@ export function LearningWhiteboard({
   }, [inkState.mode, inkSuspendedForPlayback]);
 
   const setInkMode = useCallback((mode: InkMode) => {
-    if (mode !== "draw") handwritingInputRef.current?.pause("tool");
+    if (mode !== "draw" && mode !== "select") handwritingInputRef.current?.pause("tool");
     try {
       inkRuntimeRef.current?.setMode(mode);
       if (mode !== "draw") setInkWidthMenuOpen(false);
@@ -3438,21 +3439,27 @@ export function LearningWhiteboard({
     };
   }, []);
 
+  const snapGestureTarget = useRef<HandwritingGestureTarget>(() => false);
   const handwriting = useHandwritingInput({
     viewportRef, inputRef: handwritingInputRef, inkRef: inkRuntimeRef, enabled: handwritingEnabled,
     ready: inkAvailable && handwritingEnabled, playing: Boolean(runtime?.playing), sessionId: inkSessionId,
+    gestureTargetRef: snapGestureTarget,
     onZoom: factor => mountedRef.current?.view.zoomBy(factor),
     variables: { getRuntime: () => runtimeRef.current,
       commitValue: (alias, value, control, width) => snapValueToActiveTask(runtimeRef.current, alias, value,
         control === "slider" ? sliderTaskSnapDistance(runtimeRef.current, alias, width)
           : geometryTaskSnapDistance(viewportRef.current!, runtimeRef.current, alias), control) },
   });
+  const snapAvailable = handwritingEnabled && inkAvailable && handwriting.state.status === "active" && !runtime?.playing;
+  const snapSelected = inkState.mode === "select" && inkState.selected_count > 0;
   const snapNeat = useSnapNeat({
-    inkRef: inkRuntimeRef, sessionId: inkSessionId,
-    available: handwritingEnabled && inkAvailable && handwriting.state.status !== "off" && handwriting.state.status !== "failed",
-    playing: Boolean(runtime?.playing), selected: inkState.mode === "select" && inkState.selected_count > 0,
+    viewportRef, inkRef: inkRuntimeRef, sessionId: inkSessionId,
+    available: snapAvailable, selected: snapSelected,
     selectionRevision: inkState.selection_revision,
   });
+  useLayoutEffect(() => {
+    snapGestureTarget.current = snapNeat.onGesture;
+  }, [snapNeat.onGesture]);
 
   return (
     <div className="learning-oll-board-shell">
@@ -3465,11 +3472,14 @@ export function LearningWhiteboard({
       />
       {overlay}
       {handwritingEnabled && inkSessionId && inkAvailable ? <>
-        <HandwritingControls {...handwriting} canResume={!runtime?.playing}>
-          <SnapNeatControls snap={snapNeat} />
-        </HandwritingControls>
+        <HandwritingControls {...handwriting} canResume={!runtime?.playing} />
         {gestureToggleHost ? createPortal(<HandwritingInputButton state={handwriting.state} start={handwriting.start} stop={handwriting.stop} disabled={Boolean(runtime?.playing)} />, gestureToggleHost) : null}
       </> : null}
+      {snapAvailable && snapSelected ? (
+        <SnapNeatZone snap={snapNeat} viewportRef={viewportRef} selectionRevision={inkState.selection_revision} />
+      ) : snapAvailable && snapNeat.notice ? (
+        <div className="snap-neat-notice" role="status">{snapNeat.notice}</div>
+      ) : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0

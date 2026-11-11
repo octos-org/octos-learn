@@ -128,9 +128,10 @@ export class HandwritingTargets {
     return hits.length === 1 ? hits[0]! : null;
   }
 
-  dispatch(actions: HandwritingPointerAction[], blocked: (point: Point) => boolean, navigate: boolean) {
+  dispatch(actions: HandwritingPointerAction[], blocked: (point: Point) => boolean, navigate: boolean, allowNewCapture = true) {
     for (const action of actions) {
       if (action.type === 'down') {
+        if (!allowNewCapture) continue;
         this.pressed = this.buttonAt(action.point);
         if (!this.pressed && this.isControl(this.hovered) && this.buttonHit(this.hovered, action.point, 8)) this.pressed = this.hovered;
         if (this.pressed) {

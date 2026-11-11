@@ -15,12 +15,13 @@ function setup() {
   const viewport = document.createElement("div"); document.body.append(viewport);
   Object.defineProperty(viewport, "clientWidth", { value: 800 }); Object.defineProperty(viewport, "clientHeight", { value: 600 });
   viewport.getBoundingClientRect = () => ({ x: 10, y: 20, left: 10, top: 20, right: 810, bottom: 620, width: 800, height: 600, toJSON() {} });
-  const ink = { state: { mode: "navigate" }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), clearSelection: vi.fn(), saveNow: vi.fn(async () => null) };
-  const options = { allowed: true };
+  const ink = { state: { mode: "navigate", selected_count: 0 }, setMode: vi.fn((mode: string) => { ink.state.mode = mode; }), clearSelection: vi.fn(), saveNow: vi.fn(async () => null) };
+  const options = { allowed: true, targetOwnsGesture: false };
   const captures: Array<{ callbacks: HandwritingCaptureCallbacks; stop: ReturnType<typeof vi.fn> }> = [];
   const states: BoardHandwritingState[] = [];
   const visual = vi.fn();
   const input = new BoardHandwritingInput({ viewport, mode: "grip", getInk: () => ink as unknown as InkRuntime, allowed: () => options.allowed,
+    routeGesture: () => options.targetOwnsGesture,
     onState: next => states.push(next), onVisual: visual,
     createCapture: (_video, callbacks) => {
       const capture = { callbacks, stop: vi.fn() }; captures.push(capture);
@@ -90,6 +91,40 @@ describe("binding camera hand input to the existing whiteboard", () => {
     s.captures[0]!.callbacks.onFrame({ timeMs: 264, tracked: false, confidence: 0, processingMs: 1, pipelineMs: 1 });
     expect(s.ink.clearSelection).toHaveBeenCalledTimes(1);
     expect(s.events.at(-1)?.type).toBe("pointerup"); s.input.dispose();
+  });
+  it("blocks a new air pointer only when the snap target owns the gesture", async () => {
+    const s = setup();
+    await s.input.start(document.createElement("video"));
+    s.ink.state.mode = "select";
+    for (const t of [0, 33, 66, 99]) s.feed(t, false);
+    for (const t of [132, 165, 198, 231]) s.feed(t, true);
+    for (const t of [264, 297, 330, 363]) s.feed(t, false);
+    expect(s.events.map(event => event.type)).toEqual(["pointerdown", "pointerup"]);
+    s.ink.state.selected_count = 2;
+    s.options.targetOwnsGesture = true;
+    for (const t of [396, 429, 462, 495]) s.feed(t, true);
+    for (const t of [528, 561, 594, 627]) s.feed(t, false);
+    expect(s.events).toHaveLength(2);
+    expect(s.ink.clearSelection).not.toHaveBeenCalled();
+    s.options.targetOwnsGesture = false;
+    for (const t of [660, 693, 726, 759]) s.feed(t, true);
+    expect(s.events.at(-1)?.type).toBe("pointerdown");
+    s.input.dispose();
+  });
+  it("keeps tracking available after a physical selection without sending competing air events", async () => {
+    const s = setup();
+    await s.input.start(document.createElement("video"));
+    s.ink.state.mode = "select";
+    s.input.beginDirectSelection(1);
+    for (const t of [0, 33, 66, 99]) s.feed(t, false);
+    for (const t of [132, 165, 198, 231]) s.feed(t, true);
+    expect(s.events).toEqual([]);
+    expect(s.captures[0]!.stop).not.toHaveBeenCalled();
+    s.input.endDirectSelection(1);
+    for (const t of [264, 297, 330, 363]) s.feed(t, false);
+    for (const t of [396, 429, 462, 495]) s.feed(t, true);
+    expect(s.events.map(event => event.type)).toEqual(["pointerdown"]);
+    s.input.dispose();
   });
   it("ends a held gesture when frames stop and requires the fingers to reopen", async () => {
     vi.useFakeTimers();

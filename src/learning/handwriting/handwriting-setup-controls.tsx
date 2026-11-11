@@ -11,7 +11,7 @@ function setupInstruction(stage: NonNullable<Input["setup"]>["stage"]) {
     case "top-left": return tr("把掌心移到你舒适活动范围的左上角，保持片刻。");
     case "corner-ready": return tr("左上角已记录。点击下一步，再移动到舒适范围的右下角。");
     case "bottom-right": return tr("把掌心移到舒适活动范围的右下角，保持片刻。");
-    case "region-ready": return tr("活动范围已记录，可以保存。较小的活动范围会让光标移动更快。");
+    case "region-ready": return tr("活动范围已记录，可以保存。悬停仍能到达整个白板，落笔时会限制灵敏度。");
     case "failed": return tr("样本不够稳定或区分不清。请调整光线、手的位置或活动范围后重试。");
   }
 }

@@ -1,6 +1,6 @@
 import type { HandwritingPinchThresholds } from "./handwriting-preferences";
 import { HandwritingGestureFilter, type HandwritingInputFrame, type HandwritingGestureMode } from "./handwriting-gesture";
-import { HandwritingPointFilter, mapHandPointToViewport, type HandwritingCameraRegion, type HandwritingViewportSize } from "./handwriting-map";
+import { HANDWRITING_CAMERA_REGION, HandwritingPointFilter, mapHandPointToViewport, type HandwritingCameraRegion, type HandwritingViewportSize } from "./handwriting-map";
 import type { HandwritingControllerUpdate, HandwritingPointerAction } from "./handwriting-controller";
 
 /** Short look-ahead for segmentation; the live cursor is not delayed. */
@@ -17,6 +17,7 @@ export class HandwritingGripPointerController {
   private cursor: Point | null = null;
   private motionPoint: Point | null = null;
   private precision = false;
+  private readonly writingGain: Point;
   private frozen = false;
   private active = false;
   private strokePoint: Point | null = null;
@@ -29,6 +30,13 @@ export class HandwritingGripPointerController {
   constructor(options: { mirrorX?: boolean; region?: HandwritingCameraRegion; mode?: HandwritingGestureMode; pinch?: HandwritingPinchThresholds } = {}) {
     this.options = options;
     this.gestures = new HandwritingGestureFilter(options.mode ?? "grip", options.pinch);
+    const standard = HANDWRITING_CAMERA_REGION;
+    const region = options.region ?? standard;
+    // Keep full-screen reach when aiming, but cap each axis's gain while writing.
+    this.writingGain = {
+      x: 0.65 * Math.min(1, (region.right - region.left) / (standard.right - standard.left)),
+      y: 0.65 * Math.min(1, (region.bottom - region.top) / (standard.bottom - standard.top)),
+    };
   }
 
   private commit(cutoff: number): HandwritingPointerAction[] {
@@ -64,10 +72,9 @@ export class HandwritingGripPointerController {
 
   private advance(current: Point, viewport: HandwritingViewportSize): Point {
     const base = this.motionPoint ?? this.cursor!;
-    const gain = this.precision ? 0.65 : 1;
     const point = this.previous ? {
-      x: base.x + (current.x - this.previous.x) * gain,
-      y: base.y + (current.y - this.previous.y) * gain,
+      x: base.x + (current.x - this.previous.x) * (this.precision ? this.writingGain.x : 1),
+      y: base.y + (current.y - this.previous.y) * (this.precision ? this.writingGain.y : 1),
     } : base;
     this.motionPoint = { x: Math.min(viewport.width, Math.max(0, point.x)), y: Math.min(viewport.height, Math.max(0, point.y)) };
     if (!this.precision) return { ...this.motionPoint };

@@ -16,6 +16,7 @@ export interface BoardHandwritingState {
 }
 export const INITIAL_HANDWRITING_STATE: BoardHandwritingState = { status: "off", capture: "idle", reason: null, error: null, gesture: null };
 type Capture = Pick<HandwritingCapture, "start" | "stop">;
+export type HandwritingGestureTarget = (frame: HandwritingCaptureFrame | null, gesture: HandwritingControllerUpdate | null, captured: boolean) => boolean;
 export interface BoardHandwritingOptions {
   viewport: HTMLElement;
   getInk(): Pick<InkRuntime, "setMode" | "saveNow" | "state" | "clearSelection"> | null;
@@ -27,6 +28,7 @@ export interface BoardHandwritingOptions {
   variables?: HandwritingVariableOptions;
   onSample?(frame: HandwritingCaptureFrame): boolean;
   onInterruption?(): void;
+  routeGesture?: HandwritingGestureTarget;
   createCapture?: (video: HTMLVideoElement, callbacks: HandwritingCaptureCallbacks) => Capture;
 }
 let nextPointerId = 85_000;
@@ -38,7 +40,7 @@ export function handwritingPointBlocked(viewport: HTMLElement, point: { x: numbe
   return Array.from(viewport.ownerDocument.querySelectorAll<HTMLElement>(
     '[data-learning-board-occlusion], button, input, textarea, select, [role="slider"], [contenteditable="true"]',
   )).some(element => {
-    if (element.hidden) return false;
+    if (element.hidden || element.hasAttribute("data-air-pass-through")) return false;
     const box = element.getBoundingClientRect();
     return box.width > 0 && box.height > 0 && x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
   });
@@ -50,6 +52,7 @@ export class BoardHandwritingInput {
   private state: BoardHandwritingState = { ...INITIAL_HANDWRITING_STATE };
   private controller: HandwritingPointerController;
   private readonly targets: HandwritingTargets;
+  private readonly directSelectionPointers = new Set<number>();
   get executingCommand() { return this.targets.executingCommand; }
   get navigating() { return this.targets.navigating; }
   private capture: Capture | null = null;
@@ -76,10 +79,23 @@ export class BoardHandwritingInput {
     const bounds = this.targets.root.hasAttribute("data-air-scope") ? this.targets.root.getBoundingClientRect() : view;
     return { x: point.x + bounds.left - view.left, y: point.y + bounds.top - view.top };
   }
-  private dispatch(actions: HandwritingPointerAction[]) {
-    this.targets.dispatch(actions.map(action => ({ ...action, point: this.local(action.point) })), point => handwritingPointBlocked(this.options.viewport, point),
-      this.options.getInk()?.state.mode === "navigate");
+  private dispatch(actions: HandwritingPointerAction[], allowNewCapture = true) {
+    const ink = this.options.getInk()?.state;
+    this.targets.dispatch(actions.map(action => ({ ...action, point: this.local(action.point) })),
+      point => handwritingPointBlocked(this.options.viewport, point), ink?.mode === "navigate", allowNewCapture);
   }
+
+  beginDirectSelection(pointerId: number) {
+    if (this.directSelectionPointers.size === 0) {
+      this.dispatch(this.controller.reset(performance.now(), "lost"));
+      this.targets.cancel();
+      this.options.onVisual(null, null);
+    }
+    this.directSelectionPointers.add(pointerId);
+  }
+
+  endDirectSelection(pointerId: number) { this.directSelectionPointers.delete(pointerId); }
+  cancelDirectSelection() { if (this.directSelectionPointers.size) this.pause("direct"); }
 
   private finish(reason: "stop" | "lost") {
     const running = this.capture !== null || this.state.status === "starting" || this.state.status === "active";
@@ -89,6 +105,7 @@ export class BoardHandwritingInput {
     const generation = this.generation;
     this.dispatch(this.controller.reset(performance.now(), reason));
     this.targets.cancel();
+    this.directSelectionPointers.clear();
     this.capture?.stop(); this.capture = null;
     this.options.onVisual(null, null);
     const ink = this.options.getInk();
@@ -157,6 +174,7 @@ export class BoardHandwritingInput {
         const dialog = Array.from(this.options.viewport.ownerDocument.querySelectorAll<HTMLElement>('[role="dialog"], [aria-modal="true"]'))
           .some(element => element.getBoundingClientRect().width > 0);
         if (dialog) { this.pause("dialog"); return; }
+        if (this.directSelectionPointers.size) { this.options.onVisual(frame, null); return; }
         if (this.options.onSample?.(frame)) {
           this.dispatch(this.controller.reset(frame.timeMs, "lost"));
           this.targets.cancel();
@@ -170,10 +188,11 @@ export class BoardHandwritingInput {
           this.options.getInk()?.state.mode === "draw");
         const gesture = { ...update, cursor: update.cursor ? this.local(update.cursor) : null,
           actions: update.actions.map(action => ({ ...action, point: this.local(action.point) })) };
+        const targetOwnsGesture = this.options.routeGesture?.(frame, gesture, this.targets.hasCapture);
         this.targets.hover(gesture.cursor, this.options.getInk()?.state.mode === "navigate");
-        this.dispatch(update.actions);
+        this.dispatch(update.actions, !targetOwnsGesture);
         if (this.disposed || generation !== this.generation) return;
-        if (gesture.cursor && handwritingPointBlocked(this.options.viewport, gesture.cursor)
+        if (!targetOwnsGesture && gesture.cursor && handwritingPointBlocked(this.options.viewport, gesture.cursor)
           && !this.targets.executingCommand && !this.targets.manipulatingVariable) {
           // Flush an already emitted release before resetting the recognizer.
           // Commands use their own capture and may sit inside an occlusion.

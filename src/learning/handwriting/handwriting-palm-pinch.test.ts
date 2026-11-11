@@ -113,6 +113,23 @@ describe("palm targeting with a thumb-index clutch", () => {
     expect(c.update(frame(5280, 0.75), viewport, true).actions.at(-1)?.type).toBe("up");
   });
 
+  it("keeps the same writing gain in a half-width region while retaining full hover reach", () => {
+    const region = { left: 0.25, right: 0.75, top: 0.08, bottom: 0.92 };
+    const writingDistance = (c: HandwritingPointerController) => {
+      const down = begin(c, true).find(action => action.type === "down")!;
+      let tip = down.point;
+      for (let i = 0; i < 90; i++) {
+        tip = c.update(frame(264 + i * 33, 0.1, 0.4 + Math.min(i, 60) * 0.0005), viewport, true).cursor!;
+      }
+      return down.point.x - tip.x;
+    };
+    const narrow = new HandwritingPointerController({ mode: "palm-pinch", region });
+    const standard = new HandwritingPointerController({ mode: "palm-pinch" });
+    expect(writingDistance(narrow)).toBeCloseTo(writingDistance(standard), 0);
+    narrow.reset();
+    expect(narrow.update(frame(0, 0.75, 0.26), viewport).cursor!.x).toBeCloseTo(784);
+  });
+
   it("recovers absolute hover position after clutch offsets so calibrated edges remain reachable", () => {
     const c = new HandwritingPointerController({ mode: "palm-pinch" });
     begin(c);

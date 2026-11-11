@@ -3,10 +3,10 @@ import type { HandwritingVariableOptions } from "./handwriting-variable-drag";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { HandwritingGestureMode } from "./handwriting-gesture";
 import type { InkRuntime } from "../oll/oll-ink-runtime";
-import { BoardHandwritingInput, INITIAL_HANDWRITING_STATE, type BoardHandwritingState } from "./board-handwriting-input";
+import { BoardHandwritingInput, INITIAL_HANDWRITING_STATE, type BoardHandwritingState, type HandwritingGestureTarget } from "./board-handwriting-input";
 import { drawHandwritingOverlay } from "./handwriting-overlay";
 
-export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, enabled, ready, playing, sessionId, onZoom, variables }: {
+export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, enabled, ready, playing, sessionId, onZoom, variables, gestureTargetRef }: {
   viewportRef: RefObject<HTMLDivElement | null>;
   inputRef: RefObject<BoardHandwritingInput | null>;
   inkRef: RefObject<InkRuntime | null>;
@@ -16,6 +16,7 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
   sessionId?: string;
   variables?: HandwritingVariableOptions;
   onZoom?: (factor: number) => void;
+  gestureTargetRef?: RefObject<HandwritingGestureTarget>;
 }) {
   const setup = useHandwritingSetup();
   const cancelSetup = setup.cancelSetup;
@@ -39,9 +40,11 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       variables: { getRuntime: () => variableOptions.current?.getRuntime() ?? null,
         commitValue: (alias, value, control, width) => variableOptions.current?.commitValue?.(alias, value, control, width) ?? value },
       onSample: setup.sample, onInterruption: cancelSetup,
+      routeGesture: (frame, gesture, captured) => gestureTargetRef?.current(frame, gesture, captured) ?? false,
       getInk: () => inkRef.current, allowed: () => allowed.current,
       onState: setState,
       onVisual: (frame, gesture) => {
+        if (!gesture) gestureTargetRef?.current(null, null, false);
         if (overlay.current) drawHandwritingOverlay(overlay.current, frame, gesture?.penDown, gestureMode, setup.preferencesRef.current.region);
         if (cursor.current) {
           cursor.current.hidden = !gesture?.cursor;
@@ -61,11 +64,21 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
       if (event.pointerId === input.pointerId) return;
       const target = event.target;
       if (!(target instanceof Element) || target.closest('[data-handwriting-controls]')) return;
+      if (target.closest('[data-air-command="select"]')) return;
+      if (event.button === 0 && viewport.contains(target) && inkRef.current?.state.mode === "select") {
+        input.beginDirectSelection(event.pointerId);
+        return;
+      }
       if (viewport.contains(target) || target.closest('.learning-ink-toolbar,.learning-input-dock,[data-air-command],input,textarea,select,[contenteditable="true"]')) input.pause("direct");
     };
+    const onPointerEnd = (event: PointerEvent) => input.endDirectSelection(event.pointerId);
+    const onBlur = () => input.cancelDirectSelection();
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") input.pause("manual"); };
     const onHidden = () => { if (document.hidden) input.pause("hidden"); };
     window.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("pointerup", onPointerEnd, true);
+    window.addEventListener("pointercancel", onPointerEnd, true);
+    window.addEventListener("blur", onBlur);
     window.addEventListener("keydown", onKey);
     document.addEventListener("visibilitychange", onHidden);
     let width = viewport.clientWidth;
@@ -80,11 +93,14 @@ export function useHandwritingInput({ viewportRef, inputRef: ownerRef, inkRef, e
     return () => {
       input.dispose(); if (ownerRef.current === input) ownerRef.current = null;
       window.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("pointerup", onPointerEnd, true);
+      window.removeEventListener("pointercancel", onPointerEnd, true);
+      window.removeEventListener("blur", onBlur);
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("visibilitychange", onHidden);
       resize?.disconnect();
     };
-  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, cancelSetup]);
+  }, [viewportRef, inkRef, sessionId, enabled, ownerRef, gestureMode, setup.preferencesRef, setup.sample, cancelSetup, gestureTargetRef]);
   useEffect(() => {
     const viewport = viewportRef.current;
     const shell = viewport?.closest('[data-air-scope]') ?? viewport?.closest('.learning-workspace') ?? viewport?.parentElement;

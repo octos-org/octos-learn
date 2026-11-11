@@ -1,7 +1,45 @@
-.snap-neat-controls { margin: 0 10px 10px; padding: 10px; border: 1px solid #d9d9bf; border-radius: 9px; background: #faf8eb; }
-.snap-neat-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.snap-neat-controls p { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: #45634f; }
-.snap-neat-controls p[data-ready="true"] { color: #7a5713; }
-.snap-neat-controls small { display: block; margin-top: 6px; font-size: 11px; line-height: 1.6; color: #70806d; }
-.snap-neat-controls video { display: block; width: 100%; aspect-ratio: 4 / 3; margin-top: 8px; object-fit: cover; transform: scaleX(-1); border-radius: 7px; background: #17211f; }
-.snap-neat-controls video[hidden] { display: none; }
+.snap-neat-zone {
+  position: absolute;
+  z-index: 18;
+  top: 16%;
+  left: max(12px, calc(50% - 106px));
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  width: min(212px, calc(100% - 24px));
+  min-height: 76px;
+  padding: 8px 12px;
+  border: 1px dashed #548571;
+  border-radius: 14px;
+  background: #f1faf2;
+  color: #224b3c;
+  pointer-events: none;
+}
+.snap-neat-zone[data-aimed="true"] { border-style: solid; box-shadow: 0 0 0 3px #68a88b55; }
+.snap-neat-zone[data-ready="true"] { background: #e2f6dc; border-color: #38704e; }
+.snap-neat-zone strong { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.snap-neat-zone span { font-size: 12px; line-height: 1.25; }
+.snap-neat-zone button {
+  justify-self: start;
+  min-height: 28px;
+  border: 1px solid #548571;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  pointer-events: auto;
+}
+.snap-neat-notice {
+  position: absolute;
+  z-index: 18;
+  top: 16%;
+  left: 50%;
+  max-width: calc(100% - 24px);
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f1faf2;
+  color: #224b3c;
+  font-size: 13px;
+  pointer-events: none;
+}

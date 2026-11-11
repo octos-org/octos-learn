@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Hand, Minus, Pause, Play, Plus, Settings2, X } from "lucide-react";
 import { tr } from "@/i18n";
@@ -35,8 +35,7 @@ export function HandwritingInputButton({ state, start, stop, disabled }: Pick<In
   </button>;
 }
 
-/** `children` adds optional tools (such as the finger-snap tidy-up) below the setup controls. */
-export function HandwritingControls(input: Input & { canResume: boolean; children?: ReactNode }) {
+export function HandwritingControls(input: Input & { canResume: boolean }) {
   const { state, videoRef, overlayRef, cursorRef, collapsed, setCollapsed, start, pause, stop, canResume, gestureMode, setGestureMode, zoomBy } = input;
   const on = state.status !== "off";
   const paused = state.status === "paused" || state.status === "failed";
@@ -103,7 +102,6 @@ export function HandwritingControls(input: Input & { canResume: boolean; childre
         </div>
       </div>
       <HandwritingSetupControls input={input} />
-      {input.children}
       <footer>
         <div className="board-handwriting-state" role="status" data-state={state.status} data-phase={state.gesture?.phase ?? "none"}>
           <i aria-hidden="true" />{handwritingStatus(state)}
