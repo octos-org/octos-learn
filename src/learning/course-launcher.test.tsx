@@ -136,6 +136,18 @@ describe("shared course launcher", () => {
     expect(screen.queryByText(/unspecified|mathematics/u)).toBeNull();
   });
 
+  it.each([
+    ["physics", "初中（12–14岁） · 物理"],
+    ["earth-space", "初中（12–14岁） · 地球与宇宙"],
+    ["music", "初中（12–14岁） · music"],
+  ])("names the %s subject", async (subject, label) => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      JSON.stringify(catalog([{ ...release, grade: "secondary-age-12-14", subject }])), { status: 200 },
+    )));
+    showLauncher();
+    expect(await screen.findByText(label)).toBeTruthy();
+  });
+
   it("offers separate preview and interactive entry for a version-pinned pack", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
     showLauncher();

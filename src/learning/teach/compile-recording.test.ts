@@ -82,6 +82,36 @@ describe("compileRecording", () => {
     expect(poly.bindings.map((binding) => binding.target.split(":").at(-1))).toEqual(["inscribed.sides"]);
   });
 
+  it("builds constant-speed motion with the physics plugin: a track and its distance–time graph share time and speed", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Constant speed", type: "science" }, goals: [] }), now, [{ title: "A cart" }]);
+    recording = record(recording, "card-1", "The cart moves the same distance every second.", [
+      { t: 0, type: "component.insert", panel: "constant_speed", alias: "motion-1", time: { variable: "t", max: 10 }, speed: { initial: 2, slider: { variable: "v", max: 5 } } },
+      { t: 1_000, type: "variable.drag", variable: "t", via: "slider", from: 0, to: 6, durationMs: 2_000 },
+      { t: 4_000, type: "tool.highlighter", target: { node: "motion-1-graph", part: "primary-curve" } },
+    ]);
+    const { lesson, state } = check(recording);
+    const actions = lesson.steps[0]!.beats[0]!.actions as Array<{ do: string; as?: string; kind?: string; target?: string }>;
+    expect(actions.filter((action) => action.do === "write").map((action) => [action.as, action.kind]))
+      .toEqual([["motion-1-track", "geometry"], ["motion-1-graph", "plot"]]);
+    expect(actions.some((action) => action.do === "group" && action.as === "motion-1")).toBe(true);
+    expect(lesson.lesson.variables?.map((variable) => [variable.as, variable.min, variable.max, variable.unit])).toEqual([["t", 0, 10, "s"], ["v", 0, 5, "m/s"]]);
+    const track = state.nodes["l:node:motion-1-track"]!.content as { points: Array<{ id: string; x: number; label?: string }> };
+    const cart = track.points.find((point) => point.id.endsWith(":object"))!;
+    expect([cart.x, cart.label]).toEqual([12, "object s = 12 m"]);
+    const graph = state.nodes["l:node:motion-1-graph"]!.content as { curves: Array<{ expression: string }>; axes: { y: { max: number } } };
+    expect(graph.curves[0]!.expression).toBe("(v)*x");
+    expect(graph.axes.y.max).toBe(50);
+  });
+
+  it("refuses a constant-speed motion without time or with a speed outside its slider", () => {
+    const base = planCards(createRecording({ id: "rec", now, topic: { text: "Constant speed", type: "science" }, goals: [] }), now, [{ title: "A cart" }]);
+    const bad = (time: number, speed: { initial: number; slider?: { variable: string; max: number } }) =>
+      () => compileRecording(record(base, "card-1", "Go.", [{ t: 0, type: "component.insert", panel: "constant_speed", alias: "m", time: { variable: "t", max: time }, speed }]), { author, language: "en-US" });
+    expect(bad(0, { initial: 2 })).toThrow(CompileError);
+    expect(bad(10, { initial: 3, slider: { variable: "v", max: 2 } })).toThrow(CompileError);
+    expect(bad(10, { initial: 0 })).toThrow(CompileError);
+  });
+
   it("builds graphs with the math plugin, mapping saved curve and point names", () => {
     let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Waves", type: "math_off_map" }, goals: [] }), now, [{ title: "Graphs" }]);
     recording = record(recording, "card-1", "The point follows the wave.", [

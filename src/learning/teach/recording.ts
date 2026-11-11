@@ -58,6 +58,13 @@ export type ComponentInsert = ComponentPlacement & (
   | { panel: "table"; alias: string; columns: string[]; rows: string[][]; title?: string }
   /** A regular polygon inscribed in a circle, with its perimeter; its number of sides may be a slider. */
   | { panel: "polygon"; alias: string; sides: number; slider?: { variable: string }; title?: string }
+  /**
+   * An object moving at constant speed along a track, linked to its
+   * distance–time graph (physics plugin). Time is a slider from 0 to
+   * `time.max` seconds; the speed (metres per second) may be a slider too.
+   */
+  | { panel: "constant_speed"; alias: string; time: { variable: string; max: number };
+      speed: { initial: number; slider?: { variable: string; max: number } }; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
 

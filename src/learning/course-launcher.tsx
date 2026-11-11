@@ -64,10 +64,13 @@ function courseTags(entry: CoursePackCatalogEntry): string {
     "college-calculus": tr("大学微积分"),
   };
   const grade = entry.grade.trim();
+  const subjects: Record<string, string> = {
+    mathematics: tr("数学"), physics: tr("物理"), chemistry: tr("化学"), biology: tr("生物"), "earth-space": tr("地球与宇宙"),
+  };
   const subject = entry.subject.trim();
   return [
     grade.toLowerCase() === "unspecified" ? "" : (grades[grade] ?? grade),
-    subject === "mathematics" ? tr("数学") : subject,
+    subjects[subject] ?? subject,
   ].filter(Boolean).join(" · ");
 }
 
