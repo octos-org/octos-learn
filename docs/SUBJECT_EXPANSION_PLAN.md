@@ -404,7 +404,27 @@ The owner approved merge and local acceptance, with physical camera and Jev chec
 
 Coach, Learn and Course Library were verified on OLL `7c12c9c`. Coach 0.24.3 was installed in the normal local Octos profile. The automated acceptance covers Studio recording and playback, package export and validation, camera capture and selection routing. The replay and function plot issues found during the manual pass predate P1 and are tracked separately.
 
+**Manual E2E close-out (2026-11-10).** The owner's manual pass found three defects. None came from the P1 migration.
+
+- **Replaying the previous lesson on the same board:** fixed in OLL #41 and Learn #137. An offline replay of the original pair kept step 155 and the board, then continued with the second lesson's narration.
+- **Plot bindings:** a fixed parabola with two numbers became an A/B secant instead of an h/k translation. Fixed in [Coach #51](https://github.com/alan0x/learning-coach/pull/51) (0.24.4).
+  - Formula parameters and `sample_x_numbers` are separate.
+  - Redundant sample fields are removed locally.
+  - Legends read `y = −(x − h)² + k`.
+  - Local runs of both cases each made one model request before first playback: 8.94 s for the vertex case, 10.13 s for the secant case.
+  - Request digests changed intentionally with the explicit sample field. P1's byte-identity gate applied to the migration at `e4d796a`.
+- **Plot viewport and card size:** an offline review of 60 cases found regressions in the follow-up's viewport and adaptive card size. That work is held back from P1 and continues as the plot display redesign below.
+
+Other manual results:
+- Studio drafts recorded before the migration are excluded, as agreed.
+- The signed rounding questions grade the rounded value exactly (`2.2`, `-2.2`). The owner confirmed this is the intended behaviour.
+
 - [ ] Follow-up manual coverage: physical camera teaching and live Jev image relay.
+- [ ] Rounding questions accept the unrounded value only when the model's `check` differs from its `answer`. Make "write the rounded value" deterministic for rounding tasks.
+- [ ] Plot display redesign (owner-approved 2026-11-10):
+  - A deterministic teaching view planner in Coach: curve features, the states the lesson shows, natural domains for quantities, and repair of model-written ranges.
+  - OLL presentation: a card-height band, one tick step under equal units, π ticks, adaptive sampling and edge indicators.
+  - Verified against a 60-case offline corpus and owner-reviewed contact sheets.
 - [ ] When publishing the new package writer, deploy the learner-lessons service that accepts the `oll` block before the app. Production deployment is outside this close-out.
 
 ### 13.2 P2 · Subject signal in shadow mode
