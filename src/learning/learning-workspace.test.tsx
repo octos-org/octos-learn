@@ -1614,6 +1614,51 @@ describe("LearningWorkspace", () => {
     gateSpy.mockRestore();
   });
 
+  it("sends the subject signal from Jev's answer when the Learning Coach declares plugins (subject plan P2)", async () => {
+    historyRecordingMock.enabled = true;
+    const installed = ["math", "physics", "chemistry", "biology", "earth_space", "shared"];
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate").mockResolvedValue({
+      disposition: "generate_lesson", confidence: 0.95, isSelfContained: true, source: "jev_direct", elapsedMs: 300, latencyMs: 300,
+      subject: "earth_space",
+      subjectAnswer: { choice: "earth_space", probabilities: { earth_space: 0.86, biology: 0.09, none: 0.05 }, confidence: 0.8 },
+    });
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext.map((action) => ({ ...action,
+      input_schema: { properties: { ...action.input_schema.properties, plugins: { items: { enum: installed } }, plugin_confidence: {}, plugin_source: {} } } })));
+    backgroundMock.connected.mockReturnValue(true);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-subject-signal" voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "为什么会下雨？" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    expect(gateSpy.mock.calls.at(-1)?.[0].subjectPlugins).toEqual(installed);
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(params.plugins).toEqual(["earth_space", "biology"]);
+    expect(params.plugin_confidence).toBe(0.86);
+    expect(params.plugin_source).toBe("jev");
+    gateSpy.mockRestore();
+  });
+
+  it("sends no subject signal when the installed Learning Coach does not declare plugins", async () => {
+    historyRecordingMock.enabled = true;
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate");
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext);
+    backgroundMock.connected.mockReturnValue(true);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-subject-signal-old" voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "为什么会下雨？" } });
+    fireEvent.click(screen.getByRole("button", { name: tr("发送问题") }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    expect(gateSpy.mock.calls.at(-1)?.[0].subjectPlugins).toBeUndefined();
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("plugins");
+    expect(params).not.toHaveProperty("plugin_source");
+    gateSpy.mockRestore();
+  });
+
   it("does not show the admission gate the board when the installed Learning Coach cannot receive it", async () => {
     historyRecordingMock.enabled = true;
     const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate");
