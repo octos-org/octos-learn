@@ -440,12 +440,15 @@ Order revised by the product owner on 2026-11-10. Step 1 needs no spending. Step
 - [ ] Learn sends `plugins`, `plugin_confidence` and `plugin_source`; Octos passes them through; Coach adds them to its input allow-list, rejects unknown IDs and logs them. Coach keeps sending the broad request.
 - [ ] Coach's trace records what a scoped request would have contained, and whether the lesson used a recipe outside it.
 - [ ] Report the share of lesson requests that arrive with a Jev answer.
-- [ ] Write held-out routing cases (not the 93 used for tuning), with expected plugins.
-- [ ] Prepare the recheck of the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
+- [x] Write held-out routing cases (not the 93 used for tuning), with expected plugins: 46 cases in Coach `eval/subject-routing-heldout.json` (Coach #54).
+- [x] Prepare the recheck of the two follow-ups that pass the gate only through its pass-through rule ("那晚上植物还会这样吗？" and the heating-curve follow-up).
 
 **Step 2 · Needs the owner's approval of the spend**
 
-- [ ] Run the held-out routing cases and the two follow-up rechecks against Jev, and confirm T1 0.6 / T2 0.05. This uses the owner's Jev key, roughly one call per case.
+- [x] Run the held-out routing cases and the two follow-up rechecks against Jev, and confirm T1 0.6 / T2 0.05. This uses the owner's Jev key, roughly one call per case. Owner-authorized and run 2026-11-11 (Coach `docs/SUBJECT_ROUTING_HELDOUT_2026-11-11.md`):
+  - 47 of 48 correct. The one miss is a three-subject request beyond the two-plugin limit.
+  - T1 0.6 / T2 0.05 confirmed: the lowest winning probability was 0.63; chosen second subjects were at 0.11 or more, and second subjects left out at 0.01 or less.
+  - Both follow-ups now route confidently.
 - [x] **Payload experiment** (scaled down and approved by the owner, 2026-11-10; result accepted 2026-11-11). Write the padding harness in Coach. Pad recipe guidance and schema by about 8 KB and measure only the first request on the production route, interleaved with the unpadded request. 20 pairs, or 40 if the result is borderline: 40–80 model calls, about USD 0.25–0.50. Test 2 and 4 KB only if 8 KB shows a slowdown.
 - [x] Record the experiment's result in Coach `docs/` and decide here whether scoped requests are built now or stay deferred. [Coach #55](https://github.com/alan0x/learning-coach/pull/55), `docs/PAYLOAD_EXPERIMENT_2026-11-11.md`.
   - **Result:** +8,368 B (+1,331 prompt tokens) showed no measurable cost over 20 interleaved pairs. First-playable p50 was 8.85 s unpadded and 8.87 s padded; the paired difference rules out a slowdown above about 1.3 s.
