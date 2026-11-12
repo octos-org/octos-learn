@@ -61,3 +61,27 @@ describe("OLL materialization parity", () => {
     );
   });
 });
+
+describe("number line lessons from Coach (OLL decisions 0013 and #49)", () => {
+  it("materializes a number line whose slider-driven jump starts at 0, as Coach's fitted lessons do", () => {
+    const authoring = {
+      dsl: "octos.lesson", version: "0.1", profile: "authoring",
+      lesson: {
+        mode: "explain", language: "zh-CN", title: "6 − 9", goals: ["在数轴上看减法"],
+        variables: [{ as: "number_02", initial: 0, min: -10, max: 10, label: "减去", control: { kind: "slider", step: 1 } }],
+      },
+      steps: [{ key: "s", purpose: "看移动", beats: [
+        { key: "b", say: "从 6 出发。", actions: [{ do: "write", as: "line", kind: "number_line", role: "main_visual", place: { relation: "new_region" }, content: {
+          range: { min: -6, max: 18 }, ticks: { step: 1 },
+          points: [{ as: "start", value: 6 }],
+          jumps: [{ as: "move", from: "start", by: 0, hops: true }],
+          bindings: [{ target: "move.by", expression: "number_02" }],
+        } }] },
+        { key: "c", say: "减去 9，向左跳 9 格。", actions: [{ do: "animate", variable: "number_02", value: -9 }] },
+      ] }],
+      close: { summary: "6 − 9 = −3。", focus: ["line"] },
+    } as unknown as AuthoringLesson;
+    const events = materializeOllLesson(authoring, options);
+    expect(events.some((event) => event.event === "lesson.step")).toBe(true);
+  });
+});
