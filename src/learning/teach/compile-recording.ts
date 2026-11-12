@@ -367,8 +367,10 @@ export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "s
   const unit = 1 / panel.subdivisions;
   // A slider lets the jump reach either end of the line; hop by hop, that must stay within the hop limit.
   const longest = panel.jump.slider ? Math.max(start - min, max - start) : Math.abs(by);
-  const hops = longest / unit;
-  if (panel.jump.hops && (!panel.jump.slider && Math.abs(hops - Math.round(hops)) > 1e-9 || Math.ceil(hops - 1e-9) > NUMBER_LINE_LIMITS.hops)) {
+  const whole = (value: number) => Math.abs(value / unit - Math.round(value / unit)) <= 1e-9;
+  // Hop by hop, the starting jump is whole parts; with a slider (which steps by one part) the start
+  // is on a tick too, so every value the slider reaches is whole parts as well.
+  if (panel.jump.hops && (!whole(by) || (panel.jump.slider && !whole(start)) || Math.ceil(longest / unit - 1e-9) > NUMBER_LINE_LIMITS.hops)) {
     return tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
   }
   return undefined;
