@@ -85,6 +85,7 @@ export function recordingVariableInfo(recording: LearnerRecording): Array<{ vari
     if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
     if (event.panel === "solid_3d" && event.unfold) add(event.unfold.variable, tr("展开"), false);
     if (event.panel === "polygon" && event.slider) add(event.slider.variable, tr("边数"), false);
+    if (event.panel === "number_line" && event.jump?.slider) add(event.jump.slider.variable, tr("移动"), false);
     if (event.panel === "constant_speed") {
       add(event.time.variable, tr("时间 t"), false);
       if (event.speed.slider) add(event.speed.slider.variable, tr("速度 v"), false);
@@ -302,8 +303,8 @@ export function wrapDrag(segments: DragSegment[], range: { min: number; max: num
 }
 
 /** What the Add panel can put on the board. */
-export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram" | "polygon" | "circle" | "segment" | "constant_speed";
-const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d", "polygon", "constant_speed"]);
+export type InsertForm = "graph" | "coordinate_grid" | "unit_circle" | "solid_3d" | "point" | "line" | "text" | "note" | "table" | "diagram" | "polygon" | "circle" | "segment" | "constant_speed" | "number_line";
+const FIGURES: ReadonlySet<InsertForm> = new Set(["graph", "coordinate_grid", "unit_circle", "solid_3d", "polygon", "constant_speed", "number_line"]);
 
 /** Whether a kind of component is a figure, which starts a row unless it is put next to a card. */
 export function isFigure(form: InsertForm | null): boolean {

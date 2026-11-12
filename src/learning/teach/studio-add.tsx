@@ -3,10 +3,10 @@
 // next to a card of the current row so it sits beside what it explains.
 
 import { tr } from "@/i18n";
-import { BookOpen, Box, Check, ChevronLeft, Circle, CircleAlert, CircleDot, Gauge, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
+import { BookOpen, Box, Check, MoveHorizontal, ChevronLeft, Circle, CircleAlert, CircleDot, Gauge, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEventHandler, type ReactNode } from "react";
 import { niceAxisMax } from "octos-lesson-language/plugin-physics";
-import { MAX_MOTION_SPEED, MAX_MOTION_TIME } from "./compile-recording";
+import { MAX_MOTION_SPEED, MAX_MOTION_TIME, NUMBER_LINE_SUBDIVISIONS, numberLinePanelProblem } from "./compile-recording";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
@@ -56,7 +56,7 @@ export function AddPanel({ recording, grids, row, nextTo, onNextTo, form, onForm
   const hasTwoPoints = pointsByGrid.some((points) => points.length >= 2);
   const groups: Array<[string, Entry[]]> = [
     [tr("文字与图示"), [["text", tr("文字"), MessageSquareText], ["note", tr("提示"), StickyNote], ["table", tr("表格"), Table2], ["diagram", tr("图示"), Workflow]]],
-    [tr("数学图形"), [["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["polygon", tr("正多边形"), Hexagon], ["solid_3d", tr("立体"), Box]]],
+    [tr("数学图形"), [["graph", tr("函数图"), LineChart], ["coordinate_grid", tr("坐标网格"), Grid3x3], ["unit_circle", tr("单位圆"), Circle], ["polygon", tr("正多边形"), Hexagon], ["solid_3d", tr("立体"), Box], ["number_line", tr("数轴"), MoveHorizontal]]],
     [tr("物理"), [["constant_speed", tr("匀速运动"), Gauge]]],
     [tr("在网格上绘制"), [
       ...(grids.length ? [["point", tr("放一个点"), Square] as Entry] : []),
@@ -278,6 +278,7 @@ function InsertPanel({
   if (form === "segment") return <LineForm recording={recording} segment onLine={(line) => onShape({ type: "geometry.segment", node: line.node, from: line.from, to: line.to, alias: nextComponentAlias(recording, "segment") })} />;
   if (form === "circle") return <CircleForm recording={recording} onShape={onShape} />;
   if (form === "polygon") return <PolygonForm recording={recording} placement={placement} onInsert={onInsert} />;
+  if (form === "number_line") return <NumberLineForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "constant_speed") return <ConstantSpeedForm recording={recording} placement={placement} onInsert={onInsert} />;
   if (form === "text" || form === "note") return <WordsForm kind={form} recording={recording} onInsert={onInsert} {...(said ? { said } : {})} />;
   if (form === "table") return <TableForm recording={recording} onInsert={onInsert} />;
@@ -686,6 +687,59 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
       </div>
       {!ready && <p className="teach-notice" role="status">{tr("请输入 3 到 48 之间的整数。")}</p>}
       <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("边数做成滑块：讲课时拖动，看周长越来越接近圆周")}</span></label>
+      {placement}
+    </InsertSheet>
+  );
+}
+
+/** A number line: its range, how finely each unit is split, and optionally a start point and a jump from it. */
+function NumberLineForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
+  const [from, setFrom] = useState("-5");
+  const [to, setTo] = useState("5");
+  const [parts, setParts] = useState(1);
+  const [start, setStart] = useState("");
+  const [by, setBy] = useState("");
+  const [hops, setHops] = useState(true);
+  const [slider, setSlider] = useState(false);
+  const [min, max] = [numberField(from), numberField(to)];
+  const startText = start.trim() || undefined;
+  const byText = startText && by.trim() ? by.trim() : undefined;
+  const panel = {
+    range: [min ?? Number.NaN, max ?? Number.NaN] as [number, number], subdivisions: parts,
+    ...(startText ? { start: startText } : {}),
+    ...(byText ? { jump: { by: byText, hops, ...(slider ? { slider: { variable: "" } } : {}) } } : {}),
+  };
+  const problem = numberLinePanelProblem(panel);
+  return (
+    <InsertSheet disabled={Boolean(problem)} onSubmit={(event) => {
+      event.preventDefault();
+      if (problem) return;
+      onInsert({
+        panel: "number_line", alias: nextComponentAlias(recording, "number-line"), range: panel.range, subdivisions: parts,
+        ...(startText ? { start: startText } : {}),
+        ...(byText ? { jump: { by: byText, hops, ...(slider ? { slider: { variable: nextParameterVariable(recording, "move") } } : {}) } } : {}),
+      });
+    }}>
+      <div className="teach-range">
+        <label>{tr("从")}<input className="teach-input" inputMode="numeric" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
+        <label>{tr("到")}<input className="teach-input" inputMode="numeric" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+        <label>{tr("每格分成")}
+          <select className="teach-input" value={parts} onChange={(event) => setParts(Number(event.target.value))}>
+            {NUMBER_LINE_SUBDIVISIONS.map((count) => <option key={count} value={count}>{count === 1 ? tr("不分") : tr("{{v0}} 份", { v0: count })}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="teach-range">
+        <label>{tr("起点（可不填）")}<input className="teach-input" value={start} placeholder="3, 3/4" onChange={(event) => setStart(event.target.value)} /></label>
+        <label>{tr("移动多少（可不填）")}<input className="teach-input" value={by} placeholder="-5, 1/4" disabled={!startText} onChange={(event) => setBy(event.target.value)} /></label>
+      </div>
+      {byText && (
+        <>
+          <label className="teach-place"><input type="checkbox" checked={hops} onChange={(event) => setHops(event.target.checked)} /><span>{tr("一格一跳：讲课时能一格一格地数")}</span></label>
+          <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("移动做成滑块：讲课时拖动，看跳到哪里")}</span></label>
+        </>
+      )}
+      {problem && <p className="teach-notice" role="status">{problem}</p>}
       {placement}
     </InsertSheet>
   );

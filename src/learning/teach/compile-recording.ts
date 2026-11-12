@@ -3,7 +3,7 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
-import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildSolid, buildUnitCircle, describeSolid, functionCurveId, solidUnfolds, solidZRange } from "octos-lesson-language/plugin-math";
+import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildNumberLine, buildSolid, buildUnitCircle, describeSolid, functionCurveId, numberLineValue, NUMBER_LINE_LIMITS, solidUnfolds, solidZRange } from "octos-lesson-language/plugin-math";
 import { buildConstantSpeedMotion } from "octos-lesson-language/plugin-physics";
 import { PROCESS_CYCLE_EDGE_ID, processDiagramContent, processEdgeId, processStepId } from "octos-lesson-language/plugin-shared";
 import { normalizeLocale, tr } from "@/i18n";
@@ -330,6 +330,59 @@ export const MAX_POLYGON_SIDES = 48;
 const polygonLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "正多边形" : "regular polygon");
 const sidesLabel = (language: string) => (language.toLowerCase().startsWith("zh") ? "边数" : "sides");
 
+/** The number line panel as recorded. */
+type NumberLinePanel = Extract<ComponentInsert, { panel: "number_line" }>;
+/**
+ * A value the learner typed for the number line: a plain number ("3", "−5",
+ * "0.5") becomes a number; a fraction ("3/4", "1 1/2") stays an exact string.
+ */
+export function numberLinePanelValue(text: string): number | string | undefined {
+  const typed = text.trim().replace(/−/gu, "-");
+  if (/^-?\d+(?:\.\d+)?$/u.test(typed)) return Number(typed);
+  return numberLineValue(typed) === undefined ? undefined : typed;
+}
+const panelNumber = (text: string) => { const value = numberLinePanelValue(text); return value === undefined ? undefined : numberLineValue(value); };
+
+/** Number line ranges the panel offers: a span of at most 40 units, split into at most 12 parts each. */
+export const NUMBER_LINE_SUBDIVISIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12] as const;
+export const MAX_NUMBER_LINE_SPAN = 40;
+
+/**
+ * Why a number line panel cannot be drawn, in the learner's words, or
+ * undefined when it can. The insert form and the compiler share it, so the
+ * form never offers a line that would fail to compile.
+ */
+export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "subdivisions" | "start" | "jump">): string | undefined {
+  const [min, max] = panel.range;
+  if (!Number.isInteger(min) || !Number.isInteger(max) || !(min < max) || max - min > MAX_NUMBER_LINE_SPAN) return tr("数轴的两端要是整数，从小到大，最多相差 {{v0}}。", { v0: MAX_NUMBER_LINE_SPAN });
+  if (!(NUMBER_LINE_SUBDIVISIONS as readonly number[]).includes(panel.subdivisions)) return tr("每格分成的份数不在可选范围里。");
+  if ((max - min) * panel.subdivisions > NUMBER_LINE_LIMITS.ticks) return tr("刻度太多了：请缩短数轴，或者每格少分几份。");
+  const start = panel.start === undefined ? undefined : panelNumber(panel.start);
+  if (panel.start !== undefined && (start === undefined || start < min || start > max)) return tr("起点要是数轴范围里的数或分数，例如 3 或 3/4。");
+  if (!panel.jump) return undefined;
+  if (start === undefined) return tr("要先有起点，才能画移动。");
+  const by = panelNumber(panel.jump.by);
+  if (by === undefined || by === 0) return tr("移动多少要是不为 0 的数或分数，例如 −5 或 1/4。");
+  if (start + by < min || start + by > max) return tr("移动后要停在数轴范围里。");
+  const unit = 1 / panel.subdivisions;
+  // A slider lets the jump reach either end of the line; hop by hop, that must stay within the hop limit.
+  const longest = panel.jump.slider ? Math.max(start - min, max - start) : Math.abs(by);
+  const whole = (value: number) => Math.abs(value / unit - Math.round(value / unit)) <= 1e-9;
+  // Hop by hop, the starting jump is whole parts; with a slider (which steps by one part) the start
+  // is on a tick too, so every value the slider reaches is whole parts as well.
+  if (panel.jump.hops && (!whole(by) || (panel.jump.slider && !whole(start)) || Math.ceil(longest / unit - 1e-9) > NUMBER_LINE_LIMITS.hops)) {
+    return tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
+  }
+  return undefined;
+}
+
+/** Labels of the number line panel, in the lesson's language. */
+function numberLineLabels(language: string) {
+  const zh = language.toLowerCase().startsWith("zh");
+  return { start: zh ? "起点" : "start", end: zh ? "终点" : "end", move: zh ? "移动" : "move" };
+}
+const signedValue = (value: string) => { const text = value.trim().replace(/^-/u, "−"); return text.startsWith("−") ? text : `+${text}`; };
+
 /** The longest run a constant-speed motion panel offers, in seconds, and its fastest speed in metres per second. */
 export const MAX_MOTION_TIME = 3600;
 export const MAX_MOTION_SPEED = 1000;
@@ -545,6 +598,36 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
         circumscribed: false,
         text: { ...title, inscribed_label: polygonLabel(options.language) },
       }).actions[0] as Action;
+    }
+    if (component.panel === "number_line") {
+      // The math plugin's builder, which Coach's AI lessons also use (OLL decision 0013).
+      const problem = numberLinePanelProblem(component);
+      if (problem) throw new CompileError(problem);
+      const [min, max] = component.range;
+      const labels = numberLineLabels(options.language);
+      const start = component.start === undefined ? undefined : panelNumber(component.start)!;
+      const jump = component.jump;
+      const by = jump ? panelNumber(jump.by)! : 0;
+      if (jump?.slider) {
+        if (variables.has(jump.slider.variable)) throw new CompileError(`Variable '${jump.slider.variable}' is already used`);
+        // The slider reaches either end of the line from the start, never past it.
+        variables.set(jump.slider.variable, { as: jump.slider.variable, initial: by, min: min - start!, max: max - start!, label: labels.move,
+          control: { kind: "slider", step: 1 / component.subdivisions } });
+      }
+      return buildNumberLine({
+        as: alias, role: "diagram", place: placeNext(), ...title,
+        range: { min, max }, ticks: { step: 1, subdivisions: component.subdivisions, labels: component.subdivisions > 1 ? "all" : "major" },
+        ...(start !== undefined ? { points: [
+          { as: "start", value: numberLinePanelValue(component.start!)!, label: `${labels.start} ${component.start!.trim().replace(/^-/u, "−")}` },
+          // Without a slider the jump ends at one value, which gets its own point.
+          ...(jump && !jump.slider ? [{ as: "end", value: start + by, label: labels.end }] : []),
+        ] } : {}),
+        ...(jump ? { jumps: [{
+          as: "move", from: "start", hops: jump.hops,
+          by: jump.slider ? { expression: jump.slider.variable, initial: by } : numberLinePanelValue(jump.by)!,
+          ...(jump.slider ? {} : { label: signedValue(jump.by) }),
+        }] } : {}),
+      }).actions as Action[];
     }
     if (component.panel === "constant_speed") {
       // The physics plugin's builder, which Coach's AI lessons also use: a track

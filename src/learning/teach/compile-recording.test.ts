@@ -3,7 +3,7 @@ import { assertAuthoringSchema, deriveExecutionRequirements, normalizeAuthoringL
 import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
-import { compileRecording, compiledCards, CompileError, sliderStep } from "./compile-recording";
+import { compileRecording, compiledCards, CompileError, numberLinePanelProblem, sliderStep } from "./compile-recording";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
@@ -110,6 +110,85 @@ describe("compileRecording", () => {
     expect(bad(0, { initial: 2 })).toThrow(CompileError);
     expect(bad(10, { initial: 3, slider: { variable: "v", max: 2 } })).toThrow(CompileError);
     expect(bad(10, { initial: 0 })).toThrow(CompileError);
+  });
+
+  it("builds a number line with the math plugin: 3 + (−5) hops to −2 when played", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Adding negatives", type: "math_off_map" }, goals: [] }), now, [{ title: "3 + (−5)" }]);
+    recording = record(recording, "card-1", "Start at 3 and hop five to the left.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [-6, 6], subdivisions: 1, start: "3", jump: { by: "-5", hops: true } },
+      { t: 3_000, type: "tool.highlighter", target: { node: "number-line-1", part: "end" } },
+    ]);
+    const { lesson, events } = check(recording);
+    const write = lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write") as { kind: string; content: { jumps: unknown; points: Array<{ label: string }> } };
+    expect(write.kind).toBe("number_line");
+    expect(write.content.jumps).toEqual([{ as: "move", from: "start", by: -5, label: "−5", hops: true }]);
+    expect(write.content.points.map((point: { label: string }) => point.label)).toEqual(["start 3", "end"]);
+    const player = new HeadlessLessonPlayer(events);
+    let board;
+    for (let frame = player.advance(); frame; frame = player.advance()) board = frame.projection.board;
+    const line = board!.nodes["l:node:number-line-1"]!.content as { points: Array<{ id: string; value: number }> };
+    expect(line.points.find((point) => point.id.endsWith(":end"))!.value).toBe(-2);
+    expect(deriveExecutionRequirements(events).requiredPlugins).toEqual({ math: "0.2.0" });
+  });
+
+  it("a number line's jump can be a slider that reaches either end of the line, and fractions stay exact", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Fourths", type: "math_off_map" }, goals: [] }), now, [{ title: "Fourths" }]);
+    recording = record(recording, "card-1", "Move from three fourths.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [0, 2], subdivisions: 4, start: "3/4", jump: { by: "1/4", hops: true, slider: { variable: "move" } } },
+      { t: 1_000, type: "variable.drag", variable: "move", via: "slider", from: 0.25, to: 1, durationMs: 1_000 },
+    ]);
+    const { lesson, state } = check(recording);
+    expect(lesson.lesson.variables).toEqual([expect.objectContaining({ as: "move", initial: 0.25, min: -0.75, max: 1.25, control: { kind: "slider", step: 0.25 } })]);
+    const line = state.nodes["l:node:number-line-1"]!.content as { points: Array<{ value: unknown }>; jumps: Array<{ by: number }> };
+    expect(line.points[0]!.value).toBe("3/4");
+    expect(line.jumps[0]!.by).toBe(1);
+  });
+
+  it("the insert form and the compiler refuse the same impossible number lines", () => {
+    const ok = { range: [-5, 5] as [number, number], subdivisions: 1 };
+    expect(numberLinePanelProblem(ok)).toBeUndefined();
+    expect(numberLinePanelProblem({ ...ok, range: [5, -5] })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...ok, range: [0, 100] })).toBeTruthy();
+    expect(numberLinePanelProblem({ range: [0, 30], subdivisions: 12 })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...ok, start: "7" })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...ok, start: "abc" })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...ok, start: "−2.5" })).toBeUndefined();
+    expect(numberLinePanelProblem({ ...ok, start: "3", jump: { by: "-9", hops: false } })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...ok, start: "0", jump: { by: "1/2", hops: true } })).toBeTruthy();
+    expect(numberLinePanelProblem({ range: [0, 30], subdivisions: 1, start: "0", jump: { by: "1", hops: true, slider: { variable: "m" } } })).toBeTruthy();
+    expect(numberLinePanelProblem({ range: [-20, 20], subdivisions: 1, start: "0", jump: { by: "1", hops: true, slider: { variable: "m" } } })).toBeUndefined();
+    expect(numberLinePanelProblem({ ...ok, start: "3", jump: { by: "-5", hops: true } })).toBeUndefined();
+    const base = planCards(createRecording({ id: "rec", now, topic: { text: "Bad", type: "math_off_map" }, goals: [] }), now, [{ title: "Bad" }]);
+    const bad = record(base, "card-1", "Go.", [{ t: 0, type: "component.insert", panel: "number_line", alias: "n", range: [0, 5], subdivisions: 1, start: "9" }]);
+    expect(() => compileRecording(bad, { author, language: "en-US" })).toThrow(CompileError);
+  });
+
+  it("the form's slider check agrees with OLL: a half jump on whole ticks is refused (#146 review)", () => {
+    const panel = { range: [-5, 5] as [number, number], subdivisions: 1, start: "0", jump: { by: "1/2", hops: true, slider: { variable: "move" } } };
+    expect(numberLinePanelProblem(panel)).toBeTruthy();
+    expect(numberLinePanelProblem({ ...panel, start: "1/2", jump: { by: "1", hops: true, slider: { variable: "move" } } })).toBeTruthy();
+    expect(numberLinePanelProblem({ ...panel, jump: { by: "1/2", hops: false, slider: { variable: "move" } } })).toBeUndefined();
+  });
+
+  it("every number line the form accepts compiles and passes OLL validation, and every one it refuses would fail", () => {
+    const base = planCards(createRecording({ id: "rec", now, topic: { text: "Lines", type: "math_off_map" }, goals: [] }), now, [{ title: "Lines" }]);
+    const ranges: Array<[number, number]> = [[-5, 5], [0, 2], [-12, 12]];
+    const starts = [undefined, "0", "3", "-2", "3/4", "1/2", "2.5"];
+    const moves = [undefined, "1", "-5", "1/4", "1/2", "-3/4", "0.5"];
+    let accepted = 0;
+    for (const range of ranges) for (const subdivisions of [1, 2, 4]) for (const start of starts) for (const by of moves) for (const hops of [true, false]) for (const slider of [false, true]) {
+      if (!start && by) continue;
+      const panel = { range, subdivisions, ...(start ? { start } : {}), ...(by ? { jump: { by, hops, ...(slider ? { slider: { variable: "move" } } : {}) } } : {}) };
+      const problem = numberLinePanelProblem(panel);
+      const recording = record(base, "card-1", "A line.", [{ t: 0, type: "component.insert", panel: "number_line", alias: "line", ...panel }]);
+      if (problem) {
+        expect(() => check(recording), JSON.stringify(panel)).toThrow();
+      } else {
+        expect(() => check(recording), JSON.stringify(panel)).not.toThrow();
+        accepted += 1;
+      }
+    }
+    expect(accepted).toBeGreaterThan(100);
   });
 
   it("builds graphs with the math plugin, mapping saved curve and point names", () => {
