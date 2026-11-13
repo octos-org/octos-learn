@@ -85,7 +85,7 @@ export function OllCourseOutline({
         <ListTree size={15} />
         <span className="oll-course-outline-trigger-copy">
           <small>{tr("本课目录")}</small>
-          <b>{currentStep?.title ?? tr("选择讲解步骤")}</b>
+          <b>{currentStep?.title ? <LessonText text={currentStep.title} /> : tr("选择讲解步骤")}</b>
         </span>
         <ChevronDown size={14} />
       </button>
