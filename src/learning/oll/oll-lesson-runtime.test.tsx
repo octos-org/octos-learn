@@ -795,7 +795,7 @@ const answerTaskLessonSource = (() => {
   events[0]!.lesson!.tasks = [{
     as: "simplify",
     anchor,
-    prompt: "把 6/8 化成最简分数",
+    prompt: "把 $\\frac{6}{8}$ 化成最简分数",
     availability: { kind: "after_lesson" },
     allowed_operations: [{ kind: "answer_entry" }],
     completion: { kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" },
@@ -1296,6 +1296,51 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByText("重播"));
     await waitFor(() => expect(heights()).toEqual([36]));
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+  });
+
+  it("renders inline math in a practice prompt and hint like a board card, not as raw dollars", async () => {
+    // A quadratic lesson (2026-11-12) showed "请你把滑块 $a$ 的数值调到 $5$" with its dollars.
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "inline-math-task", startAtEnd: true });
+      if (!runtime) return null;
+      return <OllLessonBoard runtime={{ ...runtime,
+        studentTasks: runtime.studentTasks.map(task => ({ ...task, available: true,
+          prompt: "请你把滑块 $a$ 的数值调到 $5$。", current_hint: "当 $a = 4$ 时再看一次" })),
+      }} />;
+    }
+    await renderLearning(<Probe />);
+    const task = await waitFor(() => {
+      const article = screen.getByTestId("oll-student-tasks").querySelector("article");
+      expect(article?.querySelectorAll(".katex").length).toBe(3);
+      return article!;
+    });
+    expect(task.textContent).not.toContain("$");
+    expect(task.textContent).toContain("请你把滑块");
+  });
+
+  it("renders inline math in a thinking question and its answer, and keeps a price as text", async () => {
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "inline-math-reflection", startAtEnd: true });
+      if (!runtime) return null;
+      const anchor = unitCircleSineLessonSource.split(/\r?\n/).filter(Boolean)
+        .map((line) => JSON.parse(line) as CanonicalEvent)
+        .flatMap((event) => event.step?.beats ?? [])
+        .flatMap((beat) => Object.values(beat.stage).flat())
+        .find((action) => action.op === "board.create" && action.node)!.node!.id;
+      return <OllLessonBoard runtime={{ ...runtime, reflections: [{ id: "think", anchor, available: true,
+        prompt: "如果 $a$ 变成 $0.1$，开口会怎样？一支笔 $5 and a book $10.",
+        answer: "当 $a$ 接近 0 时开口变宽。" }] }} />;
+    }
+    await renderLearning(<Probe />);
+    const card = await screen.findByTestId("oll-reflection-card");
+    expect(card.querySelectorAll(".katex")).toHaveLength(2);
+    expect(card.textContent).toContain("一支笔 $5 and a book $10.");
+    fireEvent.click(within(card).getByRole("button", { name: tr("查看答案") }));
+    const answer = card.querySelector(".learning-reflection-answer")!;
+    expect(answer.querySelectorAll(".katex")).toHaveLength(1);
+    expect(answer.textContent).not.toContain("$");
   });
 
   it("tells a queued task to wait for the active practice, not for playback", async () => {
@@ -3049,7 +3094,10 @@ describe("OLL lesson Runtime integration", () => {
     const first = await renderLearning(<AnswerTaskRuntimeProbe />);
     const card = await screen.findByTestId("oll-answer-task");
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
-    expect(screen.getByText("把 6/8 化成最简分数")).toBeTruthy();
+    // The prompt's inline math renders as on board cards (no raw dollars).
+    expect(card.querySelectorAll(".katex").length).toBeGreaterThan(0);
+    expect(card.textContent).toContain("化成最简分数");
+    expect(card.textContent).not.toContain("$");
     const input = screen.getByRole("textbox", { name: tr("你的答案") });
     const submit = screen.getByRole("button", { name: tr("提交") });
     expect((submit as HTMLButtonElement).disabled).toBe(true);

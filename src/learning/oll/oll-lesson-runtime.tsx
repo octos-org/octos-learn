@@ -1,4 +1,5 @@
 import { BoardHandwritingInput } from "../handwriting/board-handwriting-input";
+import { LessonText } from "./lesson-text";
 import { useHandwritingInput } from "../handwriting/use-handwriting-input";
 import { HandwritingControls, HandwritingInputButton } from "../handwriting/handwriting-controls";
 import { useSnapNeat } from "../gesture/use-snap-neat";
@@ -3492,8 +3493,8 @@ export function LearningWhiteboard({
             return (
               <div key={degraded.nodeId} className="learning-degraded-visual">
                 <div>
-                  <strong>{degraded.title}</strong>
-                  <span>{degraded.purpose}</span>
+                  <strong><LessonText text={degraded.title} /></strong>
+                  <span><LessonText text={degraded.purpose} /></span>
                 </div>
                 {onRetryDegradedVisual ? (
                   <button
@@ -4085,7 +4086,7 @@ export function LearningWhiteboard({
                               aria-live="polite"
                               aria-disabled={locked || undefined}
                             >
-                              <p>{task.prompt}</p>
+                              <p><LessonText text={task.prompt} /></p>
                               {locked && task.status !== "succeeded" ? (
                                 <div className="learning-student-task-feedback">
                                   <span>{lockedTaskMessage(presentation.topic.id)}</span>
@@ -4097,7 +4098,8 @@ export function LearningWhiteboard({
                                   {taskReactions === NEUTRAL_REACTIONS ? (
                                     <span>
                                       {task.success_message
-                                        ?? NEUTRAL_REACTIONS.taskSucceeded}
+                                        ? <LessonText text={task.success_message} />
+                                        : NEUTRAL_REACTIONS.taskSucceeded}
                                     </span>
                                   ) : (
                                     // The teacher's line depends only on whether a hint was
@@ -4106,7 +4108,7 @@ export function LearningWhiteboard({
                                       {task.hints_revealed > 0
                                         ? taskReactions.taskSucceededWithHint
                                         : taskReactions.taskSucceeded}
-                                      {task.success_message ? <small>{task.success_message}</small> : null}
+                                      {task.success_message ? <small><LessonText text={task.success_message} /></small> : null}
                                     </span>
                                   )}
                                 </div>
@@ -4130,7 +4132,7 @@ export function LearningWhiteboard({
                                   role="status"
                                 >
                                   <Lightbulb size={16} />
-                                  <span>{task.current_hint}</span>
+                                  <span><LessonText text={task.current_hint} /></span>
                                 </div>
                               ) : null}
                               {task.status !== "succeeded" && attempts > 0 ? (
@@ -4189,7 +4191,7 @@ export function LearningWhiteboard({
                       <span>{tr("想一想")}</span>
                       <small>{tr("先独立思考，再展开答案核对")}</small>
                     </header>
-                    <p>{card.prompt}</p>
+                    <p><LessonText text={card.prompt} /></p>
                     <button
                       type="button"
                       aria-expanded={open}
@@ -4198,7 +4200,7 @@ export function LearningWhiteboard({
                       {open ? tr("收起答案") : tr("查看答案")}
                     </button>
                     {open ? (
-                      <div className="learning-reflection-answer">{card.answer}</div>
+                      <div className="learning-reflection-answer"><LessonText text={card.answer} /></div>
                     ) : null}
                   </section>
                 );
@@ -4231,7 +4233,7 @@ export function LearningWhiteboard({
                       aria-live="polite"
                       aria-disabled={locked || undefined}
                     >
-                      <p>{card.prompt}</p>
+                      <p><LessonText text={card.prompt} /></p>
                       {locked && card.status !== "succeeded" ? (
                         <div className="learning-student-task-feedback">
                           <span>{lockedTaskMessage(card.topic.id)}</span>
@@ -4242,7 +4244,7 @@ export function LearningWhiteboard({
                           <CheckCircle2 size={17} />
                           <span>
                             {taskReactions === NEUTRAL_REACTIONS
-                              ? card.success_message ?? NEUTRAL_REACTIONS.taskSucceeded
+                              ? card.success_message ? <LessonText text={card.success_message} /> : NEUTRAL_REACTIONS.taskSucceeded
                               : card.hints_revealed > 0
                                 ? taskReactions.taskSucceededWithHint
                                 : taskReactions.taskSucceeded}
@@ -4297,7 +4299,7 @@ export function LearningWhiteboard({
                       {card.current_hint ? (
                         <div className="learning-student-task-hint" role="status">
                           <Lightbulb size={16} />
-                          <span>{card.current_hint}</span>
+                          <span><LessonText text={card.current_hint} /></span>
                         </div>
                       ) : null}
                       {!locked && card.status !== "succeeded" && attempts > 0

@@ -1,4 +1,5 @@
 import { getLocale, tr, withLocale, type Locale } from "@/i18n";
+import { LessonText, lessonPlainText } from "@/learning/oll/lesson-text";
 import { useLocale } from "@/i18n/use-locale";
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
@@ -3586,7 +3587,7 @@ export function LearningWorkspace({
       >
         <div>
           <span>{tr("Octos Learning Canvas")}</span>
-          <strong>{ollLesson?.title ?? tr("新的学习白板")}</strong>
+          <strong title={ollLesson?.title ? lessonPlainText(ollLesson.title) : undefined}>{ollLesson?.title ? <LessonText text={ollLesson.title} /> : tr("新的学习白板")}</strong>
         </div>
         {ollLesson ? (
           <div className="learning-demo-controls" data-testid="oll-controls">

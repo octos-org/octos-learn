@@ -120,7 +120,7 @@
   stroke: currentColor !important;
 }
 
-[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child span {
+[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child > span {
   display: none;
 }
 
@@ -928,7 +928,8 @@
   flex-direction: column;
 }
 
-.learning-workspace-topbar span {
+/* Small labels; the lesson title (and the math inside it) keeps its own type. */
+.learning-workspace-topbar span:not(:where(strong *)) {
   color: #8a8074;
   font-family: var(--font-label);
   font-size: 9px;
@@ -1290,6 +1291,12 @@
   -webkit-line-clamp: 2;
 }
 
+/* A beat title stays clamped to two lines, so it must hide overflow; with a formula its lines are
+   tall enough for a fraction or an exponent. Titles without math keep their spacing. */
+.oll-course-beat-main b:has(.katex) {
+  line-height: 1.9;
+}
+
 /* With a teacher's bust (taller than the round tile) the outline sits above
    the bust's shoulder instead of over the face, dressed in the bust's navy
    and gold. */
@@ -1520,7 +1527,9 @@
   font-size: 12px;
 }
 
-.learning-degraded-visual span {
+/* The purpose line only: a rule on every span reached KaTeX's inner spans and clipped exponents
+   and fractions in a formula (review of #151). */
+.learning-degraded-visual > div > span {
   overflow: hidden;
   font-size: 11px;
   text-overflow: ellipsis;
@@ -4014,7 +4023,7 @@
     font-size: 16px;
   }
 
-  .learning-workspace-topbar > div:first-child span {
+  .learning-workspace-topbar > div:first-child > span {
     display: none;
   }
 
@@ -4174,4 +4183,16 @@
   background: rgba(226, 189, 102, 0.14);
   font-size: 11px;
   letter-spacing: 0.08em;
+}
+
+/* One-line titles that may hold a formula clip only sideways (their ellipsis): a fraction or an
+   exponent is taller than the line and would be cut. Browsers without overflow: clip keep hidden. */
+@supports (overflow: clip) {
+  .learning-workspace-topbar strong,
+  .learning-degraded-visual > div > span,
+  .oll-course-topic h3,
+  .oll-course-step-main > span:last-child {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
 }

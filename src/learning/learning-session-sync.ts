@@ -5,6 +5,7 @@ import { getSelectedProfileId } from "@/api/client";
 import { buildApiHeaders } from "@/api/client";
 import { buildFileUrl } from "@/api/files";
 import { stripLearningContext } from "./learning-context";
+import { lessonPlainText } from "./oll/lesson-text";
 import { getLearningSession, isSubstantiveLearningText, titleFromLearningText, type LearningSessionRecord } from "./learning-session-store";
 import { isOllLessonArtifact } from "./oll/oll-artifacts";
 import { isSelectionEnhancementArtifact } from "./selection-enhancements";
@@ -31,7 +32,8 @@ async function recoverTitle(id: string, files: SessionFileInfo[]): Promise<strin
       const response = await fetch(buildFileUrl(file.path, { sessionId: id }), { headers: buildApiHeaders() });
       if (!response.ok) continue;
       const data = await response.json();
-      const title = usableTitle(data?.lesson?.title);
+      // A lesson title may carry inline math; the session list shows plain text.
+      const title = usableTitle(typeof data?.lesson?.title === "string" ? lessonPlainText(data.lesson.title) : undefined);
       if (title) return title;
     } catch { /* Try another saved source; title recovery is non-destructive. */ }
   }
