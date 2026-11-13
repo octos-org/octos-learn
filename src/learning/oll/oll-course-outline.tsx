@@ -11,6 +11,7 @@ import {
 import type { PlaybackOutlineBeat, PlaybackOutlineStep } from "octos-lesson-language/player";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { useTeacherSkin } from "@/hooks/use-teacher-skin";
+import { LessonText, lessonPlainText } from "./lesson-text";
 import type { OllLessonRuntimeController } from "./use-oll-lesson-runtime";
 
 function itemState(
@@ -111,7 +112,7 @@ export function OllCourseOutline({
               <section className="oll-course-topic" key={topic.id}>
                 <header>
                   <span>{String(topicIndex + 1).padStart(2, "0")}</span>
-                  <h3>{topic.title}</h3>
+                  <h3><LessonText text={topic.title} /></h3>
                 </header>
                 <ol>
                   {topic.steps.map((step, stepIndex) => {
@@ -132,21 +133,21 @@ export function OllCourseOutline({
                             className="oll-course-step-main"
                             onClick={() => select(() => runtime.viewStep(step.id))}
                             aria-current={state === "current" ? "step" : undefined}
-                            aria-label={tr("查看步骤：{{v0}}", { v0: step.title })}
+                            aria-label={tr("查看步骤：{{v0}}", { v0: lessonPlainText(step.title) })}
                           >
                             <span className="oll-course-step-status">
                               {state === "completed"
                                 ? <Check size={12} />
                                 : stepIndex + 1}
                             </span>
-                            <span>{step.title}</span>
+                            <span><LessonText text={step.title} /></span>
                           </button>
                           {step.beats.length > 0 ? (
                             <button
                               type="button"
                               className="oll-course-expand"
                               onClick={() => toggleStep(step.id)}
-                              aria-label={tr("{{v0}}{{v1}}的讲解片段", { v0: expanded ? tr("收起") : tr("展开"), v1: step.title })}
+                              aria-label={tr("{{v0}}{{v1}}的讲解片段", { v0: expanded ? tr("收起") : tr("展开"), v1: lessonPlainText(step.title) })}
                               aria-expanded={expanded}
                             >
                               {expanded
@@ -158,7 +159,7 @@ export function OllCourseOutline({
                             type="button"
                             className="oll-course-play"
                             onClick={() => select(() => runtime.playStep(step.id))}
-                            aria-label={tr("从步骤开始播放：{{v0}}", { v0: step.title })}
+                            aria-label={tr("从步骤开始播放：{{v0}}", { v0: lessonPlainText(step.title) })}
                           >
                             <Play size={12} fill="currentColor" />
                           </button>
@@ -180,16 +181,16 @@ export function OllCourseOutline({
                                     aria-current={
                                       beatState === "current" ? "step" : undefined
                                     }
-                                    aria-label={tr("查看讲解片段：{{v0}}", { v0: beat.title })}
+                                    aria-label={tr("查看讲解片段：{{v0}}", { v0: lessonPlainText(beat.title) })}
                                   >
                                     <span>{beatIndex + 1}</span>
-                                    <b>{beat.title}</b>
+                                    <b><LessonText text={beat.title} /></b>
                                   </button>
                                   <button
                                     type="button"
                                     className="oll-course-beat-play"
                                     onClick={() => select(() => runtime.playBeat(beat.id))}
-                                    aria-label={tr("从讲解片段开始播放：{{v0}}", { v0: beat.title })}
+                                    aria-label={tr("从讲解片段开始播放：{{v0}}", { v0: lessonPlainText(beat.title) })}
                                   >
                                     <Play size={10} fill="currentColor" />
                                   </button>

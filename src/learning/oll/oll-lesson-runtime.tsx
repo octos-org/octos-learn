@@ -3493,8 +3493,8 @@ export function LearningWhiteboard({
             return (
               <div key={degraded.nodeId} className="learning-degraded-visual">
                 <div>
-                  <strong>{degraded.title}</strong>
-                  <span>{degraded.purpose}</span>
+                  <strong><LessonText text={degraded.title} /></strong>
+                  <span><LessonText text={degraded.purpose} /></span>
                 </div>
                 {onRetryDegradedVisual ? (
                   <button

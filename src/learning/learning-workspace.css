@@ -929,7 +929,7 @@
 }
 
 /* Small labels; the lesson title (and the math inside it) keeps its own type. */
-.learning-workspace-topbar span:not(strong *) {
+.learning-workspace-topbar span:not(:where(strong *)) {
   color: #8a8074;
   font-family: var(--font-label);
   font-size: 9px;
