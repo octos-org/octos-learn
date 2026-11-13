@@ -1298,6 +1298,27 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
   });
 
+  it("renders inline math in a practice prompt and hint like a board card, not as raw dollars", async () => {
+    // A quadratic lesson (2026-11-12) showed "请你把滑块 $a$ 的数值调到 $5$" with its dollars.
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "inline-math-task", startAtEnd: true });
+      if (!runtime) return null;
+      return <OllLessonBoard runtime={{ ...runtime,
+        studentTasks: runtime.studentTasks.map(task => ({ ...task, available: true,
+          prompt: "请你把滑块 $a$ 的数值调到 $5$。", current_hint: "当 $a = 4$ 时再看一次" })),
+      }} />;
+    }
+    await renderLearning(<Probe />);
+    const task = await waitFor(() => {
+      const article = screen.getByTestId("oll-student-tasks").querySelector("article");
+      expect(article?.querySelectorAll(".katex").length).toBe(3);
+      return article!;
+    });
+    expect(task.textContent).not.toContain("$");
+    expect(task.textContent).toContain("请你把滑块");
+  });
+
   it("tells a queued task to wait for the active practice, not for playback", async () => {
     function Probe() {
       const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,

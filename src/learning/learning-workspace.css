@@ -120,7 +120,7 @@
   stroke: currentColor !important;
 }
 
-[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child span {
+[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child > span {
   display: none;
 }
 
@@ -928,7 +928,8 @@
   flex-direction: column;
 }
 
-.learning-workspace-topbar span {
+/* Small labels; the lesson title (and the math inside it) keeps its own type. */
+.learning-workspace-topbar span:not(strong *) {
   color: #8a8074;
   font-family: var(--font-label);
   font-size: 9px;
@@ -4014,7 +4015,7 @@
     font-size: 16px;
   }
 
-  .learning-workspace-topbar > div:first-child span {
+  .learning-workspace-topbar > div:first-child > span {
     display: none;
   }
 

@@ -14,13 +14,13 @@
       "repository": "alan0x/octos-lesson-language",
       "reviewed_main_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55",
       "authoring_profile_ref": "3145b5da8bac399edbbe73b6bea0ad1c7225f790",
-      "web_runtime_ref": "1e6f6d93594cd70c29d9c9e1810404ed7f07efa8"
+      "web_runtime_ref": "e9faffa10883b9d584603e19b78d0ceb0c2b2ff6"
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
       "main_baseline_ref": "0fecce1f0d3bc357978c20f460509303fd8869a0",
       "package_version": "0.1.5",
-      "oll_web_runtime_ref": "1e6f6d93594cd70c29d9c9e1810404ed7f07efa8"
+      "oll_web_runtime_ref": "e9faffa10883b9d584603e19b78d0ceb0c2b2ff6"
     },
     "octos": {
       "repository": "octos-org/octos",
