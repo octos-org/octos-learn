@@ -139,6 +139,7 @@ The owner has confirmed that fractions and charts stay in the plan.
 1. **Write and freeze the question set**, with its tags. Free; reviewed by the owner.
    - **Done (2026-11-13):** Coach #75 (`testsuite/math-expressiveness-question-set.json`), frozen at version 2: 160 questions with a seeded quarter held out. Owner decisions: 6–8 drawn evenly by grade (the catalog's 6–8 topics are mostly grade 6); the natural-set linear-systems and Pythagoras questions count in 6–8; the hand-picked 9–12 topics are accepted.
 2. **Baseline M1** (free), and **baseline M2 and M3** (paid, owner's approval).
+   - **M1 (2026-11-13):** Coach #76 (`testsuite/math-expressiveness-m1-baseline.json`). Of the 145 questions that need a picture, a component fully draws 27 (19%): K–2 1 of 27, 3–5 3 of 37, 6–8 7 of 36, 9–12 16 of 45. Ranked by gain on the open questions: fraction and area models 10, counters and ten frames 9, data charts 8, polygon figures 7, place value 6. Proposed order, for the owner: the small number-line and function-plot extensions together (10), then fractions (0014), counters and ten frames, data charts (0015), polygon figures, place value.
 3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
 4. **Components in the order M1 sets**, each through §5. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
