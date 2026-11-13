@@ -1,3 +1,4 @@
+import { spokenText } from "octos-lesson-language";
 import { tr } from "@/i18n";
 import type { NativeTtsConfig } from "@/api/voice";
 
@@ -110,10 +111,12 @@ export function configureNativeTts(config: NativeTtsConfig): boolean {
 }
 
 export function playNativeTts(
-  text: string,
+  rawText: string,
   onEnded: () => void,
   signal?: AbortSignal,
 ): Promise<boolean> {
+  // A voice never receives formula markup: inline math is spoken as words (captions keep it).
+  const text = spokenText(rawText);
   const candidate = bridge();
   if (!nativeTtsAvailable() || !candidate?.play) return Promise.resolve(false);
   if (signal?.aborted) return Promise.resolve(false);
