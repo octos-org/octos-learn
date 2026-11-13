@@ -83,7 +83,12 @@ Moving these into the plugin is one small item (step 3 in §7). It changes no le
 
 All four are reported by grade band. M1's split decides the order of work (§6), so the order is measured, not assumed.
 
-**Baseline:** M1 now (free). Then one paid run of M2 and M3 over a sample of about 60 questions, stratified by band, at about $0.60–1.00 plus about a day of hand reading. After each component: M1 again (free), and M2 and M3 on the questions that component should now serve.
+**Baseline:** M1 now (free). Then one paid run of M2 and M3 over a fixed regression sample of about 60 questions, stratified by band, at about $0.60–1.00 plus about a day of hand reading. The sample is chosen once and kept; it holds questions that existing components serve, questions that nothing serves, and near misses (questions close to a component but outside what it can show).
+
+**After each component:** M1 again (free), and one paid run over the regression sample plus the questions the component newly serves. M2 and M3 are reported separately for three groups:
+- **newly served:** does the lesson use the new component, and is the picture right?
+- **previously served:** do the existing components still get chosen and drawn correctly (no regression)?
+- **not served, including near misses to the new component:** M3's negative cases. A new recipe chosen for a request it cannot show counts as misleading here.
 
 **Judges.** Only the number line has an automatic judge today, and it took several rounds to make it trustworthy. Each new component gets its own judge, written before its recipe (§5). Until then, its questions are read by hand.
 
@@ -122,7 +127,12 @@ The owner has confirmed that fractions and charts stay in the plan.
 
 ## 7. Sequence
 
-0. **Finish the number line:** run 9, then switch it on in live AI lessons, then a phone-width check in Learn and one real lesson in the app. Run 9 is under way.
+0. **Finish the number line.** Every gate below passes before the separate change that switches it on:
+   - **Quality:** run 9 left out the comparing, solution-set and rounding questions (a harness defect, fixed in Coach #70). Run 9b runs them (owner-approved). Runs 9 and 9b together must have no misleading lesson under the slip rule.
+   - **Speed:** run 9 was inconclusive (+1.09 s). Run 9b adds the one allowed repeat; speed is judged on all 40 pairs (paired median at most +0.5 s).
+   - **Request size:** with the four types on, the fallback-outline request exceeded its S6 ceiling by up to 925 bytes. The owner approved raising those ceilings (Coach #72); the payload test must pass with the four types enabled.
+   - **Player:** a phone-width check in Learn and one real lesson in the app, with the four types enabled locally.
+   - **Then** the switch-on change. If any gate fails, the number line stays a trial and the failure is reported to the owner.
 1. **Write and freeze the question set**, with its tags. Free; reviewed by the owner.
 2. **Baseline M1** (free), and **baseline M2 and M3** (paid, owner's approval).
 3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
