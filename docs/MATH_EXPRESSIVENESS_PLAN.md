@@ -1,6 +1,6 @@
 # Math expressiveness plan (K–12)
 
-**Status** — Draft for the product owner's review, 2026-11-12. Code references were checked at learning-coach `3242238`, octos-lesson-language (OLL) `2444000` and octos-learn `5346bef` (each repository's `main` on that date).
+**Status** — Accepted 2026-11-12 (Q1–Q4 as recommended); Q5, on managing the request's growth, is open. Code references were checked at learning-coach `3242238`, octos-lesson-language (OLL) `2444000` and octos-learn `5346bef` (each repository's `main` on that date).
 
 **What changed.** On 2026-11-12 the product owner paused expansion into other subjects: the new math components were progressing slowly, and math comes first. Mathematics is the whole of the next phase, from kindergarten to grade 12. This plan replaces the math items of the [subject plugin plan](SUBJECT_EXPANSION_PLAN.md) (§8, P4 item 5: B9 → B10 → B11) and pauses its science items (P3, and P4 items 1–4). Decision S5 (math and science in parallel) is suspended until the owner resumes broader expansion. That plan's principles, payload gates (§9) and plugin contract (§4) still apply.
 
@@ -37,7 +37,7 @@ The four number-line recipes are trials. Run 9 (the gate on frozen code) is unde
 
 ### 2.2 Payload budget
 
-Math's share of the broad request is **5,760 of its 5,800-byte budget**. A new recipe costs about 70–430 bytes. Without a change, there is room for nothing more. The paused plugins hold unspent budget: physics uses 449 of 2,086 bytes, chemistry, biology and Earth & space use 2 of 1,000 each, and shared uses 265 of 2,265. Question Q1 (§8) proposes moving part of that to math. This stays inside the headroom already tested live (8,368 bytes), so no ceiling is raised.
+Math's share of the broad request is **5,760 of its 5,800-byte budget**. A new recipe costs about 70–430 bytes. Without a change, there is room for nothing more. The paused plugins hold unspent budget: physics uses 449 of 2,086 bytes, chemistry, biology and Earth & space use 2 of 1,000 each, and shared uses 265 of 2,265. Q1 (§8, accepted) moves most of that to math. This stays inside the headroom already tested live (8,368 bytes), so no ceiling is raised.
 
 ### 2.3 Goal 1: what is still outside the math plugin
 
@@ -129,12 +129,19 @@ The owner has confirmed that fractions and charts stay in the plan.
 4. **Components in the order M1 sets**, each through §5. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
 
-## 8. Decisions for the product owner
+## 8. Decisions
 
-- **Q1 Budget.** Move unspent budget from the paused plugins to math (recommended: math 5,800 → 9,900 bytes; physics 2,086 → 600, still above its 449; chemistry, biology and Earth & space 1,000 → 100 each; shared unchanged at 2,265). The budgets then total 13,065 bytes, below today's 13,151, which is the live-tested headroom. No ceiling is raised and no live comparison is needed. At roughly 200 bytes per recipe, this leaves room for about 20 more math recipes or extensions. Resuming another subject later means giving its budget back, or building scoped requests first. When math reaches 80% of its new budget, Coach starts sending math-only requests that leave other subjects' guidance out (scoped requests, decision S14).
+Q1–Q4 were accepted as recommended on 2026-11-12. Q5 is open.
+
+- **Q1 Budget.** Move unspent budget from the paused plugins to math (recommended: math 5,800 → 9,900 bytes; physics 2,086 → 600, still above its 449; chemistry, biology and Earth & space 1,000 → 100 each; shared unchanged at 2,265). The budgets then total 13,065 bytes, below today's 13,151, which is the live-tested headroom. No ceiling is raised and no live comparison is needed. At roughly 200 bytes per recipe, this leaves room for about 20 more math recipes or extensions. Resuming another subject later means giving its budget back, or building scoped requests first. Scoping by subject (S14) would save little for a math request, since everything outside math is about 720 bytes. Growth inside math is Q5.
 - **Q2 Question set.** About 160 questions, banded as in §3, mostly in English with a fifth in Chinese, and a quarter held out. Recommended as written.
 - **Q3 Hand reading.** Until a component has a judge, its M2 and M3 results come from hand reading of a sample. Recommended: accept this, and require a judge as part of each new component (§5, step 3).
 - **Q4 Order.** The order of components follows M1's measured gain per cost, not a fixed list. Fractions and charts stay in the plan regardless. Recommended.
+
+- **Q5 Managing growth (open).** The request will keep growing as components are added; a bigger budget only postpones the limit. Proposed, cheapest first:
+  1. **Measure the real limit.** The only size ever tested is +8,368 bytes; it is not a measured cliff. Runs 5–9 also show a signal: with the number-line types offered (+107 to +252 tokens), requests that do not use them were 1.7 s slower (95% interval 0.7–2.8 s, 50 pairs), cause not established. One paid size test (about +16 KB and +32 KB) shows whether size moves first-playable time at all. Budgets move from bytes to the provider's tokens (already pending in the subject plan), since bytes overcount Chinese guidance. We also check how much of the fixed part of the request is cached, because cached text costs little time.
+  2. **Make cards cheap by construction.** A family shares one card plus one line per type: the number line costs 392 bytes, and each added type 116–152. Shared rules (1,203 bytes) and the schema (1,558 bytes) are almost half of math, so parameter names are shared across recipes. "Marginal bytes" joins the definition of done (§5).
+  3. **Only then, offer a subset.** Full cards for a fixed bundle (for example by grade band) and a one-line index for the rest. The choice must be made before the first model call, from what Coach knows then (the grade input, Jev's subject signal). A miss reuses the existing one-restart path. Fixed bundles keep the request's prefix stable, so caching keeps working. The trigger is evidence (M2's "chosen" rate falling, or the size test showing a slowdown), not a byte percentage.
 
 ## 9. Changes to other plans
 
