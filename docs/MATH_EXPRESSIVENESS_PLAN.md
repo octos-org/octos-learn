@@ -1,0 +1,142 @@
+# Math expressiveness plan (K–12)
+
+**Status** — Draft for the product owner's review, 2026-11-12. Code references were checked at learning-coach `3242238`, octos-lesson-language (OLL) `2444000` and octos-learn `5346bef` (each repository's `main` on that date).
+
+**What changed.** On 2026-11-12 the product owner paused expansion into other subjects: the new math components were progressing slowly, and math comes first. Mathematics is the whole of the next phase, from kindergarten to grade 12. This plan replaces the math items of the [subject plugin plan](SUBJECT_EXPANSION_PLAN.md) (§8, P4 item 5: B9 → B10 → B11) and pauses its science items (P3, and P4 items 1–4). Decision S5 (math and science in parallel) is suspended until the owner resumes broader expansion. That plan's principles, payload gates (§9) and plugin contract (§4) still apply.
+
+## 1. Goals
+
+1. **Math runs on the plugin architecture.** This is largely done (§2.3); one small clean-up remains.
+2. **The math components can show more of K–12 math.** This covers extending the components we have (the number line's comparing, inequality and rounding types are the first example) and adding new ones (fraction models, data charts).
+3. **Progress is measured.** One fixed question set, re-measured after every component, says whether lessons can show more and whether what they show is right.
+
+All three lesson paths keep working: AI lessons (Learning Coach), learner-recorded lessons (Studio) and curated CoursePacks. All three end as canonical OLL.
+
+## 2. Where we are
+
+### 2.1 Visual components (recipes) an AI lesson can use
+
+The numbers are each recipe's bytes in the broad request: its model guidance plus parameter names.
+
+| Recipe | What it shows | Mostly for | Bytes |
+|---|---|---|---|
+| `function_plot` | Curves on a coordinate plane, sliders for parameters | 8–12 | 184 |
+| `coordinate_circle` | A circle on coordinates | 9–12 | 153 |
+| `unit_circle_projection` | The unit circle with sine/cosine projections | 9–12 | 94 |
+| `circle_and_arc` | A circle, arcs and angles | 7–12 | 416 |
+| `circle_polygon_bounds` | Inscribed and circumscribed polygons (π bounds) | 7–12 | 432 |
+| `circle_area_rearrangement` | A circle cut and rearranged into a near-rectangle | 7 | 76 |
+| `geometric_rearrangement` | Polygon pieces moved to show equal areas (e.g. Pythagoras) | 6–8 | 383 |
+| `rectangle_unit_square_array` | Unit squares in rows and columns (area, multiplication) | 3–5 | 162 |
+| `cube_with_section`, `function_surface_with_section`, `implicit_surface_with_section` | 3D solids and surfaces cut by a plane | 9–12 | 69 / 110 / 141 |
+| `number_line` (+ `_compare`, `_solution`, `_rounding`) | Jumps, comparing two numbers, inequality solution sets, rounding | 1–8 | 392 / 116 / 152 / 119 |
+
+Besides these, every lesson can use formulas, notes, tables and simple diagrams on the board, and typed answers that the program checks.
+
+The four number-line recipes are trials. Run 9 (the gate on frozen code) is under way; if it passes, a separate change switches them on.
+
+### 2.2 Payload budget
+
+Math's share of the broad request is **5,760 of its 5,800-byte budget**. A new recipe costs about 70–430 bytes. Without a change, there is room for nothing more. The paused plugins hold unspent budget: physics uses 449 of 2,086 bytes, chemistry, biology and Earth & space use 2 of 1,000 each, and shared uses 265 of 2,265. Question Q1 (§8) proposes moving part of that to math. This stays inside the headroom already tested live (8,368 bytes), so no ceiling is raised.
+
+### 2.3 Goal 1: what is still outside the math plugin
+
+- **Coach core:** about four `function_plot` special cases (`lesson-plan-compiler.ts`, `lesson-plan-schema.ts`, `lesson-plan-generation.ts`) and one hard-coded list of drawable kinds in the compiler.
+- **Learn Studio:** the number line and polygon forms are written in Studio rather than supplied by the math plugin.
+
+Moving these into the plugin is one small item (step 3 in §7). It changes no lesson.
+
+## 3. The question set
+
+**One fixed set of K–12 math questions, written and frozen before any new component is designed.** It is what "more expressive" is measured against. It is never used to tune a prompt or a recipe; probes and tests use their own cases.
+
+- **Size:** about 160 questions.
+
+  | Grade band | Questions |
+  |---|---|
+  | K–2 | 30 |
+  | 3–5 | 40 |
+  | 6–8 | 40 |
+  | 9–12 | 50 |
+
+- **Domains:**
+  - K–8: the star map's 12 math domains, such as counting, place value, fractions, measurement, geometry, data and algebra. The star-map catalog has 567 math topics, mostly in K–8.
+  - 9–12: number and quantity, algebra, functions, geometry, statistics and probability, plus introductory precalculus and calculus. The existing natural-input set (`learning-coach/testsuite/math-natural-course-cases.json`, 12 high-school topics) is reused here.
+  - Standard codes are cited only where they have been looked up.
+- **Phrasing:**
+  - **Language:** mostly English (the US market), with about a fifth in Chinese for current users.
+  - **Kinds:** a mix of detailed requests, short questions and topic names, as learners actually ask.
+- **Each question is tagged** with:
+  - its band and domain;
+  - what a good teacher would draw: a picture of the relationship, or "no visual needed";
+  - which kind of component that picture needs.
+- **Held out:** a quarter of the questions are never used in any design discussion or probe, so the measure cannot be fitted to them.
+
+## 4. Measures
+
+| Measure | Question it answers | How | Cost |
+|---|---|---|---|
+| **M1 Coverage** | For what share of the questions can a component draw the picture a good teacher would? | Hand tagging: *fully*, *partly* or *not*. *Not* splits into "extend an existing component" or "needs a new one". | Free |
+| **M2 Chosen and correct** | When a component fits, does the AI lesson use it, and is the picture right? | A paid run over a stratified sample. Automatic checks where a judge exists (today only the number line); otherwise read by hand. | Paid |
+| **M3 Never misleads** | When nothing fits, does the lesson leave the picture out rather than draw a wrong one? | Same run, read by hand. | Paid |
+| **M4 Speed and size** | Did the lesson get slower or the request bigger? | First-playable p50 within +0.5 s (live comparison); plugin budgets (offline, every build). | Paid live comparison per adopted component |
+
+All four are reported by grade band. M1's split decides the order of work (§6), so the order is measured, not assumed.
+
+**Baseline:** M1 now (free). Then one paid run of M2 and M3 over a sample of about 60 questions, stratified by band, at about $0.60–1.00 plus about a day of hand reading. After each component: M1 again (free), and M2 and M3 on the questions that component should now serve.
+
+**Judges.** Only the number line has an automatic judge today, and it took several rounds to make it trustworthy. Each new component gets its own judge, written before its recipe (§5). Until then, its questions are read by hand.
+
+## 5. Definition of done for a component
+
+What the number line taught us, made into a checklist so that the next components go faster:
+
+1. **Decision record** (OLL): what the card draws, what the program computes, and what the model writes. The owner accepts it before any code.
+2. **Render first.** The card is checked in the real player (phone width included) before Coach uses it.
+3. **Checks before the recipe.** The automatic judge and its test cases are written before the recipe exists, including negative tests (a wrong picture must fail).
+4. **The model writes only what it means.** The program owns ranges, ticks, steps and every derived value. Tests go through the real generation pipeline, not just the compiler.
+5. **Free replay.** Recorded model replies are kept and replayed through every new build at no cost.
+6. **Small probe, then the gate.** A probe of about $0.25 tests the model's behaviour; the gate runs once on frozen code with rules written down beforehand.
+7. **Studio and CoursePacks** use the same builder.
+8. **Switched on** in a separate change, then M1–M3 are re-measured.
+
+## 6. Candidates
+
+Two kinds, ranked by M1 gain per unit of cost once the baseline exists. The list below is a starting point; M1's split will add to it and re-order it.
+
+**Extend existing components**
+- **Coordinate plane:** plotted points and polygons, transformations (translate, reflect, rotate, dilate), and 2D inequalities with shaded regions.
+- **Function plot:** piecewise functions, several functions at once, sequences as points, and the derivative or area under a curve as explicit layers.
+- **Geometry:** angles with a protractor reading, constructions, and nets of solids.
+- **Number line:** a double number line for ratios, and a number line for measurements and time.
+
+**New components**
+- **Fraction and area models** (decision 0014, Phase B item B10): bars, circles and area partitions; comparing two fractions; the area model for multiplication.
+- **Data charts** (decision 0015, item B6): bar, line, dot plot, histogram, box plot and scatter plots from a small table, with a line of best fit.
+- **Place value:** base-ten blocks and place-value charts (K–3).
+- **Tape diagrams and ratio tables** (grades 2–7).
+- **Probability:** tree diagrams and simple simulations (grades 7–12).
+- **Clocks and money** (K–3), if M1 shows they matter.
+
+The owner has confirmed that fractions and charts stay in the plan.
+
+## 7. Sequence
+
+0. **Finish the number line:** run 9, then switch it on in live AI lessons, then a phone-width check in Learn and one real lesson in the app. Run 9 is under way.
+1. **Write and freeze the question set**, with its tags. Free; reviewed by the owner.
+2. **Baseline M1** (free), and **baseline M2 and M3** (paid, owner's approval).
+3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
+4. **Components in the order M1 sets**, each through §5. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
+5. **Re-measure** after each component; this plan's table of results is updated each time.
+
+## 8. Decisions for the product owner
+
+- **Q1 Budget.** Move unspent budget from the paused plugins to math (recommended: math 5,800 → 9,900 bytes; physics 2,086 → 600, still above its 449; chemistry, biology and Earth & space 1,000 → 100 each; shared unchanged at 2,265). The budgets then total 13,065 bytes, below today's 13,151, which is the live-tested headroom. No ceiling is raised and no live comparison is needed. At roughly 200 bytes per recipe, this leaves room for about 20 more math recipes or extensions. Resuming another subject later means giving its budget back, or building scoped requests first. When math reaches 80% of its new budget, Coach starts sending math-only requests that leave other subjects' guidance out (scoped requests, decision S14).
+- **Q2 Question set.** About 160 questions, banded as in §3, mostly in English with a fifth in Chinese, and a quarter held out. Recommended as written.
+- **Q3 Hand reading.** Until a component has a judge, its M2 and M3 results come from hand reading of a sample. Recommended: accept this, and require a judge as part of each new component (§5, step 3).
+- **Q4 Order.** The order of components follows M1's measured gain per cost, not a fixed list. Fractions and charts stay in the plan regardless. Recommended.
+
+## 9. Changes to other plans
+
+- [Subject plugin plan](SUBJECT_EXPANSION_PLAN.md): the math items of §8 are replaced by this plan; P3 and the science items of P4 are paused; decision S5 is suspended. A note at the top of that plan points here.
+- [Studio expressiveness plan](LEARNER_EXPRESSIVENESS_PLAN.md): items B6, B9, B10 and B11 follow this plan; the other Phase B items wait with the science work.

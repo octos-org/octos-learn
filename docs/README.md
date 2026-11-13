@@ -138,6 +138,7 @@
 - [学生当老师模式实施计划](LEARNER_TEACHING_MODE_IMPLEMENTATION_PLAN.md)：从测试修复、OLL 合同扩展、录课工作室、编译器、小章鱼与检查、声音与隐私、我的课程，到账号同意、班级分享和公开社区的里程碑、验收标准与待决事项。
 - [学生当老师模式交接](LEARNER_TEACHING_MODE_HANDOFF.md)：当前进展、仓库/分支/PR 与合并顺序、已决事项、代码地图、本地运行与实测脚本、已知问题和剩余工作；接手时先读这一篇。
 - [学生讲课表现力计划](LEARNER_EXPRESSIVENESS_PLAN.md)：先让录课工作室用上 OLL 已有的全部能力（文字、表格、图示、完整几何/函数/3D、分组、形象表情、各类练习），再按优先级扩展 OLL（数轴、分数模型、数据图表、选择/排序/匹配/标注练习、图片库等）；现状清单、阶段、验收和待决事项。
+- [Math expressiveness plan (K–12)](MATH_EXPRESSIVENESS_PLAN.md): the next phase is math only (other subjects paused 2026-11-12). A frozen K–12 question set, four measures (coverage, chosen and correct, never misleads, speed and size), a definition of done per component, candidate extensions and new components, and the payload budget.
 - [录课演示：做一个纸盒要多少纸板？](RECORDING_GUIDE_BOX_SURFACE_AREA.md) 包含长方体展开、逐面标注、表面积讲解与无盖纸盒练习的逐步录制流程。
 - [美国英语语音：Azure AI Speech](EN_US_SPEECH_AZURE.md)：P6 提案实现；为什么选 Azure、ASR / TTS 接入方式、设置页供应商切换、美式英语与儿童音色目录、电视暂不支持等限制。
 - [三位老师定稿与素材更新](TEACHER_ART_REFRESH.md)：2026-10-30 三张用户定稿、人物卡/胸像/横版素材、程序接入及创建 PR 前的本地验收。

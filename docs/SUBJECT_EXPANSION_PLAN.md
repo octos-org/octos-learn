@@ -1,5 +1,7 @@
 # Octos Learn subject plugin plan
 
+**Paused (2026-11-12).** The product owner paused expansion into other subjects; math is the whole of the next phase. The math items of §8 (P4 item 5) are replaced by the [math expressiveness plan](MATH_EXPRESSIVENESS_PLAN.md). P3 and the science items of P4 are paused, and decision S5 (math and science in parallel) is suspended. The principles, plugin contract (§4) and gates (§9) still apply.
+
 **Status** — Revised plan accepted 2026-11-09. Replaces the earlier discussion draft of this file. Code references were checked at learning-coach `be05941`, octos-lesson-language (OLL) `350d5e0`, octos-learn `e453bd8` and octos-course-library `0781f74` (each repository's `origin/main` on that date).
 
 **Review (2026-11-09)** — after P0 and the P1 migration merged, the plan was reviewed against `origin/main` of all four repositories and the P0 baseline. The work that follows from it is listed in §13. The product owner accepted the review's changes the same day (decisions S6 revised, S10–S15 in §11): P1 gets a close-out list, P2 starts with a payload experiment and runs in shadow mode, the first science capabilities move forward, the ceilings get headroom, and the plan gains an Earth and space science plugin, a "none of these" subject choice, a grade-level input and an accuracy approach for subjects the program cannot compute.

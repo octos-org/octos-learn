@@ -1,5 +1,7 @@
 # Learner lessons: expressiveness plan
 
+**Note (2026-11-12).** Phase B items B6, B9, B10 and B11 now follow the [math expressiveness plan](MATH_EXPRESSIVENESS_PLAN.md). The other Phase B items wait with the paused science work.
+
 Status: approved 2026-11-06 (decisions in section 9). Phase 2 of the teaching-mode plan (accounts, consent, class/family sharing) is postponed; this plan comes first.
 
 ## 1. Goal
