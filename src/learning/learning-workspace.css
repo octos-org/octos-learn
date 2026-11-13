@@ -938,9 +938,7 @@
 }
 
 .learning-workspace-topbar strong {
-  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: hidden;
   color: #332e28;
   font-family: var(--font-body);
   font-size: 20px;
@@ -1143,9 +1141,7 @@
 }
 
 .oll-course-topic h3 {
-  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: hidden;
   margin: 0;
   color: #6d6255;
   font-size: 12px;
@@ -1199,9 +1195,7 @@
 }
 
 .oll-course-step-main > span:last-child {
-  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: hidden;
   color: #3f3932;
   font-size: 12px;
   font-weight: 600;
@@ -1536,8 +1530,7 @@
 /* The purpose line only: a rule on every span reached KaTeX's inner spans and clipped exponents
    and fractions in a formula (review of #151). */
 .learning-degraded-visual > div > span {
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: hidden;
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4190,4 +4183,16 @@
   background: rgba(226, 189, 102, 0.14);
   font-size: 11px;
   letter-spacing: 0.08em;
+}
+
+/* One-line titles that may hold a formula clip only sideways (their ellipsis): a fraction or an
+   exponent is taller than the line and would be cut. Browsers without overflow: clip keep hidden. */
+@supports (overflow: clip) {
+  .learning-workspace-topbar strong,
+  .learning-degraded-visual > div > span,
+  .oll-course-topic h3,
+  .oll-course-step-main > span:last-child {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
 }
