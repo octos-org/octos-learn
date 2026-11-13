@@ -1,3 +1,4 @@
+import { spokenText } from "octos-lesson-language";
 import { getLocale, tr } from "@/i18n";
 import { createRequestId } from "@/lib/request-id";
 import { request as apiRequest } from "@/api/client";
@@ -130,7 +131,9 @@ export function speechResource(config: Pick<ClientService, "provider" | "params"
 }
 const refusedLessonVoices = new Set<string>();
 class SpeakerRefused extends ServiceError {}
-async function synthesizeWith(text: string, config: ClientService, speaker: string, signal?: AbortSignal, language?: string): Promise<Blob> {
+async function synthesizeWith(rawText: string, config: ClientService, speaker: string, signal?: AbortSignal, language?: string): Promise<Blob> {
+  // A voice never receives formula markup: inline math is spoken as words (captions keep it).
+  const text = spokenText(rawText, language);
   if (config.provider === "azure") {
     // The relay builds the SSML and returns the MP3 base64-encoded.
     const response = await directJson("tts", config, { text, voice: speaker }, signal);

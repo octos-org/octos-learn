@@ -18,6 +18,30 @@ describe("BYOK provider transports", () => {
     expect(JSON.parse(init.body as string)).toMatchObject({ provider: "volcano", key: "own-canary-key", params: { auth_mode: "api-key" }, payload: { req_params: { text: "学习数学" } } });
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("never sends formula markup to the voice: inline math is spoken as words", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    api.request.mockResolvedValue({ status: 200, body: '{"code":0,"data":"bXAz"}\n{"code":20000000}', code: null });
+    await synthesizeDirect("解出 $x = \\frac{2}{3}$，直线 $y = k_1 x$", undefined, config(), null, "zh-CN");
+    const volcano = JSON.parse((api.request.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(volcano.payload.req_params.text).toBe("解出 x 等于 3 分之 2，直线 y 等于 k1 x");
+    api.request.mockReset();
+    api.request.mockResolvedValue({ status: 200, body: JSON.stringify({ body: "bXAz" }), code: null });
+    await synthesizeDirect("So $x^2 = 4$.", undefined, azure(), null, "en-US").catch(() => undefined);
+    const sent = JSON.stringify(api.request.mock.calls.map((call) => (call as [string, RequestInit])[1]?.body));
+    expect(sent).toContain("So x squared equals 4.");
+    expect(sent).not.toMatch(/\$x|\^/);
+  });
+
+  it("sends wrapped, grouped and malformed formulas to the voice without any markup (review of #152)", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    api.request.mockResolvedValue({ status: 200, body: '{"code":0,"data":"bXAz"}\n{"code":20000000}', code: null });
+    const narration = "看 $\\mathbf{x_1^2}$、$\\text{50\\%}$、$\\mathrm{\\frac{2}{3}}$、$(xy)^2$ 和 $\\sqrt[3{x}$";
+    await synthesizeDirect(narration, undefined, config(), null, "zh-CN");
+    const text = JSON.parse((api.request.mock.calls[0] as [string, RequestInit])[1].body as string).payload.req_params.text as string;
+    expect(text).toBe("看 x1 的平方、50%、3 分之 2、x y 整体的平方 和 根号 [3 x");
+    expect(text).not.toMatch(/[$\\^_{}]/u);
+  });
+
   it("relays browser ASR and preserves the upstream status header for speech and silence", async () => {
     api.request.mockResolvedValueOnce({ status: 200, body: '{"result":{"text":"学习数学"}}', code: "20000000" });
     expect(await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config())).toEqual({ status: "speech", transcript: "学习数学" });

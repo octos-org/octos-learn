@@ -68,6 +68,13 @@ describe("private LiveKit narration", () => {
     // No microphone creation or audio publication API exists in this player.
     expect(mocks.fetch.mock.calls.filter(([url]) => String(url).endsWith("/speak"))).toHaveLength(1);
   });
+  it("speaks inline math as words: the voice never receives formula markup", async () => {
+    void playPrivateSpeech("解出 $x = \\frac{2}{3}$", vi.fn(), new AbortController().signal, vi.fn());
+    await ready();
+    const speak = mocks.fetch.mock.calls.find(([url]) => String(url).endsWith("/speak"))!;
+    expect(JSON.parse(String((speak[1] as RequestInit).body)).text).toBe("解出 x 等于 3 分之 2");
+  });
+
   it("reuses a warm session for the next narration", async () => {
     const signal = new AbortController().signal;
     const first = playPrivateSpeech("第一句", vi.fn(), signal, vi.fn());

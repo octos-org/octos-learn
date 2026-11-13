@@ -1,3 +1,4 @@
+import { spokenText } from "octos-lesson-language";
 import type { Room, RemoteAudioTrack } from "livekit-client";
 import { requestPrivateAsrGrant } from "@/api/private-asr";
 import { getToken, getSelectedProfileId } from "@/api/client";
@@ -87,11 +88,13 @@ let player: PrivateTtsPlayer | null = null;
 export function stopPrivateTts(): void { player?.active?.cancel(); player?.close(); player = null; }
 
 export function playPrivateSpeech(
-  text: string,
+  rawText: string,
   onEnded: () => void,
   signal: AbortSignal,
   onPlaybackError: (error: Error) => void,
 ): Promise<boolean> {
+  // A voice never receives formula markup: inline math is spoken as words (captions keep it).
+  const text = spokenText(rawText);
   if (signal.aborted) return Promise.resolve(false);
   if (text.length > 500) return Promise.reject(new Error("Private TTS text exceeds 500 characters"));
   const identity = `${getToken()}\0${getSelectedProfileId()}`;
