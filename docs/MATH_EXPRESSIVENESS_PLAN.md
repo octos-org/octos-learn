@@ -33,7 +33,7 @@ The numbers are each recipe's bytes in the broad request: its model guidance plu
 
 Besides these, every lesson can use formulas, notes, tables and simple diagrams on the board, and typed answers that the program checks.
 
-The four number-line recipes are trials. Run 9 (the gate on frozen code) is under way; if it passes, a separate change switches them on.
+The four number-line recipes were trials. Runs 9 and 9b failed the speed gate; after the cards were rewritten (Coach #73), runs 11 and 11b passed, and Coach #74 switches them on (see §7, step 0).
 
 ### 2.2 Payload budget
 
@@ -131,9 +131,10 @@ The owner has confirmed that fractions and charts stay in the plan.
    - **Quality:** run 9 left out the comparing, solution-set and rounding questions (a harness defect, fixed in Coach #70). Run 9b runs them (owner-approved). Runs 9 and 9b together must have no misleading lesson under the slip rule.
    - **Speed:** run 9 was inconclusive (+1.09 s). Run 9b adds the one allowed repeat; speed is judged on all 40 pairs (paired median at most +0.5 s).
    - **Request size:** with the four types on, the fallback-outline request exceeded its S6 ceiling by up to 925 bytes. The owner approved raising those ceilings (Coach #72); the payload test must pass with the four types enabled.
-   - **Player:** a phone-width check in Learn and one real lesson in the app, with the four types enabled locally.
+   - **Player:** one real lesson in the app, with the four types enabled locally. (Phone width was dropped on 2026-11-13: there is no mobile product.)
    - **Then** the switch-on change. If any gate fails, the number line stays a trial and the failure is reported to the owner.
    - **Result (2026-11-12):** quality passed (no misleading first section in runs 9 and 9b), but speed failed: +0.77 s against +0.5 s, after the one allowed repeat. The number line stays a trial. Requests that use it are about 3 s faster; other requests are about 2.8 s slower, probably because the model thinks more often on them (58% of turns against 40%). The next step is finding why, before anything else is added to the request (Q5).
+   - **Result (2026-11-13):** the cards were rewritten (Coach #73) and gated again on frozen code under the M4 rule (§8). Runs 11 and 11b: all 80 planned lessons pass every hard check; requests the number line fits start 3.8 s sooner, other requests +0.15 s (each within +0.5 s). Request size passes with #72's ceilings. Real lessons in the app found two player defects, both fixed: the number line had no sliders or practice task (Learn #150), and once they showed they covered the cards below (OLL #55; Learn must pin it). With both, two real lessons showed no overlaps and practice worked. Coach #74 switches the number line on; it merges after #70–#73, and ships together with Learn #150 and its OLL #55 pin.
 1. **Write and freeze the question set**, with its tags. Free; reviewed by the owner.
 2. **Baseline M1** (free), and **baseline M2 and M3** (paid, owner's approval).
 3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
