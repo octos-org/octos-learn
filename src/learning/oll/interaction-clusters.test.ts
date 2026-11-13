@@ -99,6 +99,40 @@ describe("interaction clusters", () => {
     }]);
   });
 
+  it("gives a plugin visual (the number line) its sliders and practice task", () => {
+    // An AI lesson for −3 + 5: the change slider and the task "set the change to 5". Without a
+    // cluster the task never appeared, and every later task stayed locked behind it.
+    const result = buildInteractionClusters(board({
+      line: {
+        id: "line",
+        kind: "number_line",
+        region_id: "course",
+        content: {
+          points: [{ as: "start", value: -3 }, { as: "end", value: -3 }],
+          jumps: [{ as: "move", from: "start", by: 0 }],
+          bindings: [
+            { target: "start.value", expression: "number_01" },
+            { target: "move.by", expression: "number_02" },
+            { target: "end.value", expression: "number_01 + number_02" },
+          ],
+        },
+      },
+    }), {
+      id: "course",
+      nodeIds: ["line"],
+      variableAliases: ["number_01", "number_02"],
+      taskTargets: { "section-01-task-01": { variableAliases: ["number_02"], nodeIds: [] } },
+    }, ["number_01", "number_02"], ["section-01-task-01"]);
+
+    expect(result).toEqual([{
+      id: "course:interaction:1",
+      anchorNodeId: "line",
+      nodeIds: ["line"],
+      variableAliases: ["number_01", "number_02"],
+      taskIds: ["section-01-task-01"],
+    }]);
+  });
+
   it("keeps separate visuals in separate interaction groups", () => {
     const result = buildInteractionClusters(board({
       plot: {

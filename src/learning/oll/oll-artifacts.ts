@@ -10,6 +10,9 @@ import {
 import {
   materializeOllLesson,
 } from "./oll-materialization";
+import { withPluginVisualKinds } from "./visual-node-kinds";
+
+const artifactVisualKinds = withPluginVisualKinds(["geometry", "scene3d", "plot", "image", "diagram"]);
 
 export { removeRedundantStandaloneMath } from "./oll-materialization";
 
@@ -453,7 +456,7 @@ export function buildOllLessonTopics(
             for (const action of actions) {
               if (action.op !== "board.create" || !action.node) continue;
               const kind = String(action.node.kind ?? "");
-              if (["geometry", "scene3d", "plot", "image", "diagram"].includes(kind)) counts.visual += 1;
+              if (artifactVisualKinds.has(kind)) counts.visual += 1;
               else if (kind === "math") counts.math += 1;
               else counts.text += 1;
             }

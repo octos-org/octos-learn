@@ -4,6 +4,9 @@ import {
   referencedMathVariables,
   type AuthoringLesson,
 } from "octos-lesson-language";
+import { withPluginVisualKinds } from "./visual-node-kinds";
+
+const diagnosedVisualKinds = withPluginVisualKinds(["geometry", "scene3d", "plot", "diagram"]);
 
 export interface OllConstructionDiagnostic {
   code: string;
@@ -50,7 +53,7 @@ export function analyzeOllConstruction(source: AuthoringLesson): OllConstruction
         }
       }
       if (action.do !== "write") return;
-      if (["geometry", "scene3d", "plot", "diagram"].includes(action.kind)) visualAliases.add(action.as);
+      if (diagnosedVisualKinds.has(action.kind)) visualAliases.add(action.as);
       if (action.place.anchor) related.add(pair(action.as, action.place.anchor));
       const bindings = action.content.bindings as Array<{ target: string; expression: string; allow_zero?: boolean }> | undefined;
       bindings?.forEach((binding, index) => {

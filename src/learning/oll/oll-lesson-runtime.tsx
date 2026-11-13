@@ -129,6 +129,7 @@ import {
   type CourseRegionRecord,
 } from "../course-regions";
 import "octos-lesson-language/web-runtime/styles.css";
+import { withPluginVisualKinds } from "./visual-node-kinds";
 
 type LearningInkState = InkRuntimeState & {
   pen_color: string;
@@ -262,7 +263,7 @@ const selectionContentKindLabels: Record<SelectionContentKind, string> = localiz
 });
 
 const boardOcclusionSelector = BOARD_OCCLUSION_SELECTOR;
-const courseVisualNodeKinds = new Set([
+const courseVisualNodeKinds = withPluginVisualKinds([
   "diagram",
   "geometry",
   "image",
