@@ -519,4 +519,47 @@ describe("course reading layout", () => {
       .toBe(visualPair.x + visualPair.width / 2);
     expect(lowerFormula.y).toBe(visualPair.y + visualPair.height + 54);
   });
+  it("docks a number line's sliders and practice in a teaching stage, clear of the other cards (OLL #55)", () => {
+    // Learn #150 gives the number line its control and task attachments; the pinned OLL must place them.
+    // Before OLL #55 its teaching layout treated the number line as text, so neither panel got a place
+    // and Learn's fallback put them over the equation and the note (seen in a real −3 + 5 lesson).
+    const state = boardWithNodes({
+      line: { id: "line", kind: "number_line", region_id: "course", content: {}, placement: { relation: "new_region" } },
+      equation: { id: "equation", kind: "math", region_id: "course", content: { latex: "-3+5=2" }, placement: { relation: "below", anchor: "line" } },
+      note: { id: "note", kind: "note", region_id: "course", content: { text: "从 -3 出发，向右移动 5 格" }, placement: { relation: "below", anchor: "equation" } },
+    });
+    const sizes = {
+      line: { width: 560, height: 200 },
+      equation: { width: 440, height: 72 },
+      note: { width: 440, height: 130 },
+    };
+    for (const mode of ["progressive", "overview"] as const) {
+      const layout = computeBoardLayout(state, sizes, {
+        regions: {
+          course: {
+            x: 20,
+            y: 20,
+            flow: "teaching" as const,
+            nodeSections: { line: "1", equation: "1", note: "1" },
+            composition: { width: 1440, height: 900, mode, insets: { top: 92, bottom: 120, left: 28, right: 28 } },
+            attachments: [
+              { id: "course:interaction:1", kind: "control" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 360, height: 64, focusHeight: 64, gap: 24 },
+              { id: "course:interaction:1:tasks", kind: "task" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 330, height: 180, gap: 28 },
+            ],
+          },
+        },
+      });
+      const controls = layout.attachments["course:interaction:1"];
+      const tasks = layout.attachments["course:interaction:1:tasks"];
+      expect(controls, mode).toBeDefined();
+      expect(tasks, mode).toBeDefined();
+      expect(controls!.x, mode).toBe(layout.nodes.line!.x);
+      const rects = Object.entries({ ...layout.nodes, ...layout.attachments });
+      for (const [i, [an, a]] of rects.entries()) {
+        for (const [bn, b] of rects.slice(i + 1)) {
+          expect(a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y, `${mode}: ${an} overlaps ${bn}`).toBe(false);
+        }
+      }
+    }
+  });
 });
