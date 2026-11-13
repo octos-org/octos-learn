@@ -33,7 +33,7 @@ The numbers are each recipe's bytes in the broad request: its model guidance plu
 
 Besides these, every lesson can use formulas, notes, tables and simple diagrams on the board, and typed answers that the program checks.
 
-The four number-line recipes were trials. Runs 9 and 9b failed the speed gate; after the cards were rewritten (Coach #73), runs 11 and 11b passed, and Coach #74 switches them on (see §7, step 0).
+The four number-line recipes are on (Coach 0.29.0, 2026-11-13). Runs 9 and 9b failed the speed gate; after the cards were rewritten (Coach #73), runs 11 and 11b passed (see §7, step 0).
 
 ### 2.2 Payload budget
 
@@ -135,6 +135,7 @@ The owner has confirmed that fractions and charts stay in the plan.
    - **Then** the switch-on change. If any gate fails, the number line stays a trial and the failure is reported to the owner.
    - **Result (2026-11-12):** quality passed (no misleading first section in runs 9 and 9b), but speed failed: +0.77 s against +0.5 s, after the one allowed repeat. The number line stays a trial. Requests that use it are about 3 s faster; other requests are about 2.8 s slower, probably because the model thinks more often on them (58% of turns against 40%). The next step is finding why, before anything else is added to the request (Q5).
    - **Result (2026-11-13):** the cards were rewritten (Coach #73) and gated again on frozen code under the M4 rule (§8). Runs 11 and 11b: all 80 planned lessons pass every hard check; requests the number line fits start 3.8 s sooner, other requests +0.15 s (each within +0.5 s). Request size passes with #72's ceilings. Real lessons in the app found two player defects, both fixed: the number line had no sliders or practice task (Learn #150), and once they showed they covered the cards below (OLL #55; Learn must pin it). With both, two real lessons showed no overlaps and practice worked. Coach #74 switches the number line on; it merges after #70–#73, and ships together with Learn #150 and its OLL #55 pin.
+   - **Done (2026-11-13):** Coach #70–#74 merged (Coach 0.29.0: the number line is on). Learn #150–#152 and OLL #55–#59 merged: the number line's sliders and practice, its layout (teaching stage, reading lanes, camera framing), question cards at full width, inline math in every lesson text Learn draws, and speech that never receives formula markup. Learn pins OLL `fa58c32`. Known and left for later (owner, 2026-11-13): a model-written success message can state wrong arithmetic (1 of 9 checkable claims in 144 local messages).
 1. **Write and freeze the question set**, with its tags. Free; reviewed by the owner.
 2. **Baseline M1** (free), and **baseline M2 and M3** (paid, owner's approval).
 3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
