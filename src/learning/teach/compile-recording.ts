@@ -343,8 +343,8 @@ export function numberLinePanelValue(text: string): number | string | undefined 
 }
 const panelNumber = (text: string) => { const value = numberLinePanelValue(text); return value === undefined ? undefined : numberLineValue(value); };
 
-/** Number line ranges the panel offers: a span of at most 40 units, split into at most 12 parts each. */
-export const NUMBER_LINE_SUBDIVISIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12] as const;
+/** Number line ranges the panel offers: a span of at most 40 units, each split into as many parts as OLL draws (1 to 24). */
+export const NUMBER_LINE_SUBDIVISIONS: readonly number[] = Array.from({ length: NUMBER_LINE_LIMITS.subdivisions }, (_, index) => index + 1);
 export const MAX_NUMBER_LINE_SPAN = 40;
 
 /**
@@ -355,7 +355,7 @@ export const MAX_NUMBER_LINE_SPAN = 40;
 export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "subdivisions" | "start" | "jump">): string | undefined {
   const [min, max] = panel.range;
   if (!Number.isInteger(min) || !Number.isInteger(max) || !(min < max) || max - min > MAX_NUMBER_LINE_SPAN) return tr("数轴的两端要是整数，从小到大，最多相差 {{v0}}。", { v0: MAX_NUMBER_LINE_SPAN });
-  if (!(NUMBER_LINE_SUBDIVISIONS as readonly number[]).includes(panel.subdivisions)) return tr("每格分成的份数不在可选范围里。");
+  if (!NUMBER_LINE_SUBDIVISIONS.includes(panel.subdivisions)) return tr("每格分成的份数不在可选范围里。");
   if ((max - min) * panel.subdivisions > NUMBER_LINE_LIMITS.ticks) return tr("刻度太多了：请缩短数轴，或者每格少分几份。");
   const start = panel.start === undefined ? undefined : panelNumber(panel.start);
   if (panel.start !== undefined && (start === undefined || start < min || start > max)) return tr("起点要是数轴范围里的数或分数，例如 3 或 3/4。");

@@ -150,6 +150,10 @@ describe("compileRecording", () => {
     expect(numberLinePanelProblem({ ...ok, range: [5, -5] })).toBeTruthy();
     expect(numberLinePanelProblem({ ...ok, range: [0, 100] })).toBeTruthy();
     expect(numberLinePanelProblem({ range: [0, 30], subdivisions: 12 })).toBeTruthy();
+    // Up to 24 parts per unit, as OLL draws (decision 0013): 5/24 on a short line is fine; 25 parts is not offered.
+    expect(numberLinePanelProblem({ range: [0, 2], subdivisions: 24, start: "5/24" })).toBeUndefined();
+    expect(numberLinePanelProblem({ range: [0, 2], subdivisions: 7 })).toBeUndefined();
+    expect(numberLinePanelProblem({ range: [0, 1], subdivisions: 25 })).toBeTruthy();
     expect(numberLinePanelProblem({ ...ok, start: "7" })).toBeTruthy();
     expect(numberLinePanelProblem({ ...ok, start: "abc" })).toBeTruthy();
     expect(numberLinePanelProblem({ ...ok, start: "−2.5" })).toBeUndefined();
