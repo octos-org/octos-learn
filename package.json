@@ -37,7 +37,8 @@
     "course-pack:verify-parity": "vite-node scripts/verify-course-pack-parity.ts",
     "check:i18n": "node scripts/check-i18n.mjs",
     "test:handwriting": "vitest run src/learning/handwriting",
-    "simulate:handwriting": "vite-node scripts/handwriting-trajectory-sim.ts"
+    "simulate:handwriting": "vite-node scripts/handwriting-trajectory-sim.ts",
+    "check:lesson-text-browser": "node scripts/check-lesson-text-browser.mjs"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",

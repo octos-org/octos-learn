@@ -938,7 +938,9 @@
 }
 
 .learning-workspace-topbar strong {
-  overflow: hidden;
+  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
+  overflow-x: clip;
+  overflow-y: visible;
   color: #332e28;
   font-family: var(--font-body);
   font-size: 20px;
@@ -1141,7 +1143,9 @@
 }
 
 .oll-course-topic h3 {
-  overflow: hidden;
+  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
+  overflow-x: clip;
+  overflow-y: visible;
   margin: 0;
   color: #6d6255;
   font-size: 12px;
@@ -1195,7 +1199,9 @@
 }
 
 .oll-course-step-main > span:last-child {
-  overflow: hidden;
+  /* Clip only sideways (the ellipsis); a fraction in the title is taller than the line. */
+  overflow-x: clip;
+  overflow-y: visible;
   color: #3f3932;
   font-size: 12px;
   font-weight: 600;
@@ -1289,6 +1295,12 @@
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* A beat title stays clamped to two lines, so it must hide overflow; with a formula its lines are
+   tall enough for a fraction or an exponent. Titles without math keep their spacing. */
+.oll-course-beat-main b:has(.katex) {
+  line-height: 1.9;
 }
 
 /* With a teacher's bust (taller than the round tile) the outline sits above
@@ -1521,8 +1533,11 @@
   font-size: 12px;
 }
 
-.learning-degraded-visual span {
-  overflow: hidden;
+/* The purpose line only: a rule on every span reached KaTeX's inner spans and clipped exponents
+   and fractions in a formula (review of #151). */
+.learning-degraded-visual > div > span {
+  overflow-x: clip;
+  overflow-y: visible;
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
