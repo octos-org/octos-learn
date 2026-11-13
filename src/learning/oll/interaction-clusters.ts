@@ -2,8 +2,9 @@ import {
   referencedMathVariables,
   type SemanticBoardState,
 } from "octos-lesson-language";
+import { withPluginVisualKinds } from "./visual-node-kinds";
 
-const visualNodeKinds = new Set([
+const visualNodeKinds = withPluginVisualKinds([
   "diagram",
   "geometry",
   "image",
