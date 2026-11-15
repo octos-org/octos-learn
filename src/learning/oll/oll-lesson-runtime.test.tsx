@@ -3445,7 +3445,9 @@ describe("mathematical plot interaction", () => {
     fireEvent.input(b, {target:{value:"3"}});
     await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("Δx = 3"));
     expect((a as HTMLInputElement).value).toBe("0");
-    expect(document.querySelector(".plot-measurement")?.textContent).toContain("斜率 ≈ 1");
+    // On the line y = x the two points' slope is the line's slope (OLL 0.11): "斜率 = 1", not "割线斜率 ≈ 1".
+    expect(document.querySelector(".plot-measurement")?.textContent).toContain("斜率 = 1");
+    expect(document.querySelector(".plot-measurement")?.textContent).not.toContain("割线");
     fireEvent.keyDown(document.querySelector(".plot-preview")!, {key:"+"});
     fireEvent.click(screen.getByRole("button", {name:"恢复课程视图和图层，保留参数"}));
     expect((b as HTMLInputElement).value).toBe("3");
