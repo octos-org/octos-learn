@@ -176,14 +176,25 @@ The owner has confirmed that fractions and charts stay in the plan.
    3. **3D solids decision record** (free; OLL), in parallel with 3.1 and 3.2. *Done when* the owner accepts it.
       - **Done (2026-11-15):** decision 0019 accepted with all six questions as recommended (OLL #66).
    4. **Goal-1 clean-up** (free; §2.3, formerly step 3). Coach's four `function_plot` special cases, and Studio's number-line and polygon forms supplied by the math plugin. No lesson changes. *Done when* no math special case remains outside the plugin.
-      - **Coach half (Coach #103):** the core names no recipe; the four plot special cases and the drawable-kinds list are plugin declarations. No request or lesson changes.
-      - **Learn half:** Studio has drawn number lines and polygons with the plugin's builders since 2026-11-09 and 11-11, so §2.3's line was stale. What remains is the number-line form's own checks, which step 3.5 rewrites for steps; they move into the plugin there.
+      - **Coach half: done (Coach #103, merged after two reviews).** The core names no recipe; the four plot special cases, the drawable-kinds list and the 3D camera table are recipe declarations. No request or lesson changes.
+      - **Learn half:** Studio has drawn number lines and polygons with the plugin's builders since 2026-11-09 and 11-11, so §2.3's line was stale. The number-line form's own checks move into the plugin in 3.5, slice 1.
+      - **Follow-ups from #103's reviews (owner: schedule as fits):**
+        - **4a.** Reword the repair message about the "published graph" so it fits any recipe that declares `ranges_fixed_once_shown`. It changes repair requests, so it goes with the next request-changing measurement (3.6, the substitution rule).
+        - **4b.** Derive the drawable kinds from compiled output (scan `bindings` on every written node), not from recipe declarations. It goes with the next Coach change that touches the compiler's effect check; no lesson changes.
    5. **Studio and CoursePacks use the same builder** for number-line steps and the plot options (free; §5 step 7, §10 item 1). It follows 3.4, which moves Studio's number-line form into the plugin. If the 3D record is accepted first, 3D's build (3.7) goes first and this resumes after.
-   6a. **The `sample_x_numbers` slip** (found in 3.2; free to build, paid probe). Limit `sample_x_numbers` in section requests to the valid lesson-number indexes, as `numbers` already is, and leave the field out when the outline has no numbers; perhaps also a sharper refusal message.
+      - **Course packs** write OLL directly and call no builder, so they need no work here.
+      - **Slice 1:** the number-line form's checks in the plugin (OLL #68), and Studio's form with up to three moves (Learn #159). The choices are recorded in 0017's Studio section.
+      - **Slice 2:** the plot-mark derivation moves from Coach into the plugin (OLL #69, Coach #106). Every recorded lesson and request is unchanged.
+      - **Slice 3:** Studio graph forms: mark toggles, two reference points, pieces. **The owner decides whether it goes before or after the 3D build (3.7).**
+   6a. **The `sample_x_numbers` slip** (found in 3.2). The model writes x positions where lesson-number indexes belong (`[1, 3]` for x = 1 and 3) and repeats it on every retry.
       - **Why not a repair in place:** #102 tried one and was closed after two code reviews. Any repair that reads the lesson's text to judge whether the formula is the real curve can draw a wrong picture.
-      - **Census:** 22 of the 35 recorded slips are on section calls and would be blocked. The 13 on bootstrap calls cost a retry, not the lesson.
-      - **Changes every plot section request,** so it needs a small paired probe with a control arm (call count to the owner first).
-      - *Done when* the probe shows no section slip and no regression.
+      - **Census** (corrected): 42 recorded slips. 15 on section calls in lessons with no lesson numbers, including both lessons the gate lost; 12 on section calls with numbers; 15 on bootstrap calls.
+      - **Fix (Coach #105, narrowed after four reviews):** with no lesson numbers, section requests leave the field out, so those 15 cannot be written. A paired probe (75 calls) showed no regression.
+      - **Still open:**
+        - **6b.** Slips in lessons with numbers. An enum was tried and dropped: it turns an x value into a valid but wrong index, binding a point to an unrelated slider.
+        - **6c.** Refusals keyed on the learner's request or the outline's purpose, which a retry cannot meet, so the lesson is lost. These are the moving-point and vertex refusals, and the purpose checks in `math-teaching-contracts.ts`.
+        - **6d.** The moving-point wording check misses phrasings without a point label, titles, and plots with several formulas; the plot guidance names `sample_x_numbers=[1,2]` where a section may have fewer numbers.
+        - All three were found on main; 6c and 6d go with 3.6's program checks.
    6. **Before the 60-question re-run, everything that run will judge:**
       - **Program checks** (free): undisclosed stand-in counts, animations that change nothing, and wrong arithmetic in model-written success messages (§10 items 4 and 5). They change no request. They are developed on the probe recordings (PA cases), never on the question set. Each record says what happens on a hit, since a refusal costs a call.
       - **The outline's substitution rule** (paid probe): rewrite it, and allow "no visual" when nothing fits, net of bytes. It changes requests, so it comes after 3.2's gate, with a control-arm probe.
