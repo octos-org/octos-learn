@@ -189,7 +189,8 @@ The owner has confirmed that fractions and charts stay in the plan.
    6a. **The `sample_x_numbers` slip** (found in 3.2). The model writes x positions where lesson-number indexes belong (`[1, 3]` for x = 1 and 3) and repeats it on every retry.
       - **Why not a repair in place:** #102 tried one and was closed after two code reviews. Any repair that reads the lesson's text to judge whether the formula is the real curve can draw a wrong picture.
       - **Census** (corrected): 42 recorded slips. 15 on section calls in lessons with no lesson numbers, including both lessons the gate lost; 12 on section calls with numbers; 15 on bootstrap calls.
-      - **Fix (Coach #105, narrowed after four reviews):** with no lesson numbers, section requests leave the field out, so those 15 cannot be written. A paired probe (75 calls) showed no regression.
+      - **Tried and closed (Coach #105, five reviews):** an enum on the field, then (narrowed) leaving it out in lessons with no numbers. A paired probe (75 calls) showed no regression. Replayed on the recorded slips, the narrowed form rescued three lost lessons but let a piecewise request publish drawn as two full lines (PJ-07). Main has no check that a piecewise request draws pieces; #105 removed the refusal that was blocking it by accident. The defect stays open.
+      - **Next:** add that check (a piecewise request, or narration of endpoints, with no pieces drawn), then reopen the narrowed change.
       - **Still open:**
         - **6b.** Slips in lessons with numbers. An enum was tried and dropped: it turns an x value into a valid but wrong index, binding a point to an unrelated slider.
         - **6c.** Refusals keyed on the learner's request or the outline's purpose, which a retry cannot meet, so the lesson is lost. These are the moving-point and vertex refusals, and the purpose checks in `math-teaching-contracts.ts`.
