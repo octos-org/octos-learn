@@ -43,7 +43,7 @@ test("a learner puts 3 + (−5) on a number line: the form records it and the bo
 
   const events = await takeEvents(page);
   expect(events.find((event: { type: string }) => event.type === "component.insert")).toMatchObject({
-    panel: "number_line", range: [-5, 5], subdivisions: 1, start: "3", jump: { by: "−5", hops: true },
+    panel: "number_line", range: [-5, 5], subdivisions: 1, start: "3", moves: [{ by: "−5", hops: true }],
   });
   const card = page.locator('.board-node[data-kind="number_line"]').first();
   await expect(card).toBeVisible();
@@ -65,10 +65,36 @@ test("fourths with a slider: the form records the slider and the board draws exa
   await form.getByRole("button", { name: "放到白板上" }).click();
 
   const insert = (await takeEvents(page)).find((event: { type: string }) => event.type === "component.insert");
-  expect(insert).toMatchObject({ panel: "number_line", subdivisions: 4, start: "3/4", jump: { by: "1/4", hops: true, slider: { variable: "move" } } });
+  expect(insert).toMatchObject({ panel: "number_line", subdivisions: 4, start: "3/4", moves: [{ by: "1/4", hops: true, slider: { variable: "move" } }] });
   const card = page.locator('.board-node[data-kind="number_line"]').first();
   await expect(card.locator(".number-line-fraction").first()).toBeVisible();
   // One hop of a fourth from 3/4; the slider's range is checked in compile-recording.test.ts.
   await expect(card.locator(".number-line-jump-arc")).toHaveCount(1);
   await expect(card.locator(".number-line-point-label")).toHaveText(["起点 3/4"]);
+});
+
+test("make ten in two moves (OLL decision 0017): the form adds a move, and the board draws 8 → 10 → 13", async ({ page }) => {
+  await openStudio(page, "rec-number-line-steps");
+  await page.getByRole("toolbar").getByRole("button", { name: "放入", exact: true }).click();
+  await page.getByRole("button", { name: "数轴", exact: true }).click();
+  const form = page.getByRole("dialog", { name: "数轴", exact: true });
+  await form.getByRole("textbox", { name: "从" }).fill("0");
+  await form.getByRole("textbox", { name: "到" }).fill("15");
+  await form.getByRole("textbox", { name: "起点（可不填）" }).fill("8");
+  await form.getByRole("textbox", { name: "移动多少（可不填）" }).fill("2");
+  await form.getByRole("button", { name: "再加一次移动" }).click();
+  // A second move that leaves the line is refused, and the form says which move.
+  await form.getByRole("textbox", { name: "再移动多少（可不填）" }).fill("9");
+  await expect(form.getByRole("button", { name: "放到白板上" })).toBeDisabled();
+  await expect(form.getByRole("status")).toContainText("第 2 次移动");
+  await form.getByRole("textbox", { name: "再移动多少（可不填）" }).fill("3");
+  await form.getByRole("button", { name: "放到白板上" }).click();
+
+  const insert = (await takeEvents(page)).find((event: { type: string }) => event.type === "component.insert");
+  expect(insert).toMatchObject({ panel: "number_line", start: "8", moves: [{ by: "2", hops: true }, { by: "3", hops: true }] });
+  const card = page.locator('.board-node[data-kind="number_line"]').first();
+  await expect(card).toBeVisible();
+  await expect(card.locator(".number-line-jump-arc")).toHaveCount(5);
+  await expect(card.locator(".number-line-point-label")).toHaveText(["起点 8", "10", "终点"]);
+  await card.screenshot({ path: "test-results/teach-number-line-steps.png" });
 });

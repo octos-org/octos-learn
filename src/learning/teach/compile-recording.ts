@@ -3,7 +3,7 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
-import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildNumberLine, buildSolid, buildUnitCircle, describeSolid, functionCurveId, numberLineValue, NUMBER_LINE_LIMITS, solidUnfolds, solidZRange } from "octos-lesson-language/plugin-math";
+import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildNumberLine, buildSolid, buildUnitCircle, describeSolid, functionCurveId, numberLineFormProblem, numberLineFormValue, numberLineValue, parseFraction, NUMBER_LINE_FORM_LIMITS, NUMBER_LINE_LIMITS, solidUnfolds, solidZRange, type NumberLineFormProblem } from "octos-lesson-language/plugin-math";
 import { buildConstantSpeedMotion } from "octos-lesson-language/plugin-physics";
 import { PROCESS_CYCLE_EDGE_ID, processDiagramContent, processEdgeId, processStepId } from "octos-lesson-language/plugin-shared";
 import { normalizeLocale, tr } from "@/i18n";
@@ -336,44 +336,67 @@ type NumberLinePanel = Extract<ComponentInsert, { panel: "number_line" }>;
  * A value the learner typed for the number line: a plain number ("3", "−5",
  * "0.5") becomes a number; a fraction ("3/4", "1 1/2") stays an exact string.
  */
-export function numberLinePanelValue(text: string): number | string | undefined {
-  const typed = text.trim().replace(/−/gu, "-");
-  if (/^-?\d+(?:\.\d+)?$/u.test(typed)) return Number(typed);
-  return numberLineValue(typed) === undefined ? undefined : typed;
-}
+export const numberLinePanelValue = numberLineFormValue;
 const panelNumber = (text: string) => { const value = numberLinePanelValue(text); return value === undefined ? undefined : numberLineValue(value); };
 
-/** Number line ranges the panel offers: a span of at most 40 units, each split into as many parts as OLL draws (1 to 24). */
-export const NUMBER_LINE_SUBDIVISIONS: readonly number[] = Array.from({ length: NUMBER_LINE_LIMITS.subdivisions }, (_, index) => index + 1);
-export const MAX_NUMBER_LINE_SPAN = 40;
+/** Number line ranges the panel offers: the math plugin's form limits (a span of at most 40 units, each split into 1 to 24 parts). */
+export const NUMBER_LINE_SUBDIVISIONS: readonly number[] = Array.from({ length: NUMBER_LINE_FORM_LIMITS.subdivisions }, (_, index) => index + 1);
+export const MAX_NUMBER_LINE_SPAN = NUMBER_LINE_FORM_LIMITS.span;
+export const MAX_NUMBER_LINE_MOVES = NUMBER_LINE_FORM_LIMITS.moves;
 
-/**
- * Why a number line panel cannot be drawn, in the learner's words, or
- * undefined when it can. The insert form and the compiler share it, so the
- * form never offers a line that would fail to compile.
- */
-export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "subdivisions" | "start" | "jump">): string | undefined {
-  const [min, max] = panel.range;
-  if (!Number.isInteger(min) || !Number.isInteger(max) || !(min < max) || max - min > MAX_NUMBER_LINE_SPAN) return tr("数轴的两端要是整数，从小到大，最多相差 {{v0}}。", { v0: MAX_NUMBER_LINE_SPAN });
-  if (!NUMBER_LINE_SUBDIVISIONS.includes(panel.subdivisions)) return tr("每格分成的份数不在可选范围里。");
-  if ((max - min) * panel.subdivisions > NUMBER_LINE_LIMITS.ticks) return tr("刻度太多了：请缩短数轴，或者每格少分几份。");
-  const start = panel.start === undefined ? undefined : panelNumber(panel.start);
-  if (panel.start !== undefined && (start === undefined || start < min || start > max)) return tr("起点要是数轴范围里的数或分数，例如 3 或 3/4。");
-  if (!panel.jump) return undefined;
-  if (start === undefined) return tr("要先有起点，才能画移动。");
-  const by = panelNumber(panel.jump.by);
-  if (by === undefined || by === 0) return tr("移动多少要是不为 0 的数或分数，例如 −5 或 1/4。");
-  if (start + by < min || start + by > max) return tr("移动后要停在数轴范围里。");
-  const unit = 1 / panel.subdivisions;
-  // A slider lets the jump reach either end of the line; hop by hop, that must stay within the hop limit.
-  const longest = panel.jump.slider ? Math.max(start - min, max - start) : Math.abs(by);
-  const whole = (value: number) => Math.abs(value / unit - Math.round(value / unit)) <= 1e-9;
-  // Hop by hop, the starting jump is whole parts; with a slider (which steps by one part) the start
-  // is on a tick too, so every value the slider reaches is whole parts as well.
-  if (panel.jump.hops && (!whole(by) || (panel.jump.slider && !whole(start)) || Math.ceil(longest / unit - 1e-9) > NUMBER_LINE_LIMITS.hops)) {
-    return tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
+/** A value typed on the number line as an exact fraction (decimals as tenths, hundredths, ...). */
+interface Exact { numerator: number; denominator: number }
+const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
+function exactValue(text: string): Exact {
+  const value = numberLinePanelValue(text)!;
+  if (typeof value === "string") return parseFraction(value)!;
+  const places = String(value).split(".")[1]?.length ?? 0;
+  const denominator = 10 ** places;
+  return { numerator: Math.round(value * denominator), denominator };
+}
+function addExact(a: Exact, b: Exact): Exact {
+  const numerator = a.numerator * b.denominator + b.numerator * a.denominator, denominator = a.denominator * b.denominator;
+  const divisor = gcd(numerator, denominator) || 1;
+  return { numerator: numerator / divisor, denominator: denominator / divisor };
+}
+/** An exact value as the number line reads it: a fraction string on a fraction line, else a number. */
+function exactText(value: Exact, fraction: boolean): string | number {
+  if (value.denominator === 1) return value.numerator;
+  return fraction ? `${value.numerator}/${value.denominator}` : Number((value.numerator / value.denominator).toPrecision(12));
+}
+
+/** A panel's moves: its `moves`, or the one `jump` of a recording made before moves. */
+export function numberLinePanelMoves(panel: Pick<NumberLinePanel, "jump" | "moves">) {
+  return panel.moves ?? (panel.jump ? [panel.jump] : []);
+}
+
+/** What the learner must change, in the lesson's words, for a problem the math plugin found (OLL decision 0017). */
+function numberLineProblemText(problem: NumberLineFormProblem, moves: number): string {
+  // With several moves, every move's problem says which move (review of #159).
+  const which = problem.move && moves > 1 ? tr("第 {{v0}} 次移动：", { v0: problem.move }) : "";
+  switch (problem.code) {
+    case "range": return tr("数轴的两端要是整数，从小到大，最多相差 {{v0}}。", { v0: MAX_NUMBER_LINE_SPAN });
+    case "subdivisions": return tr("每格分成的份数不在可选范围里。");
+    case "ticks": return tr("刻度太多了：请缩短数轴，或者每格少分几份。");
+    case "start": return tr("起点要是数轴范围里的数或分数，例如 3 或 3/4。");
+    case "start_missing": return tr("要先有起点，才能画移动。");
+    case "too_many_moves": return tr("最多移动 {{v0}} 次。", { v0: MAX_NUMBER_LINE_MOVES });
+    case "move_value": return which + tr("移动多少要是不为 0 的数或分数，例如 −5 或 1/4。");
+    case "move_outside": return which + tr("移动后要停在数轴范围里。");
+    case "slider_not_last": return tr("只有最后一次移动可以做成滑块。");
+    case "hops_turn_back": return which + tr("有往回走的移动（或滑块）时，不能一格一跳。");
+    case "hops": return which + tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
   }
-  return undefined;
+}
+
+/** The first thing the learner must change before the panel can draw, or undefined. */
+export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "subdivisions" | "start" | "jump" | "moves">): string | undefined {
+  const moves = numberLinePanelMoves(panel);
+  const problem = numberLineFormProblem({
+    range: panel.range, subdivisions: panel.subdivisions, start: panel.start,
+    moves: moves.map((move) => ({ by: move.by, hops: move.hops, slider: Boolean(move.slider) })),
+  });
+  return problem ? numberLineProblemText(problem, moves.length) : undefined;
 }
 
 /** Labels of the number line panel, in the lesson's language. */
@@ -606,27 +629,37 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const [min, max] = component.range;
       const labels = numberLineLabels(options.language);
       const start = component.start === undefined ? undefined : panelNumber(component.start)!;
-      const jump = component.jump;
-      const by = jump ? panelNumber(jump.by)! : 0;
-      if (jump?.slider) {
-        if (variables.has(jump.slider.variable)) throw new CompileError(`Variable '${jump.slider.variable}' is already used`);
-        // The slider reaches either end of the line from the start, never past it.
-        variables.set(jump.slider.variable, { as: jump.slider.variable, initial: by, min: min - start!, max: max - start!, label: labels.move,
+      const moves = numberLinePanelMoves(component);
+      // Each move starts where the one before it lands; only the last may be a slider. Landings are added
+      // exactly, so a fraction line labels them as fractions, as it labels its start (review of #159).
+      const exactLandings: Exact[] = [];
+      for (const move of moves) exactLandings.push(addExact(exactLandings.at(-1) ?? exactValue(component.start!), exactValue(move.by)));
+      const landings = exactLandings.map((value) => value.numerator / value.denominator);
+      const last = moves.at(-1);
+      if (last?.slider) {
+        if (variables.has(last.slider.variable)) throw new CompileError(`Variable '${last.slider.variable}' is already used`);
+        const from = landings.length > 1 ? landings.at(-2)! : start!;
+        // The slider reaches either end of the line from where the move starts, never past it.
+        variables.set(last.slider.variable, { as: last.slider.variable, initial: panelNumber(last.by)!, min: min - from, max: max - from, label: labels.move,
           control: { kind: "slider", step: 1 / component.subdivisions } });
       }
+      const pointIds = moves.map((_move, index) => (index === moves.length - 1 ? "end" : `landing-${index + 1}`));
+      const fractions = [component.start ?? "", ...moves.map((move) => move.by)].some((text) => text.includes("/"));
       return buildNumberLine({
         as: alias, role: "diagram", place: placeNext(), ...title,
         range: { min, max }, ticks: { step: 1, subdivisions: component.subdivisions, labels: component.subdivisions > 1 ? "all" : "major" },
         ...(start !== undefined ? { points: [
           { as: "start", value: numberLinePanelValue(component.start!)!, label: `${labels.start} ${component.start!.trim().replace(/^-/u, "−")}` },
-          // Without a slider the jump ends at one value, which gets its own point.
-          ...(jump && !jump.slider ? [{ as: "end", value: start + by, label: labels.end }] : []),
+          // A fixed move ends at one value, which gets its own point; a slider's end moves with it.
+          ...moves.flatMap((move, index) => (move.slider ? [] : [{
+            as: pointIds[index]!, value: exactText(exactLandings[index]!, fractions), label: index === moves.length - 1 ? labels.end : String(exactText(exactLandings[index]!, fractions)).replace(/^-/u, "−"),
+          }])),
         ] } : {}),
-        ...(jump ? { jumps: [{
-          as: "move", from: "start", hops: jump.hops,
-          by: jump.slider ? { expression: jump.slider.variable, initial: by } : numberLinePanelValue(jump.by)!,
-          ...(jump.slider ? {} : { label: signedValue(jump.by) }),
-        }] } : {}),
+        ...(moves.length ? { jumps: moves.map((move, index) => ({
+          as: index === 0 ? "move" : `move${index + 1}`, from: index === 0 ? "start" : pointIds[index - 1]!, hops: move.hops,
+          by: move.slider ? { expression: move.slider.variable, initial: panelNumber(move.by)! } : numberLinePanelValue(move.by)!,
+          ...(move.slider ? {} : { label: signedValue(move.by) }),
+        })) } : {}),
       }).actions as Action[];
     }
     if (component.panel === "constant_speed") {

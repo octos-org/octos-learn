@@ -68,13 +68,17 @@ export type ComponentInsert = ComponentPlacement & (
   /**
    * A number line (math plugin, OLL decision 0013): a range with each unit split
    * into equal parts, an optional start point (a number or an exact fraction
-   * such as "3/4"), and an optional jump from it, drawn hop by hop if asked; the
-   * jump's size may be a slider.
+   * such as "3/4"), and up to three moves from it (OLL decision 0017), each from where
+   * the one before lands, drawn hop by hop if asked; the last move's size may be a
+   * slider. Recordings made before moves wrote one `jump`, which reads as one move.
    */
   | { panel: "number_line"; alias: string; range: [number, number]; subdivisions: number; start?: string;
-      jump?: { by: string; hops: boolean; slider?: { variable: string } }; title?: string }
+      jump?: NumberLineMove; moves?: NumberLineMove[]; title?: string }
   /** Boxes joined by arrows: steps in order, or a cycle that comes back to the first box. More boxes can be added while talking (diagram.add). */
   | { panel: "diagram"; alias: string; shape: "steps" | "cycle"; boxes: string[]; title?: string });
+
+/** One move on a Studio number line: its size as typed, hop by hop or not, and an optional slider. */
+export interface NumberLineMove { by: string; hops: boolean; slider?: { variable: string } }
 
 // 3D solids are the math plugin's shared layer (OLL decision 0012), which
 // builds Studio's 3D panel and can build Coach's AI lessons.
