@@ -85,7 +85,11 @@ export function recordingVariableInfo(recording: LearnerRecording): Array<{ vari
     if (event.panel === "solid_3d" && event.cut) add(event.cut.variable, tr("切面高度"), false);
     if (event.panel === "solid_3d" && event.unfold) add(event.unfold.variable, tr("展开"), false);
     if (event.panel === "polygon" && event.slider) add(event.slider.variable, tr("边数"), false);
-    if (event.panel === "number_line" && event.jump?.slider) add(event.jump.slider.variable, tr("移动"), false);
+    // Only a number line's last move may be a slider; recordings made before moves wrote one `jump`.
+    if (event.panel === "number_line") {
+      const slider = (event.moves ?? (event.jump ? [event.jump] : [])).at(-1)?.slider;
+      if (slider) add(slider.variable, tr("移动"), false);
+    }
     if (event.panel === "constant_speed") {
       add(event.time.variable, tr("时间 t"), false);
       if (event.speed.slider) add(event.speed.slider.variable, tr("速度 v"), false);

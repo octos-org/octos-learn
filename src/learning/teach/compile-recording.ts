@@ -3,7 +3,7 @@
 // lesson, and what the learner sees while recording is what plays back.
 
 import type { AuthoringAction, AuthoringLesson, LessonAuthor, ResourceContext } from "octos-lesson-language";
-import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildNumberLine, buildSolid, buildUnitCircle, describeSolid, functionCurveId, numberLineFormProblem, numberLineFormValue, numberLineValue, NUMBER_LINE_FORM_LIMITS, NUMBER_LINE_LIMITS, solidUnfolds, solidZRange, type NumberLineFormProblem } from "octos-lesson-language/plugin-math";
+import { baseCorners, buildCirclePolygons, buildFunctionPlot, buildNumberLine, buildSolid, buildUnitCircle, describeSolid, functionCurveId, numberLineFormProblem, numberLineFormValue, numberLineValue, parseFraction, NUMBER_LINE_FORM_LIMITS, NUMBER_LINE_LIMITS, solidUnfolds, solidZRange, type NumberLineFormProblem } from "octos-lesson-language/plugin-math";
 import { buildConstantSpeedMotion } from "octos-lesson-language/plugin-physics";
 import { PROCESS_CYCLE_EDGE_ID, processDiagramContent, processEdgeId, processStepId } from "octos-lesson-language/plugin-shared";
 import { normalizeLocale, tr } from "@/i18n";
@@ -344,14 +344,36 @@ export const NUMBER_LINE_SUBDIVISIONS: readonly number[] = Array.from({ length: 
 export const MAX_NUMBER_LINE_SPAN = NUMBER_LINE_FORM_LIMITS.span;
 export const MAX_NUMBER_LINE_MOVES = NUMBER_LINE_FORM_LIMITS.moves;
 
+/** A value typed on the number line as an exact fraction (decimals as tenths, hundredths, ...). */
+interface Exact { numerator: number; denominator: number }
+const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
+function exactValue(text: string): Exact {
+  const value = numberLinePanelValue(text)!;
+  if (typeof value === "string") return parseFraction(value)!;
+  const places = String(value).split(".")[1]?.length ?? 0;
+  const denominator = 10 ** places;
+  return { numerator: Math.round(value * denominator), denominator };
+}
+function addExact(a: Exact, b: Exact): Exact {
+  const numerator = a.numerator * b.denominator + b.numerator * a.denominator, denominator = a.denominator * b.denominator;
+  const divisor = gcd(numerator, denominator) || 1;
+  return { numerator: numerator / divisor, denominator: denominator / divisor };
+}
+/** An exact value as the number line reads it: a fraction string on a fraction line, else a number. */
+function exactText(value: Exact, fraction: boolean): string | number {
+  if (value.denominator === 1) return value.numerator;
+  return fraction ? `${value.numerator}/${value.denominator}` : Number((value.numerator / value.denominator).toPrecision(12));
+}
+
 /** A panel's moves: its `moves`, or the one `jump` of a recording made before moves. */
 export function numberLinePanelMoves(panel: Pick<NumberLinePanel, "jump" | "moves">) {
   return panel.moves ?? (panel.jump ? [panel.jump] : []);
 }
 
 /** What the learner must change, in the lesson's words, for a problem the math plugin found (OLL decision 0017). */
-function numberLineProblemText(problem: NumberLineFormProblem): string {
-  const which = problem.move && problem.move > 1 ? tr("第 {{v0}} 次移动：", { v0: problem.move }) : "";
+function numberLineProblemText(problem: NumberLineFormProblem, moves: number): string {
+  // With several moves, every move's problem says which move (review of #159).
+  const which = problem.move && moves > 1 ? tr("第 {{v0}} 次移动：", { v0: problem.move }) : "";
   switch (problem.code) {
     case "range": return tr("数轴的两端要是整数，从小到大，最多相差 {{v0}}。", { v0: MAX_NUMBER_LINE_SPAN });
     case "subdivisions": return tr("每格分成的份数不在可选范围里。");
@@ -362,18 +384,19 @@ function numberLineProblemText(problem: NumberLineFormProblem): string {
     case "move_value": return which + tr("移动多少要是不为 0 的数或分数，例如 −5 或 1/4。");
     case "move_outside": return which + tr("移动后要停在数轴范围里。");
     case "slider_not_last": return tr("只有最后一次移动可以做成滑块。");
-    case "hops_turn_back": return tr("有往回走的移动（或滑块）时，不能一格一跳。");
-    case "hops": return tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
+    case "hops_turn_back": return which + tr("有往回走的移动（或滑块）时，不能一格一跳。");
+    case "hops": return which + tr("一格一跳时，移动要是整数个小格，最多 {{v0}} 跳。", { v0: NUMBER_LINE_LIMITS.hops });
   }
 }
 
 /** The first thing the learner must change before the panel can draw, or undefined. */
 export function numberLinePanelProblem(panel: Pick<NumberLinePanel, "range" | "subdivisions" | "start" | "jump" | "moves">): string | undefined {
+  const moves = numberLinePanelMoves(panel);
   const problem = numberLineFormProblem({
     range: panel.range, subdivisions: panel.subdivisions, start: panel.start,
-    moves: numberLinePanelMoves(panel).map((move) => ({ by: move.by, hops: move.hops, slider: Boolean(move.slider) })),
+    moves: moves.map((move) => ({ by: move.by, hops: move.hops, slider: Boolean(move.slider) })),
   });
-  return problem ? numberLineProblemText(problem) : undefined;
+  return problem ? numberLineProblemText(problem, moves.length) : undefined;
 }
 
 /** Labels of the number line panel, in the lesson's language. */
@@ -607,9 +630,11 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
       const labels = numberLineLabels(options.language);
       const start = component.start === undefined ? undefined : panelNumber(component.start)!;
       const moves = numberLinePanelMoves(component);
-      // Each move starts where the one before it lands; only the last may be a slider.
-      const landings: number[] = [];
-      for (const move of moves) landings.push((landings.at(-1) ?? start!) + panelNumber(move.by)!);
+      // Each move starts where the one before it lands; only the last may be a slider. Landings are added
+      // exactly, so a fraction line labels them as fractions, as it labels its start (review of #159).
+      const exactLandings: Exact[] = [];
+      for (const move of moves) exactLandings.push(addExact(exactLandings.at(-1) ?? exactValue(component.start!), exactValue(move.by)));
+      const landings = exactLandings.map((value) => value.numerator / value.denominator);
       const last = moves.at(-1);
       if (last?.slider) {
         if (variables.has(last.slider.variable)) throw new CompileError(`Variable '${last.slider.variable}' is already used`);
@@ -619,7 +644,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           control: { kind: "slider", step: 1 / component.subdivisions } });
       }
       const pointIds = moves.map((_move, index) => (index === moves.length - 1 ? "end" : `landing-${index + 1}`));
-      const valueText = (value: number) => String(Number(value.toFixed(9))).replace(/^-/u, "−");
+      const fractions = [component.start ?? "", ...moves.map((move) => move.by)].some((text) => text.includes("/"));
       return buildNumberLine({
         as: alias, role: "diagram", place: placeNext(), ...title,
         range: { min, max }, ticks: { step: 1, subdivisions: component.subdivisions, labels: component.subdivisions > 1 ? "all" : "major" },
@@ -627,7 +652,7 @@ export function compileRecording(recording: LearnerRecording, options: CompileOp
           { as: "start", value: numberLinePanelValue(component.start!)!, label: `${labels.start} ${component.start!.trim().replace(/^-/u, "−")}` },
           // A fixed move ends at one value, which gets its own point; a slider's end moves with it.
           ...moves.flatMap((move, index) => (move.slider ? [] : [{
-            as: pointIds[index]!, value: landings[index]!, label: index === moves.length - 1 ? labels.end : valueText(landings[index]!),
+            as: pointIds[index]!, value: exactText(exactLandings[index]!, fractions), label: index === moves.length - 1 ? labels.end : String(exactText(exactLandings[index]!, fractions)).replace(/^-/u, "−"),
           }])),
         ] } : {}),
         ...(moves.length ? { jumps: moves.map((move, index) => ({

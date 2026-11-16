@@ -4,6 +4,7 @@ import { HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { mountInfiniteBoard } from "octos-lesson-language/web-runtime";
 
 import { compileRecording, compiledCards, CompileError, numberLinePanelProblem, sliderStep } from "./compile-recording";
+import { nextParameterVariable, recordingVariables } from "./studio-helpers";
 import { addTakeInk, appendEvent, createRecording, finishTake, planCards, startTake, type LearnerRecording, type RecordingEvent } from "./recording";
 
 const now = "2026-10-31T12:00:00.000Z";
@@ -173,6 +174,29 @@ describe("compileRecording", () => {
     expect(numberLinePanelProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: false, slider: { variable: "m" } }, { by: "-6", hops: false }] })).toBeTruthy();
     // A move that turns back cannot go hop by hop.
     expect(numberLinePanelProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: true }, { by: "-6", hops: true }] })).toBeTruthy();
+  });
+
+  it("a slider on a number line's last move is a known variable, so a second line gets a new one (review of #159)", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Two lines", type: "math_off_map" }, goals: [] }), now, [{ title: "Two lines" }]);
+    recording = record(recording, "card-1", "Two number lines with sliders.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [-10, 10], subdivisions: 1, start: "0",
+        moves: [{ by: "3", hops: false, slider: { variable: "move" } }] },
+    ]);
+    expect(recordingVariables(recording)).toEqual(["move"]);
+    expect(nextParameterVariable(recording, "move")).not.toBe("move");
+  });
+
+  it("landings on a fraction line stay exact fractions (review of #159)", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Thirds", type: "math_off_map" }, goals: [] }), now, [{ title: "Thirds" }]);
+    recording = record(recording, "card-1", "Thirds.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [0, 1], subdivisions: 3, start: "1/3",
+        moves: [{ by: "1/3", hops: true }, { by: "1/3", hops: true }] },
+    ]);
+    const { lesson } = check(recording);
+    const write = lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write") as { content: { points: Array<{ as: string; value: unknown; label: string }> } };
+    expect(write.content.points.map((point) => [point.as, point.value, point.label])).toEqual([["start", "1/3", "start 1/3"], ["landing-1", "2/3", "2/3"], ["end", 1, "end"]]);
+    // With several moves, each move's problem names the move.
+    expect(numberLinePanelProblem({ range: [0, 3], subdivisions: 1, start: "0", moves: [{ by: "1/2", hops: true }, { by: "1", hops: true }] })).toMatch(/1/u);
   });
 
   it("the insert form and the compiler refuse the same impossible number lines", () => {

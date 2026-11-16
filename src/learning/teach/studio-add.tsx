@@ -715,7 +715,11 @@ function NumberLineForm({ recording, placement, onInsert }: { recording: Learner
     ...(filled.length ? { moves: panelMoves("") } : {}),
   };
   const problem = numberLinePanelProblem(panel);
-  const setMove = (index: number, value: string) => setMoves((current) => current.map((move, at) => (at === index ? value : move)));
+  // Clearing a move drops the moves after it, so no hidden value is kept and later brought back.
+  const setMove = (index: number, value: string) => setMoves((current) => {
+    const next = current.map((move, at) => (at === index ? value : move));
+    return value.trim() ? next : next.slice(0, Math.max(index + 1, 1));
+  });
   return (
     <InsertSheet disabled={Boolean(problem)} onSubmit={(event) => {
       event.preventDefault();
