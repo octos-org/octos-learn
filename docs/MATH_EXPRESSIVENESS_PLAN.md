@@ -1,6 +1,6 @@
 # Math expressiveness plan (K–12)
 
-**Status** — Accepted 2026-11-12 (Q1–Q4 as recommended); Q5, on managing the request's growth, is open. Updated 2026-11-15: the two extensions' progress, the 3D solids extension placed after them (owner), and a review of what the plan has dropped (§10). Code references were checked at learning-coach `3242238`, octos-lesson-language (OLL) `2444000` and octos-learn `5346bef` (each repository's `main` on that date).
+**Status** — Accepted 2026-11-12 (Q1–Q4 as recommended); Q5, on managing the request's growth, is open. Updated 2026-11-15: the two extensions' progress and switch-on, the 3D solids extension placed after them (owner), a review of what the plan had dropped (§10), and the order from here (§7 step 3). Code references were checked at learning-coach `3242238`, octos-lesson-language (OLL) `2444000` and octos-learn `5346bef` (each repository's `main` on that date).
 
 **What changed.** On 2026-11-12 the product owner paused expansion into other subjects: the new math components were progressing slowly, and math comes first. Mathematics is the whole of the next phase, from kindergarten to grade 12. This plan replaces the math items of the [subject plugin plan](SUBJECT_EXPANSION_PLAN.md) (§8, P4 item 5: B9 → B10 → B11) and pauses its science items (P3, and P4 items 1–4). Decision S5 (math and science in parallel) is suspended until the owner resumes broader expansion. That plan's principles, payload gates (§9) and plugin contract (§4) still apply.
 
@@ -29,7 +29,7 @@ The numbers are each recipe's bytes in the broad request: its model guidance plu
 | `geometric_rearrangement` | Polygon pieces moved to show equal areas (e.g. Pythagoras) | 6–8 | 383 |
 | `rectangle_unit_square_array` | Unit squares in rows and columns (area, multiplication) | 3–5 | 162 |
 | `cube_with_section`, `function_surface_with_section`, `implicit_surface_with_section` | 3D solids and surfaces cut by a plane | 9–12 | 69 / 110 / 141 |
-| `number_line` (+ `_compare`, `_solution`, `_rounding`) | Jumps, comparing two numbers, inequality solution sets, rounding | 1–8 | 392 / 116 / 152 / 119 |
+| `number_line` (+ `_compare`, `_solution`, `_rounding`, `_steps`) | Jumps, comparing two numbers, inequality solution sets, rounding; two or three moves on one line since 2026-11-15 (OLL 0017); units up to 1000 | 1–8 | 392 / 116 / 152 / 119 / 334 |
 
 Besides these, every lesson can use formulas, notes, tables and simple diagrams on the board, and typed answers that the program checks.
 
@@ -159,12 +159,24 @@ The owner has confirmed that fractions and charts stay in the plan.
    - **The two extensions, as done (2026-11-14 to 11-15):**
      - Q5 headroom accepted (Coach #83). Decision records OLL 0017 (number line) and 0018 (function plot) accepted; player 0.11.0 and math plugin 0.3.0 (OLL #61, #62); Coach and Learn pin OLL `8e85fe1`.
      - Judges written first: the plot judge (PJ cases) and the number-line steps judge (ST cases), Coach #85, #86.
-     - **Number line:** coarse units up to 1000 are on (Coach #87, a fit-only change). Two-to-three-step lines (`number_line_steps`, Coach #88) stay a trial recipe: in the reduced trial 4 of 6 in-scope cases passed both repeats; **the owner decides** whether to switch it on.
+     - **Number line:** coarse units up to 1000 are on (Coach #87, a fit-only change). Two-to-three-step lines (`number_line_steps`, Coach #88): in the reduced trial 4 of 6 in-scope cases passed both repeats and no lesson misled. **Switched on by the owner on 2026-11-15** (Coach #99), before the speed gate.
      - **Function plot:** marks, pieces, domain and range (Coach #89–#92), then repairs in place instead of refusals (#94–#97). A trial failed (Coach #93, `docs/PLOT_TRIAL_2026-11-15.md`); after the repairs, run B (73 calls, options on vs off) gave 17 vs 15 playable, 13 vs 4 judge passes, median 6.8 vs 8.1 s to the first playable section. **Switched on by the owner on 2026-11-15** (Coach #98), before the combined speed gate.
-     - **Still to do for this stage:** the combined speed gate with the practice invitation (Coach #81) against the build before #98 (`--baseline-build`), which also measures requests that never draw a plot (run B did not); §5 steps 7 and 8 (§10).
-   - **Next (owner, 2026-11-15): the 3D solids extension**, immediately after the two extensions and before fractions. It starts with its decision record (§5 step 1). Rendering exists (OLL `solids.ts`), so the work is the AI path: which solids a lesson may name, what the program computes (dimensions, sections, views), the judge, and the request bytes. The combined speed gate is blocked on #81's own open items and need not hold this back; 3D gets its own gate before switch-on.
-3. **Goal-1 clean-up** (§2.3). Small, and no lesson changes.
-4. **Components in the order M1 sets**, each through §5, after the 3D solids extension (owner, 2026-11-15). Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
+     - **Still to do for this stage:** step 3 below.
+   - **The 3D solids extension (owner, 2026-11-15)** comes immediately after the two extensions and before fractions. Read as: the next component, after this stage's §5 work, with its decision record started now (step 3.3). Rendering exists (OLL `solids.ts`), so the work is the AI path: which solids a lesson may name, what the program computes (dimensions, sections, views), the judge, and the request bytes.
+3. **From here, in order** (2026-11-15; order recommended after review with Fable, the advisor, for the owner to confirm). Every item found in the review (§10) is a step here. "Free" means no model calls; "paid" means the owner approves the call count first.
+   1. **Re-tag M1** (free). Re-tag coverage after the two switch-ons, and give each cut feature a candidate in the same pass (§10 item 6): the double number line goes to the ratio component; the area under a curve, tangents and intersecting curves get a function-plot candidate. *Done when* M1's table and the candidate list are updated; M1 then orders everything after 3D.
+   2. **Speed gate for the two switch-ons** (paid). Compare against the build before them (Coach `75578ab`, `--baseline-build`), judging requests that use the new parts and requests that don't separately (M4 rule). Run it on its own, without waiting for Coach #81, so that a failure can be attributed. Hold every request-changing merge until it runs. *Done when* both groups are within +0.5 s, or the owner decides on a failure. Estimate: about 40 pairs, as in earlier gates; the exact call count goes to the owner first.
+   3. **3D solids decision record** (free; OLL), in parallel with 3.1 and 3.2. *Done when* the owner accepts it.
+   4. **Goal-1 clean-up** (free; §2.3, formerly step 3). Coach's four `function_plot` special cases, and Studio's number-line and polygon forms supplied by the math plugin. No lesson changes. *Done when* no math special case remains outside the plugin.
+   5. **Studio and CoursePacks use the same builder** for number-line steps and the plot options (free; §5 step 7, §10 item 1). It follows 3.4, which moves Studio's number-line form into the plugin. If the 3D record is accepted first, 3D's build (3.7) goes first and this resumes after.
+   6. **Before the 60-question re-run, everything that run will judge:**
+      - **Program checks** (free): undisclosed stand-in counts, animations that change nothing, and wrong arithmetic in model-written success messages (§10 items 4 and 5). They change no request. They are developed on the probe recordings (PA cases), never on the question set. Each record says what happens on a hit, since a refusal costs a call.
+      - **The outline's substitution rule** (paid probe): rewrite it, and allow "no visual" when nothing fits, net of bytes. It changes requests, so it comes after 3.2's gate, with a control-arm probe.
+      - **Defects that can draw a wrong picture or miscount** (free; §10 item 7): the plot judge's false positive for slider-moved poles (fixed first, or the re-run counts it); a slope triangle straddling an interior pole; floating-point cancellation near a = 0.
+   7. **3D solids build** through §5 (paid probe and gate, each approved first).
+   8. **One 60-question re-run** (paid): it closes M3-first, the two extensions and 3D together, reporting open and held-out results separately. *Alternative for the owner:* a re-run before 3D as well, at the cost of a second run.
+   9. **Backlog with a trigger** (OLL): plot labels overlapping at a few slider states, and number-line tick labels adding rows while dragging. Taken up if a recording or a judge shows them in a real lesson.
+4. **Components in the order M1 sets** (re-tagged in 3.1), each through §5, after the 3D solids extension. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
 
 ## 8. Decisions
@@ -181,7 +193,7 @@ Q1–Q4 and the M4 rule were accepted on 2026-11-12. Q5's first decision, reques
   - **The problem.** The fallback-outline, later-section, section-repair and first-section-retry ceilings sat at their measured maxima (Coach #72): 98–158 B of total headroom and 0 B of schema headroom. No new component fit; the number-line and function-plot extensions need about 1–1.2 KB.
   - **The change** (Coach #83): each of those paths gets +2,000 B in total and in schema, on every input route. First-request and practice ceilings are unchanged.
   - **Why it's safe.** These requests stay far below the first-request sizes already tested live (+8,368 B, 26 KB) without a measured slowdown, the argument accepted for #72.
-  - **Live check.** Folded into the next speed gate, which covers the practice invitation (Coach #81) and the two extensions, using the two-build mode (Coach #82).
+  - **Live check.** Folded into the next speed gate, which covers the practice invitation (Coach #81) and the two extensions, using the two-build mode (Coach #82). (2026-11-15: the extensions' gate now runs on its own, §7 step 3.2; #81 gets its own.)
   - **Not chosen now.** Selecting components before the first call (Q5 item 3, for example with Jev choosing a bundle) stays the long-term option for when the first request itself fills up. It can't replace headroom, because requests without a Jev answer (no key, a timeout, camera and selection) still get the full catalog.
 - **Q5 Managing growth (open).** The request will keep growing as components are added; a bigger budget only postpones the limit. Proposed, cheapest first:
   1. **Measure the real limit.** The only size ever tested is +8,368 bytes; it is not a measured cliff. Runs 5–9 also show a signal: with the number-line types offered (+107 to +252 tokens), requests that do not use them were 1.7 s slower (95% interval 0.7–2.8 s, 50 pairs), cause not established. One paid size test (about +16 KB and +32 KB) shows whether size moves first-playable time at all. Budgets move from bytes to the provider's tokens (already pending in the subject plan), since bytes overcount Chinese guidance. We also check how much of the fixed part of the request is cached, because cached text costs little time.
@@ -197,7 +209,7 @@ Q1–Q4 and the M4 rule were accepted on 2026-11-12. Q5's first decision, reques
 
 The owner asked whether anything else was overlooked the way the 3D solids extension was (M1 added it as a candidate ranked 6th, tied with place value, but no order or step ever named it). Checked: §5 against each shipped extension, §6 against the M1 candidates, every §7 step, the cuts in decisions 0017 and 0018, §8's open items, open PRs in the three repositories, and the follow-ups and "left for later" notes of 2026-11-13 to 11-15.
 
-**Silently dropped: no step, owner, or decision names them.** Each needs an owner decision on whether and where it goes.
+**Silently dropped: no step, owner, or decision named them.** Each is now a step in §7 step 3 (owner, 2026-11-15): items 1 → 3.5, 2 → 3.1, 3 → 3.4, 4 → 3.6, 5 → 3.6, 6 → 3.1, 7 → 3.6 and 3.9.
 
 1. **§5 step 7, Studio and CoursePacks use the same builder:** not done for either extension. Decisions 0017 and 0018 do not mention Studio. A learner recording a lesson cannot add number-line steps, plot marks, pieces, or domain and range. *Recommended:* a small Studio item per extension, after the 3D solids decision record.
 2. **§5 step 8 and §7 step 5, re-measure M1 after a switch-on:** not done for coarse units or the plot options. M1 is free (hand tagging). *Recommended:* re-tag now, before ordering further work.
@@ -222,7 +234,7 @@ The owner asked whether anything else was overlooked the way the 3D solids exten
 
    *Recommended:* one OLL and Coach issue list, triaged by the owner.
 
-**Deferred, with a recorded home:** the 60-question re-run (§7 step 2; after the first new components); Q5 items 1–3 (§8); the combined speed gate with Coach #81 (§8 Q5, blocked on #81's task-side clause and re-probe); the `number_line_steps` switch-on (§7 step 2); M1 candidates ranked below place value (§7 step 4, "in the order M1 sets").
+**Deferred, with a recorded home:** the 60-question re-run (§7 step 2; after the first new components); Q5 items 1–3 (§8); the speed gate (now §7 step 3.2, run without waiting for Coach #81; #81 keeps its own task-side clause, re-probe and gate); M1 candidates ranked below place value (§7 step 4, "in the order M1 sets").
 
 **Paused by the owner:** the science plugins and decision S5 (§9); phone width (2026-11-13).
 
