@@ -185,7 +185,7 @@ The owner has confirmed that fractions and charts stay in the plan.
       - **Course packs** write OLL directly and call no builder, so they need no work here.
       - **Slice 1: done (2026-11-16).** The number-line form's checks are in the plugin (OLL #68), and Studio's form takes up to three moves (Learn #159), both merged after review. The choices are recorded in 0017's Studio section.
       - **Slice 2: done (2026-11-16).** The plot-mark derivation moved from Coach into the plugin (OLL #69, Coach #106), merged after review. Every recorded lesson and request is unchanged.
-      - **Slice 3:** Studio graph forms: mark toggles, two reference points, pieces. **The owner decides whether it goes before or after the 3D build (3.7).**
+      - **Slice 3:** Studio graph forms: mark toggles, two reference points, pieces. **After the 3D build (3.7)** (owner, 2026-11-16).
    6a. **The `sample_x_numbers` slip** (found in 3.2). The model writes x positions where lesson-number indexes belong (`[1, 3]` for x = 1 and 3) and repeats it on every retry.
       - **Why not a repair in place:** #102 tried one and was closed after two code reviews. Any repair that reads the lesson's text to judge whether the formula is the real curve can draw a wrong picture.
       - **Census** (corrected): 42 recorded slips. 15 on section calls in lessons with no lesson numbers, including both lessons the gate lost; 12 on section calls with numbers; 15 on bootstrap calls.
@@ -195,7 +195,8 @@ The owner has confirmed that fractions and charts stay in the plan.
       - **Retry tweaks cannot fix this slip (Coach #110, not recommended).** #110 left the field out of retries in lessons with no lesson numbers.
         - **Measured:** the paired check (owner-approved, 89 calls, `docs/RETRY_NARROWING_CHECK_2026-11-16.md`) gave 20 of 20 lessons against 18 of 20.
         - **Why not merge:** review found it publishes narration about points ("look at the points at x = 1 and x = 3") with no points drawn, where main loses the lesson. The x positions the model means have nowhere to go.
-        - **The fix is step 5's `points` redesign** (OLL #70, 0018 amendment): a fixed point written as x and y and checked against the curve, and a moving point by its slider name. It moves ahead of the rest of 3.6, since the slip costs about one lesson in ten on these cases.
+        - **The fix is the `points` redesign:** a fixed point written as x and y and checked against the curve, and a moving point by its slider name. It moves ahead of the rest of 3.6, since the slip costs about one lesson in ten on these cases.
+        - **Accepted (owner, 2026-11-16):** decision 0020 ("the model writes meaning, the program writes logic") with the 0018 and 0019 amendments (OLL #70). It is being built next; the paid probe's call count goes to the owner first.
       - **Still open:**
         - **6b.** Slips in lessons with numbers. An enum was tried and dropped: it turns an x value into a valid but wrong index, binding a point to an unrelated slider.
         - **6c.** Refusals keyed on the learner's request or the outline's purpose, which a retry cannot meet, so the lesson is lost. These are the moving-point and vertex refusals, and the purpose checks in `math-teaching-contracts.ts`.
