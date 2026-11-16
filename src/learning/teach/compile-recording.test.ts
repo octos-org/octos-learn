@@ -144,6 +144,37 @@ describe("compileRecording", () => {
     expect(line.jumps[0]!.by).toBe(1);
   });
 
+  it("a number line takes up to three moves, each from where the one before lands (OLL decision 0017)", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Make ten", type: "math_off_map" }, goals: [] }), now, [{ title: "8 + 5" }]);
+    recording = record(recording, "card-1", "Eight and two make ten, then three more.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [0, 15], subdivisions: 1, start: "8",
+        moves: [{ by: "2", hops: true }, { by: "3", hops: true }] },
+      { t: 3_000, type: "tool.highlighter", target: { node: "number-line-1", part: "end" } },
+    ]);
+    const { lesson, state } = check(recording);
+    const write = lesson.steps[0]!.beats[0]!.actions.find((action) => action.do === "write") as { content: { jumps: unknown; points: Array<{ as: string; value: unknown; label: string }> } };
+    expect(write.content.jumps).toEqual([
+      { as: "move", from: "start", by: 2, label: "+2", hops: true },
+      { as: "move2", from: "landing-1", by: 3, label: "+3", hops: true },
+    ]);
+    expect(write.content.points.map((point) => [point.as, point.value, point.label])).toEqual([["start", 8, "start 8"], ["landing-1", 10, "10"], ["end", 13, "end"]]);
+    const line = state.nodes["l:node:number-line-1"]!.content as { jumps: Array<{ by: number }> };
+    expect(line.jumps.map((jump) => jump.by)).toEqual([2, 3]);
+  });
+
+  it("only the last move can be a slider; it reaches either end of the line from where it starts", () => {
+    let recording = planCards(createRecording({ id: "rec", now, topic: { text: "Up then down", type: "math_off_map" }, goals: [] }), now, [{ title: "Up then down" }]);
+    recording = record(recording, "card-1", "Up four, then drag the second move.", [
+      { t: 0, type: "component.insert", panel: "number_line", alias: "number-line-1", range: [-10, 10], subdivisions: 1, start: "5",
+        moves: [{ by: "4", hops: false }, { by: "-6", hops: false, slider: { variable: "move" } }] },
+    ]);
+    const { lesson } = check(recording);
+    expect(lesson.lesson.variables).toEqual([expect.objectContaining({ as: "move", initial: -6, min: -19, max: 1 })]);
+    expect(numberLinePanelProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: false, slider: { variable: "m" } }, { by: "-6", hops: false }] })).toBeTruthy();
+    // A move that turns back cannot go hop by hop.
+    expect(numberLinePanelProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: true }, { by: "-6", hops: true }] })).toBeTruthy();
+  });
+
   it("the insert form and the compiler refuse the same impossible number lines", () => {
     const ok = { range: [-5, 5] as [number, number], subdivisions: 1 };
     expect(numberLinePanelProblem(ok)).toBeUndefined();

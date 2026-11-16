@@ -6,7 +6,7 @@ import { tr } from "@/i18n";
 import { BookOpen, Box, Check, MoveHorizontal, ChevronLeft, Circle, CircleAlert, CircleDot, Gauge, Grid3x3, Hexagon, LineChart, ListChecks, Minus, MessageSquareText, Plus, Repeat, Spline, Square, StickyNote, Table2, Workflow, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEventHandler, type ReactNode } from "react";
 import { niceAxisMax } from "octos-lesson-language/plugin-physics";
-import { MAX_MOTION_SPEED, MAX_MOTION_TIME, NUMBER_LINE_SUBDIVISIONS, numberLinePanelProblem } from "./compile-recording";
+import { MAX_MOTION_SPEED, MAX_MOTION_TIME, MAX_NUMBER_LINE_MOVES, NUMBER_LINE_SUBDIVISIONS, numberLinePanelProblem } from "./compile-recording";
 
 import type { RowCard } from "./board-rows";
 import { entryLetters, parseGraphEntry } from "./graph-entry";
@@ -692,24 +692,30 @@ function PolygonForm({ recording, placement, onInsert }: { recording: LearnerRec
   );
 }
 
-/** A number line: its range, how finely each unit is split, and optionally a start point and a jump from it. */
+/** A number line: its range, how finely each unit is split, and optionally a start point and up to three moves from it (OLL decision 0017). */
 function NumberLineForm({ recording, placement, onInsert }: { recording: LearnerRecording; placement: ReactNode; onInsert: (component: ComponentInsert) => void }) {
   const [from, setFrom] = useState("-5");
   const [to, setTo] = useState("5");
   const [parts, setParts] = useState(1);
   const [start, setStart] = useState("");
-  const [by, setBy] = useState("");
+  const [moves, setMoves] = useState<string[]>([""]);
   const [hops, setHops] = useState(true);
   const [slider, setSlider] = useState(false);
   const [min, max] = [numberField(from), numberField(to)];
   const startText = start.trim() || undefined;
-  const byText = startText && by.trim() ? by.trim() : undefined;
+  // Moves count up to the first empty one; each starts where the one before lands.
+  const typed = startText ? moves.map((move) => move.trim()) : [];
+  const filled = typed.slice(0, typed.includes("") ? typed.indexOf("") : typed.length);
+  const panelMoves = (variable: string) => filled.map((by, index) => ({
+    by, hops, ...(slider && index === filled.length - 1 ? { slider: { variable } } : {}),
+  }));
   const panel = {
     range: [min ?? Number.NaN, max ?? Number.NaN] as [number, number], subdivisions: parts,
     ...(startText ? { start: startText } : {}),
-    ...(byText ? { jump: { by: byText, hops, ...(slider ? { slider: { variable: "" } } : {}) } } : {}),
+    ...(filled.length ? { moves: panelMoves("") } : {}),
   };
   const problem = numberLinePanelProblem(panel);
+  const setMove = (index: number, value: string) => setMoves((current) => current.map((move, at) => (at === index ? value : move)));
   return (
     <InsertSheet disabled={Boolean(problem)} onSubmit={(event) => {
       event.preventDefault();
@@ -717,7 +723,7 @@ function NumberLineForm({ recording, placement, onInsert }: { recording: Learner
       onInsert({
         panel: "number_line", alias: nextComponentAlias(recording, "number-line"), range: panel.range, subdivisions: parts,
         ...(startText ? { start: startText } : {}),
-        ...(byText ? { jump: { by: byText, hops, ...(slider ? { slider: { variable: nextParameterVariable(recording, "move") } } : {}) } } : {}),
+        ...(filled.length ? { moves: panelMoves(nextParameterVariable(recording, "move")) } : {}),
       });
     }}>
       <div className="teach-range">
@@ -731,12 +737,20 @@ function NumberLineForm({ recording, placement, onInsert }: { recording: Learner
       </div>
       <div className="teach-range">
         <label>{tr("起点（可不填）")}<input className="teach-input" value={start} placeholder="3, 3/4" onChange={(event) => setStart(event.target.value)} /></label>
-        <label>{tr("移动多少（可不填）")}<input className="teach-input" value={by} placeholder="-5, 1/4" disabled={!startText} onChange={(event) => setBy(event.target.value)} /></label>
+        {moves.map((move, index) => (
+          <label key={index}>{index === 0 ? tr("移动多少（可不填）") : tr("再移动多少（可不填）")}
+            <input className="teach-input" value={move} placeholder="-5, 1/4" disabled={!startText || (index > 0 && !moves[index - 1]!.trim())}
+              onChange={(event) => setMove(index, event.target.value)} />
+          </label>
+        ))}
       </div>
-      {byText && (
+      {filled.length > 0 && moves.length < MAX_NUMBER_LINE_MOVES && filled.length === moves.length && (
+        <button type="button" className="teach-link-button" onClick={() => setMoves((current) => [...current, ""])}>{tr("再加一次移动")}</button>
+      )}
+      {filled.length > 0 && (
         <>
           <label className="teach-place"><input type="checkbox" checked={hops} onChange={(event) => setHops(event.target.checked)} /><span>{tr("一格一跳：讲课时能一格一格地数")}</span></label>
-          <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{tr("移动做成滑块：讲课时拖动，看跳到哪里")}</span></label>
+          <label className="teach-place"><input type="checkbox" checked={slider} onChange={(event) => setSlider(event.target.checked)} /><span>{filled.length > 1 ? tr("最后一次移动做成滑块：讲课时拖动，看跳到哪里") : tr("移动做成滑块：讲课时拖动，看跳到哪里")}</span></label>
         </>
       )}
       {problem && <p className="teach-notice" role="status">{problem}</p>}
