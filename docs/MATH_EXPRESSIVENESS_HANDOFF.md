@@ -21,7 +21,7 @@ The current work is **3D solids (plan step 3.7)**. It is built, reviewed three t
 |---|---|---|---|---|
 | OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | Round-4 fix pushed (dac3717: all-BigInt integer square root). Waiting for owner review and merge. | Needs review |
 | Learn #165 | `chore/oll-solids-pin` | Pins OLL (now 8ace553). Studio's `SolidChoice` excludes `two_boxes`. | Waits for OLL #73. Re-pin to #73's **merge commit**, then you merge it. | No review needed (pin) |
-| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-4 fix pushed (b63ef54: exact values held to floating-point noise). Pinned to OLL dac3717. Waiting for owner review and merge. | Needs review |
+| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-5 fix pushed (6e37b3a: zero denominators and non-finite values rejected). Pinned to OLL dac3717. Waiting for owner review and merge. | Needs review |
 | Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Stacked on #116; waiting for owner review and merge | Needs review |
 | Coach #117 | | Revised speed-gate script (`scripts/speed-gate.mjs`) | Merged | — |
 
@@ -172,7 +172,7 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 
 **OLL checks:** `npm run check:plot-browser`, `check:number-line-browser` and `check:solids-browser`. New behaviour gets a check that fails on main.
 
-**Test counts at handoff:** OLL 554 and Coach 578, all passing.
+**Test counts at handoff:** OLL 554 and Coach 579, all passing.
 
 ## 6. Traps learned the hard way
 
