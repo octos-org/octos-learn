@@ -34,11 +34,10 @@ As of 2026-11-18. Read in this order:
 - **M1:** pictures fully drawn rose from 33 to 35 of 145. The top of the candidate ranking is unchanged: fraction area models, counters and ten frames, data charts.
 
 **Next (plan §7, the work stack's L3):**
-1. **Ask the owner first** whether the rest of 3.6 goes before or after the 60-question re-run (3.8). This choice is still open.
-2. **The rest of 3.6:**
-   - program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages);
-   - the outline's "no visual" rule (a paid probe);
-   - smaller items 6b–6d.
+1. **Decided (owner, 2026-11-18):** the rest of 3.6 goes before the 60-question re-run (3.8).
+2. **The rest of 3.6** (order and stop rule in the work stack's L3):
+   - free: program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages), 6c, the open part of 6d, and the two renderer defects in plan 3.6 (slope triangle across a pole, cancellation near a = 0);
+   - paid: the outline's "no visual" rule (a control-arm probe, then the gate; dropped if the probe shows no benefit).
 3. **3.5 slice 3:** Studio graph forms.
 4. **3.8:** one 60-question re-run (paid). It closes step 3.
 5. **Step 4:** new components in the order M1 sets.
