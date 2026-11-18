@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-17 (evening). This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-18. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -16,6 +16,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
+- **Approve:** one more other-request pair for the speed gate (2 to 8 calls); see L4.
+- **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
 - **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe).
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
 - **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
@@ -54,7 +56,10 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - Fitting requests were 1.7 s faster. Other requests were +1.2 s, then +0.75 s, both over the old +0.5 s median limit, though both 95% intervals span 0.
   - Under the old rule this failed, so `solid_3d` stays a trial.
 - **Done:** the speed gate method was revised (owner, 2026-11-18; plan §8; Coach #117). Generated tokens are converted to seconds and judged sequentially. Under it, the solids result is: fitting pass; other **extend** (+0.43 s, interval −0.2 to +2.2 s, 40 pairs).
-- **Next:** 20 to 40 more other-request pairs (about 50 to 100 calls, needs owner approval), then switch on if the gate passes.
+- **Done:** gate extensions 1c and 1d (91 calls, 2026-11-18). Pooled result:
+  - fitting: **pass**, −2.17 s;
+  - other: +0.25 s at **79** pairs (interval −0.70 to +1.26 s), so still **extend**. One candidate request got a non-lesson reply from the model, which cost a pair.
+- **Next:** one more other pair (2 to 8 calls, needs owner approval). It reaches the 80-pair cap, where the median (+0.25 s now) decides. Then switch on if the gate passes.
 - **Then:** step 5, switch on, and re-tag M1.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
