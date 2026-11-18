@@ -16,7 +16,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Nothing waiting.** Coach #120 merged after six review rounds; Coach #121 is in review (the agent merges it once a round finds nothing blocking).
+- **Decide: Coach #121 (replay a repeated change).** An animation to the value a number already holds has two readings: replay the change, or hold the value. No structure separates them (decision 0020's "one reading"). Of the 6 probe lessons it changes, 5 narrate the change and 1 restates a value. Options: merge with the hold risk accepted; park it until the "no visual" probe's whole lessons can count holds against replays (recommended); or a paid structural re-ask. Four review rounds; structural findings fixed.
 - **Next ask:** the "no visual" probe's design and call count (item 3 below), once the free batch is up.
 - **Decided (owner, 2026-11-18):**
   - The rest of 3.6 goes before the 60-question re-run (3.8), in the order of L4.
@@ -35,7 +35,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 **Main track:**
 1. **Now, free (Coach; merged by the agent once a review finds nothing blocking):**
    - **Done (2026-11-18):** wrong arithmetic in praise messages, Coach #120. A false claim written wholly in numerals drops the message (the learner sees the neutral reaction). Census of 307 probe messages: 9 claims read, all true. Follow-up PR next (round-6 known issues: a task's own rounding instruction, remainders by structure, a general label rule).
-   - **In review:** animations that change nothing, Coach #121. A repeated change now plays again (OLL replay start) instead of a still picture: 9 probe lessons, checked in the real player. No request changes.
+   - **Needs the owner:** animations that change nothing, Coach #121 (see "Needs the owner"). A repeated change plays again (OLL replay start) instead of a still picture: 6 probe lessons, checked in the real player. No request changes.
    - **Next:** stand-in counts (a census first; it may have nothing left to catch on main); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
 2. **Next, free (evaluation-only):** design the "no visual" probe before asking for money: new cases (overlap-checked), arms, repeats and a two-sided pass bar (fewer misleads where no component fits; no lost pictures where one does). #79's one-run probe (3 of 13 against 1 of 13) could not tell a difference from chance.
 3. **Paid, owner approves:** the probe, with 4a riding along. **Stop rule:** if it shows no benefit, drop the rule and go to 3.8.
