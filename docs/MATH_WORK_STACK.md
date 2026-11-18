@@ -16,18 +16,24 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
-- **Review and merge:** Coach #118, the switch-on, which now targets `main`. OLL #73, Learn #165 and Coach #116 merged on 2026-11-18. After #118, I merge Coach #119 (the M1 re-tag, evaluation only).
-- **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
-- **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
+- **Decide next:** whether the rest of step 3.6 goes before or after the 60-question re-run (3.8). This is the first choice of the next phase. 3.6 covers program checks for stand-in counts, animations that change nothing and wrong arithmetic in praise messages, and the outline's "no visual" rule.
+- **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` is current as of the end of 3D (2026-11-18), ready for another agent.
+- **Rules (owner, 2026-11-17):** reviews are capped at two rounds; the agent may merge pins, docs and evaluation-only PRs; every PR is marked as needing a code review or not.
 
 ---
 
-## L4 · Now: 3D solids, plan 3.7 (decision 0019)
+## L4 · Done: 3D solids, plan 3.7 (decision 0019), finished and on 2026-11-18
 
 **Why here:** 3.6's two fixes are merged (Coach #113–#115). 3D is the next item in the plan.
 
-- **Done:** step 1, OLL render work (OLL #73, awaiting merge).
+**Closed 2026-11-18:** OLL #73, Learn #165, Coach #116–#119 merged.
+- `solid_3d` is on and `cube_with_section` is retired.
+- The default request is byte-identical to the gated one.
+- M1: 35 of 145 pictures fully drawn, up from 33.
+
+The items below are the record.
+
+- **Done:** step 1, OLL render work (OLL #73).
   - A second solid can stand beside the first, centred and framed together. One plane cuts both, and both nets open without touching.
   - A line under the scene shows the volume, surface area or face/edge/vertex counts. The program computes them, and they are exact where possible (`12π ≈ 37.70`). The player draws it from 0.13.0.
   - New composite: two boxes side by side (an L shape).
@@ -61,7 +67,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done:** step 5 prepared. Coach #118 switches on `solid_3d` and retires `cube_with_section`.
   - The default request is byte-identical to the request the gate measured.
   - 132 of 139 recorded lessons replay identically. The other 7 had asked for the cube and now get a new outline.
-- **Done (lands after #118):** M1 re-tag, Coach #119. Pictures fully drawn: 35 of 145, up from 33 (the L of two boxes, the prism's counts). The top of the candidate ranking is unchanged: fraction area models, counters and ten frames, data charts.
+- **Done:** M1 re-tag, Coach #119. Pictures fully drawn: 35 of 145, up from 33 (the L of two boxes, the prism's counts). The top of the candidate ranking is unchanged: fraction area models, counters and ten frames, data charts.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
   - promised motion the lesson can't do.
@@ -84,7 +90,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done:** 3.5 Studio uses the same builders: number line and plot marks.
 - **Done:** 3.6a The points slip, fixed by #113.
 - **Done:** 3.6 The fixes before 3D: 6e and the plot-judge fix (merged 2026-11-17).
-- **Now:** 3.7 Build 3D solids (L4). Steps 1–3 are built and in review; the paid probe is next.
+- **Done:** 3.7 Build 3D solids (L4), on 2026-11-18.
+- **Next:** ask the owner for the order of the rest of 3.6 and the re-run 3.8.
 - **Later:** the rest of 3.6:
   - program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages);
   - the outline's "no visual" rule (paid probe);
@@ -137,6 +144,5 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Open pull requests
 
-- **Merge:** Coach #118 (switch-on), then Coach #119 (M1 re-tag; I merge it).
 - **Kept:** Coach #79, the card-rule experiment, kept as a record.
 - **Waiting:** Coach #81, the program-written practice invitation. Waits until recordings show the problem.
