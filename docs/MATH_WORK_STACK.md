@@ -50,7 +50,11 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - Retire `cube_with_section` when `solid_3d` switches on (it already happens while the trial is on).
   - The open-top box stays a known near miss.
   - A teacher-driven cut or net is a later 0020-style field.
-- **Now:** step 4b, the speed gate (owner-approved, cap 200 calls).
+- **Done:** step 4b, the speed gate and its allowed repeat (155 calls).
+  - Fitting requests were 1.7 s faster. Other requests were +1.2 s, then +0.75 s, both over the old +0.5 s median limit, though both 95% intervals span 0.
+  - Under the old rule this failed, so `solid_3d` stays a trial.
+- **Done:** the speed gate method was revised (owner, 2026-11-18; plan §8; Coach #117). Generated tokens are converted to seconds and judged sequentially. Under it, the solids result is: fitting pass; other **extend** (+0.43 s, interval −0.2 to +2.2 s, 40 pairs).
+- **Next:** 20 to 40 more other-request pairs (about 50 to 100 calls, needs owner approval), then switch on if the gate passes.
 - **Then:** step 5, switch on, and re-tag M1.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
