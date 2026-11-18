@@ -139,13 +139,13 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 - Flags: `--build`/`--baseline-build`, `--both-arms`, `--recipes <key>`, `--pairs`, `--other-cases`, `--quality-repeats`, `--lesson-calls 4` (what Coach really does), `--max-calls`, `--octos-profile <profile json>`.
 - It keeps raw model replies and compiled parts in its `work_dir` (a temp folder named in the report). Copy that folder into `handoff-math-expressiveness/runs/` afterwards; temp folders get cleaned.
 - **Known quirk:** calls are counted when a model call starts, so an aborted next-section call still counts.
-- The exact gate command used for runs 1c and 1d, from `learning-coach/` with Node 22 on the PATH:
+- The exact gate command used for runs 1c, 1d and 1e (1e with `--pairs 1 --max-calls 8`), from `learning-coach/` with Node 22 on the PATH:
 
   ```
   node scripts/eval-trial-recipe-speed.mjs --build <frozen build dir> --octos-profile <profile json> --pairs 20 --recipes solid_3d --other-cases HO-MA-01,HO-PH-02,HO-CH-01,HO-BI-01,HO-ES-01,HO-MA-04,HO-PH-04,HO-CH-04,HO-BI-04,HO-ES-04 --quality-repeats 0 --lesson-calls 4 --max-calls 50 --out <run.json>
   ```
 
-  The frozen build is `handoff-math-expressiveness/runs/solids/gatebuild`; runs 1c and 1d used this build.
+  The frozen build is `handoff-math-expressiveness/runs/solids/gatebuild`; runs 1c to 1e used this build.
   To replay one recorded request offline, use `tools/replay-one.mjs <build> <raw-model.txt> <case id>`. Its trial request bytes match run 1's: prompt 4384, schema 8525.
 
 **Speed gate (revised M4, owner 2026-11-18; plan §8):** `scripts/speed-gate.mjs` in Coach.
@@ -160,7 +160,7 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 - **Don't change the rule to fit a result.**
 
 **3D evidence** (`handoff-math-expressiveness/runs/solids/`):
-- `probe-1`…`probe-3` and `gate-1`, `gate-1b`, `gate-1c`, `gate-1d`. Each has the run JSON (with `work_dir` pointed at its copied `work/`) and the log.
+- `probe-1`…`probe-3` and `gate-1`, `gate-1b`, `gate-1c`, `gate-1d`, `gate-1e`. Each has the run JSON (with `work_dir` pointed at its copied `work/`) and the log.
 - `gatebuild/`: the frozen candidate build.
 - `replay-main.jsonl`: the replay of main to compare against.
 
