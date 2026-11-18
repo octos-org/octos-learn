@@ -21,8 +21,9 @@ The current work is **3D solids (plan step 3.7)**. It is built, reviewed three t
 |---|---|---|---|---|
 | OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | **Merged** 2026-11-18 (merge commit f712bc4). | — |
 | Learn #165 | `chore/oll-solids-pin` | Pins OLL (now 8ace553). Studio's `SolidChoice` excludes `two_boxes`. | **Merged** 2026-11-18, pinned to f712bc4. | — |
-| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-5 fix pushed (6e37b3a: zero denominators and non-finite values rejected). Pinned to OLL f712bc4 (#73's merge commit). Waiting for owner review and merge. | Needs review |
-| Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Stacked on #116; waiting for owner review and merge | Needs review |
+| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | **Merged** 2026-11-18 (c7727af), pinned to OLL f712bc4. | — |
+| Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Targets `main`; CI passes; waiting for owner review and merge | Needs review |
+| Coach #119 | `eval/m1-retag-solids` | M1 re-tag after the switch-on: 35 of 145 pictures fully drawn | Merge it yourself after #118 | No review needed (evaluation record) |
 | Coach #117 | | Revised speed-gate script (`scripts/speed-gate.mjs`) | Merged | — |
 
 **Merge order: OLL → Learn → Coach.** The player's feature version gates lessons (trap 3).
@@ -46,7 +47,7 @@ Run 1d lost one pair: the model chose a non-lesson reply on one question. Run 1e
    - The owner merges OLL #73.
    - You re-pin Learn #165 to the merge commit and merge it yourself.
    - You re-pin Coach #116 (now at dac3717) to the same commit (in `package.json`, `package-lock.json` and `oll-contract.json`), rebuild, commit, and the owner merges.
-3. **Switch-on: Coach #118.** After #116 merges, retarget #118 to `main` (merge `main` into it if needed; never rebase). The owner merges it. Then re-tag M1 coverage (plan 3.1 style).
+3. **Switch-on: Coach #118** targets `main`, and the owner merges it. Then merge Coach #119 (the M1 re-tag) yourself. That closes plan 3.7.
 4. **After 3D**, per the work stack's L3:
    - the rest of 3.6 (program checks; the outline's "no visual" rule, paid; items 6b–6d);
    - 3.5 slice 3 (Studio graph forms);

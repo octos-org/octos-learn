@@ -17,7 +17,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 ## Needs the owner
 
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
-- **Merge, in this order:** Coach #116 (solids judge, cases, `solid_3d` trial recipe; pinned to OLL f712bc4) → Coach #118 (switch-on; stacked on #116, retargeted to main after it). OLL #73 and Learn #165 merged on 2026-11-18.
+- **Review and merge:** Coach #118, the switch-on, which now targets `main`. OLL #73, Learn #165 and Coach #116 merged on 2026-11-18. After #118, I merge Coach #119 (the M1 re-tag, evaluation only).
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
 - **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
 
@@ -61,7 +61,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done:** step 5 prepared. Coach #118 switches on `solid_3d` and retires `cube_with_section`.
   - The default request is byte-identical to the request the gate measured.
   - 132 of 139 recorded lessons replay identically. The other 7 had asked for the cube and now get a new outline.
-- **Then:** after #118 merges, re-tag M1 coverage.
+- **Done (lands after #118):** M1 re-tag, Coach #119. Pictures fully drawn: 35 of 145, up from 33 (the L of two boxes, the prism's counts). The top of the candidate ranking is unchanged: fraction area models, counters and ten frames, data charts.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
   - promised motion the lesson can't do.
@@ -137,6 +137,6 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Open pull requests
 
-- **Merge:** Coach #116, then Coach #118 (3D). OLL #73 and Learn #165 merged on 2026-11-18.
+- **Merge:** Coach #118 (switch-on), then Coach #119 (M1 re-tag; I merge it).
 - **Kept:** Coach #79, the card-rule experiment, kept as a record.
 - **Waiting:** Coach #81, the program-written practice invitation. Waits until recordings show the problem.
