@@ -16,7 +16,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Nothing waiting.** Next ask: the "no visual" probe's design and call count (item 3 below), once the free batch is up.
+- **Merge: Coach #120** (needs code review): a success message whose arithmetic is false is dropped (plan 3.6, the first free check). No request changes; all 139 recorded lessons replay identically.
+- **Next ask:** the "no visual" probe's design and call count (item 3 below), once the free batch is up.
 - **Decided (owner, 2026-11-18):**
   - The rest of 3.6 goes before the 60-question re-run (3.8), in the order of L4.
   - 3.5 slice 3 (Studio graph forms) moves after 3.8: it changes nothing AI lessons draw.
@@ -32,7 +33,9 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 **Why here:** the owner put "stop misleading" first on 2026-11-14 (13 of 58 lessons misled), and it has not been re-measured since. Every misleading lesson was on a question no component fits. Priorities agreed with the owner on 2026-11-18.
 
 **Main track:**
-1. **Now, free (Coach; the owner merges):** program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
+1. **Now, free (Coach; the owner merges):**
+   - **Merge:** wrong arithmetic in praise messages, Coach #120. Census of probe-case recordings: 307 messages, 11 claims read, all true, so the check is a guard that costs nothing.
+   - **Now:** the other program checks (stand-in counts, animations that change nothing); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
 2. **Next, free (evaluation-only):** design the "no visual" probe before asking for money: new cases (overlap-checked), arms, repeats and a two-sided pass bar (fewer misleads where no component fits; no lost pictures where one does). #79's one-run probe (3 of 13 against 1 of 13) could not tell a difference from chance.
 3. **Paid, owner approves:** the probe, with 4a riding along. **Stop rule:** if it shows no benefit, drop the rule and go to 3.8.
 4. **Paid, owner approves:** the speed gate, only if 3 passes.
