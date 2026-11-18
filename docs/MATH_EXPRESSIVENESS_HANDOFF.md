@@ -19,9 +19,9 @@ The current work is **3D solids (plan step 3.7)**. It is built, reviewed three t
 
 | PR | Branch | What | State | Code review? |
 |---|---|---|---|---|
-| OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | Round-3 fixes pushed (7c834cb). Waiting for owner review and merge. | Needs review |
+| OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | Round-4 fix pushed (dac3717: all-BigInt integer square root). Waiting for owner review and merge. | Needs review |
 | Learn #165 | `chore/oll-solids-pin` | Pins OLL (now 8ace553). Studio's `SolidChoice` excludes `two_boxes`. | Waits for OLL #73. Re-pin to #73's **merge commit**, then you merge it. | No review needed (pin) |
-| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-3 fixes pushed (4876cd4; gate record e8ad17e). Pinned to OLL 7c834cb. Waiting for owner review and merge. | Needs review |
+| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-4 fix pushed (b63ef54: exact values held to floating-point noise). Pinned to OLL dac3717. Waiting for owner review and merge. | Needs review |
 | Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Stacked on #116; waiting for owner review and merge | Needs review |
 | Coach #117 | | Revised speed-gate script (`scripts/speed-gate.mjs`) | Merged | — |
 
@@ -45,7 +45,7 @@ Run 1d lost one pair: the model chose a non-lesson reply on one question. Run 1e
 2. **Merge, in order.**
    - The owner merges OLL #73.
    - You re-pin Learn #165 to the merge commit and merge it yourself.
-   - You re-pin Coach #116 to the same commit (in `package.json`, `package-lock.json` and `oll-contract.json`), rebuild, commit, and the owner merges.
+   - You re-pin Coach #116 (now at dac3717) to the same commit (in `package.json`, `package-lock.json` and `oll-contract.json`), rebuild, commit, and the owner merges.
 3. **Switch-on: Coach #118.** After #116 merges, retarget #118 to `main` (merge `main` into it if needed; never rebase). The owner merges it. Then re-tag M1 coverage (plan 3.1 style).
 4. **After 3D**, per the work stack's L3:
    - the rest of 3.6 (program checks; the outline's "no visual" rule, paid; items 6b–6d);
@@ -172,7 +172,7 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 
 **OLL checks:** `npm run check:plot-browser`, `check:number-line-browser` and `check:solids-browser`. New behaviour gets a check that fails on main.
 
-**Test counts at handoff:** OLL 552 and Coach 576, all passing.
+**Test counts at handoff:** OLL 554 and Coach 578, all passing.
 
 ## 6. Traps learned the hard way
 
@@ -192,10 +192,11 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
    - Check `git status` before `git add`.
    - **Force-push is blocked: merge main into a pushed branch, never rebase it.**
    - Push with `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.
-9. **A classifier may deny some actions** (it has denied reading held-out raw replies, and auto-merging). Don't retry; ask the owner.
-10. **The provider writes object properties in schema order.** A field listed before the one the model wants to start with can never be written. 3D probe 1 failed because the height came before the radius. Order every model-facing object's fields so each intended combination can be written in order.
-11. **Number fields reach the model as `{mantissa, scale}` decimals.** `coerceModelNumbers` decodes nested values; schema bytes grow about 31 B per number field.
-12. **Exactness is never a float tolerance.** OLL measures use exact fractions. The solids judge matches a rounded value to half a unit of its last shown digit, with a 64-ulp floor. Three review rounds found the float-tolerance versions wrong.
+9. **The owner's PR reviews and your replies post from the same GitHub account** (`alan0x`). Read the body of every comment newer than your last reply: reviews carry **[P1]/[P2]** findings, and replies start with "Fixed in".
+10. **A classifier may deny some actions** (it has denied reading held-out raw replies, and auto-merging). Don't retry; ask the owner.
+11. **The provider writes object properties in schema order.** A field listed before the one the model wants to start with can never be written. 3D probe 1 failed because the height came before the radius. Order every model-facing object's fields so each intended combination can be written in order.
+12. **Number fields reach the model as `{mantissa, scale}` decimals.** `coerceModelNumbers` decodes nested values; schema bytes grow about 31 B per number field.
+13. **Exactness is never a float tolerance.** OLL measures use exact fractions. The solids judge matches a rounded value to half a unit of its last shown digit, with a 64-ulp floor. Three review rounds found the float-tolerance versions wrong.
 
 ## 7. Local environment (this Mac)
 
