@@ -16,7 +16,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Decide next:** whether the rest of step 3.6 goes before or after the 60-question re-run (3.8). This is the first choice of the next phase. 3.6 covers program checks for stand-in counts, animations that change nothing and wrong arithmetic in praise messages, and the outline's "no visual" rule.
+- **Nothing waiting.** Decided 2026-11-18 (below, L3): the rest of 3.6 goes before the 60-question re-run (3.8). Next ask: the "no visual" probe's call count, once the free work is done.
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` is current as of the end of 3D (2026-11-18), ready for another agent.
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; the agent may merge pins, docs and evaluation-only PRs; every PR is marked as needing a code review or not.
 
@@ -91,11 +91,10 @@ The items below are the record.
 - **Done:** 3.6a The points slip, fixed by #113.
 - **Done:** 3.6 The fixes before 3D: 6e and the plot-judge fix (merged 2026-11-17).
 - **Done:** 3.7 Build 3D solids (L4), on 2026-11-18.
-- **Next:** ask the owner for the order of the rest of 3.6 and the re-run 3.8.
-- **Later:** the rest of 3.6:
-  - program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages);
-  - the outline's "no visual" rule (paid probe);
-  - smaller open items 6b to 6d.
+- **Decided (owner, 2026-11-18):** the rest of 3.6 goes **before** the re-run 3.8, in this order:
+  1. **Now, free:** program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages); 6c; the open part of 6d (the moving-point wording check); and the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0). No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings before marking them done.
+  2. **Next, paid:** the outline's "no visual" rule, with 4a riding along. One control-arm probe, then the speed gate. **Stop rule (set beforehand):** if that one probe shows no benefit, drop the rule and go to 3.8. Call counts go to the owner first.
+  3. **Then, paid:** 3.8.
 - **Later:** 3.5 slice 3, Studio graph forms (after 3D; owner's call, 2026-11-16).
 - **Later:** 3.8 One 60-question re-run (paid). Closes this whole stage.
 
