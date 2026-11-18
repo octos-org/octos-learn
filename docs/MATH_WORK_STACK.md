@@ -17,8 +17,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 ## Needs the owner
 
 - **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe).
-- **Approve:** one paid budget for 3D, the probe and the speed check together, with the pass rules stated up front (asked in chat, 2026-11-17).
-- **Decide:** whether reviews are capped at two rounds, and whether I may merge pins, docs and evaluation-only PRs myself (asked in chat, 2026-11-17).
+- **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
 - **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
 
 ---
@@ -41,7 +40,17 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - The request grows by +730 B. The owner raised the cap from 600 B to about 720 B on 2026-11-17.
   - The slider is learner-only in v1 (owner, 2026-11-17).
   - Default requests are unchanged, and all 139 recorded lessons replay identically.
-- **Next:** step 4, a paid probe on the SD cases, then the speed gate. Waiting for approval.
+- **Done:** step 4a, three paid probes on the SD cases (50–75 calls each). 6 → 10 → 13 of 16 passed, and every lesson was read by hand. Fixes between probes:
+  - the size order (the provider writes fields in schema order);
+  - no outline numbers;
+  - `show` required;
+  - `join: l_shape`.
+  Record: Coach `docs/SOLIDS_PROBE_2026-11-17.md`.
+- **Decided (owner, 2026-11-17):**
+  - Retire `cube_with_section` when `solid_3d` switches on (it already happens while the trial is on).
+  - The open-top box stays a known near miss.
+  - A teacher-driven cut or net is a later 0020-style field.
+- **Now:** step 4b, the speed gate (owner-approved, cap 200 calls).
 - **Then:** step 5, switch on, and re-tag M1.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
