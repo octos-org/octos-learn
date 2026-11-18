@@ -16,13 +16,39 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Nothing waiting.** Decided 2026-11-18 (below, L3): the rest of 3.6 goes before the 60-question re-run (3.8). Next ask: the "no visual" probe's call count, once the free work is done.
+- **Nothing waiting.** Next ask: the "no visual" probe's design and call count (item 3 below), once the free batch is up.
+- **Decided (owner, 2026-11-18):**
+  - The rest of 3.6 goes before the 60-question re-run (3.8), in the order of L4.
+  - 3.5 slice 3 (Studio graph forms) moves after 3.8: it changes nothing AI lessons draw.
+  - A written pass bar before every paid probe and gate is now a plan rule (§5).
+  - There is no real-learner data yet, so every measure stays on the question set and probe cases.
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` is current as of the end of 3D (2026-11-18), ready for another agent.
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; the agent may merge pins, docs and evaluation-only PRs; every PR is marked as needing a code review or not.
 
 ---
 
-## L4 · Done: 3D solids, plan 3.7 (decision 0019), finished and on 2026-11-18
+## L4 · Now: stop misleading, then re-measure (rest of 3.6, then 3.8)
+
+**Why here:** the owner put "stop misleading" first on 2026-11-14 (13 of 58 lessons misled), and it has not been re-measured since. Every misleading lesson was on a question no component fits. Priorities agreed with the owner on 2026-11-18.
+
+**Main track:**
+1. **Now, free (Coach; the owner merges):** program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
+2. **Next, free (evaluation-only):** design the "no visual" probe before asking for money: new cases (overlap-checked), arms, repeats and a two-sided pass bar (fewer misleads where no component fits; no lost pictures where one does). #79's one-run probe (3 of 13 against 1 of 13) could not tell a difference from chance.
+3. **Paid, owner approves:** the probe, with 4a riding along. **Stop rule:** if it shows no benefit, drop the rule and go to 3.8.
+4. **Paid, owner approves:** the speed gate, only if 3 passes.
+5. **Paid, owner approves:** 3.8, the 60-question re-run (the last one was 145 calls).
+
+**Side track (between paid steps):**
+6. **Split the plan:** §7's history moves word for word into a history record; the plan keeps what is ahead. §5, §7 and §8 keep their numbers.
+7. **Done (2026-11-18):** the written pass bar is a plan rule (§5).
+8. **Cumulative speed benchmark:** build it (free, evaluation-only); its first run is paid (about 105–125 calls for 50 pairs), and the owner sets the total budget then (proposed +1.5 s). It catches small costs that add up; it does not change the per-change gate.
+9. **Fractions and area models decision record:** a draft for the owner (no record exists yet; the plan's "0014" is unwritten, and the subject plan reserves 0014 for another diagram, so it takes the next free number).
+
+**After 3.8:** step 4 in strict M1 order (fractions and area models, counters and ten frames, data charts), then 3.5 slice 3.
+
+---
+
+## L4 (previous) · Done: 3D solids, plan 3.7 (decision 0019), finished and on 2026-11-18
 
 **Why here:** 3.6's two fixes are merged (Coach #113–#115). 3D is the next item in the plan.
 
@@ -91,12 +117,9 @@ The items below are the record.
 - **Done:** 3.6a The points slip, fixed by #113.
 - **Done:** 3.6 The fixes before 3D: 6e and the plot-judge fix (merged 2026-11-17).
 - **Done:** 3.7 Build 3D solids (L4), on 2026-11-18.
-- **Decided (owner, 2026-11-18):** the rest of 3.6 goes **before** the re-run 3.8, in this order:
-  1. **Now, free:** program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages); 6c; the open part of 6d (the moving-point wording check); and the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0). No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings before marking them done.
-  2. **Next, paid:** the outline's "no visual" rule, with 4a riding along. One control-arm probe, then the speed gate. **Stop rule (set beforehand):** if that one probe shows no benefit, drop the rule and go to 3.8. Call counts go to the owner first.
-  3. **Then, paid:** 3.8.
-- **Later:** 3.5 slice 3, Studio graph forms (after 3D; owner's call, 2026-11-16).
-- **Later:** 3.8 One 60-question re-run (paid). Closes this whole stage.
+- **Now:** the rest of 3.6 (L4), decided by the owner on 2026-11-18 to go before 3.8.
+- **Next:** 3.8 One 60-question re-run (paid). Closes this whole stage.
+- **Later:** 3.5 slice 3, Studio graph forms. Moved after 3.8 (owner, 2026-11-18; was "after 3D", 2026-11-16).
 
 **How we got to step 3:**
 - The first measurement (2026-11-14) found that 13 of 58 lessons misled learners, mostly on questions no component fits. The owner put "stop misleading" first.
