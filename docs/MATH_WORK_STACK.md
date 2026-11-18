@@ -16,9 +16,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Approve:** one more other-request pair for the speed gate (2 to 8 calls); see L4.
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
-- **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe).
+- **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe) → Coach #118 (switch-on; stacked on #116, retargeted to main after it).
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
 - **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
 
@@ -56,11 +55,13 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - Fitting requests were 1.7 s faster. Other requests were +1.2 s, then +0.75 s, both over the old +0.5 s median limit, though both 95% intervals span 0.
   - Under the old rule this failed, so `solid_3d` stays a trial.
 - **Done:** the speed gate method was revised (owner, 2026-11-18; plan §8; Coach #117). Generated tokens are converted to seconds and judged sequentially. Under it, the solids result is: fitting pass; other **extend** (+0.43 s, interval −0.2 to +2.2 s, 40 pairs).
-- **Done:** gate extensions 1c and 1d (91 calls, 2026-11-18). Pooled result:
-  - fitting: **pass**, −2.17 s;
-  - other: +0.25 s at **79** pairs (interval −0.70 to +1.26 s), so still **extend**. One candidate request got a non-lesson reply from the model, which cost a pair.
-- **Next:** one more other pair (2 to 8 calls, needs owner approval). It reaches the 80-pair cap, where the median (+0.25 s now) decides. Then switch on if the gate passes.
-- **Then:** step 5, switch on, and re-tag M1.
+- **Done:** gate extensions 1c, 1d and 1e (93 calls, 2026-11-18). **The speed gate passed** at the 80-pair cap:
+  - fitting: −2.17 s;
+  - other: median +0.24 s (interval −0.81 to +1.26 s), within +0.5 s.
+- **Done:** step 5 prepared. Coach #118 switches on `solid_3d` and retires `cube_with_section`.
+  - The default request is byte-identical to the request the gate measured.
+  - 132 of 139 recorded lessons replay identically. The other 7 had asked for the cube and now get a new outline.
+- **Then:** after #118 merges, re-tag M1 coverage.
 - **Known, not blocking:** narration is read by hand in the probe:
   - numbers that disagree with the measures line;
   - promised motion the lesson can't do.
@@ -136,6 +137,6 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Open pull requests
 
-- **Merge:** OLL #73, Learn #165, Coach #116 (3D; in that order).
+- **Merge:** OLL #73, Learn #165, Coach #116, Coach #118 (3D; in that order).
 - **Kept:** Coach #79, the card-rule experiment, kept as a record.
 - **Waiting:** Coach #81, the program-written practice invitation. Waits until recordings show the problem.

@@ -22,34 +22,32 @@ The current work is **3D solids (plan step 3.7)**. It is built, reviewed three t
 | OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | Round-3 fixes pushed (7c834cb). Waiting for owner review and merge. | Needs review |
 | Learn #165 | `chore/oll-solids-pin` | Pins OLL (now 8ace553). Studio's `SolidChoice` excludes `two_boxes`. | Waits for OLL #73. Re-pin to #73's **merge commit**, then you merge it. | No review needed (pin) |
 | Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | Round-3 fixes pushed (4876cd4; gate record e8ad17e). Pinned to OLL 7c834cb. Waiting for owner review and merge. | Needs review |
+| Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Stacked on #116; waiting for owner review and merge | Needs review |
 | Coach #117 | | Revised speed-gate script (`scripts/speed-gate.mjs`) | Merged | — |
 
 **Merge order: OLL → Learn → Coach.** The player's feature version gates lessons (trap 3).
 
-**Speed gate (revised method, §5):** runs 1, 1b, 1c and 1d pooled give:
-- fitting requests: **pass**, −2.17 s (95% interval −4.44 to −0.53 s);
-- other requests: **extend**, +0.25 s at **79** pairs (−0.70 to +1.26 s).
+**Speed gate (revised method, §5): passed on 2026-11-18** at the 80-pair cap, pooling runs 1, 1b, 1c, 1d and 1e:
+- fitting requests: −2.17 s (95% interval −4.45 to −0.53 s);
+- other requests: median +0.24 s (interval −0.81 to +1.26 s), within +0.5 s.
 
-Run 1d (50 calls, 2026-11-18) lost one pair: on one question the candidate's model chose a non-lesson reply instead of teaching. This is a model choice, not a crash; an offline replay confirms it. The rule decides by the median at 80 pairs. One more other pair is needed, and its paid calls need owner approval. All four runs are recorded in `SOLIDS_PROBE_2026-11-17.md`.
+Run 1d lost one pair: the model chose a non-lesson reply on one question. Run 1e (2 calls) supplied the 80th pair. The record is in `SOLIDS_PROBE_2026-11-17.md`.
+
+**Coach #118 (switch-on, needs review)** is stacked on #116.
+- `solid_3d` joins the catalog last.
+- `cube_with_section` moves to `RETIRED_RECIPES`.
+- The default request is byte-identical to the trial request the gate measured.
+- 132 of 139 replays are identical. The 7 that change had asked for the cube's features and now get a new outline.
 
 **Next steps, in order:**
 
-1. **Finish the gate**, once the owner approves one more other pair (2 to 8 calls).
-   - Run the §5 command with `--pairs 1`.
-   - Pool all five runs with `node scripts/speed-gate.mjs` (the files are in §5).
-   - Record the result in the Coach probe doc and the work stack.
+1. **Gate: done.**
 2. **Merge, in order.**
    - The owner merges OLL #73.
    - You re-pin Learn #165 to the merge commit and merge it yourself.
    - You re-pin Coach #116 to the same commit (in `package.json`, `package-lock.json` and `oll-contract.json`), rebuild, commit, and the owner merges.
-3. **If the gate passed, switch on** in a new Coach PR (needs review).
-   - Move `solid_3d` from `TRIAL_RECIPES` into the catalog.
-   - Retire `cube_with_section` (owner decision; `TRIAL_RETIRES` already does this while the trial is on).
-   - Re-record `eval/request-hashes.json`, since the default request changes on purpose.
-   - Replays of recorded lessons change only where the cube recipe was used. Explain each change.
-   - Then re-tag M1 coverage (plan 3.1 style).
-4. **If the gate failed:** `solid_3d` stays a trial. Report to the owner with a recommendation; don't re-run without approval. The deferred option is recipe scoping (plan Q5 item 3).
-5. **After 3D**, per the work stack's L3:
+3. **Switch-on: Coach #118.** After #116 merges, retarget #118 to `main` (merge `main` into it if needed; never rebase). The owner merges it. Then re-tag M1 coverage (plan 3.1 style).
+4. **After 3D**, per the work stack's L3:
    - the rest of 3.6 (program checks; the outline's "no visual" rule, paid; items 6b–6d);
    - 3.5 slice 3 (Studio graph forms);
    - then the one 60-question re-run, 3.8 (paid).
