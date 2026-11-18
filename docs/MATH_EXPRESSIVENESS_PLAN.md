@@ -79,7 +79,7 @@ Moving these into the plugin is one small item (step 3 in §7). It changes no le
 | **M1 Coverage** | For what share of the questions can a component draw the picture a good teacher would? | Hand tagging: *fully*, *partly* or *not*. *Not* splits into "extend an existing component" or "needs a new one". | Free |
 | **M2 Chosen and correct** | When a component fits, does the AI lesson use it, and is the picture right? | A paid run over a stratified sample. Automatic checks where a judge exists (today only the number line); otherwise read by hand. | Paid |
 | **M3 Never misleads** | When nothing fits, does the lesson leave the picture out rather than draw a wrong one? | Same run, read by hand. | Paid |
-| **M4 Speed and size** | Did the lesson get slower or the request bigger? | First-playable p50 within +0.5 s (live comparison); plugin budgets (offline, every build). | Paid live comparison per adopted component |
+| **M4 Speed and size** | Did the lesson get slower or the request bigger? | Generated tokens converted to seconds, judged sequentially within +0.5 s (revised 2026-11-18, §8); a periodic benchmark of main against a frozen reference for the total; plugin budgets (offline, every build). | Paid live comparison per adopted component |
 
 All four are reported by grade band. M1's split decides the order of work (§6), so the order is measured, not assumed.
 
@@ -216,7 +216,7 @@ The owner has confirmed that fractions and charts stay in the plan.
 
 ## 8. Decisions
 
-Q1–Q4 and the M4 rule were accepted on 2026-11-12. Q5's first decision, request headroom, was accepted on 2026-11-14 (below); the rest of Q5 stays open.
+Q1–Q4 and the M4 rule were accepted on 2026-11-12; the M4 rule was revised on 2026-11-18 (below). Q5's first decision, request headroom, was accepted on 2026-11-14 (below); the rest of Q5 stays open.
 
 - **Q1 Budget.** Move unspent budget from the paused plugins to math (recommended: math 5,800 → 9,900 bytes; physics 2,086 → 600, still above its 449; chemistry, biology and Earth & space 1,000 → 100 each; shared unchanged at 2,265). The budgets then total 13,065 bytes, below today's 13,151, which is the live-tested headroom. No ceiling is raised and no live comparison is needed. At roughly 200 bytes per recipe, this leaves room for about 20 more math recipes or extensions. The budget limits size, not speed: runs 9 and 9b showed that about 250 tokens of number-line guidance slowed other requests by seconds, while 1,331 tokens of unavailable cards in the 2026-11-11 experiment cost nothing. What a card says matters more than its length. Resuming another subject later means giving its budget back, or building scoped requests first. Scoping by subject (S14) would save little for a math request, since everything outside math is about 720 bytes. Growth inside math is Q5.
 - **Q2 Question set.** About 160 questions, banded as in §3, mostly in English with a fifth in Chinese, and a quarter held out. Recommended as written.
@@ -224,6 +224,18 @@ Q1–Q4 and the M4 rule were accepted on 2026-11-12. Q5's first decision, reques
 - **Q4 Order.** The order of components follows M1's measured gain per cost, not a fixed list. Fractions and charts stay in the plan regardless. Recommended.
 
 - **M4 rule (accepted 2026-11-12).** The speed comparison used to judge one median over requests that use the new component and requests that don't. Live traffic is mostly the latter, and a gain on one side hid a loss on the other. From now on the two are judged separately, each by its paired median at most +0.5 s. The harness computes this verdict (Coach #73).
+- **M4 rule revised (owner, 2026-11-18).**
+  - **Why.** In the 3D solids gate, time to the first playable part was about 1.9 s + 5.3 ms per generated token (output and thinking, every call). That explains 67% of the variance; the rest is the provider's latency, which no request change causes. Per pair, wall-clock differences spread about ±4.8 s, so 20 pairs cannot settle ±0.5 s. A change costing nothing failed the old rule about 1 time in 8, and a real cost could pass. The input itself is not the cost: the 3D trial added 27 prompt tokens. What grew was the model's generated tokens (thinking).
+  - **Measure.** Per request, the tokens generated until the first playable part, converted to seconds at the run's own fitted rate. Wall-clock time is still recorded, as a cross-check.
+  - **Rule,** for fitting and other requests separately, on the paired differences:
+    - **pass** when the upper end of the bootstrap 95% interval of the median is at most +0.5 s;
+    - **fail** when its lower end is above +0.5 s;
+    - **otherwise extend** by 20 pairs (about 50 calls), up to 80 pairs, where the median at most +0.5 s decides.
+    - A planned group with no complete pair is incomplete.
+    Runs of the same two builds are pooled. Each extension still needs the owner's approval with its call count.
+  - **Cumulative cost.** Small per-recipe costs can each pass and still add up. A periodic benchmark (after every few switch-ons) runs main against a frozen reference build on a fixed set of about 50 requests, against a total budget (proposed: +1.5 s; set by the owner at the first benchmark).
+  - **Tooling.** Coach `scripts/speed-gate.mjs` (Coach #117). The harness reports the revised verdict as `speed` and the old rule as `speed_wall_clock`.
+  - **Not chosen now.** Scoping which recipes a request is offered (Q5 item 3) stays deferred (owner, 2026-11-18): the input size is not the main cost.
 - **Q5 decision (accepted 2026-11-14): request headroom.**
   - **The problem.** The fallback-outline, later-section, section-repair and first-section-retry ceilings sat at their measured maxima (Coach #72): 98–158 B of total headroom and 0 B of schema headroom. No new component fit; the number-line and function-plot extensions need about 1–1.2 KB.
   - **The change** (Coach #83): each of those paths gets +2,000 B in total and in schema, on every input route. First-request and practice ceilings are unchanged.
