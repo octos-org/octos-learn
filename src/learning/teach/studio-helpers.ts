@@ -59,7 +59,7 @@ export function solidName(shape: SolidShape, sides?: number): string {
 
 /** What a stack of two solids is called. */
 export function compositeName(parts: Extract<Solid, { shape: "composite" }>["parts"]): string {
-  return { cylinder_cone: tr("圆柱 + 圆锥"), cylinder_hemisphere: tr("圆柱 + 半球"), box_pyramid: tr("长方体 + 棱锥"), two_cylinders: tr("两个圆柱") }[parts];
+  return { cylinder_cone: tr("圆柱 + 圆锥"), cylinder_hemisphere: tr("圆柱 + 半球"), box_pyramid: tr("长方体 + 棱锥"), two_cylinders: tr("两个圆柱"), two_boxes: tr("两个长方体（L 形）") }[parts];
 }
 
 /** A solid's name: a six-sided prism, a truncated pyramid, a cylinder with a cone on top. */

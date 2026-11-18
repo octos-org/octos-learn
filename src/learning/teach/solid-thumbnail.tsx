@@ -1,6 +1,8 @@
 import type { Solid, SolidShape } from "./recording";
 
-export type SolidChoice = Exclude<SolidShape, "composite"> | "cube" | "truncated" | Extract<Solid, { shape: "composite" }>["parts"];
+// Two boxes side by side (an L shape, OLL decision 0019) are drawn for AI lessons; whether Studio offers
+// them is a separate decision, so they are not a choice here.
+export type SolidChoice = Exclude<SolidShape, "composite"> | "cube" | "truncated" | Exclude<Extract<Solid, { shape: "composite" }>["parts"], "two_boxes">;
 
 const thumbnails: Record<SolidChoice, readonly [silhouette: string, edges: string]> = {
   box: ["M4 11 16 5 28 10v12l-12 6-12-5Z", "m4 11 12 5 12-6m-12 6v12"],
