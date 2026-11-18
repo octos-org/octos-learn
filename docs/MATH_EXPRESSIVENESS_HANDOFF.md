@@ -97,8 +97,10 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 - **Label every PR you report "Needs code review" or "No review needed"**, with a one-line reason.
   - Lessons, requests, recipes, renderers and judges need review.
   - Pins, docs and records don't.
-- **Merge authority:** you may merge pin bumps, docs-only and evaluation-only PRs yourself once tests pass. The owner merges everything that changes lessons, requests, recipes or renderers.
-- **Reviews are capped at two rounds.** Only a wrong or misleading picture or narration blocks; list the rest as "Known issues" in the PR body. (#73 and #116 had a third round, from the owner's own review.)
+- **Reviews run until nothing blocks (owner, 2026-11-18; replaces the two-round cap of 2026-11-17).** Review, fix, and review again, with no limit on rounds, until a round finds no blocking issue.
+  - **Blocking:** a wrong or misleading picture, narration or other text the learner sees, or a failing test or CI check.
+  - **Not blocking:** everything else. List it as "Known issues" in the PR body.
+- **Merge authority (owner, 2026-11-18):** once a review round finds nothing blocking and tests pass, you merge the PR yourself, including PRs that change lessons, requests, recipes or renderers. Pins, docs-only and evaluation-only PRs merge once tests pass, as before. Paid model calls still need the owner's approval first.
 
 **Communication:**
 - **Short answers, with recommendations rather than surveys.** Point to the work stack for detail. Avoid inflated framing.
