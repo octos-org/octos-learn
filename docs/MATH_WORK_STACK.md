@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-17. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-18. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -16,47 +16,60 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Merge:** Coach #115, the plot judge fix. It only affects evaluation: no lesson, request or recipe changes. After it, the next step is 3D.
-- **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build. The plan only says "before the re-run".
+- **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
+- **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe) → Coach #118 (switch-on; stacked on #116, retargeted to main after it).
+- **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
+- **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
 
 ---
 
-## L4 · Now: two small fixes before 3D (both done)
+## L4 · Now: 3D solids, plan 3.7 (decision 0019)
 
-**Why here:** both turned up while testing the points fix (Coach #113) on 2026-11-16. The re-run and the 3D work would count them as failures if they stayed.
+**Why here:** 3.6's two fixes are merged (Coach #113–#115). 3D is the next item in the plan.
 
-- **Done:** points on function plots (Coach #113, merged 2026-11-16).
-  - Paired test: 19 of 20 lessons against 18 of 20.
-  - Speed check passed.
-  - Cost that day about $1.25.
-- **Done:** plan item 6e, merged 2026-11-17 (OLL #72, Learn #163, Coach #114).
-  - Before: a dragged point crossing a gap in the curve (x = −1 on y = 2/(x + 1)) broke the lesson at that slider position.
-  - Now: the point hides there and comes back, and the slope readout says why instead of measuring a stale point. Player 0.12.0, feature `plot:secant-hide-undefined`.
-  - No model request changed.
-  - All 139 recorded lessons and all 2,080 fixture runs are the same apart from the new flag.
-- **Merge:** plot judge false alarm (Coach #115).
-  - Where a slider moves a domain bar's end, the judge read the function a rounding step beside the end and called correct lessons wrong.
-  - It now reads the function at the end itself.
-  - Re-judging all 196 saved lessons changes one verdict, the known PJ-10 false alarm, which now passes.
-- **Later:** a dragged point on a curve a slider moves can be left undrawn (same as before #113). Watch for it in recordings.
+- **Done:** step 1, OLL render work (OLL #73, awaiting merge).
+  - A second solid can stand beside the first, centred and framed together. One plane cuts both, and both nets open without touching.
+  - A line under the scene shows the volume, surface area or face/edge/vertex counts. The program computes them, and they are exact where possible (`12π ≈ 37.70`). The player draws it from 0.13.0.
+  - New composite: two boxes side by side (an L shape).
+  - New browser check: `check:solids-browser`.
+- **Done:** step 2, the solids judge and 22 cases (Coach #116).
+  - Cases: SD-01–15, six near misses and one control.
+  - Expectations were written before any recipe code.
+  - Every case is at most 0.20 against open questions and 0.15 against held-out ones.
+- **Done:** step 3, the `solid_3d` trial recipe (Coach #116).
+  - The model writes shapes, the sizes the question states, `join`, `show` and `interaction`. The program does the logic.
+  - The request grows by +730 B. The owner raised the cap from 600 B to about 720 B on 2026-11-17.
+  - The slider is learner-only in v1 (owner, 2026-11-17).
+  - Default requests are unchanged, and all 139 recorded lessons replay identically.
+- **Done:** step 4a, three paid probes on the SD cases (50–75 calls each). 6 → 10 → 13 of 16 passed, and every lesson was read by hand. Fixes between probes:
+  - the size order (the provider writes fields in schema order);
+  - no outline numbers;
+  - `show` required;
+  - `join: l_shape`.
+  Record: Coach `docs/SOLIDS_PROBE_2026-11-17.md`.
+- **Decided (owner, 2026-11-17):**
+  - Retire `cube_with_section` when `solid_3d` switches on (it already happens while the trial is on).
+  - The open-top box stays a known near miss.
+  - A teacher-driven cut or net is a later 0020-style field.
+- **Done:** step 4b, the speed gate and its allowed repeat (155 calls).
+  - Fitting requests were 1.7 s faster. Other requests were +1.2 s, then +0.75 s, both over the old +0.5 s median limit, though both 95% intervals span 0.
+  - Under the old rule this failed, so `solid_3d` stays a trial.
+- **Done:** the speed gate method was revised (owner, 2026-11-18; plan §8; Coach #117). Generated tokens are converted to seconds and judged sequentially. Under it, the solids result is: fitting pass; other **extend** (+0.43 s, interval −0.2 to +2.2 s, 40 pairs).
+- **Done:** gate extensions 1c, 1d and 1e (93 calls, 2026-11-18). **The speed gate passed** at the 80-pair cap:
+  - fitting: −2.17 s;
+  - other: median +0.24 s (interval −0.81 to +1.26 s), within +0.5 s.
+- **Done:** step 5 prepared. Coach #118 switches on `solid_3d` and retires `cube_with_section`.
+  - The default request is byte-identical to the request the gate measured.
+  - 132 of 139 recorded lessons replay identically. The other 7 had asked for the cube and now get a new outline.
+- **Then:** after #118 merges, re-tag M1 coverage.
+- **Known, not blocking:** narration is read by hand in the probe:
+  - numbers that disagree with the measures line;
+  - promised motion the lesson can't do.
+  A regex check waits for a census of recorded messages. Surface area is always the whole surface: open-box and lateral-area questions are near misses.
 
-### How we got here: the points story
+### Before 3D: the points story (2026-11-15 to 11-17)
 
-- **Problem (2026-11-15):** to put a point on a graph, the model had to write which slider each point belongs to (`sample_x_numbers`, an index into the outline's numbers).
-  - It wrote x positions instead (`[1, 3]` meaning x = 1 and 3), and repeated the mistake on every retry.
-  - 2 of 40 lessons in the speed check came out empty. Recordings showed 42 such slips.
-- **Fixes that failed review:**
-  - #102 repaired the numbers by guessing from the lesson text, which could draw a wrong picture.
-  - #105 restricted the field to an enum, which tied points to the wrong slider.
-  - #105, narrowed, dropped the field, which let a piecewise function publish as two full lines (PJ-07).
-  - #109, a piecewise check, let the wording decide the drawing.
-  - #110 re-asked without the field, which published narration about points that were never drawn.
-- **The owner's two principles (2026-11-16):**
-  1. The model writes meaning, and the program does exact logic.
-  2. The program copes with the model's randomness and still ends correct.
-  - The advisor's rule, accepted by the owner: wording may trigger a re-ask, never decide what is drawn.
-  - The real cause was that the model's intent had nowhere to go.
-- **Fix:** decision 0020 (OLL). The model writes points as it means them: `{x, y}` for a fixed point, `{slider}` for a dragged one. Built in Coach #113, reviewed twice, tested, and merged. The two items above turned up during those tests.
+- Asking the model for an index into the outline's numbers (`sample_x_numbers`) failed: it wrote x positions instead. Five fixes failed review. Decision 0020 ("the model writes meaning, the program writes logic") fixed it in Coach #113. Plan item 6e and the plot-judge fix followed (#114, #115).
 
 ---
 
@@ -70,8 +83,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done:** 3.4 No math special cases left outside the math plugin (Coach half). Two small follow-ups (4a, 4b) ride with later changes.
 - **Done:** 3.5 Studio uses the same builders: number line and plot marks.
 - **Done:** 3.6a The points slip, fixed by #113.
-- **Now:** 3.6 Fixes before the re-run. 6e is merged; the judge fix is waiting for merge (L4).
-- **Next:** 3.7 Build 3D solids. Built under the "model writes meaning" rule from the start. The paid probe and the speed check are each approved by the owner first.
+- **Done:** 3.6 The fixes before 3D: 6e and the plot-judge fix (merged 2026-11-17).
+- **Now:** 3.7 Build 3D solids (L4). Steps 1–3 are built and in review; the paid probe is next.
 - **Later:** the rest of 3.6:
   - program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages);
   - the outline's "no visual" rule (paid probe);
@@ -124,6 +137,6 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Open pull requests
 
-- **Merge:** Coach #115, the plot judge fix (evaluation only).
+- **Merge:** OLL #73, Learn #165, Coach #116, Coach #118 (3D; in that order).
 - **Kept:** Coach #79, the card-rule experiment, kept as a record.
 - **Waiting:** Coach #81, the program-written practice invitation. Waits until recordings show the problem.
