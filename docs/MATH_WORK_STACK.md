@@ -17,7 +17,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 ## Needs the owner
 
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` was rewritten on 2026-11-18 so another agent can take over.
-- **Merge, in this order:** OLL #73 (3D render work, player 0.13.0) → Learn #165 (pin; I re-pin to the merge commit first) → Coach #116 (solids judge, cases, `solid_3d` trial recipe) → Coach #118 (switch-on; stacked on #116, retargeted to main after it).
+- **Merge, in this order:** Coach #116 (solids judge, cases, `solid_3d` trial recipe; pinned to OLL f712bc4) → Coach #118 (switch-on; stacked on #116, retargeted to main after it). OLL #73 and Learn #165 merged on 2026-11-18.
 - **Rules (owner, 2026-11-17):** reviews are capped at two rounds; I may merge pins, docs and evaluation-only PRs myself; every PR is marked as needing a code review or not.
 - **Decide (later):** before the 60-question re-run, whether the rest of step 3.6 (program checks, the outline's substitution rule) goes before or after the 3D build.
 
@@ -137,6 +137,6 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Open pull requests
 
-- **Merge:** OLL #73, Learn #165, Coach #116, Coach #118 (3D; in that order).
+- **Merge:** Coach #116, then Coach #118 (3D). OLL #73 and Learn #165 merged on 2026-11-18.
 - **Kept:** Coach #79, the card-rule experiment, kept as a record.
 - **Waiting:** Coach #81, the program-written practice invitation. Waits until recordings show the problem.
