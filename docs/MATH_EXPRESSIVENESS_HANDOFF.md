@@ -38,9 +38,12 @@ As of 2026-11-18. Read in this order:
 2. **The rest of 3.6** (order and stop rule in the work stack's L3):
    - free: program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages), 6c, the open part of 6d, and the two renderer defects in plan 3.6 (slope triangle across a pole, cancellation near a = 0);
    - paid: the outline's "no visual" rule (a control-arm probe, then the gate; dropped if the probe shows no benefit).
-3. **3.5 slice 3:** Studio graph forms.
-4. **3.8:** one 60-question re-run (paid). It closes step 3.
-5. **Step 4:** new components in the order M1 sets.
+3. **3.8:** one 60-question re-run (paid). It closes step 3.
+4. **Step 4:** new components in strict M1 order (fractions and area models first).
+5. **3.5 slice 3:** Studio graph forms, moved after 3.8 (owner, 2026-11-18).
+6. **Side track** (work stack L4, items 6–9): split the plan's history out, the cumulative speed benchmark, the fractions decision record draft.
+- **New rule (owner, 2026-11-18):** every paid probe or gate states a written pass bar first (plan §5).
+- **There is no real-learner data yet** (owner, 2026-11-18).
 
 **Known and accepted (not blocking):**
 - An open-top box is a near miss: surface area is always the whole surface.

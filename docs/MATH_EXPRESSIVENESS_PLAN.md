@@ -105,6 +105,8 @@ What the number line taught us, made into a checklist so that the next component
 7. **Studio and CoursePacks** use the same builder.
 8. **Switched on** in a separate change, then M1–M3 are re-measured.
 
+**Rule: a written pass bar (owner, 2026-11-18).** Before any paid probe or gate runs, its record states the cases, the arms, the repeats and the pass bar. Where a change can also cost something, the bar has two sides: what it must improve, and what it must not lose. The result is judged only against that bar, and the bar is never changed after the run. A near pass is reported as a miss; another probe is a new paid step that the owner approves like any other.
+
 ## 6. Candidates
 
 Two kinds, ranked by M1 gain per unit of cost once the baseline exists. The list below is a starting point; M1's split will add to it and re-order it.
@@ -185,7 +187,7 @@ The owner has confirmed that fractions and charts stay in the plan.
       - **Course packs** write OLL directly and call no builder, so they need no work here.
       - **Slice 1: done (2026-11-16).** The number-line form's checks are in the plugin (OLL #68), and Studio's form takes up to three moves (Learn #159), both merged after review. The choices are recorded in 0017's Studio section.
       - **Slice 2: done (2026-11-16).** The plot-mark derivation moved from Coach into the plugin (OLL #69, Coach #106), merged after review. Every recorded lesson and request is unchanged.
-      - **Slice 3:** Studio graph forms: mark toggles, two reference points, pieces. **After the 3D build (3.7)** (owner, 2026-11-16).
+      - **Slice 3:** Studio graph forms: mark toggles, two reference points, pieces. **After the 3D build (3.7)** (owner, 2026-11-16). **Moved after the re-run 3.8** (owner, 2026-11-18): it changes nothing AI lessons draw.
    6a. **The `sample_x_numbers` slip** (found in 3.2). The model writes x positions where lesson-number indexes belong (`[1, 3]` for x = 1 and 3) and repeats it on every retry.
       - **Why not a repair in place:** #102 tried one and was closed after two code reviews. Any repair that reads the lesson's text to judge whether the formula is the real curve can draw a wrong picture.
       - **Census** (corrected): 42 recorded slips. 15 on section calls in lessons with no lesson numbers, including both lessons the gate lost; 12 on section calls with numbers; 15 on bootstrap calls.
@@ -204,7 +206,7 @@ The owner has confirmed that fractions and charts stay in the plan.
         - All three were found on main; 6c and 6d go with 3.6's program checks.
         - **6e. Done (2026-11-17; OLL #72, Learn #163, Coach #114).** A moving point whose slider spans a pole (y = 2/(x + 1) with x from −5 to 5) failed the lesson at that slider state. Sample points now bind y with `hide_when_undefined`: the point hides at the pole and comes back, and the secant readout says the function is not defined there (player 0.12.0, `plot:secant-hide-undefined`). No request changed; recorded lessons and fixtures are unchanged apart from the flag.
         - **The plot judge's false positive for slider-moved poles: fixed in Coach #115 (awaiting merge).** Near a domain bar's end the judge reads the function at the end itself. Re-judging 196 saved lessons changes one verdict, the known PJ-10 false miss.
-   6. **Before the 60-question re-run, everything that run will judge:**
+   6. **Before the 60-question re-run, everything that run will judge** (order confirmed by the owner, 2026-11-18: free checks first, then one designed "no visual" probe with a stop rule, then 3.8; detail in the work stack's L4):
       - **Program checks** (free): undisclosed stand-in counts, animations that change nothing, and wrong arithmetic in model-written success messages (§10 items 4 and 5). They change no request. They are developed on the probe recordings (PA cases), never on the question set. Each record says what happens on a hit, since a refusal costs a call.
       - **The outline's substitution rule** (paid probe): rewrite it, and allow "no visual" when nothing fits, net of bytes. It changes requests, so it comes after 3.2's gate, with a control-arm probe.
       - **Defects that can draw a wrong picture or miscount** (free; §10 item 7): the plot judge's false positive for slider-moved poles (fixed, Coach #115); a slope triangle straddling an interior pole; floating-point cancellation near a = 0.
