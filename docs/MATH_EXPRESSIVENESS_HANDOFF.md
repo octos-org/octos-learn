@@ -10,55 +10,47 @@ As of 2026-11-18. Read in this order:
    - §8 holds the decisions, including the M4 speed rule as revised on 2026-11-18.
 4. **OLL decisions 0020 and 0019**, in `octos-lesson-language/decisions/`.
    - 0020 is the standing rule.
-   - 0019, as amended, is the 3D design now being finished.
+   - 0019, as amended, is the 3D design (shipped 2026-11-18).
 5. **The Coach run records for 3D:** `learning-coach/docs/SOLIDS_JUDGE_2026-11-17.md` and `docs/SOLIDS_PROBE_2026-11-17.md`.
 
 ## 0. Where things stand (2026-11-18)
 
-The current work is **3D solids (plan step 3.7)**. It is built, reviewed three times, and close to switching on.
+**3D solids (plan step 3.7) is finished and on.** Every PR is merged, and no PRs of this work are open.
 
-| PR | Branch | What | State | Code review? |
-|---|---|---|---|---|
-| OLL #73 | `feat/solids-beside-show` | `buildSolid`: a second solid `beside`, the measures line `show`, the L-shaped `two_boxes` composite, `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | **Merged** 2026-11-18 (merge commit f712bc4). | — |
-| Learn #165 | `chore/oll-solids-pin` | Pins OLL (now 8ace553). Studio's `SolidChoice` excludes `two_boxes`. | **Merged** 2026-11-18, pinned to f712bc4. | — |
-| Coach #116 | `feat/solid-3d` | Solids judge and 22 cases, `solid_3d` **trial** recipe, harness support, gate records | **Merged** 2026-11-18 (c7727af), pinned to OLL f712bc4. | — |
-| Coach #118 | `feat/solid-3d-switch-on` | Switch on `solid_3d`; retire `cube_with_section` | Targets `main`; CI passes; waiting for owner review and merge | Needs review |
-| Coach #119 | `eval/m1-retag-solids` | M1 re-tag after the switch-on: 35 of 145 pictures fully drawn | Merge it yourself after #118 | No review needed (evaluation record) |
-| Coach #117 | | Revised speed-gate script (`scripts/speed-gate.mjs`) | Merged | — |
+| PR | What | Merged |
+|---|---|---|
+| OLL #73 | `buildSolid`: a second solid `beside`; the program-computed measures line `show` (exact fractions; `=` only for ≤ 3 decimal places or nπ/d, d ≤ 12); the L-shaped `two_boxes` composite; `cutRange`; player 0.13.0 with feature `scene3d:caption`; `check:solids-browser` | f712bc4 |
+| Learn #165 | Pins OLL f712bc4. Studio's `SolidChoice` excludes `two_boxes`. | yes |
+| Coach #116 | Solids judge and 22 SD cases, the `solid_3d` recipe (then a trial), harness support, probe and gate records | c7727af |
+| Coach #117 | Revised speed-gate script (`scripts/speed-gate.mjs`) | yes |
+| Coach #118 | Switch-on: `solid_3d` last in the catalog; `cube_with_section` in `RETIRED_RECIPES` | f50f239 |
+| Coach #119 | M1 re-tag after the switch-on (`testsuite/math-expressiveness-m1-2026-11-18.json`) | yes |
 
-**Merge order: OLL → Learn → Coach.** The player's feature version gates lessons (trap 3).
+**What it took:**
+- **Paid calls:** three probes (6 → 10 → 13 of 16 SD cases) and five speed-gate runs. The gate passed at the 80-pair cap: fitting requests −2.17 s; other requests median +0.24 s (interval −0.81 to +1.26 s).
+- **Review:** five rounds on the judge and the measures. They left exactness on exact fractions and noise-only comparisons (trap 14).
+- **Request cost:** +801 B, accepted by the owner.
+- **Defaults on `main`:** the default request is byte-identical to the one the gate measured. 132 of 139 recorded lessons replay identically; the other 7 had asked for the retired cube and now get a new outline.
+- **M1:** pictures fully drawn rose from 33 to 35 of 145. The top of the candidate ranking is unchanged: fraction area models, counters and ten frames, data charts.
 
-**Speed gate (revised method, §5): passed on 2026-11-18** at the 80-pair cap, pooling runs 1, 1b, 1c, 1d and 1e:
-- fitting requests: −2.17 s (95% interval −4.45 to −0.53 s);
-- other requests: median +0.24 s (interval −0.81 to +1.26 s), within +0.5 s.
-
-Run 1d lost one pair: the model chose a non-lesson reply on one question. Run 1e (2 calls) supplied the 80th pair. The record is in `SOLIDS_PROBE_2026-11-17.md`.
-
-**Coach #118 (switch-on, needs review)** is stacked on #116.
-- `solid_3d` joins the catalog last.
-- `cube_with_section` moves to `RETIRED_RECIPES`.
-- The default request is byte-identical to the trial request the gate measured.
-- 132 of 139 replays are identical. The 7 that change had asked for the cube's features and now get a new outline.
-
-**Next steps, in order:**
-
-1. **Gate: done.**
-2. **Merge, in order.**
-   - The owner merges OLL #73.
-   - You re-pin Learn #165 to the merge commit and merge it yourself.
-   - You re-pin Coach #116 (now at dac3717) to the same commit (in `package.json`, `package-lock.json` and `oll-contract.json`), rebuild, commit, and the owner merges.
-3. **Switch-on: Coach #118** targets `main`, and the owner merges it. Then merge Coach #119 (the M1 re-tag) yourself. That closes plan 3.7.
-4. **After 3D**, per the work stack's L3:
-   - the rest of 3.6 (program checks; the outline's "no visual" rule, paid; items 6b–6d);
-   - 3.5 slice 3 (Studio graph forms);
-   - then the one 60-question re-run, 3.8 (paid).
-   - Raise the 3.6-before-or-after question with the owner before the re-run.
+**Next (plan §7, the work stack's L3):**
+1. **Ask the owner first** whether the rest of 3.6 goes before or after the 60-question re-run (3.8). This choice is still open.
+2. **The rest of 3.6:**
+   - program checks (stand-in counts, animations that change nothing, wrong arithmetic in praise messages);
+   - the outline's "no visual" rule (a paid probe);
+   - smaller items 6b–6d.
+3. **3.5 slice 3:** Studio graph forms.
+4. **3.8:** one 60-question re-run (paid). It closes step 3.
+5. **Step 4:** new components in the order M1 sets.
 
 **Known and accepted (not blocking):**
 - An open-top box is a near miss: surface area is always the whole surface.
 - A teacher-driven cut or net is a later 0020-style field; the slider is learner-only in v1.
-- Narration can state numbers that disagree with the measures line, or promise motion. This is read by hand in probes; a regex check waits for a census of recorded messages.
-- A periodic cumulative speed benchmark of main against a frozen reference is proposed (budget +1.5 s), not yet built.
+- Narration can state numbers that disagree with the measures line, or promise motion. Probes read this by hand; a regex check waits for a census of recorded messages.
+- A periodic cumulative speed benchmark of `main` against a frozen reference is proposed (budget +1.5 s), not yet built.
+- `TRIAL_RETIRES` is empty. It is kept for the next trial that replaces a recipe.
+
+**Merge order for any new player feature: OLL → Learn → Coach** (trap 3).
 
 ## 1. Repositories
 
@@ -173,7 +165,7 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
 
 **OLL checks:** `npm run check:plot-browser`, `check:number-line-browser` and `check:solids-browser`. New behaviour gets a check that fails on main.
 
-**Test counts at handoff:** OLL 554 and Coach 579, all passing.
+**Test counts at handoff:** OLL 554, Coach 582 and Learn 2049 unit tests, all passing.
 
 ## 6. Traps learned the hard way
 
@@ -193,11 +185,12 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
    - Check `git status` before `git add`.
    - **Force-push is blocked: merge main into a pushed branch, never rebase it.**
    - Push with `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`.
-9. **The owner's PR reviews and your replies post from the same GitHub account** (`alan0x`). Read the body of every comment newer than your last reply: reviews carry **[P1]/[P2]** findings, and replies start with "Fixed in".
-10. **A classifier may deny some actions** (it has denied reading held-out raw replies, and auto-merging). Don't retry; ask the owner.
-11. **The provider writes object properties in schema order.** A field listed before the one the model wants to start with can never be written. 3D probe 1 failed because the height came before the radius. Order every model-facing object's fields so each intended combination can be written in order.
-12. **Number fields reach the model as `{mantissa, scale}` decimals.** `coerceModelNumbers` decodes nested values; schema bytes grow about 31 B per number field.
-13. **Exactness is never a float tolerance.** OLL measures use exact fractions. The solids judge matches a rounded value to half a unit of its last shown digit, with a 64-ulp floor. Three review rounds found the float-tolerance versions wrong.
+9. **Learn's `pnpm test` is the full Playwright suite.** It is slow and regenerates screenshots under `docs/`. For a pin bump, run `npx vitest run` and `npx tsc --noEmit -p .`, and let CI run the end-to-end smoke test. Never `git commit -a` in Learn after a local Playwright run.
+10. **The owner's PR reviews and your replies post from the same GitHub account** (`alan0x`). Read the body of every comment newer than your last reply: reviews carry **[P1]/[P2]** findings, and replies start with "Fixed in".
+11. **A classifier may deny some actions** (it has denied reading held-out raw replies, and auto-merging). Don't retry; ask the owner.
+12. **The provider writes object properties in schema order.** A field listed before the one the model wants to start with can never be written. 3D probe 1 failed because the height came before the radius. Order every model-facing object's fields so each intended combination can be written in order.
+13. **Number fields reach the model as `{mantissa, scale}` decimals.** `coerceModelNumbers` decodes nested values; schema bytes grow about 31 B per number field.
+14. **Exactness is never a float tolerance.** OLL measures use exact fractions. The solids judge matches a rounded value to half a unit of its last shown digit, with a 64-ulp floor. Three review rounds found the float-tolerance versions wrong.
 
 ## 7. Local environment (this Mac)
 
