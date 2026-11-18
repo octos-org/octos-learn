@@ -24,7 +24,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - A written pass bar before every paid probe and gate is now a plan rule (§5).
   - There is no real-learner data yet, so every measure stays on the question set and probe cases.
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` is current as of the end of 3D (2026-11-18), ready for another agent.
-- **Rules (owner, 2026-11-17):** reviews are capped at two rounds; the agent may merge pins, docs and evaluation-only PRs; every PR is marked as needing a code review or not.
+- **Rules (owner, 2026-11-18, replacing 2026-11-17's):** reviews run round after round until one finds nothing blocking; the agent then merges any PR itself, lesson-changing ones included; every PR is still marked as needing a code review or not. Paid calls still need the owner's approval.
 
 ---
 
@@ -33,7 +33,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 **Why here:** the owner put "stop misleading" first on 2026-11-14 (13 of 58 lessons misled), and it has not been re-measured since. Every misleading lesson was on a question no component fits. Priorities agreed with the owner on 2026-11-18.
 
 **Main track:**
-1. **Now, free (Coach; the owner merges):**
+1. **Now, free (Coach; merged by the agent once a review finds nothing blocking):**
    - **Merge:** wrong arithmetic in praise messages, Coach #120. Census of probe-case recordings: 307 messages, 11 claims read, all true, so the check is a guard that costs nothing.
    - **Now:** the other program checks (stand-in counts, animations that change nothing); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
 2. **Next, free (evaluation-only):** design the "no visual" probe before asking for money: new cases (overlap-checked), arms, repeats and a two-sided pass bar (fewer misleads where no component fits; no lost pictures where one does). #79's one-run probe (3 of 13 against 1 of 13) could not tell a difference from chance.
