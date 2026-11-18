@@ -98,8 +98,14 @@ All live side by side under one `OctosLearn/` folder (on this Mac: `/Users/yy/Do
   - Lessons, requests, recipes, renderers and judges need review.
   - Pins, docs and records don't.
 - **Reviews run until nothing blocks (owner, 2026-11-18; replaces the two-round cap of 2026-11-17).** Review, fix, and review again, with no limit on rounds, until a round finds no blocking issue.
-  - **Blocking:** a wrong or misleading picture, narration or other text the learner sees, or a failing test or CI check.
-  - **Not blocking:** everything else. List it as "Known issues" in the PR body.
+  - **Blocking means something the PR causes** (decision 0019's "no worse than today"):
+    - the learner sees something wrong or misleading that main would not show;
+    - a lesson that compiles on main is lost;
+    - a request or hash changes unintentionally;
+    - a test, CI check or runtime path breaks.
+  - **Not blocking:** everything else, including a defect main already has that the PR fails to remove. List it as "Known issues" in the PR body.
+  - **Converging:** fix what is cheap. Don't grow heuristic word lists round after round: when a review finds a gap in a skip rule, narrow or remove the rule.
+  - **Merge the commit the last round reviewed.** Anything pushed after it needs another round.
 - **Merge authority (owner, 2026-11-18):** once a review round finds nothing blocking and tests pass, you merge the PR yourself, including PRs that change lessons, requests, recipes or renderers. Pins, docs-only and evaluation-only PRs merge once tests pass, as before. Paid model calls still need the owner's approval first.
 
 **Communication:**
