@@ -21,7 +21,11 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Misleading:** 25 of 58 → 16 of 54, read by the same readers on both runs. Paired: 15 questions better, 6 worse (p = 0.039).
   - **Lost lessons:** 1 → 5: three on "at most 24 parts per unit" and one on "two or three moves", each in section 2 after section 1 played, and one on the array. (First reported with the split reversed and as outline re-asks; corrected after reading the traces.)
 - **Decided (owner, 2026-11-18): decision 0021 accepted** (OLL #75), all eight questions as recommended.
-- **Decide: 0021 amendment (OLL #76): `fraction_model` as the math plugin's own card**, like the number line, instead of a geometry node. The render check found that a geometry node draws a full circle (4/4) as nothing and an empty one with a stray radius, cannot shade with a slider, always draws a coordinate grid, and leaves the judge to rebuild fractions from polygons. Cost: one more view in OLL; Learn needs only a pin. **Recommended: approve.** The builder waits for this answer.
+- **Decided (owner, 2026-11-18): 0021 amendment approved** (OLL #76): the fraction model is the math plugin's own card.
+- **Done (2026-11-19): 0021 §5 steps 1 and 2.**
+  - **Render first:** OLL #77 (3 review rounds), the `fraction_model` card, math plugin 0.4.0: bars, circles and grids; whole parts only (a full turn is a disc); two fractions on one whole size; the relation computed from the values; a bindable numerator. Browser check `check:fraction-model-browser`.
+  - **Judge before recipe:** Coach #130 (6 review rounds; see the rules above), OLL at 6e59471 and `scripts/fraction-judge.mjs` with 24 new cases (`testsuite/fraction-judge-cases.json`, under the case-overlap bar). Requests and the 319 recorded lessons unchanged.
+  - **Now:** step 3, the Coach `fraction_model` trial recipe (free). Then the paid probe; its call count goes to the owner first.
 - **Decided (owner, 2026-11-18): what comes next.** First the number-line losses (now #128), then step 4 in strict M1 order: fractions and area models first, starting with its decision record (side track item 9, **Now**).
 
   Narration remains the largest cause of misleading lessons (11 of 16); no program check reads it without a word list.
@@ -33,7 +37,11 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - A written pass bar before every paid probe and gate is now a plan rule (§5).
   - There is no real-learner data yet, so every measure stays on the question set and probe cases.
 - **Handoff:** `docs/MATH_EXPRESSIVENESS_HANDOFF.md` is current as of the end of 3D (2026-11-18), ready for another agent.
-- **Rules (owner, 2026-11-18, replacing 2026-11-17's):** reviews run round after round until one finds nothing blocking; the agent then merges any PR itself, lesson-changing ones included; every PR is still marked as needing a code review or not. Paid calls still need the owner's approval.
+- **Rules (owner, 2026-11-19, refining 2026-11-18's):** reviews run until one finds nothing blocking, and the agent then merges any PR itself, lesson-changing ones included; every PR is still marked as needing a code review or not. Paid calls still need the owner's approval. Added 2026-11-19, after two PRs took six or more rounds:
+  - **Blocking** is only what the PR causes compared with main (the learner sees something wrong or misleading, a lesson is lost, an unintended request or hash change, a broken test, CI check or runtime path). Reviewer briefs add no wider standard.
+  - **Rounds after the first** re-check the previous round's fixes and the code they touched; new findings that are not regressions become recorded follow-ups.
+  - **Tooling-only PRs** (no request, lesson or learner change) get one round plus a check of its fixes.
+  - Status reports say how many rounds each PR took.
 
 ---
 
