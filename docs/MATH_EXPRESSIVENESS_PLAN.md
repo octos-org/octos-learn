@@ -212,6 +212,13 @@ The owner has confirmed that fractions and charts stay in the plan.
       - **Defects that can draw a wrong picture or miscount** (free; §10 item 7): the plot judge's false positive for slider-moved poles (fixed, Coach #115); a slope triangle straddling an interior pole; floating-point cancellation near a = 0.
    7. **3D solids build** through §5 (paid probe and gate, each approved first).
    8. **One 60-question re-run** (paid): it closes M3-first, the two extensions and 3D together, reporting open and held-out results separately. *Alternative for the owner:* a re-run before 3D as well, at the cost of a second run.
+      - **Done (2026-11-18; Coach #127, `testsuite/math-expressiveness-m2m3-rerun-2026-11-18.json`).** 160 calls (cap 200). The same three readers read this run and the baseline run again by #77's rubric.
+        - **Misleading:** 25 of 58 in the baseline run against 16 of 54 now. Paired by question, 15 questions are better and 6 worse (sign test p = 0.039).
+        - **By mechanism:** clamp and shared number are gone (#78); narration fell from 17 to 11; misused recipes went from 4 to 3.
+        - **By group:** where nothing fits, 10 → 5; near misses, 11 → 7; open questions, 16 → 12; held-out, 9 → 4.
+        - **M2:** wrong pictures fell from 10 to 6, correct ones rose from 7 to 10.
+        - **Lost lessons rose from 1 to 5.** Four end on number-line refusals that re-ask the outline (a steps line needs two or three moves; at most 24 parts per unit), and one on the array. These were counted from replay, not read.
+        - **Reader effect:** the 2026-11-14 reading counted 13 of the same baseline lessons as misleading; today's readers count 25. Only the paired comparison is read as a change.
    9. **Backlog with a trigger** (OLL): plot labels overlapping at a few slider states, and number-line tick labels adding rows while dragging. Taken up if a recording or a judge shows them in a real lesson.
 4. **Components in the order M1 sets** (re-tagged in 3.1), each through §5, after the 3D solids extension. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
