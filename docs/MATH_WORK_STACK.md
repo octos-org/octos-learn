@@ -25,7 +25,9 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done (2026-11-19): 0021 §5 steps 1 and 2.**
   - **Render first:** OLL #77 (3 review rounds), the `fraction_model` card, math plugin 0.4.0: bars, circles and grids; whole parts only (a full turn is a disc); two fractions on one whole size; the relation computed from the values; a bindable numerator. Browser check `check:fraction-model-browser`.
   - **Judge before recipe:** Coach #130 (6 review rounds; see the rules above), OLL at 6e59471 and `scripts/fraction-judge.mjs` with 24 new cases (`testsuite/fraction-judge-cases.json`, under the case-overlap bar). Requests and the 319 recorded lessons unchanged.
-  - **Now:** step 3, the Coach `fraction_model` trial recipe (free). Then the paid probe; its call count goes to the owner first.
+  - **Done: step 3, the trial recipe** (Coach #131, 1 review round; follow-ups #132 and #133, 1 round). Off by default: requests and the 319 recorded lessons are unchanged without it. The model writes the fractions as values and the view; the program decides the wholes, the model, a grid's layout and the marked share. Request cost with it on: 512 B (budget 700 B). Learn pins OLL 6e59471 (#194), so the app can show the card.
+- **Decide: how a fraction's slider is made.** 0021 says the program makes it, but such a slider cannot be animated or practised on; one made from a lesson number (the number line's way) can, but brings back the later-section rounding defect of 3.8. **Recommended: no slider in the first version**; FM-16 stays out of the probe.
+- **Approve: fraction probe 1** (Coach `docs/FRACTION_PROBE_2026-11-19.md`): 23 new cases on two arms, cap **180 calls**, a two-sided bar written before the run.
 - **Decided (owner, 2026-11-18): what comes next.** First the number-line losses (now #128), then step 4 in strict M1 order: fractions and area models first, starting with its decision record (side track item 9, **Now**).
 
   Narration remains the largest cause of misleading lessons (11 of 16); no program check reads it without a word list.
