@@ -33,13 +33,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - Also: the grid fills by rows where narration (both probes) says columns; a refusal for 37 parts points to a grid that cannot draw it either, losing the lesson in both probes.
 - **Done: fraction probe 3 failed; the fraction card was parked (reopened the same day, below)** (owner approved the fixes and probe 3 and set the stop rule, 2026-11-19; Coach #137, OLL #78, Coach #138–#140; 101 of 120 calls). Judge 14/17 and lost lessons 0 vs 3 pass; near misses 2/6 and misleading narration 2 fail. Grids now fill by columns and match narration; fractions are still missing from 9 of 17 first replies. The two misleading lessons are questions whose whole is not one bar (1.6 as two parts; 3 ÷ 4 as 3/4 of one bar). Parked: the trial stays off; the card, judge, cases and recipe stay. Learn pins OLL da6c807.
 - **Decided (owner, 2026-11-19): the fraction card is reopened for redesign, before counters.** The owner judged that parking misread the failures, and an independent Fable review agreed (Coach #141). The failures came from card gaps (no labelled quantity or tape view; no decimal or mixed-number input; a program-added ">" line under two parts of one amount) and from unnatural cases, not from the model's narration as such. Decision 0022 (OLL #79) is on hold.
-- **Now: fraction redesign, free steps first** (owner approved, 2026-11-19):
-  1. A standards blueprint, and cases worded as learners ask. A separate scoring set, written by a fresh Fable agent from the blueprint alone, is frozen and never used for tuning.
-  2. An audit of what the card can draw for each case.
-  3. Free checks: the baseline lessons' narration, whether narration can see the card, and the missing saved replies.
-  4. An amendment to 0021, for the owner.
-
-  Fable is consulted at each step (owner, 2026-11-19).
+- **Done: fraction redesign, free steps** (Coach #142, `docs/FRACTION_REDESIGN_2026-11-19.md`).
+  - A standards blueprint; 24 development cases worded as learners ask.
+  - A sealed scoring set of 34 cases, written by a fresh Fable agent and never read. Its hash is recorded, and its arithmetic was checked blind.
+  - **Audit headline:** inside 0021's scope, today's card draws 10 of 16 development cases fully or mostly, 6 partly, and none misleadingly. Outside it (adding, copies, quantities), 3 of 6 cannot be drawn or mislead. In 7 cases the model must compute the answer just to write the card.
+  - With the card off, quantity problems get a wrong number line or an array captioned for area.
+  - The labelled-quantity picture the owner described is M1's planned tape-diagram component, which also serves 4 open ratio and percent questions.
+- **Decide (owner):**
+  1. Should the labelled-quantity picture be its own tape-diagram card, and should it come before the fraction card is switched on?
+  2. The order: tape and fractions, then counters?
+  3. The measurement method: the sealed set, 3 runs per case, both arms read blind by fresh agents, the core scored separately, at most two scoring runs.
+  4. Approve a paid diagnostic: today's build on the 24 development cases, both arms, cap 130 calls.
+- **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
 - **Decided (owner, 2026-11-18): what comes next.** First the number-line losses (now #128), then step 4 in strict M1 order: fractions and area models first, starting with its decision record (side track item 9, **Now**).
