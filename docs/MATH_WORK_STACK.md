@@ -16,12 +16,17 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
+- **Decide: Coach #128 (the number-line losses), needs code review.**
+  - **Cause:** three of 3.8's four number-line losses are a program defect, not the model. A section-2 practice target on a number an earlier section's line draws was rounded onto the slider's derived step (2 became 1.99 on a 1–10 slider). The line cannot hold 1.99, so it refused the program's own value in every retry of section 2, after section 1 had played. #128 keeps such targets' values.
+  - **Replay of 319 recorded lessons:** 313 identical, 6 rescued (the three 3.8 losses; three lessons main only got through by re-asking a section).
+  - **Trade-off:** main's refusal was accidental, so the rescued first drafts now publish. A blind reader judged all three rescued 3.8 lessons **misleading**: each section 2 uses the steps line for what it cannot show (subtraction drawn as addition, repeated equal jumps, number words). A probe lesson (NV-22) also gets a task that calls the boundary slider a "test point". **Recommended: do not merge.** The fix would turn three lost lessons into three misleading ones, and M3 ranks misleading below lost. #128 stays open as the record; the defect is real but, today, it hides misused steps lines.
+  - **What would help instead:** the steps line misused for subtraction and repeated jumps is a number-line extension (M1 `number_line_ext`: repeated jumps of a chosen size; a move that goes back). Not scheduled; it would come through M1's order.
+  - **Still open:** the fourth loss, a steps line written with one move in section 2 (a section cannot add the outline's numbers), and the array loss.
 - **Done: 3.8, the 60-question re-run (Coach #127).**
   - **Misleading:** 25 of 58 → 16 of 54, read by the same readers on both runs. Paired: 15 questions better, 6 worse (p = 0.039).
-  - **Lost lessons:** 1 → 5, four of them on number-line refusals.
-- **Decide: what comes next.** Recommended order:
-  1. **The number-line refusals (free).** Four lessons are lost where main re-asks the outline and runs out of attempts. Find out why the re-ask does not recover, using recorded replies only, never tuning on the question set.
-  2. **Step 4 in strict M1 order:** fractions and area models first, starting with its decision record (side track item 9).
+  - **Lost lessons:** 1 → 5: three on "at most 24 parts per unit" and one on "two or three moves", each in section 2 after section 1 played, and one on the array. (First reported with the split reversed and as outline re-asks; corrected after reading the traces.)
+- **Decide: decision 0021, fractions and area models (OLL #75, proposed).** Eight questions; the record is accepted before any code. Recommended: as written (bars, circles, grids; one, compare, equivalent, split; denominators to 12, grids to 10 × 10, up to 8 wholes; fractions written as values in the section; the symbolic area model left to its own decision).
+- **Decided (owner, 2026-11-18): what comes next.** First the number-line losses (now #128), then step 4 in strict M1 order: fractions and area models first, starting with its decision record (side track item 9, **Now**).
 
   Narration remains the largest cause of misleading lessons (11 of 16); no program check reads it without a word list.
 - **Decided (owner, 2026-11-18): Coach #121 closed.** The probe count (9 replays to 4 holds over 13 lessons) missed the 3-to-1 merge rule. A paid structural re-ask stays possible.
@@ -66,7 +71,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 6. **Split the plan:** §7's history moves word for word into a history record; the plan keeps what is ahead. §5, §7 and §8 keep their numbers.
 7. **Done (2026-11-18):** the written pass bar is a plan rule (§5).
 8. **Cumulative speed benchmark:** build it (free, evaluation-only); its first run is paid (about 105–125 calls for 50 pairs), and the owner sets the total budget then (proposed +1.5 s). It catches small costs that add up; it does not change the per-change gate.
-9. **Fractions and area models decision record:** a draft for the owner (no record exists yet; the plan's "0014" is unwritten, and the subject plan reserves 0014 for another diagram, so it takes the next free number).
+9. **Merge (owner's answers): fractions and area models decision record,** OLL #75, decision 0021 (proposed). The plan's "0014" was never written, and the subject plan reserves 0014 for another diagram, so it took the next free number.
 
 **After 3.8:** step 4 in strict M1 order (fractions and area models, counters and ten frames, data charts), then 3.5 slice 3.
 

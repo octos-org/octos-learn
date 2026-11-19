@@ -119,7 +119,7 @@ Two kinds, ranked by M1 gain per unit of cost once the baseline exists. The list
 - **3D solids** (M1 `solids_3d_ext`; added 2026-11-15): solids beyond the cube for AI lessons — prisms, cylinders, cones, spheres, composite boxes. OLL's math plugin already draws 20 solids (`plugin-math/src/solids.ts`, used by Studio); AI lessons can use only `cube_with_section` and the two surfaces.
 
 **New components**
-- **Fraction and area models** (decision 0014, Phase B item B10): bars, circles and area partitions; comparing two fractions; the area model for multiplication.
+- **Fraction and area models** (decision 0021, proposed 2026-11-18, OLL #75; planned as 0014, Phase B item B10): bars, circles and area partitions; comparing two fractions; the area model for multiplication.
 - **Data charts** (decision 0015, item B6): bar, line, dot plot, histogram, box plot and scatter plots from a small table, with a line of best fit.
 - **Place value:** base-ten blocks and place-value charts (K–3).
 - **Tape diagrams and ratio tables** (grades 2–7).
@@ -217,10 +217,11 @@ The owner has confirmed that fractions and charts stay in the plan.
         - **By mechanism:** clamp and shared number are gone (#78); narration fell from 17 to 11; misused recipes went from 4 to 3.
         - **By group:** where nothing fits, 10 → 5; near misses, 11 → 7; open questions, 16 → 12; held-out, 9 → 4.
         - **M2:** wrong pictures fell from 10 to 6, correct ones rose from 7 to 10.
-        - **Lost lessons rose from 1 to 5.** Four end on number-line refusals that re-ask the outline (a steps line needs two or three moves; at most 24 parts per unit), and one on the array. These were counted from replay, not read.
+        - **Lost lessons rose from 1 to 5.** Four end on number-line refusals in section 2, after section 1 played: three on "at most 24 parts per unit", one on "two or three moves". One is on the array. These were counted from replay, not read.
+        - **Cause of the three (found 2026-11-18, Coach #128):** a program defect. A later section's practice target on an earlier section's line was rounded onto the slider's derived step (2 became 1.99), which the line's ticks cannot hold. #128 keeps the value. Replay rescues all three, and of the other 316 recorded lessons only three change (each where main had re-asked a section). But a blind reader judged all three rescued lessons misleading: the accidental refusal was hiding steps lines used for subtraction and repeated jumps. #128 is not merged (recommended to the owner).
         - **Reader effect:** the 2026-11-14 reading counted 13 of the same baseline lessons as misleading; today's readers count 25. Only the paired comparison is read as a change.
    9. **Backlog with a trigger** (OLL): plot labels overlapping at a few slider states, and number-line tick labels adding rows while dragging. Taken up if a recording or a judge shows them in a real lesson.
-4. **Components in the order M1 sets** (re-tagged in 3.1), each through §5, after the 3D solids extension. Fractions (0014) and charts (0015) start their decision records once M1 confirms where they rank.
+4. **Components in the order M1 sets** (re-tagged in 3.1), each through §5, after the 3D solids extension. Fractions (0021, proposed) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
 
 ## 8. Decisions
