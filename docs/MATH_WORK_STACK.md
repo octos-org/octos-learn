@@ -20,7 +20,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done: 3.8, the 60-question re-run (Coach #127).**
   - **Misleading:** 25 of 58 → 16 of 54, read by the same readers on both runs. Paired: 15 questions better, 6 worse (p = 0.039).
   - **Lost lessons:** 1 → 5: three on "at most 24 parts per unit" and one on "two or three moves", each in section 2 after section 1 played, and one on the array. (First reported with the split reversed and as outline re-asks; corrected after reading the traces.)
-- **Decided (owner, 2026-11-18): decision 0021 accepted** (OLL #75), all eight questions as recommended. **Now:** §5 step 1, the fraction-model builder in OLL and its browser check (free).
+- **Decided (owner, 2026-11-18): decision 0021 accepted** (OLL #75), all eight questions as recommended.
+- **Decide: 0021 amendment (OLL #76): `fraction_model` as the math plugin's own card**, like the number line, instead of a geometry node. The render check found that a geometry node draws a full circle (4/4) as nothing and an empty one with a stray radius, cannot shade with a slider, always draws a coordinate grid, and leaves the judge to rebuild fractions from polygons. Cost: one more view in OLL; Learn needs only a pin. **Recommended: approve.** The builder waits for this answer.
 - **Decided (owner, 2026-11-18): what comes next.** First the number-line losses (now #128), then step 4 in strict M1 order: fractions and area models first, starting with its decision record (side track item 9, **Now**).
 
   Narration remains the largest cause of misleading lessons (11 of 16); no program check reads it without a word list.
