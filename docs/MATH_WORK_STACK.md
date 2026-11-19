@@ -16,7 +16,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Approve: the "no visual" probe (Coach #122, draft).** google / gemini-3.6-flash, 120 whole lessons, about 290 calls, capped at 340. It compares main with the rewritten outline rule on 30 new cases, 2 repeats per arm, read blind. The pass bar is two-sided and fixed in the PR's record (`docs/NO_VISUAL_PROBE_2026-11-18.md`): fewer misleads where nothing fits, no loss of pictures or lessons where one fits. Stop rule: if it shows no benefit, the rule is dropped and the work goes to 3.8. Simulated: a real halving of misleads passes about 7 times in 10; no effect passes about 1 time in 8.
+- **Running (approved 2026-11-18): the "no visual" probe (Coach #122, draft); the owner is reviewing #122's code.** google / gemini-3.6-flash, 120 whole lessons, about 290 calls, capped at 340. It compares main with the rewritten outline rule on 30 new cases, 2 repeats per arm, read blind. The pass bar is two-sided and fixed in the PR's record (`docs/NO_VISUAL_PROBE_2026-11-18.md`): fewer misleads where nothing fits, no loss of pictures or lessons where one fits. Stop rule: if it shows no benefit, the rule is dropped and the work goes to 3.8. Simulated: a real halving of misleads passes about 7 times in 10; no effect passes about 1 time in 8.
 - **Decided (owner, 2026-11-18): Coach #121 is parked** (draft). The probe's lessons count holds against replays, with a decision rule written in the probe record: merge if replays are at least 3 times holds over at least 10 lessons.
 - **Decided (owner, 2026-11-18):**
   - The rest of 3.6 goes before the 60-question re-run (3.8), in the order of L4.
@@ -34,11 +34,11 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 **Main track:**
 1. **Now, free (Coach; merged by the agent once a review finds nothing blocking):**
-   - **Done (2026-11-18):** wrong arithmetic in praise messages, Coach #120. A false claim written wholly in numerals drops the message (the learner sees the neutral reaction). Census of 307 probe messages: 9 claims read, all true. Follow-up PR next (round-6 known issues: a task's own rounding instruction, remainders by structure, a general label rule).
+   - **Done (2026-11-18):** wrong arithmetic in praise messages, Coach #120. A false claim written wholly in numerals drops the message (the learner sees the neutral reaction). Census of 307 probe messages: 9 claims read, all true. Follow-up merged (Coach #123, 2026-11-18, two review rounds): a task that asks for rounding to decimal places lets its message round there, lone fractions (`6/3 = 2`) are checked, curly apostrophes, a `task` field on the record. A structural label rule was tried and dropped in review (it kept false messages main drops). Census unchanged: 10 claims, all true, none dropped.
    - **Parked (owner, 2026-11-18):** animations that change nothing, Coach #121. A repeated change plays again (OLL replay start) instead of a still picture: 6 probe lessons, checked in the real player. No request changes. Waits for the probe's hold-versus-replay count.
    - **Next:** stand-in counts (a census first; it may have nothing left to catch on main); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
 2. **Done (2026-11-18):** the "no visual" probe's design (Coach #122, draft): the outline rule (+144 B, every ceiling holds), 30 overlap-checked cases (16 no fit, 4 stand-in, 10 fit), frozen builds, a blind-reading protocol, a case-level two-sided pass bar with simulated power, and a driver with a call cap. 4a rides in the same branch.
-3. **Now, waiting for approval (paid):** the probe, about 290 calls (cap 340). **Stop rule:** if it shows no benefit, drop the rule and go to 3.8.
+3. **Now, running (approved by the owner, 2026-11-18):** the probe, about 290 calls (cap 340). **Stop rule:** if it shows no benefit, drop the rule and go to 3.8.
 4. **Paid, owner approves:** the speed gate, only if 3 passes.
 5. **Paid, owner approves:** 3.8, the 60-question re-run (the last one was 145 calls).
 
