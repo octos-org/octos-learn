@@ -16,6 +16,10 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
+- **Approve: 3.8, the 60-question re-run.**
+  - **Run:** google / gemini-3.6-flash, the fixed regression sample (60 questions), one whole lesson each through `scripts/eval-math-expressiveness.mjs` on main. The last run used 145 calls; I expect 140–160 and propose a cap of 200.
+  - **Reading:** #77's rubric, unchanged. Open and held-out questions are reported separately, and held-out ones are never quoted.
+  - **What it measures:** M2 and M3 against the 2026-11-14 baseline, where 13 of 58 lessons misled. It is a measurement, not a gate, so there is no pass bar; the result decides what comes next.
 - **Decided (owner, 2026-11-18): Coach #121 closed.** The probe count (9 replays to 4 holds over 13 lessons) missed the 3-to-1 merge rule. A paid structural re-ask stays possible.
 - **Done: the "no visual" probe failed its improve test; stop rule applied (Coach #122 closed, record on its branch).** 285 calls, read blind. Where nothing fits, 11 of 40 lessons misled on each arm (p = 0.62). Nothing was lost where a picture fits. The rule changed what was drawn, not whether lessons misled: stand-in-picture misleads fell 9 → 4, narration describing an absent picture rose 3 → 7. The remaining lever is narration, which no program check reads without a word list.
 - **Decided (owner, 2026-11-18):**
@@ -36,11 +40,23 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 1. **Now, free (Coach; merged by the agent once a review finds nothing blocking):**
    - **Done (2026-11-18):** wrong arithmetic in praise messages, Coach #120. A false claim written wholly in numerals drops the message (the learner sees the neutral reaction). Census of 307 probe messages: 9 claims read, all true. Follow-up merged (Coach #123, 2026-11-18, two review rounds): a task that asks for rounding to decimal places lets its message round there, lone fractions (`6/3 = 2`) are checked, curly apostrophes, a `task` field on the record. A structural label rule was tried and dropped in review (it kept false messages main drops). Census unchanged: 10 claims, all true, none dropped.
    - **Closed (owner, 2026-11-18):** animations that change nothing, Coach #121 (the probe count missed the merge rule).
-   - **Next:** stand-in counts (a census first; it may have nothing left to catch on main); 6c; the open part of 6d (the moving-point wording check); the two renderer defects from plan 3.6 (a slope triangle straddling an interior pole, floating-point cancellation near a = 0); 4b if it rides with the effect check. No request changes. 6b and 6d's `sample_x_numbers=[1,2]` guidance look closed by #113 (the field is no longer offered); to be confirmed on the recordings.
+   - **Done (2026-11-18): the rest of the free batch.**
+     - **Stand-in counts: nothing to catch on main, no check built.** In the probe's control-arm lessons with the unit-square array, every count matches the question or is said aloud. Where a side is above 8 (NV-17), main draws a flowchart or a 3D box, never a shrunken grid.
+     - **6c: no change (Coach #124 closed after two review rounds).** In 259 recorded lessons, the only refusal no retry can meet is NV-05 (a scatter of four points), lost anyway for another reason. Every narrower fix let misleading narration through (a polygon rearrangement for circle area, points to move that don't exist).
+     - **Renderer defects, both fixed:**
+       - a slope triangle no longer spans a pole (Coach #125);
+       - plot marks hide at a coefficient that cancels to a rounding residue, and a cancelling double root is drawn (OLL #74, two review rounds; Coach #126 bumps OLL).
+       - The 259 recorded lessons replay identically.
+     - **6b: confirmed closed.** The first request carries no `sample_x_numbers`, and none of the probe's 120 fresh lessons wrote it.
+     - **6d's open part: not pursued.** It would mean growing a wording list (owner's rule, 2026-11-18).
+     - **4b: waits** for the next change to the compiler's effect check.
+     - **Seen while reading, recorded only (narration and animation choices, not counts):**
+       - NV-17: a 3D box whose narration invites dragging a slider that does not exist.
+       - NV-10: a grid silently animated to 1 by 6 while the narration lists pairs.
 2. **Done (2026-11-18):** the "no visual" probe's design (Coach #122, draft): the outline rule (+144 B, every ceiling holds), 30 overlap-checked cases (16 no fit, 4 stand-in, 10 fit), frozen builds, a blind-reading protocol, a case-level two-sided pass bar with simulated power, and a driver with a call cap. 4a rides in the same branch.
 3. **Done (2026-11-18): the probe failed (stop rule).** 285 of 340 approved calls. The rule is dropped; 4a goes with the next request change.
 4. **Skipped:** the speed gate (only if 3 passed).
-5. **Paid, owner approves:** 3.8, the 60-question re-run (the last one was 145 calls).
+5. **Next, paid (owner approves):** 3.8, the 60-question re-run (the last one was 145 calls). The ask goes to the owner now.
 
 **Side track (between paid steps):**
 6. **Split the plan:** §7's history moves word for word into a history record; the plan keeps what is ahead. §5, §7 and §8 keep their numbers.
