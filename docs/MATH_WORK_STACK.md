@@ -16,10 +16,14 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
 ## Needs the owner
 
-- **Approve: 3.8, the 60-question re-run.**
-  - **Run:** google / gemini-3.6-flash, the fixed regression sample (60 questions), one whole lesson each through `scripts/eval-math-expressiveness.mjs` on main. The last run used 145 calls; I expect 140–160 and propose a cap of 200.
-  - **Reading:** #77's rubric, unchanged. Open and held-out questions are reported separately, and held-out ones are never quoted.
-  - **What it measures:** M2 and M3 against the 2026-11-14 baseline, where 13 of 58 lessons misled. It is a measurement, not a gate, so there is no pass bar; the result decides what comes next.
+- **Done: 3.8, the 60-question re-run (Coach #127).**
+  - **Misleading:** 25 of 58 → 16 of 54, read by the same readers on both runs. Paired: 15 questions better, 6 worse (p = 0.039).
+  - **Lost lessons:** 1 → 5, four of them on number-line refusals.
+- **Decide: what comes next.** Recommended order:
+  1. **The number-line refusals (free).** Four lessons are lost where main re-asks the outline and runs out of attempts. Find out why the re-ask does not recover, using recorded replies only, never tuning on the question set.
+  2. **Step 4 in strict M1 order:** fractions and area models first, starting with its decision record (side track item 9).
+
+  Narration remains the largest cause of misleading lessons (11 of 16); no program check reads it without a word list.
 - **Decided (owner, 2026-11-18): Coach #121 closed.** The probe count (9 replays to 4 holds over 13 lessons) missed the 3-to-1 merge rule. A paid structural re-ask stays possible.
 - **Done: the "no visual" probe failed its improve test; stop rule applied (Coach #122 closed, record on its branch).** 285 calls, read blind. Where nothing fits, 11 of 40 lessons misled on each arm (p = 0.62). Nothing was lost where a picture fits. The rule changed what was drawn, not whether lessons misled: stand-in-picture misleads fell 9 → 4, narration describing an absent picture rose 3 → 7. The remaining lever is narration, which no program check reads without a word list.
 - **Decided (owner, 2026-11-18):**
@@ -56,7 +60,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 2. **Done (2026-11-18):** the "no visual" probe's design (Coach #122, draft): the outline rule (+144 B, every ceiling holds), 30 overlap-checked cases (16 no fit, 4 stand-in, 10 fit), frozen builds, a blind-reading protocol, a case-level two-sided pass bar with simulated power, and a driver with a call cap. 4a rides in the same branch.
 3. **Done (2026-11-18): the probe failed (stop rule).** 285 of 340 approved calls. The rule is dropped; 4a goes with the next request change.
 4. **Skipped:** the speed gate (only if 3 passed).
-5. **Next, paid (owner approves):** 3.8, the 60-question re-run (the last one was 145 calls). The ask goes to the owner now.
+5. **Done (2026-11-18):** 3.8, the 60-question re-run, 160 calls (Coach #127; see "Needs the owner").
 
 **Side track (between paid steps):**
 6. **Split the plan:** §7's history moves word for word into a history record; the plan keeps what is ahead. §5, §7 and §8 keep their numbers.
