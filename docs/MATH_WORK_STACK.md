@@ -83,10 +83,23 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - no card on either near miss (2 of 2 before).
 
   `share` and the two steps were used and drawn correctly. Two lessons mislead, because the model used the cut view to show parts: FD-11, which is core, read "Each share is 7/9", and FD-20 "Each share is 3/4". A replay shows the 3a and 3b rules are not the cause. The likely cause is #147's guidance trim, which removed the split view's purpose. FD-11 blocks the tape card and scoring.
+- **Done: fixes after the re-run** (Coach #151, 1 review round plus a fix check, owner approved):
+  - the split view's purpose is back in the guidance (710 B);
+  - an equivalence can be written with its cut;
+  - whole things are cut without a share.
+- **Done: the second re-run** (Coach #152 registration, #153 results; 65 of 90 calls).
+  - A good card in 10 of 22 lessons.
+  - FD-11 is fixed, but FD-04 (core) now misleads ("Each share is 12/9 = 4/3"). The wording didn't stop the model writing the part count as its cut; the misuse moved.
+  - Cause: a three-reply chain after refusals.
+  - Two candidate program rules were tested on every split written in six runs:
+    - R1, refuse a cut equal to the denominator: catches all 8 bad writes, but blocks a correct "half of a half";
+    - R2, refuse a split of an improper fraction: catches the 3 core misleads and blocks none seen.
 - **Decide (owner):**
-  1. Restore the split view's purpose in the guidance (710 B, within the 720 B allowed), and measure it with a second dev-set re-run, about 70 calls with a cap of 90.
-  2. Accept an `equivalent` card with a consistent `split_each_part`, at no request cost (FD-05).
-  3. Whether a cut of whole things (a/1) keeps "Each share is …" and its marks (FD-20).
+  - which rule, if any;
+  - whether to keep 710 B or return to 698 B;
+  - whether to measure with a small run on the parts-of-wholes cases (card on only, 3 repeats).
+
+  The tape card and scoring wait for this.
 - **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
