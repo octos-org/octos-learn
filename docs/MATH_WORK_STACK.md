@@ -48,24 +48,27 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Card on, 22 in-scope lessons:** reached a good card 8; reached the best card, which falls short 6; no card fits (tape) 2; the model fell short 1; the program dropped the model's second card 3; another good visual 2.
   - **Near misses:** a card was drawn in 2 of 2.
   - **New finding:** Coach drops a second create of the same card in the first section without a refusal. It happened in 15 lessons with the card on across four runs and in none of 93 without it. It hid good and bad second cards alike, and caused probe 2's misleading FM-13.
-- **Decide (owner): 0021 amendment 2** (OLL #80, proposed; left open until answered). The fraction card's first version:
-  1. **Two steps on one card**, fraction card only:
-     - the same fraction plain, then cut, is drawn as two steps;
-     - an earlier create without fractions takes the later values;
-     - if the fractions differ, the first is kept, so FD-05 and FD-20 stay dropped;
-     - a refused card is asked again.
-     Recommended.
-  2. **A `share` view** (+42 B): recommended.
-  3. **A `percent` switch** (+48 B): recommended not in v1; B15 is outside v1.
-  4. **Request cap:** 710 B with `share`; trim to 700, or raise to 720. Recommended: trim.
-  5. **Scope by row and picture.** A fresh agent tags the sealed cases, and the bars get numbers at registration. Recommended.
-  6. **Scoring waits for the tape card**, so both cards are scored once. Recommended.
+- **Decided (owner, 2026-11-19): 0021 amendment 2 accepted** (OLL #80), all six as recommended:
+  - two steps on one card by the narrow rule;
+  - a `share` view;
+  - no `percent` in v1;
+  - the guidance trimmed to stay within 700 B;
+  - scope by row and picture, frozen before the sealed set is opened;
+  - scoring once the tape card exists.
+- **Done: build step 1 (OLL)**, OLL #81, 1 review round plus a fix check. Math 0.4.2:
+  - a share marks one piece of each part;
+  - the card writes the number's other form (mixed or whole on bars and circles; decimals on 10 and 100 grids);
+  - the player redraws a revised card, and it grows clear of the card below.
+- **Done: Coach pins OLL cea255a** (Coach #146, no review needed). The 319 lessons and request hashes are unchanged.
+- **Done: build step 2**, Coach #145, 3 rounds (the third a one-line fix check). The judge reads each step of a revised card: an expectation can be met at any step, and what is not asked for is checked at every step.
+- **Done: the scoring scope is frozen** (Coach #145, `testsuite/fraction-scoring-scope.json`). A fresh agent tagged the sealed cases, returning IDs and tags only: core 16, outside v1 10, tape 4, near misses 4.
+- **In review: build step 3a**, Coach #147:
+  - the `share` view;
+  - rule 2 as a recipe hook;
+  - guidance at 698 B.
 
-  The other proposals cost no bytes:
-  - the marked share goes one piece in each shaded part;
-  - mixed and whole-number labels on bars and circles;
-  - decimals on hundred and tenth grids;
-  - a dev-set re-run (about 70 calls, approved when reached) before the sealed run.
+  Replaying saved replies, only FD-08 changes, and as intended. Probe 3 and the 319 lessons are unchanged.
+- **Next:** step 3b, the plain step then its cut as a revision. Then a dev-set re-run, which is paid and needs the owner's approval.
 - **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
