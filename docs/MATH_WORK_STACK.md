@@ -48,11 +48,24 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Card on, 22 in-scope lessons:** reached a good card 8; reached the best card, which falls short 6; no card fits (tape) 2; the model fell short 1; the program dropped the model's second card 3; another good visual 2.
   - **Near misses:** a card was drawn in 2 of 2.
   - **New finding:** Coach drops a second create of the same card in the first section without a refusal. It happened in 15 lessons with the card on across four runs and in none of 93 without it. It hid good and bad second cards alike, and caused probe 2's misleading FM-13.
-- **Now:** draft the 0021 amendment. It is a small first version, with measured request bytes, typed inputs only, and scope by blueprint row, frozen before the sealed set is opened. The diagnostic suggests its first version should have:
-  - two states on one card;
-  - a typed share input;
-  - no relation line unless comparing;
-  - program-written labels for number forms.
+- **Decide (owner): 0021 amendment 2** (OLL #80, proposed; left open until answered). The fraction card's first version:
+  1. **Two steps on one card**, fraction card only:
+     - the same fraction plain, then cut, is drawn as two steps;
+     - an earlier create without fractions takes the later values;
+     - if the fractions differ, the first is kept, so FD-05 and FD-20 stay dropped;
+     - a refused card is asked again.
+     Recommended.
+  2. **A `share` view** (+42 B): recommended.
+  3. **A `percent` switch** (+48 B): recommended not in v1; B15 is outside v1.
+  4. **Request cap:** 710 B with `share`; trim to 700, or raise to 720. Recommended: trim.
+  5. **Scope by row and picture.** A fresh agent tags the sealed cases, and the bars get numbers at registration. Recommended.
+  6. **Scoring waits for the tape card**, so both cards are scored once. Recommended.
+
+  The other proposals cost no bytes:
+  - the marked share goes one piece in each shaded part;
+  - mixed and whole-number labels on bars and circles;
+  - decimals on hundred and tenth grids;
+  - a dev-set re-run (about 70 calls, approved when reached) before the sealed run.
 - **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
