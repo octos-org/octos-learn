@@ -39,11 +39,13 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Audit headline:** inside 0021's scope, today's card draws 10 of 16 development cases fully or mostly, 6 partly, and none misleadingly. Outside it (adding, copies, quantities), 3 of 6 cannot be drawn or mislead. In 7 cases the model must compute the answer just to write the card.
   - With the card off, quantity problems get a wrong number line or an array captioned for area.
   - The labelled-quantity picture the owner described is M1's planned tape-diagram component, which also serves 4 open ratio and percent questions.
-- **Decide (owner):**
-  1. Should the labelled-quantity picture be its own tape-diagram card, and should it come before the fraction card is switched on?
-  2. The order: tape and fractions, then counters?
-  3. The measurement method: the sealed set, 3 runs per case, both arms read blind by fresh agents, the core scored separately, at most two scoring runs.
-  4. Approve a paid diagnostic: today's build on the 24 development cases, both arms, cap 130 calls.
+- **Decided (owner, 2026-11-19): all four recommendations.**
+  1. The labelled-quantity picture becomes its own tape-diagram card, built before the fraction card is switched on.
+  2. Fraction fixes and the tape card come first, then counters (0022 stays on hold).
+  3. Measurement: the sealed set, 3 runs per case, both arms read blind by fresh agents, the core scored separately, at most two scoring runs (each paid run asked for separately).
+  4. A paid diagnostic first (Gemini 3.6 Flash, dev key, cap 130).
+- **Now: the paid diagnostic** on the 24 development cases, both arms, one run each. Runner option `--cases-file` and the registration before the run: Coach #143. It is read case by case against the audit's best card: the model reached it, fell short (the model's choice), or reached a poor card (the card's gap). That reading sets the views of the 0021 amendment's first version.
+- **Next:** the 0021 amendment (a small first version, measured request bytes, typed inputs only, scope by blueprint row, frozen before the sealed set is opened); then the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
