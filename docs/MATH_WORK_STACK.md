@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-18. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-20. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -94,10 +94,30 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - Two candidate program rules were tested on every split written in six runs:
     - R1, refuse a cut equal to the denominator: catches all 8 bad writes, but blocks a correct "half of a half";
     - R2, refuse a split of an improper fraction: catches the 3 core misleads and blocks none seen.
+- **Decided (owner, 2026-11-20): R1, R2 and the small run are dropped.** The owner asked whether this was the morning's trap again, and it partly was:
+  - the misleading cards came from the program refusing the model's natural descriptions of the picture (one fraction per whole, wholes in parts) and then drawing the squeezed-down reply;
+  - both rules would have added more refusals;
+  - one run per case chased a moving target.
+
+  In their place is a free step: catalogue what the model writes, and propose card inputs that accept it as typed values.
+- **Done (2026-11-20): the catalogue and a draft proposal** (handoff `runs/fractions/input-forms/`; no build, no calls). Every fraction input the model wrote across all six runs: 231, with 147 in first replies and 84 in section replies. A fresh Fable agent reviewed the proposal.
+  - **The errors are the program's:**
+    - a cut equal to the denominator is drawn as a further cut (three of the four misleading cards);
+    - correct one-whole-per-entry lists such as 3/3, 3/3, 1/3 are refused;
+    - first replies leave the card's values out (67 of 147 inputs; 0 of 84 in section replies), because that schema requires nothing, and each re-ask spends an attempt (probe 2's FM-15 was lost after three identical refused replies);
+    - a valid section 1 is rewritten when only section 2's picture is refused (FD-20 lost its right 12/4).
+  - **Proposal (typed values only):**
+    - P1: a whole-by-whole list is one amount, and a cut restating the denominator is dropped where nothing is cut;
+    - P2: under split, a cut equal to the denominator must say what it means (refused with typed pointers, or a proper fraction with its share as a witness). It refuses the same inputs as R1, including FD-05's correct 1/2 cut 2, which is pointed to `equivalent`;
+    - P3: missing first-reply values have no cheap fix; a values-only call would be new core work;
+    - P4: keep section 1 (recipe-agnostic, every capability) or allow one card per section (declared by the recipe);
+    - captions unchanged, which corrects 2026-11-19.
+  - **Net change against today:** newly accepted FD-04, FD-20 (re-run 1) and FM-01 (probe 1); newly refused 6 split inputs (4 wrong, 2 FD-05's correct ones).
 - **Decide (owner):**
-  - which rule, if any;
-  - whether to keep 710 B or return to 698 B;
-  - whether to measure with a small run on the parts-of-wholes cases (card on only, 3 repeats).
+  - P1 and P2 together (P1 alone only under `one`);
+  - P3: accept the spent attempt, or design a values-only call;
+  - P4 a or b;
+  - then whether to approve a paid run to judge them.
 
   The tape card and scoring wait for this.
 - **Next:** the tape-diagram card's decision record.
