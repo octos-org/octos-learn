@@ -77,7 +77,16 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - a share's card label reads "2/1 = 2";
   - the guidance doesn't state the 2 to 6 share limit;
   - Learn's own check of a two-step lesson in the app.
-- **Decide (owner): the dev-set re-run** (registration: Coach #149). Gemini 3.6 Flash on the dev key; the 24 development cases with the card on and off, one run each. About 70 calls expected, cap 90. The frozen `main` was checked offline first.
+- **Done: the dev-set re-run** (owner approved; Coach #149 registration, #150 results; 69 of 90 calls). On the 22 in-scope lessons with the card on:
+  - a good card in 9 (8 in the diagnostic);
+  - the model fell short in 4 (1);
+  - no card on either near miss (2 of 2 before).
+
+  `share` and the two steps were used and drawn correctly. Two lessons mislead, because the model used the cut view to show parts: FD-11, which is core, read "Each share is 7/9", and FD-20 "Each share is 3/4". A replay shows the 3a and 3b rules are not the cause. The likely cause is #147's guidance trim, which removed the split view's purpose. FD-11 blocks the tape card and scoring.
+- **Decide (owner):**
+  1. Restore the split view's purpose in the guidance (710 B, within the 720 B allowed), and measure it with a second dev-set re-run, about 70 calls with a cap of 90.
+  2. Accept an `equivalent` card with a consistent `split_each_part`, at no request cost (FD-05).
+  3. Whether a cut of whole things (a/1) keeps "Each share is …" and its marks (FD-20).
 - **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
