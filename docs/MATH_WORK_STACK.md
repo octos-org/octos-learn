@@ -44,8 +44,16 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   2. Fraction fixes and the tape card come first, then counters (0022 stays on hold).
   3. Measurement: the sealed set, 3 runs per case, both arms read blind by fresh agents, the core scored separately, at most two scoring runs (each paid run asked for separately).
   4. A paid diagnostic first (Gemini 3.6 Flash, dev key, cap 130).
-- **Now: the paid diagnostic** on the 24 development cases, both arms, one run each. Runner option `--cases-file` and the registration before the run: Coach #143. It is read case by case against the audit's best card: the model reached it, fell short (the model's choice), or reached a poor card (the card's gap). That reading sets the views of the 0021 amendment's first version.
-- **Next:** the 0021 amendment (a small first version, measured request bytes, typed inputs only, scope by blueprint row, frozen before the sealed set is opened); then the tape-diagram card's decision record.
+- **Done: the paid diagnostic** (Coach #143 runner and registration, 1 review round plus a fix check; results #144). 69 of 130 calls.
+  - **Card on, 22 in-scope lessons:** reached a good card 8; reached the best card, which falls short 6; no card fits (tape) 2; the model fell short 1; the program dropped the model's second card 3; another good visual 2.
+  - **Near misses:** a card was drawn in 2 of 2.
+  - **New finding:** Coach drops a second create of the same card in the first section without a refusal. It happened in 15 lessons with the card on across four runs and in none of 93 without it. It hid good and bad second cards alike, and caused probe 2's misleading FM-13.
+- **Now:** draft the 0021 amendment. It is a small first version, with measured request bytes, typed inputs only, and scope by blueprint row, frozen before the sealed set is opened. The diagnostic suggests its first version should have:
+  - two states on one card;
+  - a typed share input;
+  - no relation line unless comparing;
+  - program-written labels for number forms.
+- **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
