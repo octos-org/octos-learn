@@ -62,13 +62,22 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done: Coach pins OLL cea255a** (Coach #146, no review needed). The 319 lessons and request hashes are unchanged.
 - **Done: build step 2**, Coach #145, 3 rounds (the third a one-line fix check). The judge reads each step of a revised card: an expectation can be met at any step, and what is not asked for is checked at every step.
 - **Done: the scoring scope is frozen** (Coach #145, `testsuite/fraction-scoring-scope.json`). A fresh agent tagged the sealed cases, returning IDs and tags only: core 16, outside v1 10, tape 4, near misses 4.
-- **In review: build step 3a**, Coach #147:
+- **Done: build step 3a**, Coach #147, 1 review round, no blocking findings:
   - the `share` view;
-  - rule 2 as a recipe hook;
+  - rule 2 as the recipe hook `choose_first_create`;
   - guidance at 698 B.
-
-  Replaying saved replies, only FD-08 changes, and as intended. Probe 3 and the 319 lessons are unchanged.
-- **Next:** step 3b, the plain step then its cut as a revision. Then a dev-set re-run, which is paid and needs the owner's approval.
+- **Done: build step 3b**, Coach #148, 1 review round plus a fix check; the round found a title and a timing problem, both fixed. A plain card, then its cut (or wholes, then shared), is drawn as the card and its revision. Anything else keeps the first create; a refused cut asks section 1 again. Replays: only FD-08 and FD-19 change, as intended; probe 3 and the 319 lessons are unchanged.
+- **Done: Learn pins OLL cea255a** (Learn #206, no review needed), so the app draws shares and revised cards. No two-step lesson has been played in the app yet; OLL's browser check covers the player.
+- **Reported to the owner: three build differences from the accepted amendment** (OLL #82, #83):
+  - "one fraction, then the second added" is not built and keeps the first;
+  - a share pair is added;
+  - the share caption reads "Each share is a/b".
+- **Follow-ups recorded (not blocking):**
+  - rule 2 takes the later create's whole content, view included (a cut can show one moment early);
+  - a share's card label reads "2/1 = 2";
+  - the guidance doesn't state the 2 to 6 share limit;
+  - Learn's own check of a two-step lesson in the app.
+- **Decide (owner): the dev-set re-run** (registration: Coach #149). Gemini 3.6 Flash on the dev key; the 24 development cases with the card on and off, one run each. About 70 calls expected, cap 90. The frozen `main` was checked offline first.
 - **Next:** the tape-diagram card's decision record.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
