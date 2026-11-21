@@ -141,11 +141,11 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **A local compile showed why the new picture needs its own fields:** today's card draws FD-20's numbers under `compare` as "3/1 > 1/4".
   - **The first-reply values (P3) are mainly the optional schema;** my "missing place" claim was overstated (2 or 3 of 67). Making the fields required risks silent fillers and breaks amendment 2's rule 2, so no change: measure it.
   - **Keeping section 1 (P4), replayed locally on 11 refused replies:** 1 better (FD-20), 3 the same with calls saved, 3 worse (the outline re-ask had rescued a thin or misleading first card). Not now.
-  - **The `share` view is fine.** The reading tool overcounts circle cuts by one; the Coach checkout's installed OLL is stale and needs a fresh install before the next audit.
+  - **The `share` view is fine.** The reading tool overcounts cuts by one on circles drawn as a single whole (a/1); the Coach checkout's installed OLL is stale and needs a fresh install before the next audit.
 - **Decide (owner):**
-  - **D1:** the new picture as a separate card (recommended; a view on today's card would collide with its required `fractions` and invite stray values);
-  - **D2:** R2 exactly (an improper fraction under split refused, pointing to `one` and the new card; a/1 left alone), provisional on the probe;
-  - **D3:** a slider on the number of wholes, later, with its own probe (reopens "no numerator slider in v1");
+  - **D1:** the new picture as a separate card (recommended, chiefly because a later reply can't drift from it to a sibling view; the lean moved twice today);
+  - **D2:** R2 exactly (an improper fraction under split refused, pointing to `one`; a/1 left alone), provisional on the probe;
+  - **D3:** the first new card is static; a slider on the number of wholes comes later, with its own probe (reopens "no numerator slider in v1");
   - **D4:** FS-27 into the core of the frozen scope;
   - **D5:** order: the new card with D2, a probe, the tape card, counting givens, then one scoring;
   - **D6:** P3 unchanged and measured;
