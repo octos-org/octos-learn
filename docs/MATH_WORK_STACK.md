@@ -193,12 +193,50 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - In K–2, 16 of 22 open questions need a component that doesn't exist.
     - K–2 early number is split into 10 needs from the standards (codes checked).
     - Most K–2 needs are physical actions (touching each thing once, pairing, bundling ten), so a tap control in OLL would serve most of them.
-- **Decide (owner):**
-  - which components to build first. Recommended: how many fit, then mixed numbers, joining and separating, and the tape;
-  - whether to build two OLL pieces several components need: a **tap control**, and a **typed answer that can require a form** (a mixed number, or a fraction over a given denominator);
-  - whether to split another area next. Candidates: data charts, or K–2 measurement.
+- **Approved (owner, 2026-11-21): finish the map for all of K–12**, as the plan's step 4 list rewritten under the rules.
+- **Done (2026-11-21): the K–12 component map** (handoff `runs/fractions/component-map/`: `SUMMARY.md`, `fractions.md`, `areas/*.md`; artifact "K–12 Component Map"). Free; nothing built.
+  - **449 teaching needs** from the Common Core standards, area by area. Codes were taken from the fetched pages and spot-checked.
+  - **Today:** none fully served, 158 partly drawn, 291 missing.
+    - K–2: 63 needs, 50 missing.
+    - 3–5: 96 needs, 58 missing.
+    - 6–8: 132 needs, 80 missing.
+    - High school: 158 needs, 103 missing.
+  - **Shared pieces:**
+    - every card can hold back a value until the child types it (a new option);
+    - about 277 needs require a new tap or drag control (104 have nothing else);
+    - about 250 need a new slider binding;
+    - about 30 need a typed answer with a form or tolerance;
+    - about 20 need an expression or list answer.
+  - **Cards that don't fit their needs:**
+    - 3D solids shows the asked measure;
+    - the inequality line draws a continuous ray for whole-number stories;
+    - the rounding line draws the result;
+    - the array stops at 8 × 8;
+    - the function plot only slides;
+    - the rearrangements have only a progress slider;
+    - there is no vertical number line.
+  - **Process:** a pilot area first, then nine areas in parallel, then a rules-first Fable review. It found:
+    - K–2 early number was a sketch, now rebuilt (34 needs);
+    - ideas waved through as "served", now re-tested (none passed);
+    - a wrong "fully" count;
+    - fraction-map gaps;
+    - folded rows;
+    - slider-only actions.
 
-  Building any of them, and any paid test, would be asked for separately.
+    All were fixed, and a check of the fixes confirmed them.
+  - **Provisional build order:** by open-question count (counts only): fraction models, counters and ten frames, data charts, polygon figures, place value, probability, tapes. 61 needs fit no existing picture kind.
+- **Decide (owner):**
+  - **review and freeze the list;**
+  - **then a free re-tag** of the coverage measure against it, by a fresh agent returning question IDs and tags only, which sets the real order;
+  - **the proposed plan amendment** (handoff `component-map/plan-amendment-draft.md`):
+    - §6 becomes the per-need list;
+    - shared pieces come first;
+    - §5 adds the rules' tests;
+    - the fraction trial card becomes the fraction rows;
+  - **whether to build the shared pieces first:** the tap and drag controls, the hold-back option, and typed answers with a form;
+  - **then the first components** (recommended: the four sketched fraction components).
+
+  Building, and any paid test, would be asked for separately.
   **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
