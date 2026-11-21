@@ -8,6 +8,19 @@ As of 2026-11-21. This is the **status page for the math expressiveness work**, 
 
 The plan itself is `docs/MATH_EXPRESSIVENESS_PLAN.md`; this page says where we are in it.
 
+## Working rules (owner, 2026-11-21; must be followed)
+1. **When a test question fails, examine the interactive component itself first.** Is it actually capable of representing the knowledge being taught in a way that is appropriate for this particular question?
+2. **If it isn't, the model is forced to squeeze the lesson into the closest representation the card can produce,** which gives an incorrect or misleading picture. This does not necessarily mean the model broke our rules, or that the program failed to enforce them.
+3. **The real solution is to design interactive components that fit the teaching need,** and that help children understand abstract concepts through concrete, intuitive visualizations. It is not to keep adding rules that prevent wrong pictures.
+4. **The goal is a much wider variety of interactive components,** each designed for a specific teaching need.
+
+**In practice:**
+- every failure analysis starts with what the child should see and do, and whether a component shows it;
+- a misleading picture is answered with the component that fits, not with a refusal rule;
+- interaction is designed in from the start;
+- work proceeds from a map of teaching needs to components, not one card at a time;
+- every plan says how each item follows these rules, and reviewers check that as well as the facts.
+
 **Keep it current.** Update it whenever an item finishes, a layer is pushed (going deeper) or popped (coming back up), or something needs the owner. The owner reads this page to follow the project at a glance. A rendered copy is kept as a claude.ai artifact by whoever is working; this file is the record in the repo.
 
 Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner to merge), **Paused**.
@@ -136,11 +149,40 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - The free design note is approved, with "how many fit" (B14b) as the first piece.
 
   **Still open:** the server's settings file has not been checked for `LEARNING_COACH_TRIAL_RECIPES`. The owner can confirm; I will not read production.
-- **Now: the design note** (free; no build, no calls). Before drafting it, two checks on the saved replies:
-  - whether the first replies without values are a place the card lacks (the blueprint's opening state: a whole cut into parts, nothing shaded);
-  - "how many fit" tested on paper against the share view, which takes the same two numbers.
+- **Done (2026-11-21): the design note** (handoff `runs/fractions/card-design/note.md`; free, nothing built, no model calls). Fable consulted three times; a fresh Fable review, then a check of its fixes (2 rounds).
+  - **The review overturned my draft's input.** "N wholes, d pieces" is how the model also describes sharing (FD-16, FD-17, FM-14), so it can't separate "how many fit" from `share`. The model already writes the piece as a unit fraction (1/4, 1/3), so the divisor is typed as one, and a whole-number divisor is refused with a pointer to `share`.
+  - **A local compile showed why the new picture needs its own fields:** today's card draws FD-20's numbers under `compare` as "3/1 > 1/4".
+  - **The first-reply values (P3) are mainly the optional schema;** my "missing place" claim was overstated (2 or 3 of 67). Making the fields required risks silent fillers and breaks amendment 2's rule 2, so no change: measure it.
+  - **Keeping section 1 (P4), replayed locally on 11 refused replies:** 1 better (FD-20), 3 the same with calls saved, 3 worse (the outline re-ask had rescued a thin or misleading first card). Not now.
+  - **The `share` view is fine.** The reading tool overcounts cuts by one on circles drawn as a single whole (a/1); the Coach checkout's installed OLL is stale and needs a fresh install before the next audit.
+- **Decide (owner):**
+  - **D1:** the new picture as a separate card (recommended, chiefly because a later reply can't drift from it to a sibling view; the lean moved twice today);
+  - **D2:** R2 exactly (an improper fraction under split refused, pointing to `one`; a/1 left alone), provisional on the probe;
+  - **D3:** the first new card is static; a slider on the number of wholes comes later, with its own probe (reopens "no numerator slider in v1");
+  - **D4:** FS-27 into the core of the frozen scope;
+  - **D5:** order: the new card with D2, a probe, the tape card, counting givens, then one scoring;
+  - **D6:** P3 unchanged and measured;
+  - **D7:** P4 not now;
+  - **D8:** raise the 720 B cap by measurement, with the speed gate.
 
-  Fable consults on the draft, then a fresh Fable review. The tape card (B12, X01, X03) is one of the note's entries; its decision record waits for the note. Scoring waits too.
+  The probe (paid, about 36 lessons, at most about 80 calls) would be asked for separately, with its cases, expected pictures and pass bar written first.
+- **Reconsidering (2026-11-21, late; awaiting the owner).** The owner asked whether I had understood the point: the failures may mean our components don't suit the questions, not that rules were broken. Measured against that, the design note partly slipped back:
+  - D2 is another refusal rule on the old card;
+  - most of the note is about plumbing;
+  - it plans one card at a time;
+  - the first card is static.
+
+  **Proposed instead (free, nothing run):**
+  - drop D2;
+  - first write a component map: for every test question, what the child should see and do, which component that needs, and whether we have it;
+  - then build the components the map ranks highest, each with its interaction designed in from the start.
+
+  The D1–D8 list above waits on this.
+- **Decided (owner, 2026-11-21, late): the working rules above.** The owner restated the point as rules and asked for work to continue overnight.
+  - D2 is withdrawn.
+  - D1 and D3–D8 are superseded by the component map; whatever survives will be re-asked against the rules.
+- **Now (overnight, free; no model calls, nothing built or merged into product code):** the component map, then component designs and picture mock-ups, reviewed by Fable. The plan is in the owner report of 2026-11-21.
+  **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
