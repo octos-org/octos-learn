@@ -153,6 +153,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **D8:** raise the 720 B cap by measurement, with the speed gate.
 
   The probe (paid, about 36 lessons, at most about 80 calls) would be asked for separately, with its cases, expected pictures and pass bar written first.
+- **Reconsidering (2026-11-21, late; awaiting the owner).** The owner asked whether I had understood the point: the failures may mean our components don't suit the questions, not that rules were broken. Measured against that, the design note partly slipped back:
+  - D2 is another refusal rule on the old card;
+  - most of the note is about plumbing;
+  - it plans one card at a time;
+  - the first card is static.
+
+  **Proposed instead (free, nothing run):**
+  - drop D2;
+  - first write a component map: for every test question, what the child should see and do, which component that needs, and whether we have it;
+  - then build the components the map ranks highest, each with its interaction designed in from the start.
+
+  The D1–D8 list above waits on this.
   **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
