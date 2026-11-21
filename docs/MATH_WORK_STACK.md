@@ -259,12 +259,28 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **First component: trading tens and ones** (K2N-23), with its place-value siblings next (35P-05, 35P-07).
   - **The server settings question is closed:** the owner says whether the fraction trial is enabled there does not matter.
 - **Reported to the owner (2026-11-21):** Learn #217 merged while its unit-test check was still pending. A wait-and-merge command treated a failed status read as "all passed". The check then passed on that commit. It is the third such slip. Merges now confirm each required check's conclusion through the API before merging.
-- **Now: the first component's decision record** (free). Before writing it:
-  - how a practice task's pile relates to the lesson's (practice returns to the start, so holding the number back only means something on a different pile);
-  - the tap control checked on paper against other needs near the top of the order;
-  - a working sketch of the trade with a rules-first review.
-
-  The record then goes to the owner, with a one-page English summary.
+- **Done (2026-11-21): the first component's decision record**, OLL #85, decision 0023, Proposed (no review needed: a proposed record only).
+  - **The sketch** (handoff `component-map/first-component/sketch/`).
+    - v1 failed a rules-first review: the program made the trade, pressing buttons until they went grey passed, the blocks were not to scale, and there was no inverse.
+    - v2 was rebuilt:
+      - the child gathers into a ring drawn with the outline of one ten;
+      - only exactly ten trades;
+      - the child can break a ten or a hundred back;
+      - the child says when trading is done, then types the number, the count in each place, and the number by places.
+    - A fix-check (round 2) rated 4 of the 9 findings fixed and 5 partly fixed, and found 3 new layout and state bugs. All 3 are fixed; the remaining limits are listed in the record.
+    - Model: 27 checks pass. Page: 36 checks pass.
+  - **Other design work:**
+    - the practice pile differs from the lesson's;
+    - the tap control is handled by the card (checked on paper against six needs near the top);
+    - four new player abilities.
+  - The one-page English summary is `first-component/SUMMARY-0023.md`.
+- **Needs the owner: the six questions in 0023.**
+  1. The component. One point within it: a child can press "done" more than once to find when to stop. The recommendation is no limit.
+  2. The tap control.
+  3. The other three player abilities.
+  4. Retiring 0022.
+  5. Pausing the fraction trial.
+  6. The order of work.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
