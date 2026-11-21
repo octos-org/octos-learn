@@ -136,11 +136,24 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - The free design note is approved, with "how many fit" (B14b) as the first piece.
 
   **Still open:** the server's settings file has not been checked for `LEARNING_COACH_TRIAL_RECIPES`. The owner can confirm; I will not read production.
-- **Now: the design note** (free; no build, no calls). Before drafting it, two checks on the saved replies:
-  - whether the first replies without values are a place the card lacks (the blueprint's opening state: a whole cut into parts, nothing shaded);
-  - "how many fit" tested on paper against the share view, which takes the same two numbers.
+- **Done (2026-11-21): the design note** (handoff `runs/fractions/card-design/note.md`; free, nothing built, no model calls). Fable consulted three times; a fresh Fable review, then a check of its fixes (2 rounds).
+  - **The review overturned my draft's input.** "N wholes, d pieces" is how the model also describes sharing (FD-16, FD-17, FM-14), so it can't separate "how many fit" from `share`. The model already writes the piece as a unit fraction (1/4, 1/3), so the divisor is typed as one, and a whole-number divisor is refused with a pointer to `share`.
+  - **A local compile showed why the new picture needs its own fields:** today's card draws FD-20's numbers under `compare` as "3/1 > 1/4".
+  - **The first-reply values (P3) are mainly the optional schema;** my "missing place" claim was overstated (2 or 3 of 67). Making the fields required risks silent fillers and breaks amendment 2's rule 2, so no change: measure it.
+  - **Keeping section 1 (P4), replayed locally on 11 refused replies:** 1 better (FD-20), 3 the same with calls saved, 3 worse (the outline re-ask had rescued a thin or misleading first card). Not now.
+  - **The `share` view is fine.** The reading tool overcounts circle cuts by one; the Coach checkout's installed OLL is stale and needs a fresh install before the next audit.
+- **Decide (owner):**
+  - **D1:** the new picture as a separate card (recommended; a view on today's card would collide with its required `fractions` and invite stray values);
+  - **D2:** R2 exactly (an improper fraction under split refused, pointing to `one` and the new card; a/1 left alone), provisional on the probe;
+  - **D3:** a slider on the number of wholes, later, with its own probe (reopens "no numerator slider in v1");
+  - **D4:** FS-27 into the core of the frozen scope;
+  - **D5:** order: the new card with D2, a probe, the tape card, counting givens, then one scoring;
+  - **D6:** P3 unchanged and measured;
+  - **D7:** P4 not now;
+  - **D8:** raise the 720 B cap by measurement, with the speed gate.
 
-  Fable consults on the draft, then a fresh Fable review. The tape card (B12, X01, X03) is one of the note's entries; its decision record waits for the note. Scoring waits too.
+  The probe (paid, about 36 lessons, at most about 80 calls) would be asked for separately, with its cases, expected pictures and pass bar written first.
+  **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
