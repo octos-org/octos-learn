@@ -113,11 +113,20 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - P4: keep section 1 (recipe-agnostic, every capability) or allow one card per section (declared by the recipe);
     - captions unchanged, which corrects 2026-11-19.
   - **Net change against today:** newly accepted FD-04, FD-20 (re-run 1) and FM-01 (probe 1); newly refused 6 split inputs (4 wrong, 2 FD-05's correct ones).
+- **Done (2026-11-20): did the card fit the lessons?** The owner asked whether the failures meant the card was unsuited to the lessons, rather than that the model or program broke rules (handoff `runs/fractions/card-fit/review.md`; no build, no calls).
+  - **Each FD question was sorted by fit** before outcomes were read: the card draws the teaching picture (11); it draws the amount but not the step taught (9); it cannot draw the idea (4).
+  - **Every misleading card came from a question the card could not fully draw (7 of 7; none where it fits).** Five are one missing step, counting unit pieces across wholes (FD-04, FD-11, FD-20 ×3). FD-20 ("how many 1/4-cup scoops in 3 cups") was wrong in every run, with the card and without it.
+  - **Nothing broke a rule in those cards.** The rules let one field carry two meanings, and the card had no picture for the idea. P1 and P2 were patches for a missing card. Two real program faults are separate and would hit any card: first replies without values, and the refusal of a second card of the same kind.
+  - **Against "more cards":**
+    - a half-fitting card pulled FD-09, 10, 12 and 15 away from the number line, which drew them better with the card off;
+    - the model already uses the card for sets and ratios despite its exclusions.
+
+    So each card needs a narrow scope, an input shape that shows its purpose, and a measured selection rate.
+  - **Correction:** this morning's "the errors are the program's" stands for the mechanism, but was too narrow about the cause.
 - **Decide (owner):**
-  - P1 and P2 together (P1 alone only under `one`);
-  - P3: accept the spent attempt, or design a values-only call;
-  - P4 a or b;
-  - then whether to approve a paid run to judge them.
+  - withdraw P1 and P2 (recommended), and hold P3 and P4 until the first new card; the paid run is then not needed;
+  - approve the free next step: a card-list design note grounded in the CCSS fraction progression (each card's teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), reviewed by Fable;
+  - my lean for the first new card: counting unit pieces together with "how many fit" (3.NF.3c, 4.NF.3b, 4.NF.4a, 5.NF.7b).
 
   The tape card and scoring wait for this.
 - **Next:** the tape-diagram card's decision record.
