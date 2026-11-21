@@ -113,23 +113,27 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - P4: keep section 1 (recipe-agnostic, every capability) or allow one card per section (declared by the recipe);
     - captions unchanged, which corrects 2026-11-19.
   - **Net change against today:** newly accepted FD-04, FD-20 (re-run 1) and FM-01 (probe 1); newly refused 6 split inputs (4 wrong, 2 FD-05's correct ones).
-- **Done (2026-11-20): did the card fit the lessons?** The owner asked whether the failures meant the card was unsuited to the lessons, rather than that the model or program broke rules (handoff `runs/fractions/card-fit/review.md`; no build, no calls).
-  - **Each FD question was sorted by fit** before outcomes were read: the card draws the teaching picture (11); it draws the amount but not the step taught (9); it cannot draw the idea (4).
-  - **Every misleading card came from a question the card could not fully draw (7 of 7; none where it fits).** Five are one missing step, counting unit pieces across wholes (FD-04, FD-11, FD-20 ×3). FD-20 ("how many 1/4-cup scoops in 3 cups") was wrong in every run, with the card and without it.
-  - **Nothing broke a rule in those cards.** The rules let one field carry two meanings, and the card had no picture for the idea. P1 and P2 were patches for a missing card. Two real program faults are separate and would hit any card: first replies without values, and the refusal of a second card of the same kind.
+- **Done (2026-11-20): did the card fit the lessons?** The owner asked whether the failures meant the card was unsuited to the lessons, rather than that the model or program broke rules (handoff `runs/fractions/card-fit/review.md`; no build, no calls). It is sorted by the 2026-11-19 audit's verdicts, which were written before the FD runs.
+  - **"How many fit" (5.NF.B.7.b) has no picture anywhere.** FD-20 was wrong in every run, with the card and without it; FM-15 was wrong or lost in two of three probes.
+  - **Every wrong card in the FD runs (7) was predicted by the audit.** Two cases were flagged as misleading (FD-15, FD-23). In the other five, the card made the model compute the answer to write it (FD-04, FD-11, FD-20 ×3), against decision 0020. There were none in the three "fully" cases. The audit listed these gaps on 2026-11-19; we deferred them and patched the split view instead.
+  - **In the probes, about half the misleading lessons were program faults on questions the card fits,** all since fixed. The rest were questions it does not fit.
+  - **Nothing broke a rule in the FD runs.** One field carried two meanings, and the model did the program's arithmetic.
+  - **The reply chain still matters:** three of the four misleading captions began with a first reply that had no values (P3).
   - **Against "more cards":**
-    - a half-fitting card pulled FD-09, 10, 12 and 15 away from the number line, which drew them better with the card off;
-    - the model already uses the card for sets and ratios despite its exclusions.
+    - a half-fitting card pulled four operation lessons away from the number line (one-run readings);
+    - the model ignores the card's exclusions;
+    - every new recipe changes every math prompt.
 
     So each card needs a narrow scope, an input shape that shows its purpose, and a measured selection rate.
-  - **Correction:** this morning's "the errors are the program's" stands for the mechanism, but was too narrow about the cause.
+  - **Correction:** this morning's "the errors are the program's" holds for the mechanism, but was too narrow about the cause.
 - **Decide (owner):**
-  - withdraw P1 and P2 (recommended), and hold P3 and P4 until the first new card; the paid run is then not needed;
-  - approve the free next step: a card-list design note grounded in the CCSS fraction progression (each card's teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), reviewed by Fable;
-  - my lean for the first new card: counting unit pieces together with "how many fit" (3.NF.3c, 4.NF.3b, 4.NF.4a, 5.NF.7b).
+  - **withdraw P1 and P2 (recommended).** This costs learners nothing: the fraction card is a trial recipe that no deployment offers;
+  - **keep P3 open** and design it in the next note; hold P4; the paid run is then not needed;
+  - **approve the free next step:** a design note for the blueprint's gaps (each with its teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), plus P3 and a selection plan, reviewed by Fable;
+  - **my lean for the first piece:** "how many fit" (B14b). The note decides whether counting (B03, B07) is a new card or givens with program-written labels on today's picture.
 
-  The tape card and scoring wait for this.
-- **Next:** the tape-diagram card's decision record.
+  Scoring waits for this.
+- **Next:** the design note, if approved. The tape card (B12, X01, X03) is one of its entries; its decision record waits for the note.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
