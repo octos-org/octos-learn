@@ -255,10 +255,16 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - and others at 2 each.
   - **By area:** 6–8 geometry and statistics 18 open questions; high-school functions 13; K–2 early number 12; high-school geometry and statistics 12; fractions 11.
   - **Correction:** the four sketched fraction components rank low by this measure. "How many fit" has 1 open question; mixed numbers, joining and the tape have 0. The earlier recommendation came from harm in the fraction runs, not from the plan's measure.
-- **Decide (owner):** the first component.
-  - **Recommended: trading tens and ones (K2N-23).** It is the top need. With its two place-value siblings (35P-05, 35P-07) it serves 8 open questions on one block family (base-ten units and the trade action). It also needs the tap control and the hold-back option, which most later components use.
-  - **Alternative:** "how many fit", already sketched, with the most harm in the fraction runs.
-  - **What happens to the fraction trial** (the sealed scoring set, the tape card) follows from this choice.
+- **Decided (owner, 2026-11-21):**
+  - **First component: trading tens and ones** (K2N-23), with its place-value siblings next (35P-05, 35P-07).
+  - **The server settings question is closed:** the owner says whether the fraction trial is enabled there does not matter.
+- **Reported to the owner (2026-11-21):** Learn #217 merged while its unit-test check was still pending. A wait-and-merge command treated a failed status read as "all passed". The check then passed on that commit. It is the third such slip. Merges now confirm each required check's conclusion through the API before merging.
+- **Now: the first component's decision record** (free). Before writing it:
+  - how a practice task's pile relates to the lesson's (practice returns to the start, so holding the number back only means something on a different pile);
+  - the tap control checked on paper against other needs near the top of the order;
+  - a working sketch of the trade with a rules-first review.
+
+  The record then goes to the owner, with a one-page English summary.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
