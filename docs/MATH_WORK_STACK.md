@@ -178,10 +178,27 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - then build the components the map ranks highest, each with its interaction designed in from the start.
 
   The D1–D8 list above waits on this.
-- **Decided (owner, 2026-11-21, late): the working rules above.** The owner restated the point as rules and asked for work to continue overnight.
-  - D2 is withdrawn.
-  - D1 and D3–D8 are superseded by the component map; whatever survives will be re-asked against the rules.
-- **Now (overnight, free; no model calls, nothing built or merged into product code):** the component map, then component designs and picture mock-ups, reviewed by Fable. The plan is in the owner report of 2026-11-21.
+- **Decided (owner, 2026-11-21, late): the working rules above,** and that work continues overnight.
+  - I withdrew my D2.
+  - The rest of that day's list (D1, D3–D8) is set aside, waiting for the owner, behind the component map.
+- **Done (overnight 2026-11-21/22; free: no model calls, no product code):** the component map and working sketches (handoff `runs/fractions/component-map/`).
+  - **Fraction map.** It has 27 teaching needs, each with what the child sees and does, how completion is checked from typed state, the control it needs, today's state and the harm in the runs.
+    - First finding: the fraction card is the only math card with no learner control.
+    - Ranked by harm: how many fit (5.NF.B.7.b), mixed numbers, joining and separating, a fraction of a length on a tape.
+  - **Working sketches of those four** (artifact "Fraction Component Sketches").
+    - They are drawn from tested code: 54 arithmetic checks and 36 checks in a headless browser.
+    - A rules-first Fable review found that the first version let a child reach the answer by copying a count already on screen. Now the child decides when to stop, and nothing is counted or labelled until the child has typed it.
+    - It also found needs folded into neighbours (now their own rows), a refused sum over one whole (now it spills into a second whole), and marbles on a continuous tape (now kilometres; objects as groups is its own component).
+  - **K–12 by area, open questions only.** These come from the M1 tags; no question text was read and nothing was designed from the set.
+    - In K–2, 16 of 22 open questions need a component that doesn't exist.
+    - K–2 early number is split into 10 needs from the standards (codes checked).
+    - Most K–2 needs are physical actions (touching each thing once, pairing, bundling ten), so a tap control in OLL would serve most of them.
+- **Decide (owner):**
+  - which components to build first. Recommended: how many fit, then mixed numbers, joining and separating, and the tape;
+  - whether to build two OLL pieces several components need: a **tap control**, and a **typed answer that can require a form** (a mixed number, or a fraction over a given denominator);
+  - whether to split another area next. Candidates: data charts, or K–2 measurement.
+
+  Building any of them, and any paid test, would be asked for separately.
   **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
