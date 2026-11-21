@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-20. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-21. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -129,14 +129,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
     So each card needs a narrow scope, an input shape that shows its purpose, and a measured selection rate.
   - **Correction:** this morning's "the errors are the program's" holds for the mechanism, but was too narrow about the cause.
-- **Decide (owner):**
-  - **withdraw P1 and P2 (recommended).** The fraction card is a trial recipe, off by default and set in no repository (the server's settings file is not checked), so learners should not see it;
-  - **design P3 and P4 in the next note** rather than hold them; the paid run is then not needed;
-  - **approve the free next step:** a design note for the blueprint's gaps (each with its teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), plus P3, P4 and a selection plan, reviewed by Fable;
-  - **my lean for the first piece:** "how many fit" (B14b). The note decides whether counting (B03, B07) is a new card or givens with program-written labels on today's picture.
+- **Decided (owner, 2026-11-21): all four recommendations.**
+  - P1 and P2 are withdrawn.
+  - P3 and P4 are to be designed in the next note.
+  - The paid run that was to judge P1 and P2 is not needed.
+  - The free design note is approved, with "how many fit" (B14b) as the first piece.
 
-  Scoring waits for this.
-- **Next:** the design note, if approved. The tape card (B12, X01, X03) is one of its entries; its decision record waits for the note.
+  **Still open:** the server's settings file has not been checked for `LEARNING_COACH_TRIAL_RECIPES`. The owner can confirm; I will not read production.
+- **Now: the design note** (free; no build, no calls). Before drafting it, two checks on the saved replies:
+  - whether the first replies without values are a place the card lacks (the blueprint's opening state: a whole cut into parts, nothing shaded);
+  - "how many fit" tested on paper against the share view, which takes the same two numbers.
+
+  Fable consults on the draft, then a fresh Fable review. The tape card (B12, X01, X03) is one of the note's entries; its decision record waits for the note. Scoring waits too.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
