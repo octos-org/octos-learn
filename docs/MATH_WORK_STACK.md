@@ -225,7 +225,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 
     All were fixed, and a check of the fixes confirmed them.
   - **Provisional build order:** by open-question count (counts only): fraction models, counters and ten frames, data charts, polygon figures, place value, probability, tapes. 61 needs fit no existing picture kind.
+- **Approved (owner, 2026-11-21): look for reusable building blocks** for the components, rather than building each one on its own (the AI still picks one component per need; the blocks stay inside the program).
+- **Done (2026-11-21): the building-block test failed, 6 of 25** (handoff `runs/fractions/component-map/blocks/RESULT.md`). Free; nothing built.
+  - **The test:** blocks were found in half the map, then a different agent tried to build 25 held-back needs from them, adding nothing. The bar of 20 was set before any block existed.
+  - **In the half they came from,** 11 objects, 5 relations and 23 shared actions build 185 of 222 needs.
+  - **Failures, in two kinds:**
+    - 8 needed pieces from topics the blocks never saw (place value, high-school algebra, mapping arrows, a tree diagram);
+    - 11 had the objects but lacked a piece. In about 6 that piece is the heart of the component (laying units along a length, linked clock hands, a compass, tracing a copy); in about 5 it is a small addition.
+  - **The block count does not level off** (61 needs gave 14 blocks; 222 gave 39; the test wanted at least 7 more).
+  - **A small core transferred:** containers, units, moving an item, figures, placing the next unit.
+  - **Correction:** "a small set keeps recurring" was wrong. A small core recurs; most components need a piece of their own.
 - **Decide (owner):**
+  - **grow the blocks as components are built** (recommended): start each component from the existing blocks, and turn a piece into a block when a second component needs it. The alternative is designing the full set first, which the data does not support;
   - **review and freeze the list;**
   - **then a free re-tag** of the coverage measure against it, by a fresh agent returning question IDs and tags only, which sets the real order;
   - **the proposed plan amendment** (handoff `component-map/plan-amendment-draft.md`):
