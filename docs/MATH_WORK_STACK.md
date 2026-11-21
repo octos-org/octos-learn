@@ -8,6 +8,19 @@ As of 2026-11-21. This is the **status page for the math expressiveness work**, 
 
 The plan itself is `docs/MATH_EXPRESSIVENESS_PLAN.md`; this page says where we are in it.
 
+## Working rules (owner, 2026-11-21; must be followed)
+1. **When a test question fails, examine the interactive component itself first.** Is it actually capable of representing the knowledge being taught in a way that is appropriate for this particular question?
+2. **If it isn't, the model is forced to squeeze the lesson into the closest representation the card can produce,** which gives an incorrect or misleading picture. This does not necessarily mean the model broke our rules, or that the program failed to enforce them.
+3. **The real solution is to design interactive components that fit the teaching need,** and that help children understand abstract concepts through concrete, intuitive visualizations. It is not to keep adding rules that prevent wrong pictures.
+4. **The goal is a much wider variety of interactive components,** each designed for a specific teaching need.
+
+**In practice:**
+- every failure analysis starts with what the child should see and do, and whether a component shows it;
+- a misleading picture is answered with the component that fits, not with a refusal rule;
+- interaction is designed in from the start;
+- work proceeds from a map of teaching needs to components, not one card at a time;
+- every plan says how each item follows these rules, and reviewers check that as well as the facts.
+
 **Keep it current.** Update it whenever an item finishes, a layer is pushed (going deeper) or popped (coming back up), or something needs the owner. The owner reads this page to follow the project at a glance. A rendered copy is kept as a claude.ai artifact by whoever is working; this file is the record in the repo.
 
 Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner to merge), **Paused**.
@@ -165,6 +178,10 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - then build the components the map ranks highest, each with its interaction designed in from the start.
 
   The D1–D8 list above waits on this.
+- **Decided (owner, 2026-11-21, late): the working rules above.** The owner restated the point as rules and asked for work to continue overnight.
+  - D2 is withdrawn.
+  - D1 and D3–D8 are superseded by the component map; whatever survives will be re-asked against the rules.
+- **Now (overnight, free; no model calls, nothing built or merged into product code):** the component map, then component designs and picture mock-ups, reviewed by Fable. The plan is in the owner report of 2026-11-21.
   **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
