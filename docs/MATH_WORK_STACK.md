@@ -235,20 +235,30 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **The block count does not level off** (61 needs gave 14 blocks; 222 gave 39; the test wanted at least 7 more).
   - **A small core transferred:** containers, units, moving an item, figures, placing the next unit.
   - **Correction:** "a small set keeps recurring" was wrong. A small core recurs; most components need a piece of their own.
-- **Decide (owner):**
-  - **grow the blocks as components are built** (recommended): start each component from the existing blocks, and turn a piece into a block when a second component needs it. The alternative is designing the full set first, which the data does not support;
-  - **review and freeze the list;**
-  - **then a free re-tag** of the coverage measure against it, by a fresh agent returning question IDs and tags only, which sets the real order;
-  - **the proposed plan amendment** (handoff `component-map/plan-amendment-draft.md`):
-    - §6 becomes the per-need list;
-    - shared pieces come first;
-    - §5 adds the rules' tests;
-    - the fraction trial card becomes the fraction rows;
-  - **whether to build the shared pieces first:** the tap and drag controls, the hold-back option, and typed answers with a form;
-  - **then the first components** (recommended: the four sketched fraction components).
-
-  Building, and any paid test, would be asked for separately.
-  **Still open:** the server settings file (`LEARNING_COACH_TRIAL_RECIPES`).
+- **Decided (owner, 2026-11-21):**
+  - grow blocks as components are built;
+  - freeze the map as it stands, without a review (`FREEZE.md`, `NEEDS-INDEX.md`, 449 needs);
+  - re-tag M1 against it;
+  - apply the plan amendment (this PR, §5 items 9–10 and §6).
+- **Done (2026-11-21): the re-tag** (handoff `component-map/BUILD-ORDER.md`, `RETAG-tags.json`).
+  - **Method:** a fresh agent tagged all 160 questions with the needs their teacher pictures call for, returning IDs and tags only. The ranking uses open questions only.
+  - **Result:** of 119 open questions, 104 call for a need in the map, 11 need no picture, and 4 fit no need.
+  - **The order is coarse.** 104 questions spread over 137 needs, so most needs have 1 or 2.
+  - **Top needs:**
+    - tens-and-ones trading (K2N-23, 4 open questions);
+    - making ten to add (K2N-19);
+    - building and pulling apart a number by place, and adding and subtracting with trades on a place-value chart (35P-05, 35P-07);
+    - where two lines cross (68E-28);
+    - building a dot plot (68G-33);
+    - a vertical number line (68R-15);
+    - a unit fraction ÷ a whole number (FR-24);
+    - and others at 2 each.
+  - **By area:** 6–8 geometry and statistics 18 open questions; high-school functions 13; K–2 early number 12; high-school geometry and statistics 12; fractions 11.
+  - **Correction:** the four sketched fraction components rank low by this measure. "How many fit" has 1 open question; mixed numbers, joining and the tape have 0. The earlier recommendation came from harm in the fraction runs, not from the plan's measure.
+- **Decide (owner):** the first component.
+  - **Recommended: trading tens and ones (K2N-23).** It is the top need. With its two place-value siblings (35P-05, 35P-07) it serves 8 open questions on one block family (base-ten units and the trade action). It also needs the tap control and the hold-back option, which most later components use.
+  - **Alternative:** "how many fit", already sketched, with the most harm in the fraction runs.
+  - **What happens to the fraction trial** (the sealed scoring set, the tape card) follows from this choice.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.

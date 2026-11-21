@@ -104,10 +104,24 @@ What the number line taught us, made into a checklist so that the next component
 6. **Small probe, then the gate.** A probe of about $0.25 tests the model's behaviour; the gate runs once on frozen code with rules written down beforehand.
 7. **Studio and CoursePacks** use the same builder.
 8. **Switched on** in a separate change, then M1–M3 are re-measured.
+9. **The owner's working rules (2026-11-21).**
+   - The component serves one teaching need.
+   - The child's action is the idea itself (cutting, counting, grouping, joining, measuring), and the child decides when to stop.
+   - Completion is checked from what the child built and typed. The screen does not show the answer until the child has typed it.
+   - No need is folded into another component to save work.
+10. **Built from blocks where they fit (owner, 2026-11-21).** A component starts from the existing blocks: mathematical objects that know their meaning, shared child actions, and relations. It adds only what it needs. A piece becomes a shared block when a second component needs it. The blocks stay inside the program: the model still picks one component per need and writes that need's typed values.
 
 **Rule: a written pass bar (owner, 2026-11-18).** Before any paid probe or gate runs, its record states the cases, the arms, the repeats and the pass bar. Where a change can also cost something, the bar has two sides: what it must improve, and what it must not lose. The result is judged only against that bar, and the bar is never changed after the run. A near pass is reported as a miss; another probe is a new paid step that the owner approves like any other.
 
 ## 6. Candidates
+
+**Amended (owner, 2026-11-21).** The candidates are now the **K–12 component map**, one component per teaching need. Its 449 needs come from the Common Core standards. The owner froze the map on 2026-11-21, recorded in handoff `runs/fractions/component-map/FREEZE.md` and `NEEDS-INDEX.md`.
+- **Order:** M1 is re-tagged against the frozen list by a fresh agent, which returns question IDs and tags only. Components are then built in the order of the open questions that need them.
+- **The picture kinds below** were the first list. They stay as history, and the map records each need's picture kind.
+- **Why the change:** each picture kind carried many teaching needs. The fraction card showed the cost: the model squeezed lessons into the nearest view the card had.
+- **A test of designing blocks up front** (handoff `component-map/blocks/RESULT.md`) found that blocks from half the map built only 6 of 25 needs from the other half. So blocks grow as components are built (§5 item 10).
+
+The original text follows.
 
 Two kinds, ranked by M1 gain per unit of cost once the baseline exists. The list below is a starting point; M1's split will add to it and re-order it.
 
@@ -221,7 +235,7 @@ The owner has confirmed that fractions and charts stay in the plan.
         - **Cause of the three (found 2026-11-18, Coach #128):** a program defect. A later section's practice target on an earlier section's line was rounded onto the slider's derived step (2 became 1.99), which the line's ticks cannot hold. #128 keeps the value. Replay rescues all three, and of the other 316 recorded lessons only three change (each where main had re-asked a section). But a blind reader judged all three rescued lessons misleading: the accidental refusal was hiding steps lines used for subtraction and repeated jumps. #128 was closed (owner, 2026-11-18).
         - **Reader effect:** the 2026-11-14 reading counted 13 of the same baseline lessons as misleading; today's readers count 25. Only the paired comparison is read as a change.
    9. **Backlog with a trigger** (OLL): plot labels overlapping at a few slider states, and number-line tick labels adding rows while dragging. Taken up if a recording or a judge shows them in a real lesson.
-4. **Components in the order M1 sets** (re-tagged in 3.1), each through §5, after the 3D solids extension. Fractions (0021, accepted 2026-11-18; building) and charts (0015) start their decision records once M1 confirms where they rank.
+4. **Components in the order M1 sets** (re-tagged in 3.1; since 2026-11-21, re-tagged against the frozen component map, §6), each through §5, after the 3D solids extension. Fractions (0021, accepted 2026-11-18; building) and charts (0015) start their decision records once M1 confirms where they rank.
 5. **Re-measure** after each component; this plan's table of results is updated each time.
 
 ## 8. Decisions
