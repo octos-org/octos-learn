@@ -114,10 +114,13 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - captions unchanged, which corrects 2026-11-19.
   - **Net change against today:** newly accepted FD-04, FD-20 (re-run 1) and FM-01 (probe 1); newly refused 6 split inputs (4 wrong, 2 FD-05's correct ones).
 - **Done (2026-11-20): did the card fit the lessons?** The owner asked whether the failures meant the card was unsuited to the lessons, rather than that the model or program broke rules (handoff `runs/fractions/card-fit/review.md`; no build, no calls). It is sorted by the 2026-11-19 audit's verdicts, which were written before the FD runs.
-  - **"How many fit" (5.NF.B.7.b) has no picture anywhere.** FD-20 was wrong in every run, with the card and without it; FM-15 was wrong or lost in two of three probes.
-  - **Every wrong card in the FD runs (7) was predicted by the audit.** Two cases were flagged as misleading (FD-15, FD-23). In the other five, the card made the model compute the answer to write it (FD-04, FD-11, FD-20 ×3), against decision 0020. There were none in the three "fully" cases. The audit listed these gaps on 2026-11-19; we deferred them and patched the split view instead.
+  - **"How many fit" (5.NF.B.7.b) has no picture that counts the pieces or states the division.** Without the card, FD-20 was wrong in all three runs. With it, the best card is "partly" (12/4, uncounted), and re-run 2 lost even that to the same-card refusal (P4).
+  - **The audit predicted 2 of the 5 cases that went wrong** (FD-15, FD-23). It called the 16 in-scope cases, FD-04, 11 and 20 among them, "none misleading".
+    - Found afterwards: all 5 sit in the 12 of 24 cases it flagged in some way. The other flag was that the card makes the model compute the answer to write it, against decision 0020.
+    - There were none in the three "fully" cases.
+    - Amendment 2 added the share view and two-step cards. The counting labels, operation views and "how many fit" were deferred, and we patched the split view instead.
   - **In the probes, about half the misleading lessons were program faults on questions the card fits,** all since fixed. The rest were questions it does not fit.
-  - **Nothing broke a rule in the FD runs.** One field carried two meanings, and the model did the program's arithmetic.
+  - **Nothing broke a rule in the FD runs.** The model's arithmetic was right every time. What the four misleading captions share is a part count in the cut field after refusals. The card had no other way to say "each whole in d pieces", so one field carried two meanings.
   - **The reply chain still matters:** three of the four misleading captions began with a first reply that had no values (P3).
   - **Against "more cards":**
     - a half-fitting card pulled four operation lessons away from the number line (one-run readings);
@@ -127,9 +130,9 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     So each card needs a narrow scope, an input shape that shows its purpose, and a measured selection rate.
   - **Correction:** this morning's "the errors are the program's" holds for the mechanism, but was too narrow about the cause.
 - **Decide (owner):**
-  - **withdraw P1 and P2 (recommended).** This costs learners nothing: the fraction card is a trial recipe that no deployment offers;
-  - **keep P3 open** and design it in the next note; hold P4; the paid run is then not needed;
-  - **approve the free next step:** a design note for the blueprint's gaps (each with its teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), plus P3 and a selection plan, reviewed by Fable;
+  - **withdraw P1 and P2 (recommended).** The fraction card is a trial recipe, off by default and set in no repository (the server's settings file is not checked), so learners should not see it;
+  - **design P3 and P4 in the next note** rather than hold them; the paid run is then not needed;
+  - **approve the free next step:** a design note for the blueprint's gaps (each with its teaching step, typed givens, what the program computes, what the child does, and how a wrong pick fails by structure), plus P3, P4 and a selection plan, reviewed by Fable;
   - **my lean for the first piece:** "how many fit" (B14b). The note decides whether counting (B03, B07) is a new card or givens with program-written labels on today's picture.
 
   Scoring waits for this.
