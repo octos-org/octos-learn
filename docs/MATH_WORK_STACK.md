@@ -296,12 +296,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Flow:** a demonstration comes first, then practice on a different problem.
   - **Tested:** a fresh agent's no-notes first-use test finished in one pass with one wrong first move, and its six findings are fixed. 32 model checks and 40 page checks pass.
 - **Decided (owner, 2026-11-22): v3 accepted,** after one fix: the hundreds overlapped, and now stand three to a row, apart. Decision 0023 is accepted (OLL #85).
-- **Next: build step 1 of 0023** (free, product code in OLL):
-  - the `base_ten_trade` card;
-  - the four player abilities: card-handled tap, a "done" step the child submits, holding numbers back, and practice from a different pile;
-  - browser checks.
-
-  Then the judge and cases, the Coach recipe, and the paid probe (each paid step asked for first).
+- **Done (2026-11-22): step 1 of 0023 in OLL,** four PRs, all "Needs code review", 9 review rounds in total. Each one was merged only after its conformance check passed.
+  - **A: the `base_ten_trade` card** (OLL #86, math plugin 0.5.0; 2 rounds).
+    - The card's rules are ported from sketch v3. The view draws the accepted mat.
+    - Round 1 found that a three-column mat's fifth variable wasn't range-checked. Now each variable is checked on its own, and the card never draws more than the mat holds.
+  - **B: card tasks** (OLL #87, player 0.14.0; 3 rounds).
+    - New: a tap that changes several variables in one step; "I'm done" judged by the card; a gate so the card can be tapped only while its task is open; a practice pile that must be given.
+    - Review found: a revised card would freeze, so a bound card can't be revised. A count could leave its range, so a practice pile is required and tap variables have no other control. A replay didn't lay the practice pile again; it does now, and once the task is done a replay shows the child's traded pile.
+  - **C: tapping on the board** (OLL #88; 2 rounds). The unit tapped is the unit that moves, trades animate, and refusals are explained. Review found a stale animation timer and a revised title not redrawn; both are fixed, and the timer case has a browser test that fails without the fix.
+  - **D: the demonstration** (OLL #89; 2 rounds). The lesson taps the card by its own rules, and the validator follows the counts in playback order and refuses an illegal tap before playback. Review found that a tap could push a count past its range, and that a slider could invalidate a later tap; both are refused now.
+  - **Changes from the approved abilities, for the owner:** holding numbers back isn't needed, because the card never draws a number; instead the card can be tapped only while its task is open. The typed answers would be separate short questions (one blank each) unless the owner wants a multi-blank row, which would be a further ability.
+- **Needs the owner:** separate questions or one multi-blank row for the typed answers.
+- **Next (free):** steps 2 and 3 of 0023, the judge and cases, then the Coach recipe; also the Learn host's "I'm done" task UI and the OLL pin. The paid probe is asked for first.
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
