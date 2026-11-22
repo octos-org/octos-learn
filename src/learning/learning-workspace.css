@@ -1941,6 +1941,82 @@
   cursor: default;
 }
 
+/* A row of blanks (decision 0023 amendment 1): text and boxes on one line, a word under each box. */
+.learning-answer-row {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.learning-answer-row-parts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 7px;
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+.learning-answer-row-text {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  color: #2f3532;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.learning-answer-row-blank {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.learning-answer-row-blank > input {
+  width: 4.2em;
+  min-height: 34px;
+  padding: 5px 6px;
+  border: 1px solid rgba(13, 112, 130, 0.24);
+  border-radius: 9px;
+  background: #fff;
+  color: #2f3532;
+  font-size: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.learning-answer-row-blank > input:focus {
+  border-color: #0d7082;
+  outline: 2px solid rgba(13, 112, 130, 0.18);
+}
+
+.learning-answer-row-blank > input.is-missing {
+  border-color: #c7832e;
+  outline: 2px solid rgba(199, 131, 46, 0.22);
+}
+
+.learning-answer-row-blank > small {
+  color: #4f5752;
+  font-size: 12px;
+}
+
+.learning-answer-row > button {
+  min-height: 34px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #0d7082;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 650;
+  margin-left: auto;
+}
+
+.learning-answer-row > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* An earlier course keeps its practice in place while a later lesson plays. */
 .learning-student-task.is-locked {
   opacity: 0.62;

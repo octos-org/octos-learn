@@ -1,10 +1,11 @@
-import { checkNumericAnswer, type AuthoringAnswerStudentTask } from "octos-lesson-language";
+import { checkNumericAnswer, type AuthoringAnswerStudentTask, type AuthoringRowStudentTask } from "octos-lesson-language";
 import type { StudentTaskSnapshot } from "octos-lesson-language/web-runtime";
 
 import type { OllLessonOutlineTopic } from "./use-oll-lesson-runtime";
 
 export type AnswerTaskCard = StudentTaskSnapshot & {
-  definition: AuthoringAnswerStudentTask;
+  /** A typed answer, or a row of blanks (decision 0023 amendment 1). */
+  definition: AuthoringAnswerStudentTask | AuthoringRowStudentTask;
   topic: OllLessonOutlineTopic;
 };
 
@@ -14,7 +15,7 @@ export type AnswerTaskCard = StudentTaskSnapshot & {
  * delivery has settled); one that is not open yet shows as locked. */
 export function visibleAnswerTasks(
   tasks: readonly StudentTaskSnapshot[],
-  definitions: ReadonlyMap<string, AuthoringAnswerStudentTask>,
+  definitions: ReadonlyMap<string, AuthoringAnswerStudentTask | AuthoringRowStudentTask>,
   outline: readonly OllLessonOutlineTopic[],
   cursor: number,
   settled: boolean,
@@ -36,7 +37,7 @@ export function visibleAnswerTasks(
 /** What the last typed answer got wrong: its value, or only its written form. */
 export function lastAnswerMistake(card: AnswerTaskCard): "value" | "form" | undefined {
   const last = card.attempts.at(-1);
-  if (!last || last.succeeded || last.answer === undefined) return undefined;
+  if (!last || last.succeeded || last.answer === undefined || card.definition.completion.kind !== "numeric_answer") return undefined;
   const check = checkNumericAnswer(card.definition.completion, last.answer);
   return check.readable && !check.succeeded ? check.reason : undefined;
 }

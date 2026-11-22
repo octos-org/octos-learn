@@ -278,6 +278,14 @@ describe("OLL lesson artifacts", () => {
             tolerance: 0.1,
           },
           hints: [],
+        }, {
+          // A card task (decision 0023) belongs to the card it taps.
+          as: "trade",
+          prompt: "Make tens until you can't.",
+          availability: { kind: "after_lesson" },
+          allowed_operations: [{ kind: "card_tap", node: "course:node:mat" }, { kind: "card_submit" }],
+          completion: { kind: "card_fact", node: "course:node:mat", fact: "no_trade_left" },
+          hints: [],
         }],
       },
     }, {
@@ -307,6 +315,7 @@ describe("OLL lesson artifacts", () => {
 
     expect(buildOllLessonTopics([events])[0]?.taskTargets).toEqual({
       rotate: { variableAliases: ["theta"], nodeIds: [] },
+      trade: { variableAliases: [], nodeIds: ["course:node:mat"] },
     });
   });
 
