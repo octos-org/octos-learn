@@ -313,12 +313,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **OLL #93: "I'm done" with a few ones left in the tray** (1 round; 0023 amendment 2). This was the first-use test's most confusing moment: done was refused and "Fill the tray first" was impossible. Done now needs only that no place has ten or more. The refusal states a fact, and the mat is laid tidy afterwards.
   - **Learn #223: Learn pins OLL 29403a3** (1 round), with taps on the mat, the "I'm done" button, the row card, and a test page with a browser test of the whole flow (now in CI).
   - **Checked:** a no-notes first-use test in Learn found the problems above. The demonstration plays correctly in Learn's own player.
-- **Open finding:** after the lesson, Learn zooms out to show the whole course, so the mat is about a third of its size (ones about 7 px) while the child answers. Learn's practice camera should frame the mat and the open question at reading size. Recommended next, before the owner tries it.
-- **Needs the owner:**
-  - **Confirm (1):** the mat follows the open task, instead of holding numbers back.
-  - **Confirm (2):** "I'm done" with a few ones left in the tray (differs from sketch v3).
-  - **Decide:** fix the practice camera next?
-- **Later:** the judge and cases, then the Coach recipe (it must ask what each place is *worth*); the paid probe is asked for first. Also a general issue: every card shows its kind in small grey text in the corner (an OLL stylesheet rule).
+- **Decided (owner, 2026-11-22):** both changes confirmed: the mat follows the open task, and "I'm done" works with a few ones left in the tray (OLL #94). The practice camera zoom-out is left as it is for now.
+- **Done (2026-11-22): step 2 of 0023 in Coach.**
+  - **Coach #154:** pins OLL 0225643; requests and recorded lessons are byte-identical. No review needed.
+  - **Coach #155:** the blueprint (5 rows from the standards), 20 development cases (16 with the stated pile, 4 near misses; all under the overlap bars) and the judge; 2 review rounds.
+    - Round 1 found: a case with no stated pile; "different practice pile" comparing piles rather than numbers; row words not tied to the practice pile; tests covering only two columns.
+    - All are fixed, with a test for each check.
+- **Needs the owner: five decisions for the recipe (step 3)**, recommendations first (handoff `first-component/STEP2-3-PLAN.md`):
+  1. The program speaks the demonstration's trade steps, as the v3 sketch captioned them. This would be the program's first time in the teacher's voice.
+  2. Long piles: the first trade tap by tap, then the rest at once.
+  3. The program writes the mat's practice, and model practice questions about the mat are dropped.
+  4. One mat per lesson.
+  5. English lessons only for now.
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
