@@ -274,13 +274,30 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - the tap control is handled by the card (checked on paper against six needs near the top);
     - four new player abilities.
   - The one-page English summary is `first-component/SUMMARY-0023.md`.
-- **Needs the owner: the six questions in 0023.**
-  1. The component. One point within it: a child can press "done" more than once to find when to stop. The recommendation is no limit.
-  2. The tap control.
-  3. The other three player abilities.
-  4. Retiring 0022.
-  5. Pausing the fraction trial.
-  6. The order of work.
+- **Decided (owner, 2026-11-22), on 0023's six questions:**
+  1. No limit on pressing "done".
+  2. The tap control: approved.
+  3. The other three player abilities: approved.
+  4. 0022 is retired. OLL #79 is closed, replaced by per-need components.
+  5. The fraction trial is paused.
+  6. The order of work: approved.
+- **Needs work (owner, 2026-11-22): the sketch is not intuitive enough.** The owner had to read the notes and try it several times before seeing what it teaches.
+  - The sketch was built to test the logic and checks, not first-use clarity.
+  - The meaning is carried by words instead of by the picture and its motion:
+    - five buttons and a break mode;
+    - instant trades, with no visible fusing of ten ones into a ten;
+    - the piece tapped is not the piece that moves;
+    - small pieces;
+    - no demonstration before the child tries.
+  - 0023 is back to Proposed until the interaction is redone.
+- **Now: sketch v3 of trading tens and ones** (free).
+  - Meaning moves into the picture: the tapped piece moves, and ten ones visibly fuse into a ten.
+  - Trade sits on the ring, and break is a direct action on a piece.
+  - The lesson's demonstration comes first.
+  - Larger pieces.
+  - Kept: the child trades, only exactly ten trades, the child says done, and nothing is counted on screen.
+  - Before the owner sees it, a fresh agent gets the page with no notes and says what it teaches and what to do next.
+- **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
 - **Owner's app findings (2026-11-19):** a few issues found while trying the app; to be taken up after the plan's current steps.
