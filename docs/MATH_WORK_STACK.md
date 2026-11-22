@@ -290,13 +290,18 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - small pieces;
     - no demonstration before the child tries.
   - 0023 is back to Proposed until the interaction is redone.
-- **Now: sketch v3 of trading tens and ones** (free).
-  - Meaning moves into the picture: the tapped piece moves, and ten ones visibly fuse into a ten.
-  - Trade sits on the ring, and break is a direct action on a piece.
-  - The lesson's demonstration comes first.
-  - Larger pieces.
-  - Kept: the child trades, only exactly ten trades, the child says done, and nothing is counted on screen.
-  - Before the owner sees it, a fresh agent gets the page with no notes and says what it teaches and what to do next.
+- **Done (2026-11-22): sketch v3 of trading tens and ones** (handoff `first-component/sketch-v3/`).
+  - **The mat:** a place-value mat with columns labelled in words. A tray of exactly ten sits between two columns, labelled, and takes no more once full (owner).
+  - **Actions:** the tapped piece is the one that moves; the trade is animated; the buttons sit under the tray; break puts a ten back into the empty tray.
+  - **Flow:** a demonstration comes first, then practice on a different problem.
+  - **Tested:** a fresh agent's no-notes first-use test finished in one pass with one wrong first move, and its six findings are fixed. 32 model checks and 40 page checks pass.
+- **Decided (owner, 2026-11-22): v3 accepted,** after one fix: the hundreds overlapped, and now stand three to a row, apart. Decision 0023 is accepted (OLL #85).
+- **Next: build step 1 of 0023** (free, product code in OLL):
+  - the `base_ten_trade` card;
+  - the four player abilities: card-handled tap, a "done" step the child submits, holding numbers back, and practice from a different pile;
+  - browser checks.
+
+  Then the judge and cases, the Coach recipe, and the paid probe (each paid step asked for first).
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
