@@ -22,7 +22,14 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
   await expect(looseOnes).toHaveCount(7);
   await page.screenshot({ path: 'test-results/trading-mat-traded.png' });
+  // The last 7 ones go in the tray too: they do not make a ten, and "I'm done" still succeeds (OLL #93).
+  for (let i = 0; i < 7; i += 1) await looseOnes.first().click({ force: true });
+  await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
+  await expect(page.locator('.base-ten-notice')).toHaveText('This tray does not hold a ten: a ten is ten ones.');
   await done.click();
+  // The mat is laid tidy for the questions: 3 tens and 7 ones, the tray empty.
+  await expect(page.locator('.base-ten-unit.base-ten-in-tray')).toHaveCount(0);
+  await expect(looseOnes).toHaveCount(7);
   // The mat is inert once the learner has said done.
   await expect(page.locator('.base-ten-mat .base-ten-live')).toHaveCount(0);
   const answer = page.getByTestId('oll-answer-task').filter({ hasText: /How many marbles/ });
@@ -42,10 +49,10 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await expect(counts).toContainText(/1/);
   await countBoxes.nth(1).fill('7');
   await counts.locator('button[type="submit"]').click();
-  const parts = page.getByTestId('oll-answer-task').filter({ hasText: /Write the number by places/ });
+  const parts = page.getByTestId('oll-answer-task').filter({ hasText: /What are the tens and the ones worth/ });
   const partBoxes = parts.locator('.learning-answer-row-blank input');
   await expect(partBoxes).toHaveCount(2);
-  await expect(parts.locator('.learning-answer-row-blank small')).toHaveText(['the tens', 'the ones']);
+  await expect(parts.locator('.learning-answer-row-blank small')).toHaveText(['the tens are worth', 'the ones are worth']);
   await page.screenshot({ path: 'test-results/trading-mat-row.png' });
   await partBoxes.nth(0).fill('30');
   await partBoxes.nth(1).fill('7');

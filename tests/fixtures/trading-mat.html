@@ -2,6 +2,11 @@
 <meta charset="utf-8"><title>Trading mat in the lesson board</title>
 <style>body {margin:0;} #root {width:1280px;height:900px;}</style>
 <div id="root"></div>
+<script>
+// The trading mat serves US K-12 lessons: English unless the test asks otherwise. A classic script runs
+// before the module below imports the app, which reads the language once when it loads.
+try{localStorage.setItem('octos-locale',new URLSearchParams(location.search).get('lang')??'en-US');}catch{}
+</script>
 <script type="module">
 // The trading mat (decision 0023) in Learn's real lesson board, with the lesson already played: the
 // practice pile on the mat, the "I'm done" task beside it, then the typed answer and two rows of blanks.
@@ -17,7 +22,8 @@ import 'octos-lesson-language/web-runtime/styles.css';
 const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
 const key=new URLSearchParams(location.search).get('key')??'trading-mat';
 function App(){
- const runtime=useOllLessonRuntime({source,storageKey:key,startAtEnd:true,topics});
+ const fromStart=new URLSearchParams(location.search).has('fromStart');
+ const runtime=useOllLessonRuntime({source,storageKey:key,startAtEnd:!fromStart,autoPlay:fromStart,topics});
  window.tradingRuntime=runtime;
  if(!runtime?.board)return null;
  return React.createElement(OllLessonBoard,{runtime,inkSessionId:key,portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
