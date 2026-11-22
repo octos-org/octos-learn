@@ -306,8 +306,19 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **C: tapping on the board** (OLL #88; 2 rounds). The unit tapped is the unit that moves, trades animate, and refusals are explained. Review found a stale animation timer and a revised title not redrawn; both are fixed, and the timer case has a browser test that fails without the fix.
   - **D: the demonstration** (OLL #89; 2 rounds). The lesson taps the card by its own rules, and the validator follows the counts in playback order and refuses an illegal tap before playback. Review found that a tap could push a count past its range, and that a slider could invalidate a later tap; both are refused now.
   - **Changes from the approved abilities, for the owner:** holding numbers back isn't needed, because the card never draws a number; instead the card can be tapped only while its task is open. The typed answers would be separate short questions (one blank each) unless the owner wants a multi-blank row, which would be a further ability.
-- **Needs the owner:** separate questions or one multi-blank row for the typed answers.
-- **Next (free):** steps 2 and 3 of 0023, the judge and cases, then the Coach recipe; also the Learn host's "I'm done" task UI and the OLL pin. The paid probe is asked for first.
+- **Decided (owner, 2026-11-22): typed answers as rows of blanks** (option B), "it increases the expressive capabilities of our system". Recorded in 0023 amendment 1 (OLL #90).
+- **Done (2026-11-22): the row, and the trading mat in Learn.** All "Needs code review" except #90, and each merged only after its checks passed.
+  - **OLL #91: a row of blanks** (`numeric_row`; 1 round). Fixed text and 1 to 6 blanks, judged whole, never saying which blank is wrong; an empty blank isn't a try.
+  - **OLL #92: question cards on one card stack in their order** (2 rounds). They were reversed. Round 1 found that a task docked under another card could push a question away; only cards hanging directly under the card count now.
+  - **OLL #93: "I'm done" with a few ones left in the tray** (1 round; 0023 amendment 2). This was the first-use test's most confusing moment: done was refused and "Fill the tray first" was impossible. Done now needs only that no place has ten or more. The refusal states a fact, and the mat is laid tidy afterwards.
+  - **Learn #223: Learn pins OLL 29403a3** (1 round), with taps on the mat, the "I'm done" button, the row card, and a test page with a browser test of the whole flow (now in CI).
+  - **Checked:** a no-notes first-use test in Learn found the problems above. The demonstration plays correctly in Learn's own player.
+- **Open finding:** after the lesson, Learn zooms out to show the whole course, so the mat is about a third of its size (ones about 7 px) while the child answers. Learn's practice camera should frame the mat and the open question at reading size. Recommended next, before the owner tries it.
+- **Needs the owner:**
+  - **Confirm (1):** the mat follows the open task, instead of holding numbers back.
+  - **Confirm (2):** "I'm done" with a few ones left in the tray (differs from sketch v3).
+  - **Decide:** fix the practice camera next?
+- **Later:** the judge and cases, then the Coach recipe (it must ask what each place is *worth*); the paid probe is asked for first. Also a general issue: every card shows its kind in small grey text in the corner (an OLL stylesheet rule).
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
