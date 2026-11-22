@@ -46,7 +46,9 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await countBoxes.nth(1).fill('17');
   await counts.locator('button[type="submit"]').click();
   await expect(countBoxes.nth(0)).not.toHaveClass(/is-missing/);
-  await expect(counts).toContainText(/1/);
+  // The wrong row counted as one try, and the feedback names no box.
+  await expect(counts.locator('.learning-student-task-feedback small')).toContainText('1');
+  await expect(counts.locator('.learning-answer-row-blank input.is-missing')).toHaveCount(0);
   await countBoxes.nth(1).fill('7');
   await counts.locator('button[type="submit"]').click();
   const parts = page.getByTestId('oll-answer-task').filter({ hasText: /What are the tens and the ones worth/ });
