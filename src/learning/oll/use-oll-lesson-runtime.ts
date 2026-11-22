@@ -126,6 +126,17 @@ export interface OllLessonRuntimeController {
   retryStudentTask(taskId: string): void;
   /** A typed answer to the open numeric answer task; `false` when the text is not a number. */
   submitStudentAnswer(taskId: string, text: string): boolean;
+  /**
+   * A row of blanks to the open row task (decision 0023 amendment 1); the names of blanks left empty or
+   * not readable as numbers, or an empty list when the row was checked.
+   */
+  submitStudentRow(taskId: string, answers: Record<string, string>): string[];
+  /** Whether the open task lets the learner tap this card now (decision 0023). */
+  studentCardLive(nodeId: string): boolean;
+  /** One tap on a card; the card's own reason when it refuses, or `undefined` when the tap was made. */
+  tapStudentCard(nodeId: string, tap: { kind: "gather" | "ungather" | "make" | "break"; place: number }, input: StudentInputMethod): { operation: unknown } | { refused: string; message: string };
+  /** The learner says "done" on the open card task. */
+  submitStudentCard(taskId: string): void;
   recordStudentInkSelection(
     source: StudentInkSelectionSource,
     input: StudentInputMethod,
@@ -516,6 +527,28 @@ export function useOllLessonRuntime({
     },
     [session],
   );
+  const submitStudentRow = useCallback(
+    (taskId: string, answers: Record<string, string>) => {
+      const result = guardedStudentInput(session, () => session!.submitStudentRow(taskId, answers, "keyboard"));
+      return result && "unreadable" in result ? result.unreadable : [];
+    },
+    [session],
+  );
+  const studentCardLive = useCallback(
+    (nodeId: string) => Boolean(session && !session.failure && session.studentCardLive(nodeId)),
+    [session],
+  );
+  const tapStudentCard = useCallback(
+    (nodeId: string, tap: { kind: "gather" | "ungather" | "make" | "break"; place: number }, input: StudentInputMethod) =>
+      guardedStudentInput(session, () => session!.tapStudentCard(nodeId, tap, input)) ?? { refused: "inert", message: "" },
+    [session],
+  );
+  const submitStudentCard = useCallback(
+    (taskId: string) => {
+      guardedStudentInput(session, () => session!.submitStudentCard(taskId, "unknown"));
+    },
+    [session],
+  );
   const retryStudentTask = useCallback(
     (taskId: string) => {
       guardedStudentInput(session, () => session!.retryStudentTask(taskId));
@@ -696,6 +729,10 @@ export function useOllLessonRuntime({
     requestStudentTaskHint,
     retryStudentTask,
     submitStudentAnswer,
+    submitStudentRow,
+    studentCardLive,
+    tapStudentCard,
+    submitStudentCard,
     recordStudentInkSelection,
     handleStudentScene3dInput,
     setDeliverySettled,

@@ -1,4 +1,4 @@
-import type { AuthoringAnswerStudentTask } from "octos-lesson-language";
+import type { AuthoringAnswerStudentTask, AuthoringRowStudentTask } from "octos-lesson-language";
 import type { StudentTaskSnapshot } from "octos-lesson-language/web-runtime";
 import { describe, expect, it } from "vitest";
 
@@ -60,5 +60,31 @@ describe("lastAnswerMistake", () => {
     expect(lastAnswerMistake(card("0.7", false))).toBe("value");
     expect(lastAnswerMistake(card("6/8", false))).toBe("form");
     expect(lastAnswerMistake(card("3/4", true))).toBeUndefined();
+  });
+});
+
+describe("a row of blanks (decision 0023 amendment 1)", () => {
+  const row: AuthoringRowStudentTask = {
+    as: "parts", anchor: "lesson:node:mat", prompt: "Write the number by places.",
+    availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "row_entry" }],
+    completion: { kind: "numeric_row", parts: [{ text: "37 =" }, { blank: { as: "tens", answer: "30", label: "the tens" } }, { text: "+" }, { blank: { as: "ones", answer: "7", label: "the ones" } }] },
+    hints: ["What are 3 tens worth?"],
+  };
+  const rows = new Map<string, AuthoringAnswerStudentTask | AuthoringRowStudentTask>([[row.as, row]]);
+  const rowTask = (patch: Partial<StudentTaskSnapshot> = {}): StudentTaskSnapshot => ({
+    task_id: "parts", status: "not_started", hints_revealed: 0, attempts: [], available: true, prompt: row.prompt, hints: row.hints, ...patch,
+  });
+
+  it("opens under the card it asks about, like a typed answer", () => {
+    const cards = visibleAnswerTasks([rowTask()], rows, [topic("trade", 4, ["lesson:node:mat"])], 0, true);
+    expect(cards.map((card) => [card.task_id, card.topic.id])).toEqual([["parts", "trade"]]);
+  });
+
+  it("never names a wrong blank: no written-form mistake for a row", () => {
+    const [card] = visibleAnswerTasks([rowTask({
+      status: "in_progress",
+      attempts: [{ sequence: 1, operation_id: "o1", actual: 1, target: 2, succeeded: false, answers: { tens: "3", ones: "7" } }],
+    })], rows, [topic("trade", 4, ["lesson:node:mat"])], 0, true);
+    expect(lastAnswerMistake(card!)).toBeUndefined();
   });
 });

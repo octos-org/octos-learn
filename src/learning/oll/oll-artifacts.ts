@@ -477,7 +477,7 @@ export function buildOllLessonTopics(
                 : operation.variable]
             : []);
         const nodeIds = task.allowed_operations.flatMap((operation) =>
-          operation.kind === "scene3d_view" ? [operation.node] : []);
+          operation.kind === "scene3d_view" || operation.kind === "card_tap" ? [operation.node] : []);
         return [taskAlias, { variableAliases, nodeIds }];
       })),
       ...(questionIds[index] ? { questionId: questionIds[index] } : {}),

@@ -49,6 +49,7 @@ import {
 import {
   evaluateMathExpression,
   type AuthoringAnswerStudentTask,
+  type AuthoringRowStudentTask,
   type AuthoringVariableStudentTask,
 } from "octos-lesson-language";
 import {
@@ -993,6 +994,9 @@ export function LearningWhiteboard({
   const [inkColorPaletteOpen, setInkColorPaletteOpen] = useState(false);
   const [taskError, setTaskError] = useState("");
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
+  // A row of blanks (decision 0023 amendment 1): each blank's draft, and the blanks left empty or unreadable.
+  const [rowDrafts, setRowDrafts] = useState<Record<string, Record<string, string>>>({});
+  const [unreadableRowBlanks, setUnreadableRowBlanks] = useState<Record<string, string[]>>({});
   const [unreadableAnswerTask, setUnreadableAnswerTask] = useState<string | null>(null);
   const [enhancementLayer, setEnhancementLayer] =
     useState<HTMLDivElement | null>(null);
@@ -1213,8 +1217,8 @@ export function LearningWhiteboard({
   // Typed-answer tasks sit by their own board card, not with a visual's controls.
   const studentTaskDefinitions = runtime?.studentTaskDefinitions;
   const answerDefinitions = useMemo(() => new Map((studentTaskDefinitions ?? [])
-    .flatMap((definition) => definition.completion.kind === "numeric_answer"
-      ? [[definition.as, definition as AuthoringAnswerStudentTask] as const] : [])), [studentTaskDefinitions]);
+    .flatMap((definition) => definition.completion.kind === "numeric_answer" || definition.completion.kind === "numeric_row"
+      ? [[definition.as, definition as AuthoringAnswerStudentTask | AuthoringRowStudentTask] as const] : [])), [studentTaskDefinitions]);
   const interactionPlans = presentationTopics.flatMap((topic) => {
     const topicControls = variableControls.filter((control) =>
       topic.variableAliases?.includes(control.alias));
@@ -1853,6 +1857,25 @@ export function LearningWhiteboard({
     }
   }, []);
 
+  const submitRow = useCallback((taskId: string, answers: Record<string, string>) => {
+    try {
+      const missing = runtimeRef.current?.submitStudentRow(taskId, answers) ?? [];
+      setUnreadableRowBlanks((current) => ({ ...current, [taskId]: missing }));
+      setTaskError("");
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法提交答案"));
+    }
+  }, []);
+
+  const submitCardDone = useCallback((taskId: string) => {
+    try {
+      runtimeRef.current?.submitStudentCard(taskId);
+      setTaskError("");
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : tr("暂时无法提交答案"));
+    }
+  }, []);
+
   const retryTask = useCallback((taskId: string) => {
     try {
       runtimeRef.current?.retryStudentTask(taskId);
@@ -2420,6 +2443,11 @@ export function LearningWhiteboard({
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport, (id) => resolveAssetRef.current?.(id));
     (mounted.view as unknown as { setLocale?: (locale: string) => void }).setLocale?.(getLocale());
+    // Taps on a card the learner works on (decision 0023): live only while that card's task is open.
+    mounted.view.setCardTapHandler({
+      live: (nodeId) => runtimeRef.current?.studentCardLive(nodeId) ?? false,
+      tap: (nodeId, tap, input) => runtimeRef.current?.tapStudentCard(nodeId, tap, input) ?? { refused: "inert", message: "" },
+    });
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
     // Automatic framing must not reduce teaching cards to an unreadable
     // thumbnail: large compositions are cropped instead. Meeting displays are
@@ -4079,6 +4107,8 @@ export function LearningWhiteboard({
                           const lastAttempt = task.attempts.at(-1);
                           const attempts = task.attempts.length;
                           const locked = !task.available;
+                          // A card task (decision 0023): the learner taps the card, then says done.
+                          const cardTask = runtime?.studentTaskDefinitions.find((definition) => definition.as === task.task_id)?.completion.kind === "card_fact";
                           return (
                             <article
                               key={task.task_id}
@@ -4115,9 +4145,11 @@ export function LearningWhiteboard({
                               ) : lastAttempt ? (
                                 <div className="learning-student-task-feedback">
                                   <span>
-                                    {task.status === "needs_hint"
-                                      ? taskReactions.taskNeedsHint
-                                      : taskReactions.taskRetry}
+                                    {cardTask
+                                      ? tr("还没有。再看看摆面。")
+                                      : task.status === "needs_hint"
+                                        ? taskReactions.taskNeedsHint
+                                        : taskReactions.taskRetry}
                                   </span>
                                   <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small>
                                 </div>
@@ -4126,7 +4158,15 @@ export function LearningWhiteboard({
                                   <span>{tr("轮到你操作了，完成后这里会立即反馈。")}</span>
                                 </div>
                               )}
-                              {task.current_hint ? (
+                              {cardTask && !locked && task.status !== "succeeded" ? (
+                                <div className="learning-student-task-actions learning-card-done">
+                                  <button type="button" onClick={() => submitCardDone(task.task_id)}>
+                                    <CheckCircle2 size={15} />
+                                    {tr("我做完了")}
+                                  </button>
+                                </div>
+                              ) : null}
+                                                            {task.current_hint ? (
                                 <div
                                   className="learning-student-task-hint"
                                   role="status"
@@ -4211,8 +4251,13 @@ export function LearningWhiteboard({
                 const locked = !card.available;
                 const attempts = card.attempts.length;
                 const mistake = lastAnswerMistake(card);
-                const unit = card.definition.completion.unit;
+                const rowCompletion = card.definition.completion.kind === "numeric_row" ? card.definition.completion : undefined;
+                const unit = card.definition.completion.kind === "numeric_answer" ? card.definition.completion.unit : undefined;
                 const draft = answerDrafts[card.task_id] ?? "";
+                const rowDraft = rowDrafts[card.task_id] ?? {};
+                const rowBlanks = rowCompletion ? rowCompletion.parts.flatMap((part) => ("blank" in part ? [part.blank] : [])) : [];
+                const missingBlanks = unreadableRowBlanks[card.task_id] ?? [];
+                const lastRow = card.attempts.at(-1)?.answers;
                 return (
                   <section
                     key={card.attachmentId}
@@ -4248,9 +4293,47 @@ export function LearningWhiteboard({
                               : card.hints_revealed > 0
                                 ? taskReactions.taskSucceededWithHint
                                 : taskReactions.taskSucceeded}
-                            <small>{tr("答案：")}{card.attempts.at(-1)?.answer}{unit ? ` ${unit}` : ""}</small>
+                            <small>{tr("答案：")}{rowCompletion && lastRow
+                              ? rowCompletion.parts.map((part) => ("text" in part ? part.text : lastRow[part.blank.as] ?? "")).join(" ")
+                              : card.attempts.at(-1)?.answer}{unit ? ` ${unit}` : ""}</small>
                           </span>
                         </div>
+                      ) : rowCompletion ? (
+                        // One row, several blanks: answered in one go, never told which blank is wrong.
+                        <form
+                          className="learning-answer-entry learning-answer-row"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            submitRow(card.task_id, Object.fromEntries(rowBlanks.map((blank) => [blank.as, (rowDraft[blank.as] ?? "").trim()])));
+                          }}
+                        >
+                          <div className="learning-answer-row-parts">
+                            {rowCompletion.parts.map((part, index) => ("text" in part ? (
+                              <span key={index} className="learning-answer-row-text">{part.text}</span>
+                            ) : (
+                              <label key={index} className="learning-answer-row-blank">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  enterKeyHint="done"
+                                  aria-label={part.blank.label ?? tr("你的答案")}
+                                  aria-invalid={missingBlanks.includes(part.blank.as) || undefined}
+                                  className={missingBlanks.includes(part.blank.as) ? "is-missing" : undefined}
+                                  value={rowDraft[part.blank.as] ?? ""}
+                                  maxLength={32}
+                                  onChange={(event) => {
+                                    const value = event.target.value;
+                                    setRowDrafts((current) => ({ ...current, [card.task_id]: { ...(current[card.task_id] ?? {}), [part.blank.as]: value } }));
+                                    if (missingBlanks.length) setUnreadableRowBlanks((current) => ({ ...current, [card.task_id]: [] }));
+                                  }}
+                                />
+                                {part.blank.label ? <small>{part.blank.label}</small> : null}
+                              </label>
+                            )))}
+                          </div>
+                          <button type="submit" disabled={rowBlanks.every((blank) => !(rowDraft[blank.as] ?? "").trim())}>{tr("提交")}</button>
+                        </form>
                       ) : (
                         <form
                           className="learning-answer-entry"
@@ -4279,7 +4362,11 @@ export function LearningWhiteboard({
                         </form>
                       )}
                       {!locked && card.status !== "succeeded" ? (
-                        unreadableAnswerTask === card.task_id ? (
+                        missingBlanks.length > 0 ? (
+                          <div className="learning-student-task-feedback">
+                            <span>{tr("每个空都填一个数。")}</span>
+                          </div>
+                        ) : unreadableAnswerTask === card.task_id ? (
                           <div className="learning-student-task-feedback">
                             <span>{tr("请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。")}</span>
                           </div>

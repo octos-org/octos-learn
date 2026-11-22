@@ -3525,5 +3525,8 @@
   "有往回走的移动（或滑块）时，不能一格一跳。": "With a move that turns back (or a slider), moves can't go one hop per part.",
   "再移动多少（可不填）": "Then move by (optional)",
   "再加一次移动": "Add another move",
-  "最后一次移动做成滑块：讲课时拖动，看跳到哪里": "Make the last move a slider: drag it while teaching to see where it lands"
+  "最后一次移动做成滑块：讲课时拖动，看跳到哪里": "Make the last move a slider: drag it while teaching to see where it lands",
+  "我做完了": "I'm done",
+  "还没有。再看看摆面。": "Not yet. Look at the mat again.",
+  "每个空都填一个数。": "Fill every box with a number."
 }
