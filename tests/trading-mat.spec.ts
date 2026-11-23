@@ -130,3 +130,34 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   await page.screenshot({ path: 'test-results/trading-mat-zh-done.png', fullPage: true });
   expect(errors).toEqual([]);
 });
+
+// The mat's slider (OLL 0023 amendment 4; owner, 2026-11-23: every component has sliders): each stop of the
+// slider on the ones is one trade, animated on the mat, so the amount never changes.
+test('slide the ones: each stop is one trade, animated, then answer the number', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`/tests/fixtures/trading-mat.html?lesson=slider&key=trading-slider-${Date.now()}`);
+  await expect(page.locator('.base-ten-mat')).toBeVisible();
+  const slider = page.locator('input[data-air-variable="ones"]');
+  await expect(slider).toBeEnabled();
+  // The track stops only where a trade lands: 7, 17, 27, 37 for 17 ones and 2 tens.
+  await expect(slider).toHaveAttribute('min', '7');
+  await expect(slider).toHaveAttribute('max', '37');
+  await expect(slider).toHaveAttribute('step', '10');
+  await expect(slider).toHaveValue('17');
+  const looseOnes = page.locator('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)');
+  await expect(looseOnes).toHaveCount(17);
+  await slider.focus();
+  await page.keyboard.press('ArrowLeft');
+  // Ten ones go into the tray before they become a ten: the trade is animated, not a jump.
+  await expect(page.locator('.base-ten-unit.base-ten-in-tray')).not.toHaveCount(0);
+  await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
+  await expect(looseOnes).toHaveCount(7);
+  await expect(page.locator('.base-ten-unit.base-ten-in-tray')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/trading-mat-slider.png' });
+  const answer = page.getByTestId('oll-answer-task').filter({ hasText: /How many marbles/ });
+  await answer.locator('input').fill('37');
+  await answer.locator('button[type="submit"]').click();
+  await expect(page.getByTestId('oll-answer-task').filter({ hasText: /How many of each/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -1117,7 +1117,8 @@ export function LearningWhiteboard({
     );
     mountedRef.current?.view.releaseHostCamera();
   }, [playbackCourseTarget]);
-  const variableControls = runtime ? variableControlModels(runtime.board) : [];
+  // A card's count slider is live only while its task is open, and its track stops where a trade lands (0023 amendment 4).
+  const variableControls = runtime ? variableControlModels(runtime.board, { live: (alias) => runtime.studentVariableLive(alias) }) : [];
   const studentTasks = runtime?.studentTasks ?? [];
   // A newly met practice goal (checked by the program) shows the classroom
   // teacher's approval; restoring an already finished board does not.
@@ -2447,6 +2448,8 @@ export function LearningWhiteboard({
     mounted.view.setCardTapHandler({
       live: (nodeId) => runtimeRef.current?.studentCardLive(nodeId) ?? false,
       tap: (nodeId, tap, input) => runtimeRef.current?.tapStudentCard(nodeId, tap, input) ?? { refused: "inert", message: "" },
+      // A card slider's trades, animated one after another (0023 amendment 4).
+      takeSteps: (nodeId) => runtimeRef.current?.takeStudentCardSteps(nodeId) ?? [],
     });
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
     // Automatic framing must not reduce teaching cards to an unreadable
@@ -3923,6 +3926,7 @@ export function LearningWhiteboard({
                                 id={inputId}
                                 data-air-variable={control.alias}
                                 type="range"
+                                disabled={control.disabled === true}
                                 min={control.min}
                                 max={control.max}
                                 step={control.step}
