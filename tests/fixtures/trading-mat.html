@@ -15,7 +15,10 @@ import {createRoot} from 'react-dom/client';
 import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
 import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
 import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
-import source from './trading-mat.canonical.jsonl?raw';
+import english from './trading-mat.canonical.jsonl?raw';
+import chinese from './trading-mat-zh.canonical.jsonl?raw';
+// ?lesson=zh plays the same lesson in Chinese, on a mat that speaks Chinese (OLL 0023 amendment 3).
+const source=new URLSearchParams(location.search).get('lesson')==='zh'?chinese:english;
 import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 import 'octos-lesson-language/web-runtime/styles.css';
