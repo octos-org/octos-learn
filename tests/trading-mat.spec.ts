@@ -31,7 +31,7 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await expect(looseOnes).toHaveCount(17);
   // Saying done with a trade left: not yet.
   await done.click();
-  await expect(page.getByTestId('oll-student-tasks')).toContainText(/Look at the mat again|再看看摆面/);
+  await expect(page.getByTestId('oll-student-tasks')).toContainText(/Look at the mat again|再看看这些方块/);
   // One tap at a time, each seen in the tray before the next: on CI two of ten quick taps were lost after the
   // "not yet" message moved the view (the Chinese test, then this one).
   const tray = page.locator('.base-ten-unit.base-ten-in-tray');
@@ -91,7 +91,7 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   await page.goto(`/tests/fixtures/trading-mat.html?lesson=zh&lang=zh-CN&key=trading-zh-${Date.now()}`);
   const mat = page.locator('.base-ten-mat');
   await expect(mat).toBeVisible();
-  await expect(mat).toHaveAttribute('aria-label', '数位摆面');
+  await expect(mat).toHaveAttribute('aria-label', '数位方块');
   await expect(page.locator('.base-ten-heading')).toHaveText(['十位', '个位']);
   await expect(page.locator('.base-ten-tray-label')).toHaveText(['十个一是一个十']);
   const done = page.locator('.learning-card-done button');
@@ -101,7 +101,7 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-notice')).toHaveText('先点个位里的一，把它们放进托盘。');
   await done.click();
-  await expect(page.getByTestId('oll-student-tasks')).toContainText('再看看摆面');
+  await expect(page.getByTestId('oll-student-tasks')).toContainText('再看看这些方块');
   // One tap at a time, each seen in the tray before the next (CI lost taps while the refusal message cleared).
   const inTray = page.locator('.base-ten-unit.base-ten-in-tray');
   const seen: string[] = [];
@@ -114,7 +114,7 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   const answer = page.getByTestId('oll-answer-task').filter({ hasText: /一共有多少颗弹珠/ });
   await answer.locator('input').fill('３７');
   await answer.locator('button[type="submit"]').click();
-  const counts = page.getByTestId('oll-answer-task').filter({ hasText: /摆面上各有几个/ });
+  const counts = page.getByTestId('oll-answer-task').filter({ hasText: /各有几个十、几个一/ });
   const countBoxes = counts.locator('.learning-answer-row-blank input');
   await expect(countBoxes).toHaveCount(2);
   await expect(counts).toContainText('个十');
