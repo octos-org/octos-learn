@@ -63,3 +63,48 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await page.screenshot({ path: 'test-results/trading-mat-done.png', fullPage: true });
   expect(errors).toEqual([]);
 });
+
+// The same lesson in Chinese (OLL 0023 amendment 3): the mat, its refusals and the questions speak Chinese,
+// and an answer typed with full-width digits is read.
+test('a Chinese lesson: the mat speaks Chinese, and the questions are answered in Chinese', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`/tests/fixtures/trading-mat.html?lesson=zh&lang=zh-CN&key=trading-zh-${Date.now()}`);
+  const mat = page.locator('.base-ten-mat');
+  await expect(mat).toBeVisible();
+  await expect(mat).toHaveAttribute('aria-label', '数位摆面');
+  await expect(page.locator('.base-ten-heading')).toHaveText(['十位', '个位']);
+  await expect(page.locator('.base-ten-tray-label')).toHaveText(['十个一是一个十']);
+  const done = page.locator('.learning-card-done button');
+  await expect(done).toHaveText('我做完了');
+  const looseOnes = page.locator('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)');
+  await expect(looseOnes).toHaveCount(17);
+  await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
+  await expect(page.locator('.base-ten-notice')).toHaveText('先点个位里的一，把它们放进托盘。');
+  await done.click();
+  await expect(page.getByTestId('oll-student-tasks')).toContainText('再看看摆面');
+  for (let i = 0; i < 10; i += 1) await looseOnes.first().click({ force: true });
+  await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
+  await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
+  await expect(looseOnes).toHaveCount(7);
+  await done.click();
+  await expect(page.locator('.base-ten-mat .base-ten-live')).toHaveCount(0);
+  const answer = page.getByTestId('oll-answer-task').filter({ hasText: /一共有多少颗弹珠/ });
+  await answer.locator('input').fill('３７');
+  await answer.locator('button[type="submit"]').click();
+  const counts = page.getByTestId('oll-answer-task').filter({ hasText: /摆面上各有几个/ });
+  const countBoxes = counts.locator('.learning-answer-row-blank input');
+  await expect(countBoxes).toHaveCount(2);
+  await expect(counts).toContainText('个十');
+  await countBoxes.nth(0).fill('3');
+  await countBoxes.nth(1).fill('7');
+  await counts.locator('button[type="submit"]').click();
+  const parts = page.getByTestId('oll-answer-task').filter({ hasText: /每一位表示多少/ });
+  await expect(parts.locator('.learning-answer-row-blank small')).toHaveText(['十位表示', '个位表示']);
+  await parts.locator('.learning-answer-row-blank input').nth(0).fill('30');
+  await parts.locator('.learning-answer-row-blank input').nth(1).fill('7');
+  await parts.locator('button[type="submit"]').click();
+  await expect(parts).toContainText('37 = 30 + 7');
+  await page.screenshot({ path: 'test-results/trading-mat-zh-done.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
