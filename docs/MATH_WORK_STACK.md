@@ -334,7 +334,25 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Bar 2:** comparing two numbers drew the mat (one case per language).
   - **Bar 4:** the narration describes the pile before the trade the mat already showed (English 7, Chinese 2). It is a timing fault; the results it states are right.
   - Also: the model's practice piles lost two lessons (expanded form) and changed one lesson pile.
-  - **Now:** the fixes. The program derives the practice pile; the demonstration's placement is tested by replay; comparisons. Then probe 2. English and Chinese; a trial, off by default (requests and recorded lessons unchanged). The program draws the mat, demonstrates the trades in its own sentences and writes the practice; model questions on the mat are dropped. Request cost with it on: 661 B.
+  - **Superseded (owner, 2026-11-22/23):** those fixes were not made. The owner reviewed the approach:
+    - the pipeline stays (the model writes the whole timeline, fixed at generation);
+    - one component per need stays;
+    - no program-written narration or practice;
+    - the problem to solve is the cost of adding a component;
+    - a general fallback is wanted for when no component fits.
+- **Done (2026-11-23): the trading mat rebuilt on the earlier components' pattern,** Coach #160 (Needs code review; 4 rounds).
+  - The pile is lesson numbers; the model's own animation plays the trades in its own moment; the model writes the practice.
+  - The program's demonstration, the program's practice and the six fields are removed.
+  - Draft of the interface for new components: handoff `COMPONENT-INTERFACE-2026-11-23.md`.
+- **Done: probe 2 fails all four bars; stopped for the owner** (Coach #161 setup, 1 round plus a check; #162 result; 190 calls).
+  - **Worked:** every trade the model made played with its own sentence.
+  - **Main cause of the failures:** the model writes the child's task and its hand-over for a slider ("adjust the loose ones to 14"), as every earlier component has one; the mat has none. That was 23 of 33 refusals, all three lost lessons, and 8 of 13 misleading lessons.
+  - **Waiting for the owner:** how the model is told what the child can do on a card without a slider.
+- **Done: the sketch card (the general fallback) on paper.** Two drafts, each tested by a fresh agent on 15 needs chosen by rule.
+  - Draft 1: 2 full, 4 partly, 9 no.
+  - Draft 2: 5 full, 5 partly, 5 no, on a fresh set.
+  - It suits K–5 quantity, measurement and simple plane ideas, not objects (coins, a clock) or spatial acts (a fold).
+  - Files: handoff `sketch-card/`. Nothing is built.
   - **For the owner:** "the rest at once" became "quickly, one trade at a time" (a brief tray fill and a make, about 3 s each): two animated counts showed 37 for 67 in Learn's player. 50 ones take about 28 s in all.
   - **Found (OLL, open):** when practice starts, the mat animates to the practice pile and shows wrong amounts for about a second.
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
