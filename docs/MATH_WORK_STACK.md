@@ -325,7 +325,16 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done (2026-11-22): a quick second tap never undoes the first,** OLL #96 (2 review rounds: taps on a moving unit fell through to buttons). Found by diagnostics on Learn's CI. Learn pins it (#229, no review needed).
 - **Done: the trading mat's sealed scoring set,** written by a fresh agent and never read; its hash is recorded and its arithmetic was checked blind (all cases fit the mat's limits). Recorded in handoff `first-component/STEP2-3-PLAN.md`.
 - **Decided (owner, 2026-11-22): child-facing Chinese names the blocks, not the mat.** "摆面" was a coined word. OLL #97 (no review needed): 没有地方再放十个了。, and the screen-reader name 数位方块. Learn (this PR): 还没有。再看看这些方块。 Coach #157: 各有几个十、几个一？ (with 百 on a wide mat). **For the owner:** the approved "一共有多少个方块？" became "这些方块一共是多少？", because the first counts pieces (67 is 13 blocks).
-- **Now: step 3, the Coach recipe,** Coach #157 (Needs code review; 2 review rounds, then the wording commit; merging when its checks pass). English and Chinese; a trial, off by default (requests and recorded lessons unchanged). The program draws the mat, demonstrates the trades in its own sentences and writes the practice; model questions on the mat are dropped. Request cost with it on: 661 B.
+- **Done: step 3, the Coach recipe,** Coach #157 merged (Needs code review; 2 review rounds, then the wording commit). The Chinese wording is merged everywhere: OLL #97, Learn #230, Coach #157; the record is corrected in OLL #98. **Open with the owner:** the total question is 这些方块一共是多少？, not the approved 一共有多少个方块？, because the approved one counts pieces.
+- **Decided (owner, 2026-11-22): paid probes are authorized in advance.** The speed gate and sealed scoring are still announced first.
+- **Done: probe setup,** Coach #158 (Needs code review; 1 round plus a check of its fixes: the report never named the recipe). It adds 13 Chinese development cases, the runner's judge, and the record with its bars before any call.
+- **Done: probe 1 fails bars 2 and 4** (Coach #159; 131 calls in all, under the 290 cap).
+  - Bar 1 passes: English 14/16, Chinese 9/10.
+  - Bar 3 passes.
+  - **Bar 2:** comparing two numbers drew the mat (one case per language).
+  - **Bar 4:** the narration describes the pile before the trade the mat already showed (English 7, Chinese 2). It is a timing fault; the results it states are right.
+  - Also: the model's practice piles lost two lessons (expanded form) and changed one lesson pile.
+  - **Now:** the fixes. The program derives the practice pile; the demonstration's placement is tested by replay; comparisons. Then probe 2. English and Chinese; a trial, off by default (requests and recorded lessons unchanged). The program draws the mat, demonstrates the trades in its own sentences and writes the practice; model questions on the mat are dropped. Request cost with it on: 661 B.
   - **For the owner:** "the rest at once" became "quickly, one trade at a time" (a brief tray fill and a make, about 3 s each): two animated counts showed 37 for 67 in Learn's player. 50 ones take about 28 s in all.
   - **Found (OLL, open):** when practice starts, the mat animates to the practice pile and shows wrong amounts for about a second.
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
