@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-21. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-22. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -319,12 +319,10 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Coach #155:** the blueprint (5 rows from the standards), 20 development cases (16 with the stated pile, 4 near misses; all under the overlap bars) and the judge; 2 review rounds.
     - Round 1 found: a case with no stated pile; "different practice pile" comparing piles rather than numbers; row words not tied to the practice pile; tests covering only two columns.
     - All are fixed, with a test for each check.
-- **Needs the owner: five decisions for the recipe (step 3)**, recommendations first (handoff `first-component/STEP2-3-PLAN.md`):
-  1. The program speaks the demonstration's trade steps, as the v3 sketch captioned them. This would be the program's first time in the teacher's voice.
-  2. Long piles: the first trade tap by tap, then the rest at once.
-  3. The program writes the mat's practice, and model practice questions about the mat are dropped.
-  4. One mat per lesson.
-  5. English lessons only for now.
+- **Decided (owner, 2026-11-22): the recipe's five decisions.** 1–4 as recommended: the program speaks the demonstration's trade steps; long piles show the first trade tap by tap, then the rest at once; the program writes the mat's practice; one mat per lesson. 5 changed: **English and Chinese both, from the start.**
+- **Now (2026-11-22): the mat speaks Chinese,** OLL #95 (0023 amendment 3, math plugin 0.6.0), Needs code review: the mat can now speak Chinese; English lessons are unchanged byte for byte. In review.
+  - **Needs the owner:** confirm the Chinese wording (table in amendment 3; numbers written in characters, so the card still draws no digit). #95 merges only after that.
+- **Next:** Learn pins the new OLL (a Chinese mat page and a no-notes first-use test in Chinese); then step 3, the Coach recipe in both languages, with the judge and development cases extended to Chinese.
 - **Need IDs** (for example K2N-23): the grade band and area, then the row in that area's map. Examples: K2N is K–2 early number, 35O grades 3–5 operations, 35P grades 3–5 place value, FR fractions.
 - **Reported to the owner (2026-11-19):** Learn #200 was merged before its unit-test check finished (it passed afterwards), the second time this has happened. Merges now wait for every check.
 - **Reported to the owner (2026-11-19): held-out slip.** While gathering the counters cases, a wrong filter showed the text of two held-out questions (K2-08, G68-02) in my own tool output. They were written nowhere and shown to no one. The design uses only the open questions, and 0022 only counts those two.
