@@ -3997,6 +3997,8 @@ export function LearningWhiteboard({
                                   <button
                                     key={direction}
                                     type="button"
+                                    // A card's count slider moves only while its task is open (0023 amendment 4).
+                                    disabled={control.disabled === true}
                                     onClick={() => {
                                       if (!runtime) return;
                                       const stepIndex = Math.round(
@@ -4037,7 +4039,9 @@ export function LearningWhiteboard({
                                     {direction < 0 ? "−" : "+"}
                                   </button>
                                 ))}
-                                <button
+                                {/* No reset on a card's count slider (review of #233): setting one count back would draw a
+                                    pile the card's rules never made. The task's own "start again" restores the whole pile. */}
+                                {control.disabled === undefined ? <button
                                   type="button"
                                   onClick={() => {
                                     const initial = runtime?.board
@@ -4070,7 +4074,7 @@ export function LearningWhiteboard({
                                   title={tr("复位{{v0}}", { v0: String(control.label) })}
                                 >
                                   <RotateCcw size={12} aria-hidden="true" />
-                                </button>
+                                </button> : null}
                               </div>
                             </div>
                           );

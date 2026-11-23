@@ -145,6 +145,9 @@ test('slide the ones: each stop is one trade, animated, then answer the number',
   await expect(slider).toHaveAttribute('max', '37');
   await expect(slider).toHaveAttribute('step', '10');
   await expect(slider).toHaveValue('17');
+  // No reset on the mat's slider: it would set the ones back alone, a pile the card never made (review of #233).
+  const row = page.locator('.learning-variable-control').filter({ has: slider });
+  await expect(row.getByRole('button', { name: /Reset|复位/ })).toHaveCount(0);
   const looseOnes = page.locator('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)');
   await expect(looseOnes).toHaveCount(17);
   await slider.focus();
@@ -155,6 +158,9 @@ test('slide the ones: each stop is one trade, animated, then answer the number',
   await expect(looseOnes).toHaveCount(7);
   await expect(page.locator('.base-ten-unit.base-ten-in-tray')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/trading-mat-slider.png' });
+  // The task is done: the slider and its step buttons are disabled.
+  await expect(slider).toBeDisabled();
+  await expect(row.locator('button[data-air-command="variable-step"]').first()).toBeDisabled();
   const answer = page.getByTestId('oll-answer-task').filter({ hasText: /How many marbles/ });
   await answer.locator('input').fill('37');
   await answer.locator('button[type="submit"]').click();
