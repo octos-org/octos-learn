@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-22. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-23. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -347,7 +347,23 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
 - **Done: probe 2 fails all four bars; stopped for the owner** (Coach #161 setup, 1 round plus a check; #162 result; 190 calls).
   - **Worked:** every trade the model made played with its own sentence.
   - **Main cause of the failures:** the model writes the child's task and its hand-over for a slider ("adjust the loose ones to 14"), as every earlier component has one; the mat has none. That was 23 of 33 refusals, all three lost lessons, and 8 of 13 misleading lessons.
-  - **Waiting for the owner:** how the model is told what the child can do on a card without a slider.
+  - **Decided (owner, 2026-11-23):** "I think all interactive components should support slider-based interaction."
+- **Done (2026-11-23): the trading mat has a slider** (OLL decision 0023 amendment 4). All "Needs code review", each merged only after its checks passed:
+  - **OLL #99** (2 rounds): each stop of the slider on the ones (and tens with hundreds) is one trade made by the card's rules, animated as taps are.
+  - **OLL #100** (1 round): a host's reset of one count is refused.
+  - **Coach #163** (2 rounds): the mat's ones and tens get the slider; the model's slider task becomes the child's task.
+  - **Learn #233** (2 rounds): the slider is live only in its task, trades animate, and there is no reset.
+  - **First use, no notes:** finished every task; "I could clearly see ten ones become one ten". Open: Make/Break look tappable during a slider task; the slider starts mid-track, so the trading direction is unclear; the task feedback is in grown-up words.
+  - **Rule recorded:** in the component interface spec and in decision 0023. The slider shows a place's count: a number on screen, which 0023 had ruled out until the child types.
+- **Done: probe 3 fails bars 1 and 4; stopped for the owner** (Coach #163 record, #164 result, #165 checks; 163 calls).
+  - Judge EN 9/16, ZH 5/10 (fail). Near misses 1/7 and lost lessons EN 0 vs 1, ZH 1 vs 1 (pass). Misleading EN 6, ZH 6 (fail).
+  - **What the slider fixed:** refusals 33 → 7; lost lessons 3 → 1.
+  - **What is left:**
+    - 9 lessons ask the child to undo the trade (a break back to the start), which Coach's down-only rule drops;
+    - 6 ask for a count that would change the total;
+    - 6 retell the starting pile while the mat shows the traded pile, although every later-section request states each number's current value.
+  - No single change clears the bars.
+  - **Waiting for the owner:** whether to go on with the trading mat, and how.
 - **Done: the sketch card (the general fallback) on paper.** Two drafts, each tested by a fresh agent on 15 needs chosen by rule.
   - Draft 1: 2 full, 4 partly, 9 no.
   - Draft 2: 5 full, 5 partly, 5 no, on a fresh set.
