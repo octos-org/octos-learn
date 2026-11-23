@@ -4146,7 +4146,7 @@ export function LearningWhiteboard({
                                 <div className="learning-student-task-feedback">
                                   <span>
                                     {cardTask
-                                      ? tr("还没有。再看看摆面。")
+                                      ? tr("还没有。再看看这些方块。")
                                       : task.status === "needs_hint"
                                         ? taskReactions.taskNeedsHint
                                         : taskReactions.taskRetry}
