@@ -17,8 +17,11 @@ import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
 import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
 import english from './trading-mat.canonical.jsonl?raw';
 import chinese from './trading-mat-zh.canonical.jsonl?raw';
+// ?lesson=slider: the same lesson, the learner trading with the mat's slider on the ones (0023 amendment 4).
+import slider from './trading-mat-slider.canonical.jsonl?raw';
 // ?lesson=zh plays the same lesson in Chinese, on a mat that speaks Chinese (OLL 0023 amendment 3).
-const source=new URLSearchParams(location.search).get('lesson')==='zh'?chinese:english;
+const chosen=new URLSearchParams(location.search).get('lesson');
+const source=chosen==='zh'?chinese:chosen==='slider'?slider:english;
 import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 import 'octos-lesson-language/web-runtime/styles.css';

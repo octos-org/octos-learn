@@ -133,6 +133,10 @@ export interface OllLessonRuntimeController {
   submitStudentRow(taskId: string, answers: Record<string, string>): string[];
   /** Whether the open task lets the learner tap this card now (decision 0023). */
   studentCardLive(nodeId: string): boolean;
+  /** Whether the learner may move this slider now: a card's count slider only while its task is open (0023 amendment 4). */
+  studentVariableLive(alias: string): boolean;
+  /** The trades a card's slider made since last asked, for the board to animate one after another (0023 amendment 4). */
+  takeStudentCardSteps(nodeId: string): ReturnType<BrowserLessonSession["takeStudentCardSteps"]>;
   /** One tap on a card; the card's own reason when it refuses, or `undefined` when the tap was made. */
   tapStudentCard(nodeId: string, tap: { kind: "gather" | "ungather" | "make" | "break"; place: number }, input: StudentInputMethod): { operation: unknown } | { refused: string; message: string };
   /** The learner says "done" on the open card task. */
@@ -538,6 +542,14 @@ export function useOllLessonRuntime({
     (nodeId: string) => Boolean(session && !session.failure && session.studentCardLive(nodeId)),
     [session],
   );
+  const studentVariableLive = useCallback(
+    (alias: string) => Boolean(session && !session.failure && session.studentVariableLive(alias)),
+    [session],
+  );
+  const takeStudentCardSteps = useCallback(
+    (nodeId: string) => (session ? session.takeStudentCardSteps(nodeId) : []),
+    [session],
+  );
   const tapStudentCard = useCallback(
     (nodeId: string, tap: { kind: "gather" | "ungather" | "make" | "break"; place: number }, input: StudentInputMethod) =>
       guardedStudentInput(session, () => session!.tapStudentCard(nodeId, tap, input)) ?? { refused: "inert", message: "" },
@@ -731,6 +743,8 @@ export function useOllLessonRuntime({
     submitStudentAnswer,
     submitStudentRow,
     studentCardLive,
+    studentVariableLive,
+    takeStudentCardSteps,
     tapStudentCard,
     submitStudentCard,
     recordStudentInkSelection,
