@@ -84,6 +84,8 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   await done.click();
   await expect(page.getByTestId('oll-student-tasks')).toContainText('再看看摆面');
   for (let i = 0; i < 10; i += 1) await looseOnes.first().click({ force: true });
+  // Wait for the tray to hold ten before making a ten, as the English test does (CI is slower).
+  await expect(page.locator('.base-ten-unit.base-ten-in-tray')).toHaveCount(10);
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
   await expect(looseOnes).toHaveCount(7);
