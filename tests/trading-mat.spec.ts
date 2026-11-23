@@ -16,14 +16,22 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   // Saying done with a trade left: not yet.
   await done.click();
   await expect(page.getByTestId('oll-student-tasks')).toContainText(/Look at the mat again|再看看摆面/);
-  for (let i = 0; i < 10; i += 1) await looseOnes.first().click({ force: true });
-  await expect(page.locator('.base-ten-unit.base-ten-in-tray')).toHaveCount(10);
+  // One tap at a time, each seen in the tray before the next: on CI two of ten quick taps were lost after the
+  // "not yet" message moved the view (the Chinese test, then this one).
+  const tray = page.locator('.base-ten-unit.base-ten-in-tray');
+  for (let i = 0; i < 10; i += 1) {
+    await looseOnes.first().click({ force: true });
+    await expect(tray).toHaveCount(i + 1);
+  }
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
   await expect(looseOnes).toHaveCount(7);
   await page.screenshot({ path: 'test-results/trading-mat-traded.png' });
   // The last 7 ones go in the tray too: they do not make a ten, and "I'm done" still succeeds (OLL #93).
-  for (let i = 0; i < 7; i += 1) await looseOnes.first().click({ force: true });
+  for (let i = 0; i < 7; i += 1) {
+    await looseOnes.first().click({ force: true });
+    await expect(tray).toHaveCount(i + 1);
+  }
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-notice')).toHaveText('This tray does not hold a ten: a ten is ten ones.');
   await done.click();
