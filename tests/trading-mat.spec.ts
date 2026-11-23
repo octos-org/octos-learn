@@ -1,4 +1,20 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+/**
+ * Taps the first loose one where it is drawn and waits for the tray to hold `want`. On CI a quick tap was
+ * once seen to take a one back out of the tray: the message names what was under the pointer at each tap.
+ */
+async function tapLoose(page: Page, looseOnes: Locator, tray: Locator, want: number, seen: string[]): Promise<void> {
+  const box = (await looseOnes.first().boundingBox())!;
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  seen.push(await page.evaluate(([px, py]) => {
+    const hit = document.elementFromPoint(px, py);
+    const unit = hit?.closest('.base-ten-unit') as SVGElement | null;
+    return unit ? `${unit.dataset.ollTap}${unit.classList.contains('base-ten-in-tray') ? ' (in tray)' : ''}` : String(hit?.tagName);
+  }, [x, y]));
+  await page.mouse.click(x, y);
+  await expect(tray, `under the pointer: ${seen.join(', ')}`).toHaveCount(want);
+}
 
 // The trading mat (decision 0023) in Learn's lesson board: the learner trades on the practice pile, says
 // done, then answers the number and two rows of blanks (decision 0023 amendment 1).
@@ -19,19 +35,14 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   // One tap at a time, each seen in the tray before the next: on CI two of ten quick taps were lost after the
   // "not yet" message moved the view (the Chinese test, then this one).
   const tray = page.locator('.base-ten-unit.base-ten-in-tray');
-  for (let i = 0; i < 10; i += 1) {
-    await looseOnes.first().click({ force: true });
-    await expect(tray).toHaveCount(i + 1);
-  }
+  const seen: string[] = [];
+  for (let i = 0; i < 10; i += 1) await tapLoose(page, looseOnes, tray, i + 1, seen);
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
   await expect(looseOnes).toHaveCount(7);
   await page.screenshot({ path: 'test-results/trading-mat-traded.png' });
   // The last 7 ones go in the tray too: they do not make a ten, and "I'm done" still succeeds (OLL #93).
-  for (let i = 0; i < 7; i += 1) {
-    await looseOnes.first().click({ force: true });
-    await expect(tray).toHaveCount(i + 1);
-  }
+  for (let i = 0; i < 7; i += 1) await tapLoose(page, looseOnes, tray, i + 1, seen);
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-notice')).toHaveText('This tray does not hold a ten: a ten is ten ones.');
   await done.click();
@@ -93,10 +104,8 @@ test('a Chinese lesson: the mat speaks Chinese, and the questions are answered i
   await expect(page.getByTestId('oll-student-tasks')).toContainText('再看看摆面');
   // One tap at a time, each seen in the tray before the next (CI lost taps while the refusal message cleared).
   const inTray = page.locator('.base-ten-unit.base-ten-in-tray');
-  for (let i = 0; i < 10; i += 1) {
-    await looseOnes.first().click({ force: true });
-    await expect(inTray).toHaveCount(i + 1);
-  }
+  const seen: string[] = [];
+  for (let i = 0; i < 10; i += 1) await tapLoose(page, looseOnes, inTray, i + 1, seen);
   await page.locator('.base-ten-button[data-oll-tap="make:0"]').click({ force: true });
   await expect(page.locator('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')).toHaveCount(3);
   await expect(looseOnes).toHaveCount(7);
