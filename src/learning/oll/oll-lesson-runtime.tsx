@@ -1239,18 +1239,21 @@ export function LearningWhiteboard({
     return clusters.map((cluster) => {
       const controls = topicControls.filter((control) =>
         cluster.variableAliases.includes(control.alias));
+      // A card's slider with one stop stays mounted but hidden (OLL #101), so dragging another slider never
+      // rebuilds the list; only the shown ones take room.
+      const shownControls = controls.filter((control) => control.hidden !== true);
       const tasks = topicTasks.filter((task) =>
         cluster.taskIds.includes(task.task_id));
-      const controlsWidth = controls.length > 0 ? 360 : 0;
+      const controlsWidth = shownControls.length > 0 ? 360 : 0;
       const tasksWidth = tasks.length > 0 ? 330 : 0;
       // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
-      const controlsHeight = controls.length > 0
-        ? 12 + controls.length * 24 + Math.max(0, controls.length - 1) * 4
+      const controlsHeight = shownControls.length > 0
+        ? 12 + shownControls.length * 24 + Math.max(0, shownControls.length - 1) * 4
         : 0;
       // Ownership is stable before a task opens; collision space is not.
       // Invalidate measurements when visible content changes (including replay).
       const signature = JSON.stringify([
-        controls.map((control) => control.alias), tasks.map((task) => task.task_id),
+        shownControls.map((control) => control.alias), tasks.map((task) => task.task_id),
       ]);
       const tasksHeight = tasks.length > 0 ? 60 + tasks.length * 220 : 0;
       const estimatedWidth = Math.max(controlsWidth, tasksWidth);
@@ -1267,6 +1270,8 @@ export function LearningWhiteboard({
         controlOwnerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId,
         anchorNodeIds: cluster.nodeIds,
         controls,
+        // Whether any control is shown: hidden ones (OLL #101) take no room in the layout.
+        controlsShown: shownControls.length > 0,
         tasks,
         signature,
         controlsHeight: measured?.controlsHeight ?? controlsHeight,
@@ -1311,7 +1316,7 @@ export function LearningWhiteboard({
       const attachments: NonNullable<RegionLayoutConstraint["attachments"]> = interactionPlans
         .filter(plan => plan.topic.id === topic.id && Boolean(plan.anchorNodeId) && plan.height > 0)
         .flatMap((plan): NonNullable<RegionLayoutConstraint["attachments"]> => [
-          ...(plan.controls.length ? [{
+          ...(plan.controlsShown ? [{
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
             ownerNodeId: plan.controlOwnerNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
@@ -1322,7 +1327,7 @@ export function LearningWhiteboard({
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
             ownerNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: 330,
-            height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
+            height: Math.max(1, plan.height - (plan.controlsShown ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
         ])
         .concat(reflectionCards
@@ -1481,7 +1486,7 @@ export function LearningWhiteboard({
       controlsWidth: attachmentBounds?.width ?? 360,
       tasksPosition: {
         x: taskBounds?.x ?? interactionPosition.x,
-        y: taskBounds?.y ?? (interactionPosition.y + (controls.length > 0 ? plan.controlsHeight + 28 : 0)),
+        y: taskBounds?.y ?? (interactionPosition.y + (plan.controlsShown ? plan.controlsHeight + 28 : 0)),
       },
     }];
   });
@@ -3344,7 +3349,7 @@ export function LearningWhiteboard({
             presentation.controlsPosition.y,
             presentation.tasksPosition.y,
           ),
-          width: presentation.controls.length > 0 && presentation.tasks.length > 0
+          width: presentation.controls.some((control) => control.hidden !== true) && presentation.tasks.length > 0
             ? 760
             : 372,
           height: 220,
@@ -3895,7 +3900,7 @@ export function LearningWhiteboard({
                   ?? presentation.topic.id;
                 return (
                   <div key={`course-ui:${presentation.id}`}>
-                    {presentation.controls.length > 0 ? (
+                    {presentation.controls.some((control) => control.hidden !== true) ? (
                       <div
                         className="learning-variable-controls is-world"
                         style={{
@@ -3920,6 +3925,8 @@ export function LearningWhiteboard({
                                 ? "learning-variable-control is-animating"
                                 : "learning-variable-control"}
                               key={control.alias}
+                              hidden={control.hidden === true}
+                              style={control.hidden === true ? { display: "none" } : undefined}
                             >
                               <label htmlFor={inputId}>{control.label}</label>
                               <input
