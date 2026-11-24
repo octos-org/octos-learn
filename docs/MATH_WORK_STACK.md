@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-23. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-24. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -364,6 +364,35 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - 6 retell the starting pile while the mat shows the traded pile, although every later-section request states each number's current value.
   - No single change clears the bars.
   - **Waiting for the owner:** whether to go on with the trading mat, and how.
+- **Decided (owner, 2026-11-23 and 11-24): the trading mat goes on, and how components are judged changes.**
+  - **I check only objective things:**
+    - a lesson generates;
+    - the components it chose render;
+    - speed.
+  - **Judging lessons is the owner's.** There are no narration bars or blind readings.
+  - **Request size** is tracked, not capped. Growth is to be met by sending the model only the components a request needs.
+  - **Coach's rewriting of model output stays for now.** It is documented in Coach issue #166 and in the handoff's `COACH-INTERVENTIONS-2026-11-24.md`.
+  - **Ending with a trade left** (11 tens and 6 ones = 116) is correct but less complete.
+  - **A slider that can't move** is hidden.
+- **Done (2026-11-24): fixes from tracing two real lessons** (each "Needs code review"; merged after a review found nothing blocking):
+  - **Coach #167 (2 rounds):**
+    - typed and thinking questions are no longer deleted silently: a section that draws no card asks beside the latest earlier card;
+    - a mat task whose target is already met starts from the lesson's end pile, otherwise one trade away;
+    - the mat's guidance names the hundreds column;
+    - later sections get each card's guidance;
+    - the size ceilings are now measurements;
+    - the base-ten judge keeps objective checks only.
+  - **OLL #101 (3 rounds):** a card slider with one stop is hidden. It stays in the list, so a drag of another slider is never rebuilt.
+  - **Learn #235 (2 rounds):** pins OLL 257dc8b and hides those rows without reserving room.
+- **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
+  - **Generation:** 33/33 lessons in both groups, none refused or lost.
+  - **Speed:**
+    - **Mat on:** first playable median 9.8 s (p90 12.1 s); total 13.5 s.
+    - **Mat off:** first playable 9.4 s (p90 25.0 s); total 14.5 s.
+    - **Paired, mat on − off:** +0.2 s to the first playable section, −0.8 s in total.
+  - **Rendering in Learn's lesson board:** all 66 lessons play to the end with no page error, and every card is drawn. The checker completed every task: 91/91 with the mat (33 slider, 58 typed) and 77/77 without.
+  - **Judge (objective):** 33/33. Notes: 3 lessons have no task on the mat; 1 near miss drew the mat; no lesson leaves a trade unfinished.
+  - **Waiting for the owner: their review of the lessons.** Each can be played on a local index page, mat on beside mat off.
 - **Done: the sketch card (the general fallback) on paper.** Two drafts, each tested by a fresh agent on 15 needs chosen by rule.
   - Draft 1: 2 full, 4 partly, 9 no.
   - Draft 2: 5 full, 5 partly, 5 no, on a fresh set.
@@ -543,8 +572,9 @@ The items below are the record.
 ## Standing rules
 
 - **Meaning and logic:** the model writes what to teach; the program works out anything that must be exact (OLL decision 0020). This applies whenever a field is built or changed. It is not a separate project.
-- **Paid runs:** every paid run is approved by the owner first, with its call count.
-- **Request changes:** any change to what the model is asked gets a paired test and a speed check (+0.5 s at most).
+- **Paid runs:** probe runs on the dev-probe key are pre-approved (owner, 2026-11-22); each is reported with its model, purpose and call count.
+- **Request changes:** request size is tracked, not capped (owner, 2026-11-24); speed is measured in live runs.
+- **Evaluation (owner, 2026-11-24):** I check objective things only (generation, rendering, speed); judging lessons is the owner's.
 
 ## Open pull requests
 
