@@ -1270,6 +1270,8 @@ export function LearningWhiteboard({
         controlOwnerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId,
         anchorNodeIds: cluster.nodeIds,
         controls,
+        // Whether any control is shown: hidden ones (OLL #101) take no room in the layout.
+        controlsShown: shownControls.length > 0,
         tasks,
         signature,
         controlsHeight: measured?.controlsHeight ?? controlsHeight,
@@ -1314,7 +1316,7 @@ export function LearningWhiteboard({
       const attachments: NonNullable<RegionLayoutConstraint["attachments"]> = interactionPlans
         .filter(plan => plan.topic.id === topic.id && Boolean(plan.anchorNodeId) && plan.height > 0)
         .flatMap((plan): NonNullable<RegionLayoutConstraint["attachments"]> => [
-          ...(plan.controls.length ? [{
+          ...(plan.controlsShown ? [{
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
             ownerNodeId: plan.controlOwnerNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
@@ -1325,7 +1327,7 @@ export function LearningWhiteboard({
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
             ownerNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: 330,
-            height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
+            height: Math.max(1, plan.height - (plan.controlsShown ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
         ])
         .concat(reflectionCards
@@ -1484,7 +1486,7 @@ export function LearningWhiteboard({
       controlsWidth: attachmentBounds?.width ?? 360,
       tasksPosition: {
         x: taskBounds?.x ?? interactionPosition.x,
-        y: taskBounds?.y ?? (interactionPosition.y + (controls.length > 0 ? plan.controlsHeight + 28 : 0)),
+        y: taskBounds?.y ?? (interactionPosition.y + (plan.controlsShown ? plan.controlsHeight + 28 : 0)),
       },
     }];
   });
