@@ -410,7 +410,28 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - Render: 82/82 tasks; the how-to text was shown on 31/31 mat tasks.
     - Judge 31/31.
     - Speed is slower (median 16.2 s total vs 14.8 s); not attributed.
-  - **Needs the owner:** the subjective review of the check-3 lessons (index on port 5180). Promotion out of trial waits for it.
+  - **Done (owner, 2026-11-25):** the subjective review of the check-3 lessons (index on port 5180). Promotion out of trial waits for it.
+- **Decided and done (owner, 2026-11-25): the review of check 3, and the mat switched on.**
+  - **Owner's feedback, six points.** Use value names (一, 十, 百), not 十条/百板; BT-31 and BT-32 failed; BT-28's typed question opened with an unrelated fact; the number line needs zoom; why BT-19/20 used the number line; review sets should be small.
+  - **Value names, and typed questions say only what they need** (Coach #171, "No review needed").
+    - The program labels the mat's counts by value.
+    - The development questions no longer contain block names.
+    - The judge counts block names in Chinese lessons.
+  - **A picture that keeps breaking its own limits costs that picture, not the lesson** (Coach #170, "Needs code review", 1 round; Coach #173 after check 4, "Needs code review", 1 round).
+    - In section 1, the lesson is re-planned without that picture.
+    - In a later section, that section's picture is withdrawn and the section is written once more, told the picture is gone.
+    - Replay tests use the recorded replies of all four lost lessons.
+  - **The mat is offered by default** (Coach #172, "No review needed"; ahead of a speed gate, as with the line in steps). First requests grow by about 1.5 KB.
+  - **Objective check 4** (`runs/base-ten/objective-4/RECORD.md`; 9 distinct cases; 25 calls, plus 7 for re-running BT-31/32 on #173's build):
+    - 7/9 lessons at first, then 9/9 after #173.
+    - No block names; judge 9/9.
+    - A task that stayed locked was a player bug: a mat task right after a typed answer never opened. Fixed in OLL #108 ("No review needed": two lines and a regression test). After the fix, all tasks are done by real clicks.
+  - **Number line zoom, decision 0024** (OLL #106 record, accepted with the owner's three answers; OLL #107, "Needs code review", 2 rounds: one blocker, a hidden answer losing its tick, fixed).
+    - The card zooms its numbers, not its text: buttons, the wheel and pinch on the card, and drag to pan.
+    - Ticks thin at rest. A line with a hidden answer is not thinned.
+    - Learn pins OLL d7c4b02 (#244).
+  - **Map:** K2N-23 is the first conquered need (the Teaching Needs Map artifact).
+  - **Needs the owner:** the check-4 review set (index-check4 on port 5180) and the zoom in the app.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
