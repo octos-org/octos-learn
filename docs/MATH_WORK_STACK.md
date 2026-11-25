@@ -384,6 +384,7 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - the base-ten judge keeps objective checks only.
   - **OLL #101 (3 rounds):** a card slider with one stop is hidden. It stays in the list, so a drag of another slider is never rebuilt.
   - **Learn #235 (2 rounds):** pins OLL 257dc8b and hides those rows without reserving room.
+- **Done (2026-11-24): pale card text on the board** (owner's screenshot). Cards set no text colour and inherited the app's dark-theme text (#e4ddd4), so note text and card titles were barely readable on the light board, in the app too. The board now sets its own dark colour. OLL #102 and Learn #237 pin 8d16aac (each "No review needed": one CSS line, checked in Chromium). The locked second "Work it out" question stays greyed on purpose.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
