@@ -385,6 +385,23 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **OLL #101 (3 rounds):** a card slider with one stop is hidden. It stays in the list, so a drag of another slider is never rebuilt.
   - **Learn #235 (2 rounds):** pins OLL 257dc8b and hides those rows without reserving room.
 - **Done (2026-11-24): pale card text on the board** (owner's screenshot). Cards set no text colour and inherited the app's dark-theme text (#e4ddd4), so note text and card titles were barely readable on the light board, in the app too. The board now sets its own dark colour. OLL #102 and Learn #237 pin 8d16aac (each "No review needed": one CSS line, checked in Chromium). The locked second "Work it out" question stays greyed on purpose.
+- **Decided (owner, 2026-11-24): the model never names a control.** A component is data plus rules. The model writes the data, the changes it shows (as targets, never raw writes that break the rules) and each practice goal. The program checks, draws and animates them, and maps the learner's own gestures onto the same changes. Each component declares its own gestures; a slider stays only where it is the natural handle (number-line point, curve parameter, cross-section height). This supersedes 2026-11-23's "every interactive component supports a slider". The trading mat came first; the function plot's `points {slider}` and `student_controls` in model guidance are later candidates.
+- **Done (2026-11-24): the trading mat is worked by its own taps.**
+  - **PRs** (each "Needs code review"; one round each; no blocking findings):
+    - OLL #103 (decision 0023 amendment 5, player 0.15.0) adds a count task: tap the mat, say done, and the place's count is judged. The slider stays supported, so older lessons still play.
+    - Coach #168 lowers the model's practice target to that task, removes the mat's slider and its slider wording, and updates the judge. The re-pin to OLL f409e5c and a judge cleanup merged after its review.
+    - Learn #239 pins f409e5c ("No review needed": a pin bump).
+  - **Objective check 2** (`handoff-math-expressiveness/runs/base-ten/objective-2/RECORD.md`; 72 calls, `gemini-3.6-flash`, dev key):
+    - 31 of 33 lessons; all play with no errors and every card drawn.
+    - 75 of 75 tasks done, 28 of them on the mat by real clicks on its blocks and buttons.
+    - The judge passes 31/31.
+    - Speed: median +0.8 s to the first playable section and +2.2 s in total vs check 1. This is not attributed.
+- **Needs the owner (2026-11-24): the trading mat after check 2.**
+  1. **The model's hints still say "drag the slider"** in 15 of 24 mat lessons (16 hints, 3 prompts), and 3 lessons say the trade happens by itself. Who writes the "how to do it" hint?
+     - (a) The component supplies it, as it already owns its refusal sentences. This needs your yes, since it borders on program-owned practice.
+     - (b) Coach refuses task text that names a control and asks again. That costs retries.
+  2. **BT-15 was lost** on a practice target trading can't reach. Should an unreachable practice target lose only that activity instead of the lesson?
+  3. **The subjective review of the tap lessons** (index on port 5180). Promotion out of trial waits for it.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
