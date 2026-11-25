@@ -1836,6 +1836,14 @@
   justify-content: space-between;
 }
 
+/* How to work a card task's card: the card's own fixed text (OLL 0023). */
+.learning-card-howto {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #6f685f;
+}
+
 .learning-student-task-feedback > small {
   flex: 0 0 auto;
   color: #938c82;
