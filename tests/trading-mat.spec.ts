@@ -26,6 +26,8 @@ test('trade, say done, then answer the number and two rows of blanks', async ({ 
   await expect(mat).toBeVisible();
   const done = page.locator('.learning-card-done button');
   await expect(done).toBeVisible();
+  // The mat says how it is used, as its own fixed text (owner, 2026-11-24).
+  await expect(page.locator('.learning-card-howto').first()).toContainText(/Tap a block to put it in the tray|点一个方块/);
   await expect(page.locator('.base-ten-mat .base-ten-live').first()).toBeVisible();
   const looseOnes = page.locator('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)');
   await expect(looseOnes).toHaveCount(17);
