@@ -396,12 +396,21 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - 75 of 75 tasks done, 28 of them on the mat by real clicks on its blocks and buttons.
     - The judge passes 31/31.
     - Speed: median +0.8 s to the first playable section and +2.2 s in total vs check 1. This is not attributed.
-- **Needs the owner (2026-11-24): the trading mat after check 2.**
-  1. **The model's hints still say "drag the slider"** in 15 of 24 mat lessons (16 hints, 3 prompts), and 3 lessons say the trade happens by itself. Who writes the "how to do it" hint?
-     - (a) The component supplies it, as it already owns its refusal sentences. This needs your yes, since it borders on program-owned practice.
-     - (b) Coach refuses task text that names a control and asks again. That costs retries.
-  2. **BT-15 was lost** on a practice target trading can't reach. Should an unreachable practice target lose only that activity instead of the lesson?
-  3. **The subjective review of the tap lessons** (index on port 5180). Promotion out of trial waits for it.
+- **Decided and done (owner, 2026-11-24/25): the trading mat after check 2.**
+  - **How to work the mat is the mat's own fixed text** (OLL #105, Learn #242; each "No review needed": fixed text and a pin). Learn shows `baseTenHowTo` with each mat task.
+  - **Practice goals: better information, tolerate errors** (Coach #169, "Needs code review", 2 rounds: the first found two wrong-fact bugs, both fixed and re-checked).
+    - Once the mat is drawn, the model gets facts in the mat's own terms.
+    - The guidance says the amount never changes, goals are said as trades, practice trains the lesson's goals, and hints are about the maths.
+    - A goal the mat can't reach drops only that task, and the drop is recorded.
+  - **The pile snap was a bug in OLL #103** (OLL #104, "Needs code review", 1 round plus hardening; Learn #241 pin). The mat now keeps the child's own pile after "I'm done", also after a reload or replay.
+  - **Objective check 3** (`handoff-math-expressiveness/runs/base-ten/objective-3/RECORD.md`; 72 calls):
+    - 31/33 lessons; both losses are near misses that drew the mat.
+    - Slider or dragging words in mat task text: 15 → 0 lessons.
+    - Practice goals refused: 4 → 0.
+    - Render: 82/82 tasks; the how-to text was shown on 31/31 mat tasks.
+    - Judge 31/31.
+    - Speed is slower (median 16.2 s total vs 14.8 s); not attributed.
+  - **Needs the owner:** the subjective review of the check-3 lessons (index on port 5180). Promotion out of trial waits for it.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
