@@ -67,7 +67,7 @@
 
 ## 专题计划
 
-- [Arcade implementation plan](ARCADE_PLAN.md): math fact fluency mini-games on a separate Arcade page, in a hand-drawn notebook style (owner decisions 2026-11-25). On-device handwriting recognition of answers, an adaptive per-fact scheduler, an answer-driven game interface, records, achievements and star map effects, milestones M0–M6 and a TODO list. Developed in parallel with the math work.
+- [Arcade implementation plan](ARCADE_PLAN.md): math fact fluency mini-games on a separate Arcade page, in a hand-drawn notebook style, entertainment first (owner decisions 2026-11-25). Answers are handwritten on tablets and computers, typed on a number pad without touch, or chosen by body movement in front of the TV camera. Covers the scheduler, the answer-driven game interface (Margin Run first, mascot Nib), records, achievements and star map effects, milestones M0–M6, a TODO list and the review round 1 outcomes. Developed in parallel with the math work.
 
 - [圆与正多边形周长夹逼](ARCHIMEDES_POLYGON_BOUNDS.md)：割圆术（`circle_polygon_bounds` / OLL `regular_polygons`）的设计、2026-10-18 公网发布记录与浏览器回归测试。
 
