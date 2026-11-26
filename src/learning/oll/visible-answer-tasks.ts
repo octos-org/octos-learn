@@ -1,4 +1,4 @@
-import { checkNumericAnswer, type AuthoringAnswerStudentTask, type AuthoringRowStudentTask } from "octos-lesson-language";
+import { checkNumericAnswer, type AuthoringAnswerStudentTask, type AuthoringRowStudentTask, type AuthoringStudentTask } from "octos-lesson-language";
 import type { StudentTaskSnapshot } from "octos-lesson-language/web-runtime";
 
 import type { OllLessonOutlineTopic } from "./use-oll-lesson-runtime";
@@ -32,6 +32,26 @@ export function visibleAnswerTasks(
       ? [{ ...task, definition, topic }]
       : [];
   });
+}
+
+/**
+ * Whether a typed answer waits on the card task just before it (OLL decision 0026): that task is open, has no
+ * "done" (`auto_submit`: the tap that completes the card submits it), and works the card this answer is anchored
+ * to. The answer box then shows from the start, disabled, and opens on the completing tap (the owner's accepted
+ * sketch for 35P-07: seeing where the answer goes mattered).
+ */
+export function answerWaitsOnCardTask(
+  taskId: string,
+  tasks: readonly StudentTaskSnapshot[],
+  definitions: readonly AuthoringStudentTask[],
+): boolean {
+  const index = definitions.findIndex((definition) => definition.as === taskId);
+  const answer = definitions[index];
+  const before = index > 0 ? definitions[index - 1] : undefined;
+  if (answer?.completion.kind !== "numeric_answer" || before?.completion.kind !== "card_fact") return false;
+  if ((answer as AuthoringAnswerStudentTask).anchor !== before.completion.node) return false;
+  const card = tasks.find((task) => task.task_id === before.as);
+  return card?.auto_submit === true && card.available && card.status !== "succeeded";
 }
 
 /** What the last typed answer got wrong: its value, or only its written form. */

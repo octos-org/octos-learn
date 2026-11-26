@@ -1,9 +1,9 @@
-import type { AuthoringAnswerStudentTask, AuthoringRowStudentTask } from "octos-lesson-language";
+import type { AuthoringAnswerStudentTask, AuthoringRowStudentTask, AuthoringStudentTask } from "octos-lesson-language";
 import type { StudentTaskSnapshot } from "octos-lesson-language/web-runtime";
 import { describe, expect, it } from "vitest";
 
 import type { OllLessonOutlineTopic } from "./use-oll-lesson-runtime";
-import { lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
+import { answerWaitsOnCardTask, lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 
 const definition: AuthoringAnswerStudentTask = {
   as: "simplify",
@@ -86,5 +86,56 @@ describe("a row of blanks (decision 0023 amendment 1)", () => {
       attempts: [{ sequence: 1, operation_id: "o1", actual: 1, target: 2, succeeded: false, answers: { tens: "3", ones: "7" } }],
     })], rows, [topic("trade", 4, ["lesson:node:mat"])], 0, true);
     expect(lastAnswerMistake(card!)).toBeUndefined();
+  });
+});
+
+describe("answerWaitsOnCardTask (OLL decision 0026)", () => {
+  const node = "trade-add:node:sum";
+  const practice = {
+    as: "practice-1", prompt: "Add on the chart, column by column.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "card_tap", node }], completion: { kind: "card_fact", node, fact: "complete" },
+    hints: ["Start with any column."],
+  } as unknown as AuthoringStudentTask;
+  const total: AuthoringAnswerStudentTask = {
+    as: "answer-1", anchor: node, prompt: "What is the total?", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "answer_entry" }], completion: { kind: "numeric_answer", answer: "6231" },
+    hints: ["Read the answer row, one digit per column."],
+  };
+  const definitionsInOrder: AuthoringStudentTask[] = [practice, total];
+  const snapshot = (task: AuthoringStudentTask, patch: Partial<StudentTaskSnapshot> = {}): StudentTaskSnapshot => ({
+    task_id: task.as, status: "not_started", hints_revealed: 0, attempts: [], available: false,
+    prompt: task.prompt, hints: task.hints, ...patch,
+  });
+  const open = (cardPatch: Partial<StudentTaskSnapshot> = {}) => [
+    snapshot(practice, { available: true, auto_submit: true, ...cardPatch }),
+    snapshot(total),
+  ];
+
+  it("waits while the card task before it is open with no done, on the card it is anchored to", () => {
+    expect(answerWaitsOnCardTask("answer-1", open(), definitionsInOrder)).toBe(true);
+    expect(answerWaitsOnCardTask("answer-1", open({ status: "in_progress" }), definitionsInOrder)).toBe(true);
+  });
+
+  it("opens once the completing tap has finished the card task", () => {
+    expect(answerWaitsOnCardTask("answer-1", open({ status: "succeeded" }), definitionsInOrder)).toBe(false);
+  });
+
+  it("does not wait before the card task opens (the lesson is still playing)", () => {
+    expect(answerWaitsOnCardTask("answer-1", open({ available: false }), definitionsInOrder)).toBe(false);
+  });
+
+  it("does not wait on a card task that has a done (the trading mat, the place-value chart)", () => {
+    const withDone = { ...open()[0]! };
+    delete withDone.auto_submit;
+    expect(answerWaitsOnCardTask("answer-1", [withDone, snapshot(total)], definitionsInOrder)).toBe(false);
+  });
+
+  it("only for the typed answer right after the card task, anchored to that card", () => {
+    const elsewhere = { ...total, anchor: "trade-add:node:other" };
+    expect(answerWaitsOnCardTask("answer-1", open(), [practice, elsewhere])).toBe(false);
+    const between = { ...total, as: "between" };
+    expect(answerWaitsOnCardTask("answer-1", [...open(), snapshot(between)], [practice, between, total])).toBe(false);
+    expect(answerWaitsOnCardTask("practice-1", open(), definitionsInOrder)).toBe(false);
+    expect(answerWaitsOnCardTask("missing", open(), definitionsInOrder)).toBe(false);
   });
 });

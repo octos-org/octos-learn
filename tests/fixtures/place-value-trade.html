@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8"><title>Place-value trade card in the lesson board</title>
+<style>html,body {margin:0;} #root {width:100vw;height:100vh;}</style>
+<div id="root"></div>
+<script>
+// The trade card serves US K-12 lessons: English unless the test asks otherwise. A classic script runs
+// before the module below imports the app, which reads the language once when it loads.
+try{localStorage.setItem('octos-locale',new URLSearchParams(location.search).get('lang')??'en-US');}catch{}
+</script>
+<script type="module">
+// The place-value trade card (OLL decision 0026) in Learn's real lesson board, filling the window (desktop
+// only), with the lesson already played: the practice pair on the card, its task beside it with no "done",
+// and the typed answer under the card. The lessons are OLL's own test fixtures at the pinned commit
+// (packages/plugin-math/test/place-value-trade-fixtures.ts, tradeLesson), compiled with normalizeAuthoringLesson.
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
+import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
+// ?lesson=add (default): 3,486 + 2,739 shown, practice 4,658 + 1,573; four columns.
+import add from './place-value-trade-add.canonical.jsonl?raw';
+// ?lesson=sub: 50,003 − 2,476 shown, practice 40,002 − 3,585 across the zeros; five columns.
+import sub from './place-value-trade-sub.canonical.jsonl?raw';
+// ?lesson=wide: 389,457 + 247,568, practice 456,789 + 278,436; six columns.
+import wide from './place-value-trade-wide.canonical.jsonl?raw';
+import '/src/index.css';
+import '/src/learning/learning-workspace.css';
+import 'octos-lesson-language/web-runtime/styles.css';
+const chosen=new URLSearchParams(location.search).get('lesson');
+const source=chosen==='sub'?sub:chosen==='wide'?wide:add;
+const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
+const key=new URLSearchParams(location.search).get('key')??'place-value-trade';
+function App(){
+ const fromStart=new URLSearchParams(location.search).has('fromStart');
+ const runtime=useOllLessonRuntime({source,storageKey:key,startAtEnd:!fromStart,autoPlay:fromStart,topics});
+ window.tradeRuntime=runtime;
+ if(!runtime?.board)return null;
+ return React.createElement(OllLessonBoard,{runtime,inkSessionId:key,portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
+}
+createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>

@@ -1949,6 +1949,16 @@
   cursor: default;
 }
 
+/* A typed answer waiting on the card task before it (OLL 0026): where the answer goes, greyed until the card is finished. */
+.learning-student-task.is-waiting {
+  opacity: 0.62;
+}
+
+.learning-answer-entry > input:disabled {
+  background: #f3f1ed;
+  cursor: default;
+}
+
 /* A row of blanks (decision 0023 amendment 1): text and boxes on one line, a word under each box. */
 .learning-answer-row {
   flex-wrap: wrap;

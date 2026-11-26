@@ -66,7 +66,9 @@ import {
   type InkCameraBoard,
   type InkCameraGate,
 } from "./ink-camera-gate";
-import { lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
+import { answerWaitsOnCardTask, lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
+import { cardTaskHowTo } from "./card-task-how-to";
+import { NATURAL_SIZE_CAMERA_FLOOR, NATURAL_SIZE_CARD_KINDS, naturalSizeCardFrame } from "./natural-size-card-frame";
 import { visibleReflections } from "./visible-reflections";
 import { compositionTargetsRendered, planHostTeachingFocus } from "./host-camera-policy";
 import {
@@ -130,7 +132,6 @@ import {
   courseRegionOccupiedRect,
   type CourseRegionRecord,
 } from "../course-regions";
-import { cardHowTo } from "octos-lesson-language/plugin-math";
 import "octos-lesson-language/web-runtime/styles.css";
 import { withPluginVisualKinds } from "./visual-node-kinds";
 
@@ -299,6 +300,8 @@ interface InternalInfiniteBoardView {
 
 const REFLECTION_CARD_ESTIMATED_HEIGHT = 150;
 const ANSWER_CARD_ESTIMATED_HEIGHT = 190;
+/** Room kept above a natural-size card's answer row and below its answer input when both are framed (OLL 0026). */
+const EDGE_PAD = 12;
 const OPEN_REFLECTIONS_KEY = "octos-learn:open-reflections:v1";
 
 function readOpenReflections(): Record<string, boolean> {
@@ -2509,11 +2512,26 @@ export function LearningWhiteboard({
       (request) => {
         const courseFrame = request.source === "course-end"
           || request.source === "course-restore";
-        const focusedViewport = mounted.view.focusWorldRect(request.rect, {
-          exclusive: true,
-          framing: courseFrame ? "course" : "content",
-          parts: request.parts,
-        });
+        // A card the learner works at natural size (OLL 0026): this one move has a floor of one unit a pixel.
+        // Framed against the viewport's insets as they are now, so the kept edge lands just inside the chrome.
+        const cardFrame = request.source === "card-task" && request.card
+          ? naturalSizeCardFrame(request.card.rect, request.card.below, {
+            width: viewport.clientWidth,
+            height: viewport.clientHeight,
+            insets: learningBoardInsets(viewport),
+          }, request.card.align)
+          : undefined;
+        if (cardFrame) mounted.view.setAutomaticCameraMinimumScale(NATURAL_SIZE_CAMERA_FLOOR);
+        let focusedViewport: ReturnType<typeof mounted.view.focusWorldRect>;
+        try {
+          focusedViewport = mounted.view.focusWorldRect(cardFrame ?? request.rect, {
+            exclusive: true,
+            framing: courseFrame ? "course" : "content",
+            parts: cardFrame ? [cardFrame] : request.parts,
+          });
+        } finally {
+          if (cardFrame) mounted.view.setAutomaticCameraMinimumScale(teachingCameraFloor());
+        }
         // A course region's persisted bounds are a placement footprint, not a
         // camera target. Remember the complete world area exposed by the final
         // course frame so the next course starts beyond that view instead of
@@ -3174,6 +3192,8 @@ export function LearningWhiteboard({
       && restoredCourseFocusRef.current !== courseId
       && !pendingCourseId;
     if (!observedInProgress && !restoringLastCourse && automaticOverviewRef.current !== courseId) return;
+    // The learner works a card held up close at natural size (OLL 0026): the overview waits until they are done.
+    if (cameraControllerRef.current?.holdsCardFrame(courseId)) return;
 
     const frame = window.requestAnimationFrame(() => {
       const view = mountedRef.current?.view;
@@ -3379,6 +3399,87 @@ export function LearningWhiteboard({
     runtimeRegionBounds,
     runtimeRegionIdForTopic,
   ]);
+
+  // A card the learner works at natural size (the place-value trade card, OLL 0026). When its task opens, the
+  // camera brings the card up at one unit a pixel or more, its top under the top chrome, after the course frame
+  // (which still records the course's footprint). When the typed answer under it opens, the camera moves down to
+  // the card's answer row and the answer box, at the same size. Once per task, and again if the chrome changes
+  // before the learner moves the board.
+  const naturalSizeTask = activeStudentTask
+    ? studentTaskDefinitions?.find((definition) => definition.as === activeStudentTask.task_id)
+    : undefined;
+  const naturalSizeNodeId = naturalSizeTask?.completion.kind === "card_fact"
+    ? naturalSizeTask.completion.node
+    : naturalSizeTask?.completion.kind === "numeric_answer"
+      ? (naturalSizeTask as AuthoringAnswerStudentTask).anchor
+      : undefined;
+  const naturalSizeCardId = naturalSizeNodeId
+    && NATURAL_SIZE_CARD_KINDS.has(runtime?.board?.nodes?.[naturalSizeNodeId]?.kind ?? "")
+    ? naturalSizeNodeId
+    : undefined;
+  const naturalSizeTaskId = naturalSizeCardId ? naturalSizeTask?.as : undefined;
+  const naturalSizeAlign = naturalSizeTask?.completion.kind === "card_fact" ? "top" as const : "bottom" as const;
+  const naturalSizeCourseId = activeStudentTaskTopic
+    ? activeStudentTaskTopic.questionId ?? activeStudentTaskTopic.id
+    : undefined;
+  const naturalSizeChrome = teachingViewport ? `${teachingViewport.insets.top ?? 0}:${teachingViewport.insets.bottom ?? 0}` : "";
+  const naturalSizeFramedRef = useRef(new Set<string>());
+  // The card stays up close while it is worked and its answer typed; then the course overview may frame the
+  // course again.
+  const naturalSizeHeld = Boolean(naturalSizeCardId);
+  useEffect(() => {
+    if (!naturalSizeHeld) cameraControllerRef.current?.releaseCardFrame();
+  }, [naturalSizeHeld]);
+  useEffect(() => {
+    if (!naturalSizeCardId || !naturalSizeTaskId || !naturalSizeCourseId) return;
+    const frame = window.requestAnimationFrame(() => {
+      const viewport = viewportRef.current;
+      if (!viewport || !enhancementLayer) return;
+      const task = `${naturalSizeCourseId}:${naturalSizeTaskId}`;
+      // Framed once already: a change of chrome frames it again, unless the learner has moved the board.
+      if (naturalSizeFramedRef.current.has(task) && viewport.classList.contains("manual-navigation")) return;
+      const element = viewport.querySelector<HTMLElement>(`.board-node[data-id="${CSS.escape(naturalSizeCardId)}"]`);
+      const card = element ? renderedWorldRect(element) : null;
+      if (!card) return;
+      // The typed answers under the card (up to the open one), so the box shows where the answer goes; wait until
+      // they are laid out.
+      const answers = answerCards.filter((answer) => answer.definition.anchor === naturalSizeCardId);
+      const upTo = answers.findIndex((answer) => answer.task_id === naturalSizeTaskId);
+      const shown = naturalSizeAlign === "bottom" && upTo >= 0 ? answers.slice(0, upTo + 1) : answers;
+      const below = shown.flatMap((answer) => {
+        const box = enhancementLayer.querySelector<HTMLElement>(`[data-reflection-attachment-id="${CSS.escape(answer.attachmentId)}"]`);
+        const rect = box ? renderedWorldRect(box) : null;
+        return rect ? [rect] : [];
+      });
+      if (below.length < shown.length) return;
+      // Once the answer opens, what is read and typed: from the card's answer row to the answer box's input.
+      // Measured inside each element at one instant, so a camera move in progress does not skew it.
+      const worldY = (outer: HTMLElement, outerWorld: WhiteboardRect, edge: number) => {
+        const box = outer.getBoundingClientRect();
+        return outerWorld.y + (edge - box.top) * (outer.offsetHeight / Math.max(1, box.height));
+      };
+      const answerRow = [...element!.querySelectorAll(".place-value-trade-cell-answer")]
+        .map((cell) => cell.getBoundingClientRect().top);
+      const openAnswer = shown.at(-1);
+      const openBox = openAnswer ? enhancementLayer.querySelector<HTMLElement>(`[data-reflection-attachment-id="${CSS.escape(openAnswer.attachmentId)}"]`) : null;
+      const input = openBox?.querySelector("input");
+      const reading = naturalSizeAlign === "bottom" && answerRow.length && openBox && input && below.length
+        ? { top: worldY(element!, card, Math.min(...answerRow)) - EDGE_PAD, bottom: worldY(openBox, below.at(-1)!, input.getBoundingClientRect().bottom) + EDGE_PAD }
+        : undefined;
+      const framed = reading && reading.bottom > reading.top
+        ? { rect: { x: card.x, y: reading.top, width: card.width, height: reading.bottom - reading.top }, below: [], align: naturalSizeAlign }
+        : { rect: card, below, align: naturalSizeAlign };
+      const accepted = cameraControllerRef.current?.request({
+        source: "card-task",
+        key: `card-task:${task}:${naturalSizeChrome}`,
+        courseId: naturalSizeCourseId,
+        rect: unionWhiteboardRects([card, ...below]) ?? card,
+        card: framed,
+      });
+      if (accepted) naturalSizeFramedRef.current.add(task);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [answerCards, enhancementLayer, naturalSizeAlign, naturalSizeCardId, naturalSizeChrome, naturalSizeCourseId, naturalSizeTaskId, runtimeAttachmentBounds]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -4126,9 +4227,12 @@ export function LearningWhiteboard({
                           // A card task (decision 0023): the learner taps the card, then says done.
                           const cardCompletion = runtime?.studentTaskDefinitions.find((definition) => definition.as === task.task_id)?.completion;
                           const cardTask = cardCompletion?.kind === "card_fact";
-                          // How to work the card is the card's own fixed text (OLL 0023; owner, 2026-11-24).
+                          // How to work the card is the card's own fixed text (OLL 0023; owner, 2026-11-24); none
+                          // for a card that draws its own line (the place-value trade card, OLL 0026).
                           const cardNode = cardTask ? runtime?.board?.nodes?.[(cardCompletion as { node: string }).node] : undefined;
-                          const cardHowToText = cardNode ? cardHowTo(cardNode.kind, cardNode.content) : undefined;
+                          const cardHowToText = cardNode ? cardTaskHowTo(cardNode.kind, cardNode.content) : undefined;
+                          // No "done" on a card task the completing tap submits (`auto_submit`, OLL 0026).
+                          const cardDone = cardTask && !task.auto_submit;
                           return (
                             <article
                               key={task.task_id}
@@ -4181,7 +4285,7 @@ export function LearningWhiteboard({
                               {cardHowToText && !locked && task.status !== "succeeded" ? (
                                 <p className="learning-card-howto">{cardHowToText}</p>
                               ) : null}
-                              {cardTask && !locked && task.status !== "succeeded" ? (
+                              {cardDone && !locked && task.status !== "succeeded" ? (
                                 <div className="learning-student-task-actions learning-card-done">
                                   <button type="button" onClick={() => submitCardDone(task.task_id)}>
                                     <CheckCircle2 size={15} />
@@ -4281,6 +4385,9 @@ export function LearningWhiteboard({
                 const rowBlanks = rowCompletion ? rowCompletion.parts.flatMap((part) => ("blank" in part ? [part.blank] : [])) : [];
                 const missingBlanks = unreadableRowBlanks[card.task_id] ?? [];
                 const lastRow = card.attempts.at(-1)?.answers;
+                // The answer to a card task with no "done" (OLL 0026) shows from the start, disabled, where the
+                // answer goes; the tap that completes the card opens it (the owner's accepted sketch, 35P-07).
+                const waiting = locked && answerWaitsOnCardTask(card.task_id, runtimeStudentTasks ?? [], studentTaskDefinitions ?? []);
                 return (
                   <section
                     key={card.attachmentId}
@@ -4297,12 +4404,12 @@ export function LearningWhiteboard({
                       <small>{tr("输入答案，程序马上核对")}</small>
                     </header>
                     <article
-                      className={`learning-student-task is-${card.status}${locked ? " is-locked" : ""}`}
+                      className={`learning-student-task is-${card.status}${waiting ? " is-waiting" : locked ? " is-locked" : ""}`}
                       aria-live="polite"
                       aria-disabled={locked || undefined}
                     >
                       <p><LessonText text={card.prompt} /></p>
-                      {locked && card.status !== "succeeded" ? (
+                      {locked && !waiting && card.status !== "succeeded" ? (
                         <div className="learning-student-task-feedback">
                           <span>{lockedTaskMessage(card.topic.id)}</span>
                           {attempts > 0 ? <small>{tr("已尝试") + " "}{attempts} {tr("次")}</small> : null}
@@ -4362,7 +4469,7 @@ export function LearningWhiteboard({
                           className="learning-answer-entry"
                           onSubmit={(event) => {
                             event.preventDefault();
-                            submitAnswer(card.task_id, draft);
+                            if (!waiting) submitAnswer(card.task_id, draft);
                           }}
                         >
                           <input
@@ -4370,6 +4477,7 @@ export function LearningWhiteboard({
                             inputMode="text"
                             autoComplete="off"
                             enterKeyHint="done"
+                            disabled={waiting}
                             aria-label={tr("你的答案")}
                             placeholder={tr("如 12、0.5、3/4、2 3/4")}
                             value={draft}
@@ -4381,7 +4489,7 @@ export function LearningWhiteboard({
                             }}
                           />
                           {unit ? <span className="learning-answer-unit">{unit}</span> : null}
-                          <button type="submit" disabled={!draft.trim()}>{tr("提交")}</button>
+                          <button type="submit" disabled={waiting || !draft.trim()}>{tr("提交")}</button>
                         </form>
                       )}
                       {!locked && card.status !== "succeeded" ? (
