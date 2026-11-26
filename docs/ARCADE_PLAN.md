@@ -468,7 +468,9 @@ A pure TypeScript state machine with an injectable clock and seeded RNG:
 - the Arcade settings can override it on any device with a camera.
 
 **Requirements:**
-- A camera on the TV, built in or USB (owner to confirm, §14).
+- A camera on the TV. **The TV has a USB camera** (owner, 2026-11-26).
+  - Android exposes a USB camera to apps only when the vendor's system supports external cameras ([AOSP](https://source.android.com/docs/core/camera/external-usb-cameras); also noted in `LEARNER_AVATAR_ANIMATION_PLAN.md` §7). No record shows this camera opened from the WebView yet.
+  - So the M0 spike starts by checking that the WebView lists it (`enumerateDevices`), opens it through `getUserMedia`, and delivers at least 15 frames per second at 640×480 or lower (§7.10).
 - The Android app already declares `CAMERA` and grants WebView video capture (`MainActivity.java`, `onPermissionRequest`).
 - Without a camera, the two choices are tapped on the touch screen.
 
@@ -627,6 +629,7 @@ All wording passes the no-mastery rule. Gold and star tier badges come from the 
   - Its recorded capability probe says "WebGL 1.0" (`tv-capabilities.json`). The probe probably requested a WebGL1 context, and the GPU normally supports WebGL2.
   - Still, no three.js scene has run on it: the Android app deliberately uses static teacher art (commit `bd41b482`).
   - So M0 runs a notebook-shader prototype *with pose detection* on the TV, at each tier's render size, plus the shader and recognizer on a low-end Chromebook.
+  - The TV part starts with the USB camera (§7.6): listed by the WebView, opened through `getUserMedia`, at least 15 fps at 640×480 or lower. Frames per second, resolution and the time to first frame are recorded. If the WebView cannot open it, the owner decides at M0: a native camera bridge in the Android app, another camera model, or the tap fallback only.
   - If the TV cannot reach 30 fps at the low tier, the owner decides at M0. The options are a lower fixed resolution, a simpler 2.5D renderer for the TV, or the TV joining later.
 - **Device matrix:**
   - the TV (Android app, body mode and tap fallback);
@@ -694,7 +697,7 @@ Sizes are relative (S/M/L), not dates. M1 and M2 run in parallel once M0's spike
 
 | | Milestone | Size | Contents | Exit criteria |
 | --- | --- | --- | --- | --- |
-| **M0** | Plan, style and device spike | M | This plan reviewed and merged. Style board artifact. **Device spike:** notebook shader + pose detection on the TV at each tier's render size; shader + recognizer runtime candidates on a low-end Chromebook | Owner approves the plan and the style board; spike results recorded in `docs/arcade/DEVICE_RESULTS.md`; any TV decision taken (§7.10) |
+| **M0** | Plan, style and device spike | M | This plan reviewed and merged. Style board artifact. **Device spike:** the TV's USB camera through the WebView, then notebook shader + pose detection on the TV at each tier's render size; shader + recognizer runtime candidates on a low-end Chromebook | Owner approves the plan and the style board; spike results recorded in `docs/arcade/DEVICE_RESULTS.md`; any TV decision taken (§7.10) |
 | **M1** | Handwriting recognizer | L | `/arcade/ink-lab`; team evaluation set with deliberately wrong samples; training pipeline; model candidates (a) and (b); runtime candidates; evaluation harness with timing replay; worker integration | §7.7 gate passes per device class, or the owner records the fallback decision |
 | **M2** | Round core, inputs and records | L | Skill catalog, generators and state derivation in `services/`; scheduler; round engine (with pause and "Show me"); sticky note + number pad + decision logic (stub recognizer until M1); **body input** (pose worker, side selection, calibration, choices, Android TV flag); Arcade events, separate sync batches, server derivation, progress endpoint and support check; plain dev harness page (debug flag only) | Exhaustive fact tests and scheduler invariants; full rounds in Playwright via number pad and via replayed pose landmarks; events sync and derive correctly; **owner playtest 1** on the harness (all three inputs) |
 | **M3** | Margin Run | L | Notebook rendering kit with tiers and watchdog; Nib model and clips; Margin Run in both modes; Arcade pages, hall card, navigation, flag, settings; capability checks; music and sound | Device matrix at target frame rates; bundle check; full round via replayed real strokes with the real model in Playwright; **owner playtest 2** |
@@ -772,7 +775,7 @@ These are collected in the owner's playtests and on development builds only, unt
 | Recognizer misreads children's digits | Frustration; wrong records | The M1 gate per device class; an unsure path; the number pad after two unsure readings; automatic fallback |
 | False accepts | Children credited for wrong facts | Top-1-only acceptance; the false-accept bar; the prefix rate measured (accepted risk, decision 9) |
 | The TV cannot render 3D with pose detection at 30 fps | The main device plays poorly | Spike at M0; device-pixel tiers; owner decision before building |
-| The TV has no camera, or body tracking is unreliable (lighting, several children in view) | Body mode fails | Tap fallback; centre-person tracking; calibration; measured in the owner's playtests |
+| The WebView cannot open the TV's USB camera, or body tracking is unreliable (lighting, several children in view) | Body mode fails | Camera check first in the M0 spike, with an owner decision if it fails; tap fallback; centre-person tracking; calibration; measured in the owner's playtests |
 | Two choices allow guessing | Weaker practice on the TV | Accepted for the entertainment focus; input recorded so it can be weighed later |
 | Art takes longer than code | M3 slips; the look disappoints | The style board is approved before production; shader-led treatment over simple geometry; one game first |
 | Rewards without learning (PRD §11) | Engagement without faster recall | Targets weak facts; answer time measured per fact; the "Learn how" link |
@@ -784,10 +787,10 @@ These are collected in the owner's playtests and on development builds only, unt
 
 ## 14. Owner questions
 
-Answered 2026-11-25 (decisions 5–17 in §1).
+Answered 2026-11-25 (decisions 5–17 in §1). Answered 2026-11-26: **the TV has a USB camera** (§7.6); whether the WebView can open it is the first check in the M0 spike.
 
 Still open:
-1. **Camera on the TV:** does the TV have one, built in or USB? Which model? Needed for the M0 spike.
+1. **USB camera model** (optional): its name helps if the M0 camera check fails.
 2. **3D art source:** AI 3D generation with clean-up, or a commissioned 3D artist? Needed for M3 production.
 3. **Sound and music source:** CC0 libraries, or commissioned? Needed by M3.
 4. **zh names** for the Arcade place (游戏厅 proposed), Nib (小墨) and the games (§5.5). Needed by M3.
@@ -809,8 +812,8 @@ Please focus on what changed since round 1 (§17):
 - [x] Agent review round 1; owner decisions on its findings (2026-11-25).
 - [ ] Agent review round 2 (the last); owner accepts or amends.
 - [ ] Style board artifact (paper, ink, hatching, palette, Nib's sheet beside the Octos avatar, Margin Run in both modes, the screen pieces); owner approval.
-- [ ] TV camera confirmed (§14 question 1).
-- [ ] Device spike: the TV (shader + pose, each tier) and a low-end Chromebook (shader + recognizer runtimes); `docs/arcade/DEVICE_RESULTS.md`; any TV decision.
+- [x] TV camera confirmed: USB (owner, 2026-11-26).
+- [ ] Device spike: the TV (USB camera through the WebView first; then shader + pose, each tier) and a low-end Chromebook (shader + recognizer runtimes); `docs/arcade/DEVICE_RESULTS.md`; any TV decision.
 
 **M1: handwriting recognizer**
 - [ ] `/arcade/ink-lab` collection page (debug flag), stroke export with timing.
