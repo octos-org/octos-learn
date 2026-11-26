@@ -447,7 +447,13 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - Coach #174, the judge, 21 cases and the trial recipe, off by default ("Needs code review", 2 rounds; blockers: too many variables lost the lesson instead of the chart; the row copied hints that could give its answers; both fixed). With the trial on, first requests +1,839 B.
   - **Known limits:** OLL's 16 lesson variables cap pulling apart at 7 columns; a row of blanks holds 6; at 375 px the chart stays tappable only with the host camera at 0.8 or more.
   - **Reported:** a recipe agent's early `grep` swept `testsuite/`, which includes the question set; it printed nothing from it.
-  - **Now:** objective check 1, the 21 cases with the trial on (handoff `runs/place-value/objective-1/RECORD.md`).
+  - **Done: objective check 1** (handoff `runs/place-value/objective-1/RECORD.md`; 95 calls, gemini-3.6-flash, dev key):
+    - 19 of 21 lessons in the first run. The two lost builds (PV-02, PV-05) wrote the full number again in section 2. Coach #175 ("Needs code review", 1 round) reads building as the value on the chart, growing from 0; re-run 8 of 8 build lessons.
+    - Two decimal builds then declared the number as 0. Coach #176 ("No review needed": one refusal's wording and one guidance sentence) fixed PV-13; PV-10 still loses its chart (the lesson is kept). Follow-up: an outline re-ask that keeps the picture.
+    - Judge: every served lesson with a chart passes; 4 of 6 near misses drew the chart and fail (35P-06, 35P-04 twice, 35P-07: no component serves them yet).
+    - Rendering in Learn: 23 of 23 lessons play with no error, 61 of 61 tasks done by real clicks, the how-to shown 17 of 17.
+    - Speed: first playable median 9.7 s (p90 23.2 s), total 15.7 s (p90 41.0 s).
+  - **Needs the owner:** the review set, 7 lessons plus 2 anomalies (index-pv1 on port 5180), and whether to switch the chart on by default.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
