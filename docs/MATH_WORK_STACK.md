@@ -1,6 +1,6 @@
 # Math work stack
 
-As of 2026-11-24. This is the **status page for the math expressiveness work**, kept as a stack.
+As of 2026-11-25. This is the **status page for the math expressiveness work**, kept as a stack.
 
 - The top layer (L4) is what is happening now.
 - Each layer below it says why the layer above exists, down to the product (L0).
@@ -432,6 +432,12 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - Learn pins OLL d7c4b02 (#244).
   - **Map:** K2N-23 is the first conquered need (the Teaching Needs Map artifact).
   - **Needs the owner:** the check-4 review set (index-check4 on port 5180) and the zoom in the app.
+- **Decided (owner, 2026-11-25): the trading mat is complete.** The owner found the check-4 lessons fine except BT-31.
+  - **BT-31 (known limit, kept):** a comparison question (263 vs 236, need K2N-24 "comparing by place") borrowed the mat, the only card that draws blocks. The mat holds one pile and only trades, so 236 was never drawn. The one-mat rule then pushed section 2 onto a number line. No component serves K2N-24; the owner chose not to build one now.
+  - **Known limits:** near misses can still draw the mat; the model sometimes writes slider words ("调到") in mat task text; the judge records a forbidden mat as a note, not a failure (new judges count it as a failure from the start).
+  - **Parked:** near-miss component selection; applying the two new rules (fixed how-to text, practice goals as data) to other components; the shared-blocks proposal (folded into the next component's record).
+- **Now (2026-11-25): the next component, 35P-05, building a number and pulling it apart,** on a place-value chart, as decided on 2026-11-21 (the mat's place-value siblings 35P-05 and 35P-07 next, ahead of K2N-19 in the raw ranking).
+  - Order: blueprint and development cases (from the standards, checked for overlap), then the decision record and a sketch for the owner, then card, judge, trial recipe, one objective check with a review set of 8 or fewer lessons.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
@@ -619,10 +625,35 @@ The items below are the record.
 
 ## Standing rules
 
+All rules in force, gathered on 2026-11-25 at the owner's request.
+
+**Components and lessons**
+- **Component fit first** (2026-11-21, top of this page): a failure is first a question of whether a component fits the need; the fix is a component designed for the need, not a rule.
+- **One component per teaching need**; no multi-purpose instruments (2026-11-22).
+- **The original pipeline stays:** the model writes the outline and the whole lesson timeline; the program never adds its own narration, demonstrations or practice (2026-11-22/23).
+- **The model never names a control.** A component is data plus rules; it declares its own gestures (2026-11-24).
+- **How to work a component is its own fixed text,** never model-written; the model's hints are about the maths (2026-11-24).
+- **Practice goals: better information, tolerate errors.** A goal the component can't reach drops that task only, recorded (2026-11-24).
+- **A picture that keeps failing costs that picture, not the lesson** (2026-11-25).
+- **Coach keeps its rewriting logic** (Coach #166).
+
+**Correctness and evaluation**
 - **Meaning and logic:** the model writes what to teach; the program works out anything that must be exact (OLL decision 0020). This applies whenever a field is built or changed. It is not a separate project.
 - **Paid runs:** probe runs on the dev-probe key are pre-approved (owner, 2026-11-22); each is reported with its model, purpose and call count.
 - **Request changes:** request size is tracked, not capped (owner, 2026-11-24); speed is measured in live runs.
 - **Evaluation (owner, 2026-11-24):** I check objective things only (generation, rendering, speed); judging lessons is the owner's.
+- **Review sets are small (2026-11-25):** at most about 8 distinct lessons plus anomalies; a full case run only when measuring a rate.
+- **Held-out questions:** never tuned against or quoted; sealed sets are never read; new cases are checked with `case-overlap.mjs` (IDs and scores only).
+- **Model wording never decides what is drawn;** correctness comes from validated data and program code.
+
+**Process**
+- **Reviews:** blocking is only what the PR breaks compared with main; later rounds re-check the fixes; tooling PRs get one round. Every PR is labelled "Needs code review" or "No review needed", and reports give the round count.
+- **Merges:** only after every required check is confirmed successful through the API, on the reviewed commit.
+- **Pin bumps** also update `learning-stack-bom.json` (Learn) and `oll-contract.json` (Coach).
+- **Design decisions, paid steps and surprising results** are checked with Fable first.
+- **Sketches read without notes** on first use.
+- **Work in parallel (2026-11-25):** while CI or reviewers run, the next independent item goes ahead.
+- **Reports are short,** with a recommendation rather than a survey.
 
 ## Open pull requests
 
