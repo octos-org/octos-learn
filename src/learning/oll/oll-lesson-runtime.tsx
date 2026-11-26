@@ -130,7 +130,7 @@ import {
   courseRegionOccupiedRect,
   type CourseRegionRecord,
 } from "../course-regions";
-import { baseTenHowTo } from "octos-lesson-language/plugin-math";
+import { cardHowTo } from "octos-lesson-language/plugin-math";
 import "octos-lesson-language/web-runtime/styles.css";
 import { withPluginVisualKinds } from "./visual-node-kinds";
 
@@ -4128,7 +4128,7 @@ export function LearningWhiteboard({
                           const cardTask = cardCompletion?.kind === "card_fact";
                           // How to work the card is the card's own fixed text (OLL 0023; owner, 2026-11-24).
                           const cardNode = cardTask ? runtime?.board?.nodes?.[(cardCompletion as { node: string }).node] : undefined;
-                          const cardHowTo = cardNode?.kind === "base_ten_trade" ? baseTenHowTo(cardNode.content) : undefined;
+                          const cardHowToText = cardNode ? cardHowTo(cardNode.kind, cardNode.content) : undefined;
                           return (
                             <article
                               key={task.task_id}
@@ -4178,8 +4178,8 @@ export function LearningWhiteboard({
                                   <span>{tr("轮到你操作了，完成后这里会立即反馈。")}</span>
                                 </div>
                               )}
-                              {cardHowTo && !locked && task.status !== "succeeded" ? (
-                                <p className="learning-card-howto">{cardHowTo}</p>
+                              {cardHowToText && !locked && task.status !== "succeeded" ? (
+                                <p className="learning-card-howto">{cardHowToText}</p>
                               ) : null}
                               {cardTask && !locked && task.status !== "succeeded" ? (
                                 <div className="learning-student-task-actions learning-card-done">

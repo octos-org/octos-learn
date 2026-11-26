@@ -138,7 +138,7 @@ export interface OllLessonRuntimeController {
   /** The trades a card's slider made since last asked, for the board to animate one after another (0023 amendment 4). */
   takeStudentCardSteps(nodeId: string): ReturnType<BrowserLessonSession["takeStudentCardSteps"]>;
   /** One tap on a card; the card's own reason when it refuses, or `undefined` when the tap was made. */
-  tapStudentCard(nodeId: string, tap: { kind: "gather" | "ungather" | "make" | "break"; place: number }, input: StudentInputMethod): { operation: unknown } | { refused: string; message: string };
+  tapStudentCard(nodeId: string, tap: { kind: string; place: number }, input: StudentInputMethod): { operation: unknown } | { refused: string; message: string };
   /** The learner says "done" on the open card task. */
   submitStudentCard(taskId: string): void;
   recordStudentInkSelection(
