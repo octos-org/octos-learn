@@ -453,7 +453,8 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
     - Judge: every served lesson with a chart passes; 4 of 6 near misses drew the chart and fail (35P-06, 35P-04 twice, 35P-07: no component serves them yet).
     - Rendering in Learn: 23 of 23 lessons play with no error, 61 of 61 tasks done by real clicks, the how-to shown 17 of 17.
     - Speed: first playable median 9.7 s (p90 23.2 s), total 15.7 s (p90 41.0 s).
-  - **Needs the owner:** the review set, 7 lessons plus 2 anomalies (index-pv1 on port 5180), and whether to switch the chart on by default.
+  - **Pull-apart demonstrations (owner question on PV-07, 2026-11-25):** 4 of 7 stopped early across a section boundary. Owner: no extra round trip; no hard-coded "must end at 0" check, since a lesson may rightly stop partway; judge each lesson by its content. Coach #177 ("No review needed": two section facts) tells a later section which places are still on the chart and the values it can go to next (about 64 bytes, only there). Re-run of the 7 cases (15 calls): 7 of 7 lessons and charts, all play in Learn, 20 of 20 tasks by real clicks; 6 empty the chart and PV-14 stops where its question does. Remaining notes in RECORD (steps that lag the words in PV-14 and PV-15; PV-12 tried the practice number on the chart).
+  - **Needs the owner:** the review sets (index-pv1 and index-pv-apart on port 5180), and whether to switch the chart on by default.
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
