@@ -3424,8 +3424,8 @@ export function LearningWhiteboard({
     : undefined;
   const naturalSizeChrome = teachingViewport ? `${teachingViewport.insets.top ?? 0}:${teachingViewport.insets.bottom ?? 0}` : "";
   const naturalSizeFramedRef = useRef(new Set<string>());
-  // The card stays up close while it is worked and its answer typed; then the course overview may frame the
-  // course again.
+  // The card stays up close while it is worked and its answer typed. Once released, the camera stays where it is
+  // until the course next changes shape; the course overview then frames the whole course again.
   const naturalSizeHeld = Boolean(naturalSizeCardId);
   useEffect(() => {
     if (!naturalSizeHeld) cameraControllerRef.current?.releaseCardFrame();

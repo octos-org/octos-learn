@@ -98,6 +98,8 @@ test('adding by real clicks: no done, the answer waits, then opens and is accept
   for (const [place, count] of [[3, 6], [2, 2], [1, 3], [0, 1]] as const) await expect(disks(page, place, 'answer')).toHaveCount(count);
   // The camera has moved down to the answer row and the box, still at natural size.
   await expect(answer.locator('input')).toBeInViewport();
+  // The answer row is read off the card: every column's answer disks are in view.
+  for (const place of [3, 2, 1, 0]) await expect(disks(page, place, 'answer').first()).toBeInViewport();
   await atNaturalSize(page);
   await answer.locator('input').fill('6230');
   await answer.locator('button[type="submit"]').click();
@@ -134,6 +136,7 @@ test('subtracting across zeros by real clicks: a short column, the chain of brea
   await expect(page.getByTestId('oll-student-tasks').locator('.learning-student-task.is-succeeded')).toHaveCount(1);
   await expect(answer.locator('input')).toBeEnabled();
   await expect(answer.locator('input')).toBeInViewport();
+  for (const place of [4, 3, 2, 1, 0]) await expect(disks(page, place, 'answer').first()).toBeInViewport();
   await shot(page, 'place-value-trade-sub-complete');
   await answer.locator('input').fill('36417');
   await answer.locator('button[type="submit"]').click();

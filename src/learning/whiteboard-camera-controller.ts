@@ -200,6 +200,9 @@ export class WhiteboardCameraController {
   /** The learner is done with the card held up close: the course overview may frame the course again. */
   releaseCardFrame(): void {
     this.cardHeldCourseId = null;
+    // A card frame still waiting would take the hold again with nothing left to release it.
+    if (this.pending?.source === "card-task") this.pending = null;
+    if (this.followUp?.source === "card-task") this.followUp = null;
   }
 
   destroy(): void {

@@ -206,6 +206,17 @@ describe("WhiteboardCameraController: a card framed at natural size", () => {
     expect(applied(probe)).toEqual(["card-2", "card-2-answer", "end-2c"]);
   });
 
+  it("drops a card frame still waiting when the host releases the card", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("card-task", "card-2"));
+    probe.flush();
+    probe.controller.request(request("card-task", "card-2-chrome"));
+    probe.controller.releaseCardFrame();
+    probe.flush();
+    expect(applied(probe)).toEqual(["card-2"]);
+    expect(probe.controller.holdsCardFrame("course-2")).toBe(false);
+  });
+
   it("drops a waiting card frame and the hold when a new question loads", () => {
     const probe = controllerProbe();
     probe.controller.request(request("card-task", "card-2"));
