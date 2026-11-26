@@ -26,6 +26,13 @@ Owner, 2026-11-25:
 3. **Developed in parallel** with the current math work (`docs/MATH_WORK_STACK.md`).
 4. **Version 1 is math only.**
 
+Owner, 2026-11-25, on the plan's questions:
+
+5. **Mascot:** a new original doodle octopus, as recommended. The owner delegated naming: the mascot is **Nib** (§5.6).
+6. **Game names:** delegated. Order: A, then B, C and D, as recommended (§5.5).
+7. **Times tables to 10×10** in version 1; ×11 and ×12 are out.
+8. **Children's handwriting collection** (consent logistics, and later training use) is deferred until M1 needs it.
+
 Standing decisions that apply:
 - Target market is US K–12 (2026-10-30): COPPA/FERPA-aware design; Chromebooks and iPads matter.
 - Main devices are desktop browsers and large touch-screen TVs (2026-10-24). The TVs run the Android APK, which is a WebView shell.
@@ -83,7 +90,7 @@ A *skill* is a set of facts with one answer format. Version 1 skills (*proposed*
 | `add-sub-20` | one-digit + one-digit sums and the related subtractions | 2.OA.B.2 | `mt__t4afSyZRm` within 20 | 100 + 100 |
 | `mul-2-5-10` | a × b (0–10) with a factor of 2, 5 or 10, and their divisions | 3.OA.C.7 | `mt_HhuSDxwDNM` times tables 2, 5, 10 | 57 + 54 |
 | `mul-3-4-8` | a × b (0–10) with a factor of 3, 4 or 8, and their divisions | 3.OA.C.7 | `mt_wQ89AEXhz3` times tables 3, 4, 8 | 57 + 54 |
-| `mul-div-100` | all products of 0–10 by 0–10, and their divisions | 3.OA.C.7 | `mt_K5jM7vlVhA` all tables (×11 and ×12 optional) | 121 + 110 |
+| `mul-div-100` | all products of 0–10 by 0–10, and their divisions | 3.OA.C.7 | `mt_K5jM7vlVhA` all tables (the topic runs to 12×12; version 1 stops at 10×10, decision 7) | 121 + 110 |
 
 Exact sets:
 - **Add/sub within n:** a + b with a + b ≤ n; c − b with 0 ≤ b ≤ c ≤ n.
@@ -193,20 +200,30 @@ The HUD shows progress dots, the streak, stars and a back button. On non-touch d
 
 ### 5.5 The games
 
-All games share one notebook world and the same answer-driven rule. Working names are *proposed*, and the owner names the final ones.
+All games share one notebook world and the same answer-driven rule. Names were chosen 2026-11-25 (decision 6); the build order is A, B, C, D.
 
-| | Game | Correct answer does | Streak does | Why it suits |
-| --- | --- | --- | --- | --- |
-| **A (v1)** | **Margin Run** | The mascot runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | Speed lines, a longer leap, then a glide | Simplest endless scene; the strongest sense of motion |
-| B | **Paper Plane** | A folded-paper plane catches an updraft and passes through the next drawn hoop | Loops and a contrail | Calm and flowing; a good second game |
-| C | **Star Sketch** | Draws one line of a constellation; finishing one brings its doodle creature to life | Lines glow and sparkle | Ties to our star map and academy theme |
-| D | **Doodle Tower** | Adds a block to a tower climbing the page | Bigger blocks and a sway-proof glow | Very readable on TV; good for younger children |
+| | Game | zh (*proposed*) | Correct answer does | Streak does | Why it suits |
+| --- | --- | --- | --- | --- | --- |
+| **A (v1)** | **Margin Run** | 页边快跑 | Nib runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | Speed lines, a longer leap, then a glide | Simplest endless scene; the strongest sense of motion |
+| B | **Paper Glider** | 纸飞机 | Nib rides a folded-paper glider that catches an updraft and passes through the next drawn hoop | Loops and a contrail | Calm and flowing; a good second game |
+| C | **Star Sketch** | 星星连线 | Draws one line of a constellation; finishing one brings its doodle creature to life | Lines glow and sparkle | Ties to our star map and academy theme |
+| D | **Up the Page** | 一页登顶 | Adds a block to a tower climbing the page | Bigger blocks and a sway-proof glow | Very readable on TV; good for younger children |
 
-The order of B to D is the owner's choice. Each game is a separate lazy-loaded module and a separate PR.
+**Naming checks (2026-11-25):** web searches found no existing game with these names.
+- "Paper Plane" was replaced by "Paper Glider" because it is too generic.
+- "Doodle Tower" was replaced by "Up the Page" because "Doodle" is crowded among K–5 math apps (DoodleMath, Math Doodles, Doodle School: Math).
+- "Tower Math" is an existing 3D tower arithmetic game, so we avoid "tower" in the name.
+
+Each game is a separate lazy-loaded module and a separate PR.
 
 ### 5.6 Mascot and teachers
 
-- **Mascot** (owner decision needed): (1) a doodle version of the learner's star fox avatar, (2) a new original doodle creature (for example a small octopus that echoes the Octos name), or (3) a choice of doodle critters. Recommendation: (2), one mascot made to look good in the notebook style, with (3) later as collectibles if D12 allows. It must not resemble the reference's pencil mascot.
+- **Mascot: Nib** (zh 小墨, *proposed*), decision 5.
+  - **Who Nib is:** a small, original doodle octopus whose ink draws the notebook world. A nib is the tip of a pen. A web search found no existing octopus character called Nib.
+  - **Look:** ink-blue linework, one pencil-colour fill, big readable eyes, and tentacles that animate well for run, leap, stumble, idle and cheer.
+  - **Not the Octos avatar:** Learn already has an octopus, the "Octos" teacher skin (`src/components/octos-avatar.tsx`, skins ocean, coral, scholar and starlight). Nib must read as its own character, a hand-drawn notebook doodle with a different silhouette, face and colours. The M0 style board shows the two side by side to check that.
+  - **Not the reference's mascot:** Nib must not resemble the reference's pencil mascot.
+  - **Later:** more doodle critters can come as collectibles if D12 allows.
 - **Teachers:** they appear on the results screen only. The teacher's existing portrait is taped into the notebook like a photo, with one short spoken line. The line uses the existing award voice path and respects "teacher voice off" and "playful lines off". Teachers do not appear inside the 3D scenes in version 1, because their painted style would clash with the doodles.
 
 ### 5.7 Accessibility
@@ -469,7 +486,7 @@ Sizes are relative (S/M/L), not dates. M1 and M2 run in parallel.
 
 | | Milestone | Size | Contents | Exit criteria |
 | --- | --- | --- | --- | --- |
-| **M0** | Plan and style | S | This plan reviewed and merged. Style board artifact; mascot choice; game A name | Owner approves the plan and the style board |
+| **M0** | Plan and style | S | This plan reviewed and merged. Style board artifact, including Nib's character sheet beside the Octos avatar | Owner approves the plan and the style board |
 | **M1** | Recognizer (go/no-go) | L | `/arcade/ink-lab` collection page; consented evaluation set; training pipeline; candidates (a) and (b); evaluation harness; worker integration; device latency | §7.6 gate passes, or the owner records the number-pad-default decision |
 | **M2** | Round core and records | M | Skill catalog and generators; fact states; scheduler; round engine; writing strip + number pad + decision logic (with a stub recognizer until M1 lands); arcade events, service derivation, progress endpoint; plain dev harness page (debug flag only, never shipped) | Unit tests for every fact and every scheduler invariant; a full round via the number pad in Playwright; events sync and derive correctly |
 | **M3** | First game | L | Notebook rendering kit; mascot model and clips; Margin Run; Arcade pages; hall card and navigation; feature flag; quality tiers | Plays at target frame rates on the device matrix; bundle check passes; full round via synthetic ink in Playwright with the real model |
@@ -548,15 +565,15 @@ These are collected locally and in play tests only, until PRD decision D11 sets 
 
 ## 14. Owner questions
 
-1. **Mascot:** a doodle star fox, a new original doodle creature (recommended), or several critters?
-2. **Game names** and the order of games B–D.
-3. **Times tables:** to 10×10 or 12×12 (the catalog topic)? The US standard asks for one-digit products. Recommendation: 10×10 in version 1, with ×11 and ×12 as an optional set.
-4. **Star map effect:** the proposed "quick facts" ring and `practising` only, or something else?
-5. **Teachers on the results screen:** taped portrait plus a spoken line, or not in version 1?
-6. **Children's handwriting for evaluation:** who recruits families and holds the consent forms? Is training on their samples allowed later?
-7. **3D art source:** AI 3D generation with clean-up, or a commissioned 3D artist?
-8. **Sound:** CC0 libraries, or commissioned sound and music?
-9. **zh name** for the Arcade place (游戏厅 proposed).
+Answered 2026-11-25 (decisions 5–8 in §1): mascot (Nib), game names and order, times tables to 10×10. Children's handwriting collection is deferred until M1.
+
+Still open:
+1. **Star map effect:** the proposed "quick facts" ring and `practising` only, or something else? Needed by M4.
+2. **Teachers on the results screen:** taped portrait plus a spoken line, or not in version 1? Needed by M4.
+3. **Children's handwriting for evaluation** (deferred): who recruits families and holds the consent forms? Is training on their samples allowed later? Needed when M1 reaches the children's set.
+4. **3D art source:** AI 3D generation with clean-up, or a commissioned 3D artist? Needed for M3 production.
+5. **Sound:** CC0 libraries, or commissioned sound and music? Needed by M3.
+6. **zh names** for the Arcade place (游戏厅 proposed), Nib (小墨) and the games (§5.5). Needed by M3.
 
 ## 15. Questions for the reviewer
 
@@ -572,7 +589,8 @@ These are collected locally and in play tests only, until PRD decision D11 sets 
 **M0 — plan and style**
 - [ ] Agent review of this plan; owner accepts or amends (two review rounds at most).
 - [ ] Style board artifact (paper, ink, hatching, palette, mascot sheet, game A frame, UI frame); owner approval.
-- [ ] Owner answers §14 questions 1–3 and 9 (the others can wait for M4/M5).
+- [x] Owner answers on mascot, game names and order, and times tables (2026-11-25; decisions 5–8).
+- [ ] zh names (§14 question 6).
 
 **M1 — recognizer**
 - [ ] `/arcade/ink-lab` collection page (debug flag), stroke export format.
