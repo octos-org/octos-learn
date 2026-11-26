@@ -438,6 +438,16 @@ Legend: **Done**, **Now**, **Next**, **Later**, **Merge** (waiting for the owner
   - **Parked:** near-miss component selection; applying the two new rules (fixed how-to text, practice goals as data) to other components; the shared-blocks proposal (folded into the next component's record).
 - **Now (2026-11-25): the next component, 35P-05, building a number and pulling it apart,** on a place-value chart, as decided on 2026-11-21 (the mat's place-value siblings 35P-05 and 35P-07 next, ahead of K2N-19 in the raw ranking).
   - Order: blueprint and development cases (from the standards, checked for overlap), then the decision record and a sketch for the owner, then card, judge, trial recipe, one objective check with a review set of 8 or fewer lessons.
+  - **Decided (owner, 2026-11-25): decision 0025 accepted** (OLL #109 proposed, #110 accepted), all three answers as recommended: one card for building and pulling apart; a tenth disk refused; "Take out" kept. The × (1/10) decimal form is for English grade 5 only; Chinese lessons count units (3个0.1). The owner tried the number line zoom in the app: it works well.
+  - **Built (2026-11-25):**
+    - OLL #111, the chart's plugin code ("Needs code review", 1 round; one leak fixed: "1 × 1,000" shows its answer).
+    - OLL #112, card taps routed by card kind, the mat unchanged ("Needs code review", 1 round; a list-valued fact refused as before).
+    - OLL #113, the chart wired into the player ("Needs code review", 2 rounds; blocker: a tampered done pile replayed as wrong maths, fixed). Practice on its own number; the phone layout wraps whole periods into rows; player 0.16.0, math 0.8.0. Decision 0025 amendment 1 records the abilities opened to a second card.
+    - Learn #247, the pin and the card's how-to by kind ("No review needed").
+    - Coach #174, the judge, 21 cases and the trial recipe, off by default ("Needs code review", 2 rounds; blockers: too many variables lost the lesson instead of the chart; the row copied hints that could give its answers; both fixed). With the trial on, first requests +1,839 B.
+  - **Known limits:** OLL's 16 lesson variables cap pulling apart at 7 columns; a row of blanks holds 6; at 375 px the chart stays tappable only with the host camera at 0.8 or more.
+  - **Reported:** a recipe agent's early `grep` swept `testsuite/`, which includes the question set; it printed nothing from it.
+  - **Now:** objective check 1, the 21 cases with the trial on (handoff `runs/place-value/objective-1/RECORD.md`).
 - **Done: trading mat, objective check 1** (handoff `runs/base-ten/objective-1/RECORD.md`; 155 calls on the dev key, gemini-3.6-flash). The 33 development questions, mat on and off, Coach main 1d3896b:
   - **Generation:** 33/33 lessons in both groups, none refused or lost.
   - **Speed:**
