@@ -15,10 +15,10 @@ describe("naturalSizeCardFrame", () => {
     expect(NATURAL_SIZE_CARD_KINDS.has("place_value_chart")).toBe(false);
   });
 
-  it("knows what each card's answer is read off: the trade card's answer row, make-ten's counts; none for times-ten", () => {
+  it("knows what each card's answer is read off: the trade card's answer row, make-ten's counts, times-ten's answer", () => {
     expect(cardAnswerRowSelector("place_value_trade")).toBe(".place-value-trade-cell-answer");
     expect(cardAnswerRowSelector("make_ten")).toBe(".make-ten-caption");
-    expect(cardAnswerRowSelector("place_value_times_ten")).toBeUndefined();
+    expect(cardAnswerRowSelector("place_value_times_ten")).toBe(".place-value-times-ten-answer");
     expect(cardAnswerRowSelector(undefined)).toBeUndefined();
     expect(cardAnswerRowSelector("toString")).toBeUndefined();
   });

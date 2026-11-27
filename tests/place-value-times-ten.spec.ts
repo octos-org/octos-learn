@@ -78,7 +78,24 @@ async function expectOpened(page: Page, blanks: number) {
   return row;
 }
 
-/** The task ended by the completing tap; the row open, in view with its Submit. */
+/**
+ * The card's answer element (OLL #126: a count's target column, a times pair's copy numbers 1 to 10), which the camera
+ * frames down from to the row once the row opens: drawn once, and in view down to its bottom edge (a times pair's
+ * 10). Not all of it: at natural size, from its top to the row's Submit is about 640 px on a count and 940 px on
+ * 4,000 is ? times 400, more than the band between the chrome at 1024 × 768 or 1440 × 900, and the frame keeps the
+ * row in view, so the top of a tall answer element (a times pair's first copies) is above the window.
+ */
+async function expectAnswerInView(page: Page) {
+  const answer = page.locator('svg.place-value-times-ten .place-value-times-ten-answer');
+  await expect(answer).toHaveCount(1);
+  await expect(answer).toBeInViewport();
+  await expect.poll(() => answer.evaluate((element) => {
+    const { bottom, height } = element.getBoundingClientRect();
+    return height > 0 && bottom > 0 && bottom <= window.innerHeight;
+  })).toBe(true);
+}
+
+/** The task ended by the completing tap; the row open, in view with its Submit, and the card's answer element. */
 async function expectRowOpen(page: Page, row: ReturnType<Page['getByTestId']>) {
   await expect(page.getByTestId('oll-student-tasks').locator('.learning-student-task.is-succeeded')).toHaveCount(1);
   await expect(page.locator('svg.place-value-times-ten.place-value-times-ten-live')).toHaveCount(0);
@@ -89,6 +106,7 @@ async function expectRowOpen(page: Page, row: ReturnType<Page['getByTestId']>) {
   }
   await expect(row.locator('button[type="submit"]')).toBeInViewport();
   await atNaturalSize(page);
+  await expectAnswerInView(page);
 }
 
 for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900 }]) {
