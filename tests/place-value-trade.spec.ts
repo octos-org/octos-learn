@@ -46,7 +46,7 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `test-results/${name}.png` });
 }
 
-async function open(page: Page, lesson: 'add' | 'sub' | 'wide') {
+async function open(page: Page, lesson: 'add' | 'sub' | 'wide' | 'rows') {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`/tests/fixtures/place-value-trade.html?lesson=${lesson}&key=trade-${lesson}-${Date.now()}`);
@@ -61,11 +61,33 @@ async function expectOpened(page: Page, answerPrompt: RegExp) {
   await expect(page.locator('.learning-card-done')).toHaveCount(0);
   await expect(page.locator('.learning-card-howto')).toHaveCount(0);
   await expect(page.locator('.place-value-trade-howto')).toHaveCount(1);
+  // No attempt is recorded before the completing tap, so the hint is offered from the start; there is nothing to
+  // start again yet.
+  await expect(tasks.getByRole('button', { name: 'Give me a hint' })).toBeVisible();
+  await expect(tasks.getByRole('button', { name: 'Start again' })).toHaveCount(0);
   const answer = page.getByTestId('oll-answer-task').filter({ hasText: answerPrompt });
   await expect(answer.locator('input')).toBeDisabled();
   await expect(answer.locator('button[type="submit"]')).toBeDisabled();
   await expect(answer).not.toContainText(/Complete the previous practice|先完成前面的练习/);
   return answer;
+}
+
+/** An answer shown where it goes, greyed and disabled, without the "complete the previous practice" lock. */
+async function expectWaiting(answer: ReturnType<Page['getByTestId']>) {
+  await expect(answer.locator('.learning-student-task.is-waiting')).toHaveCount(1);
+  for (const input of await answer.locator('input').all()) await expect(input).toBeDisabled();
+  await expect(answer.locator('button[type="submit"]')).toBeDisabled();
+  await expect(answer).not.toContainText(/Complete the previous practice|先完成前面的练习/);
+}
+
+/** An answer open to type into, in view with its Submit. */
+async function expectOpen(answer: ReturnType<Page['getByTestId']>) {
+  await expect(answer.locator('.learning-student-task.is-waiting')).toHaveCount(0);
+  for (const input of await answer.locator('input').all()) {
+    await expect(input).toBeEnabled();
+    await expect(input).toBeInViewport();
+  }
+  await expect(answer.locator('button[type="submit"]')).toBeInViewport();
 }
 
 test.use({ viewport: { width: 1024, height: 768 } });
@@ -155,5 +177,60 @@ test('six columns at 1024 px: drawn at natural size, the whole width in the wind
   await expect(page.locator('.place-value-trade-given')).toBeInViewport();
   await expect(page.locator(`.place-value-trade-down[data-oll-tap="down:${index(0)}"]`)).toBeInViewport();
   await shot(page, 'place-value-trade-wide-1024');
+  expect(errors).toEqual([]);
+});
+
+test('a row of blanks and two typed answers on the card: all wait, then open one by one; the hint from the start', async ({ page }) => {
+  const errors = await open(page, 'rows');
+  await expect(page.locator('.place-value-trade-given')).toHaveText('4,658 + 1,573');
+  const tasks = page.getByTestId('oll-student-tasks');
+  await expect(tasks).toBeVisible();
+  await expect(page.locator('.learning-card-done')).toHaveCount(0);
+  const answers = page.getByTestId('oll-answer-task');
+  const row = answers.filter({ hasText: /Read the answer row/ });
+  const total = answers.filter({ hasText: /What is the total/ });
+  const hundreds = answers.filter({ hasText: /How many hundreds/ });
+  // The row, then both answers, greyed where they go from the start, not locked.
+  await expect(row.locator('input')).toHaveCount(4);
+  for (const answer of [row, total, hundreds]) await expectWaiting(answer);
+  await atNaturalSize(page);
+  // The card task's hint, before any tap: offered, opened, and the chart is still worked at natural size. The task
+  // panel sits under the card, below the fold at natural size (as in #254); a pointer click here would first scroll
+  // the board's own element to it, which a learner panning the board does not, so the click is dispatched.
+  await tasks.getByRole('button', { name: 'Give me a hint' }).dispatchEvent('click');
+  await expect(tasks.locator('.learning-student-task-hint')).toHaveText('Start with any column.');
+  await expect(tasks.getByRole('button', { name: /hint/ })).toHaveCount(0);
+  await expect(page.locator('.place-value-trade-live').first()).toBeVisible();
+  await atNaturalSize(page);
+  await shot(page, 'place-value-trade-rows-open');
+  for (const place of [0, 1, 2]) {
+    await down(page, place);
+    await ring(page, place);
+    await expect(disks(page, place + 1, 'carry')).toHaveCount(1);
+  }
+  await down(page, 3);
+  await expect(tasks.locator('.learning-student-task.is-succeeded')).toHaveCount(1);
+  // The completing tap opens the row, the first after the card, and the camera moves to it at natural size; the
+  // two answers stay greyed until their turn.
+  await expectOpen(row);
+  for (const place of [3, 2, 1, 0]) await expect(disks(page, place, 'answer').first()).toBeInViewport();
+  await atNaturalSize(page);
+  for (const answer of [total, hundreds]) await expectWaiting(answer);
+  await shot(page, 'place-value-trade-rows-row-open');
+  for (const [label, digit] of [['thousands', '6'], ['hundreds', '2'], ['tens', '3'], ['ones', '1']] as const) {
+    await row.getByRole('textbox', { name: label }).fill(digit);
+  }
+  await row.locator('button[type="submit"]').click();
+  await expect(row.locator('.learning-student-task.is-succeeded')).toHaveCount(1);
+  await expectOpen(total);
+  await expectWaiting(hundreds);
+  await total.locator('input').fill('6231');
+  await total.locator('button[type="submit"]').click();
+  await expect(total.locator('.learning-student-task.is-succeeded')).toHaveCount(1);
+  await expectOpen(hundreds);
+  await hundreds.locator('input').fill('62');
+  await hundreds.locator('button[type="submit"]').click();
+  await expect(hundreds.locator('.learning-student-task.is-succeeded')).toHaveCount(1);
+  await shot(page, 'place-value-trade-rows-answered');
   expect(errors).toEqual([]);
 });

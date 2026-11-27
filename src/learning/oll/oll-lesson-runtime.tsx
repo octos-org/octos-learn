@@ -68,6 +68,7 @@ import {
 } from "./ink-camera-gate";
 import { answerWaitsOnCardTask, lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 import { cardTaskHowTo } from "./card-task-how-to";
+import { cardTaskHintFromStart } from "./card-task-hint";
 import { NATURAL_SIZE_CAMERA_FLOOR, NATURAL_SIZE_CARD_KINDS, naturalSizeCardFrame } from "./natural-size-card-frame";
 import { visibleReflections } from "./visible-reflections";
 import { compositionTargetsRendered, planHostTeachingFocus } from "./host-camera-policy";
@@ -3410,8 +3411,8 @@ export function LearningWhiteboard({
     : undefined;
   const naturalSizeNodeId = naturalSizeTask?.completion.kind === "card_fact"
     ? naturalSizeTask.completion.node
-    : naturalSizeTask?.completion.kind === "numeric_answer"
-      ? (naturalSizeTask as AuthoringAnswerStudentTask).anchor
+    : naturalSizeTask?.completion.kind === "numeric_answer" || naturalSizeTask?.completion.kind === "numeric_row"
+      ? (naturalSizeTask as AuthoringAnswerStudentTask | AuthoringRowStudentTask).anchor
       : undefined;
   const naturalSizeCardId = naturalSizeNodeId
     && NATURAL_SIZE_CARD_KINDS.has(runtime?.board?.nodes?.[naturalSizeNodeId]?.kind ?? "")
@@ -3462,7 +3463,8 @@ export function LearningWhiteboard({
         .map((cell) => cell.getBoundingClientRect().top);
       const openAnswer = shown.at(-1);
       const openBox = openAnswer ? enhancementLayer.querySelector<HTMLElement>(`[data-reflection-attachment-id="${CSS.escape(openAnswer.attachmentId)}"]`) : null;
-      const input = openBox?.querySelector("input");
+      // A row of blanks: all of its entry (a word under each box, the boxes may wrap, Submit), not its first box.
+      const input = openBox?.querySelector(".learning-answer-row") ?? openBox?.querySelector("input");
       const reading = naturalSizeAlign === "bottom" && answerRow.length && openBox && input && below.length
         ? { top: worldY(element!, card, Math.min(...answerRow)) - EDGE_PAD, bottom: worldY(openBox, below.at(-1)!, input.getBoundingClientRect().bottom) + EDGE_PAD }
         : undefined;
@@ -4233,6 +4235,8 @@ export function LearningWhiteboard({
                           const cardHowToText = cardNode ? cardTaskHowTo(cardNode.kind, cardNode.content) : undefined;
                           // No "done" on a card task the completing tap submits (`auto_submit`, OLL 0026).
                           const cardDone = cardTask && !task.auto_submit;
+                          // Its hint, though, from the start: it records no attempt before it succeeds (OLL 0026).
+                          const hintFromStart = cardTask && cardTaskHintFromStart(task);
                           return (
                             <article
                               key={task.task_id}
@@ -4302,7 +4306,7 @@ export function LearningWhiteboard({
                                   <span><LessonText text={task.current_hint} /></span>
                                 </div>
                               ) : null}
-                              {task.status !== "succeeded" && attempts > 0 ? (
+                              {task.status !== "succeeded" && (attempts > 0 || hintFromStart) ? (
                                 <div className="learning-student-task-actions">
                                   {task.hints_revealed < task.hints.length ? (
                                     <button
@@ -4314,13 +4318,15 @@ export function LearningWhiteboard({
                                       {task.current_hint ? tr("下一个提示") : tr("给我提示")}
                                     </button>
                                   ) : null}
-                                  <button
-                                    type="button"
-                                    disabled={locked}
-                                    onClick={() => retryTask(task.task_id)}
-                                  >
-                                    <RotateCcw size={15} />
-                                    {tr("重新开始")}</button>
+                                  {attempts > 0 ? (
+                                    <button
+                                      type="button"
+                                      disabled={locked}
+                                      onClick={() => retryTask(task.task_id)}
+                                    >
+                                      <RotateCcw size={15} />
+                                      {tr("重新开始")}</button>
+                                  ) : null}
                                 </div>
                               ) : null}
                             </article>
@@ -4385,8 +4391,8 @@ export function LearningWhiteboard({
                 const rowBlanks = rowCompletion ? rowCompletion.parts.flatMap((part) => ("blank" in part ? [part.blank] : [])) : [];
                 const missingBlanks = unreadableRowBlanks[card.task_id] ?? [];
                 const lastRow = card.attempts.at(-1)?.answers;
-                // The answer to a card task with no "done" (OLL 0026) shows from the start, disabled, where the
-                // answer goes; the tap that completes the card opens it (the owner's accepted sketch, 35P-07).
+                // The answers to a card task with no "done" (OLL 0026), typed or a row, show from the start, disabled,
+                // where they go; the tap that completes the card opens the first (the owner's accepted sketch, 35P-07).
                 const waiting = locked && answerWaitsOnCardTask(card.task_id, runtimeStudentTasks ?? [], studentTaskDefinitions ?? []);
                 return (
                   <section
@@ -4434,7 +4440,7 @@ export function LearningWhiteboard({
                           className="learning-answer-entry learning-answer-row"
                           onSubmit={(event) => {
                             event.preventDefault();
-                            submitRow(card.task_id, Object.fromEntries(rowBlanks.map((blank) => [blank.as, (rowDraft[blank.as] ?? "").trim()])));
+                            if (!waiting) submitRow(card.task_id, Object.fromEntries(rowBlanks.map((blank) => [blank.as, (rowDraft[blank.as] ?? "").trim()])));
                           }}
                         >
                           <div className="learning-answer-row-parts">
@@ -4447,6 +4453,7 @@ export function LearningWhiteboard({
                                   inputMode="decimal"
                                   autoComplete="off"
                                   enterKeyHint="done"
+                                  disabled={waiting}
                                   aria-label={part.blank.label ?? tr("你的答案")}
                                   aria-invalid={missingBlanks.includes(part.blank.as) || undefined}
                                   className={missingBlanks.includes(part.blank.as) ? "is-missing" : undefined}
@@ -4462,7 +4469,7 @@ export function LearningWhiteboard({
                               </label>
                             )))}
                           </div>
-                          <button type="submit" disabled={rowBlanks.every((blank) => !(rowDraft[blank.as] ?? "").trim())}>{tr("提交")}</button>
+                          <button type="submit" disabled={waiting || rowBlanks.every((blank) => !(rowDraft[blank.as] ?? "").trim())}>{tr("提交")}</button>
                         </form>
                       ) : (
                         <form

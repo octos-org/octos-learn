@@ -1954,7 +1954,8 @@
   opacity: 0.62;
 }
 
-.learning-answer-entry > input:disabled {
+.learning-answer-entry > input:disabled,
+.learning-answer-row-blank > input:disabled {
   background: #f3f1ed;
   cursor: default;
 }

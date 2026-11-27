@@ -23,11 +23,15 @@ import add from './place-value-trade-add.canonical.jsonl?raw';
 import sub from './place-value-trade-sub.canonical.jsonl?raw';
 // ?lesson=wide: 389,457 + 247,568, practice 456,789 + 278,436; six columns.
 import wide from './place-value-trade-wide.canonical.jsonl?raw';
+// ?lesson=rows: practice 4,658 + 1,573, then a row of blanks (the answer row's digits) and two typed answers, all
+// anchored to the card: tradeLesson's practice task and answer, its extraTasks for the row and the second answer,
+// the tasks put in that order before normalizeAuthoringLesson (OLL 84aa55d).
+import rows from './place-value-trade-rows.canonical.jsonl?raw';
 import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 import 'octos-lesson-language/web-runtime/styles.css';
 const chosen=new URLSearchParams(location.search).get('lesson');
-const source=chosen==='sub'?sub:chosen==='wide'?wide:add;
+const source=chosen==='sub'?sub:chosen==='wide'?wide:chosen==='rows'?rows:add;
 const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
 const key=new URLSearchParams(location.search).get('key')??'place-value-trade';
 function App(){

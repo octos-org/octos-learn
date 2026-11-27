@@ -34,11 +34,19 @@ export function visibleAnswerTasks(
   });
 }
 
+const isAnswerTask = (definition: AuthoringStudentTask | undefined): definition is AuthoringAnswerStudentTask | AuthoringRowStudentTask =>
+  definition?.completion.kind === "numeric_answer" || definition?.completion.kind === "numeric_row";
+
 /**
- * Whether a typed answer waits on the card task just before it (OLL decision 0026): that task is open, has no
- * "done" (`auto_submit`: the tap that completes the card submits it), and works the card this answer is anchored
- * to. The answer box then shows from the start, disabled, and opens on the completing tap (the owner's accepted
- * sketch for 35P-07: seeing where the answer goes mattered).
+ * Whether a typed answer or a row of blanks waits on the card task before it (OLL decision 0026). The card task has
+ * no "done" (`auto_submit`: the tap that completes the card submits it) and works the card this answer is anchored
+ * to; between them there may be only other answers and rows anchored to the same card (two typed answers in a row,
+ * a row then an answer). The answer then shows from the start, disabled, where it goes (the owner's accepted sketch
+ * for 35P-07: seeing where the answer goes mattered).
+ *
+ * It waits while that card task is open, and then while one of the answers before it on the same card is open:
+ * OLL opens one task at a time, so after the completing tap the first answer opens and the next ones stay greyed
+ * where they go until their turn, rather than turning into "complete the previous practice".
  */
 export function answerWaitsOnCardTask(
   taskId: string,
@@ -47,11 +55,25 @@ export function answerWaitsOnCardTask(
 ): boolean {
   const index = definitions.findIndex((definition) => definition.as === taskId);
   const answer = definitions[index];
-  const before = index > 0 ? definitions[index - 1] : undefined;
-  if (answer?.completion.kind !== "numeric_answer" || before?.completion.kind !== "card_fact") return false;
-  if ((answer as AuthoringAnswerStudentTask).anchor !== before.completion.node) return false;
-  const card = tasks.find((task) => task.task_id === before.as);
-  return card?.auto_submit === true && card.available && card.status !== "succeeded";
+  if (!isAnswerTask(answer)) return false;
+  const snapshot = (id: string) => tasks.find((task) => task.task_id === id);
+  if (snapshot(answer.as)?.available) return false;
+  // Back over the answers on the same card to the card task they follow.
+  const between: string[] = [];
+  for (let at = index - 1; at >= 0; at -= 1) {
+    const before = definitions[at]!;
+    if (isAnswerTask(before)) {
+      if (before.anchor !== answer.anchor) return false;
+      between.push(before.as);
+      continue;
+    }
+    if (before.completion.kind !== "card_fact" || before.completion.node !== answer.anchor) return false;
+    const card = snapshot(before.as);
+    if (card?.auto_submit !== true) return false;
+    const open = (task: StudentTaskSnapshot | undefined) => task?.available === true && task.status !== "succeeded";
+    return open(card) || (card.status === "succeeded" && between.some((id) => open(snapshot(id))));
+  }
+  return false;
 }
 
 /** What the last typed answer got wrong: its value, or only its written form. */
