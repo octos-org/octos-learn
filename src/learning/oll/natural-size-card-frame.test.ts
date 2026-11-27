@@ -9,8 +9,8 @@ const card = { x: 20, y: 20, width: 988, height: 545 };
 const answer = { x: 20, y: 790, width: 988, height: 150 };
 
 describe("naturalSizeCardFrame", () => {
-  it("is for the place-value trade card, the make-ten card and the place-value times-ten card", () => {
-    expect([...NATURAL_SIZE_CARD_KINDS]).toEqual(["place_value_trade", "make_ten", "place_value_times_ten"]);
+  it("is for the place-value trade, make-ten, place-value times-ten and place-value compare cards", () => {
+    expect([...NATURAL_SIZE_CARD_KINDS]).toEqual(["place_value_trade", "make_ten", "place_value_times_ten", "place_value_compare"]);
     expect(NATURAL_SIZE_CARD_KINDS.has("base_ten_trade")).toBe(false);
     expect(NATURAL_SIZE_CARD_KINDS.has("place_value_chart")).toBe(false);
   });
@@ -19,6 +19,8 @@ describe("naturalSizeCardFrame", () => {
     expect(cardAnswerRowSelector("place_value_trade")).toBe(".place-value-trade-cell-answer");
     expect(cardAnswerRowSelector("make_ten")).toBe(".make-ten-caption");
     expect(cardAnswerRowSelector("place_value_times_ten")).toBe(".place-value-times-ten-answer");
+    // The compare card's task ends on the card (its sign); nothing is typed under it (OLL 0029).
+    expect(cardAnswerRowSelector("place_value_compare")).toBeUndefined();
     expect(cardAnswerRowSelector(undefined)).toBeUndefined();
     expect(cardAnswerRowSelector("toString")).toBeUndefined();
   });

@@ -6,9 +6,11 @@ import type { WhiteboardRect } from "../whiteboard-placement";
  * the size it draws them at:
  * - the place-value trade card (OLL 0026): disks of 34, 28 or 24 px by column count, about 16 px with the course;
  * - the make-ten card (OLL 0027): counters of 50 px, 24 px with the course at 1024 × 768;
- * - the place-value times-ten card (OLL 0028): disks of 30 px, 11.5 to 14.3 px with the course at 1024 × 768.
+ * - the place-value times-ten card (OLL 0028): disks of 30 px, 11.5 to 14.3 px with the course at 1024 × 768;
+ * - the place-value compare card (OLL 0029): disks of 34, 31, 30 or 28 px by four to seven columns; on the test
+ *   pairs, a card 560 to 956 px wide and 582 to 660 px tall.
  */
-export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_value_trade", "make_ten", "place_value_times_ten"]);
+export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_value_trade", "make_ten", "place_value_times_ten", "place_value_compare"]);
 
 /**
  * What the learner reads the answer off, on a natural-size card, by kind. Once the typed answer under the card
@@ -18,6 +20,8 @@ export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_valu
  * - the make-ten card: the count above each frame (10 and what is left), with the frames under them;
  * - the times-ten card: its own answer element (OLL #126), a count's target column or a times pair's column of copy
  *   numbers (1 to 10).
+ * The place-value compare card (OLL 0029) has none: its task ends on the card, with the learner's own sign in the
+ * sentence under its chart, and nothing is typed under it, so it is framed from its top while worked.
  */
 const CARD_ANSWER_READING: Readonly<Record<string, string>> = {
   place_value_trade: ".place-value-trade-cell-answer",

@@ -29,6 +29,14 @@ describe("cardTaskHowTo", () => {
     expect(cardTaskHowTo("place_value_times_ten", {})).toBeUndefined();
   });
 
+  it("shows no second line for the place-value compare card, which draws its own under the problem (OLL decision 0029)", () => {
+    // OLL has fixed text for the card; the card's own line follows it (judge from the left, then choose the sign).
+    const compare = { a: 6281000, b: 6218000, compared: 0, marked: 0, signed: 0 };
+    expect(cardHowTo("place_value_compare", compare)).toBeTruthy();
+    expect(cardTaskHowTo("place_value_compare", compare)).toBeUndefined();
+    expect(cardTaskHowTo("place_value_compare", { ...compare, language: "zh-CN" })).toBeUndefined();
+  });
+
   it("has nothing for a card without a how-to", () => {
     expect(cardTaskHowTo("number_line", {})).toBeUndefined();
     expect(cardTaskHowTo(undefined, {})).toBeUndefined();

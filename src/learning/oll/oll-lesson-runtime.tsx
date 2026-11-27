@@ -3411,11 +3411,11 @@ export function LearningWhiteboard({
   ]);
 
   // A card the learner works at natural size (the place-value trade card, OLL 0026; make-ten, 0027; times-ten,
-  // 0028). When its task opens, the camera brings the card up at one unit a pixel or more, its top under the top
-  // chrome, after the course frame (which still records the course's footprint). When the typed answer under it
-  // opens, the camera moves down to what the answer is read off (the trade card's answer row, make-ten's counts,
-  // times-ten's answer element) and the answer box, at the same size. Once per task, and again if the
-  // chrome changes before the learner moves the board.
+  // 0028; compare, 0029). When its task opens, the camera brings the card up at one unit a pixel or more, its top
+  // under the top chrome, after the course frame (which still records the course's footprint). When the typed answer
+  // under it opens, the camera moves down to what the answer is read off (the trade card's answer row, make-ten's
+  // counts, times-ten's answer element) and the answer box, at the same size; the compare card has no typed answer.
+  // Once per task, and again if the chrome changes before the learner moves the board.
   const naturalSizeTask = activeStudentTask
     ? studentTaskDefinitions?.find((definition) => definition.as === activeStudentTask.task_id)
     : undefined;
