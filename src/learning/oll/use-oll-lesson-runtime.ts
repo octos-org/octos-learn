@@ -105,6 +105,12 @@ export interface OllLessonRuntimeController {
   studentTaskDefinitions: AuthoringStudentTask[];
   scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
+  /**
+   * The session's playback speed, as last set (1, or the fast start's speed). The board's view takes the same value
+   * (`InfiniteBoardView.setPlaybackSpeed`, OLL #129): a tap card's demonstration step animates as long as the
+   * session gives it.
+   */
+  playbackSpeed: number;
   play(): void;
   pause(): void;
   restart(): void;
@@ -202,6 +208,16 @@ function guardedStudentInput<T>(session: BrowserLessonSession | null, apply: () 
   catch (error) { session.reportFailure("input", error); return undefined; }
 }
 
+/**
+ * Input to one student task. A known task that is not available now (its window closed, a practice not yet started,
+ * a card that moved on) is refused here and the session goes on; an unknown task still reaches the session and fails it.
+ */
+function guardedStudentTaskInput<T>(session: BrowserLessonSession | null, taskId: string, apply: () => T): T | undefined {
+  const task = session?.studentTasks.find((candidate) => candidate.task_id === taskId);
+  if (task && !task.available) return undefined;
+  return guardedStudentInput(session, apply);
+}
+
 const EMPTY_TOPICS: OllLessonTopicDefinition[] = [];
 
 export function useOllLessonRuntime({
@@ -267,6 +283,12 @@ export function useOllLessonRuntime({
     if (session) capture.bind(session, runtimeBindings.get(session));
   }, [capture, runtimeBindings, session]);
   const [revision, setRevision] = useState(0);
+  // Every speed change goes through here, so the board's view can follow it (`playbackSpeed`).
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const setSessionSpeed = useCallback((target: BrowserLessonSession, speed: number) => {
+    target.setSpeed(speed);
+    setPlaybackSpeed(speed);
+  }, []);
   const acceleratedStartupRef = useRef<{
     session: BrowserLessonSession;
     narrationId: string;
@@ -284,10 +306,10 @@ export function useOllLessonRuntime({
       session.pause();
       if (acceleratedStartupRef.current?.session === session) {
         acceleratedStartupRef.current = null;
-        session.setSpeed(1);
+        setSessionSpeed(session, 1);
       }
     };
-  }, [autoPlay, session, startAtEnd, capture]);
+  }, [autoPlay, session, startAtEnd, capture, setSessionSpeed]);
 
   useEffect(() => {
     if (!session || !startupNarrationId || startupSpeed <= 1 || startAtEnd) {
@@ -301,16 +323,16 @@ export function useOllLessonRuntime({
       session,
       narrationId: startupNarrationId,
     };
-    session.setSpeed(startupSpeed);
+    setSessionSpeed(session, startupSpeed);
     return () => {
       if (
         acceleratedStartupRef.current?.session !== session
         || acceleratedStartupRef.current.narrationId !== startupNarrationId
       ) return;
       acceleratedStartupRef.current = null;
-      session.setSpeed(1);
+      setSessionSpeed(session, 1);
     };
-  }, [session, startAtEnd, startupNarrationId, startupSpeed]);
+  }, [session, startAtEnd, startupNarrationId, startupSpeed, setSessionSpeed]);
 
   const activeNarrationBeatId = session?.projection.current_narration
     ? session.projection.current_beat_id
@@ -323,8 +345,8 @@ export function useOllLessonRuntime({
       || acceleratedStartupRef.current.narrationId !== activeNarrationBeatId
     ) return;
     acceleratedStartupRef.current = null;
-    session.setSpeed(1);
-  }, [activeNarrationBeatId, session]);
+    setSessionSpeed(session, 1);
+  }, [activeNarrationBeatId, session, setSessionSpeed]);
 
   const stopCursorRef = useRef<number | null>(null);
   const outlineRef = useRef<OllLessonOutlineTopic[]>([]);
@@ -520,20 +542,20 @@ export function useOllLessonRuntime({
   }, [session]);
   const requestStudentTaskHint = useCallback(
     (taskId: string) => {
-      guardedStudentInput(session, () => session!.requestStudentTaskHint(taskId));
+      guardedStudentTaskInput(session, taskId, () => session!.requestStudentTaskHint(taskId));
     },
     [session],
   );
   const submitStudentAnswer = useCallback(
     (taskId: string, text: string) => {
-      const result = guardedStudentInput(session, () => session!.submitStudentAnswer(taskId, text, "keyboard"));
+      const result = guardedStudentTaskInput(session, taskId, () => session!.submitStudentAnswer(taskId, text, "keyboard"));
       return !(result && "unreadable" in result);
     },
     [session],
   );
   const submitStudentRow = useCallback(
     (taskId: string, answers: Record<string, string>) => {
-      const result = guardedStudentInput(session, () => session!.submitStudentRow(taskId, answers, "keyboard"));
+      const result = guardedStudentTaskInput(session, taskId, () => session!.submitStudentRow(taskId, answers, "keyboard"));
       return result && "unreadable" in result ? result.unreadable : [];
     },
     [session],
@@ -557,13 +579,13 @@ export function useOllLessonRuntime({
   );
   const submitStudentCard = useCallback(
     (taskId: string) => {
-      guardedStudentInput(session, () => session!.submitStudentCard(taskId, "unknown"));
+      guardedStudentTaskInput(session, taskId, () => session!.submitStudentCard(taskId, "unknown"));
     },
     [session],
   );
   const retryStudentTask = useCallback(
     (taskId: string) => {
-      guardedStudentInput(session, () => session!.retryStudentTask(taskId));
+      guardedStudentTaskInput(session, taskId, () => session!.retryStudentTask(taskId));
     },
     [session],
   );
@@ -725,6 +747,7 @@ export function useOllLessonRuntime({
     studentTaskDefinitions: events[0]?.lesson?.tasks ?? [],
     scene3dViews: snapshot.scene3dViews,
     currentOperation: session.currentOperation,
+    playbackSpeed,
     play,
     pause,
     restart,

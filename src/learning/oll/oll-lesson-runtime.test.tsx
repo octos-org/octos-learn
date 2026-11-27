@@ -1161,7 +1161,7 @@ function ReviewToLiveRuntimeProbe() {
   );
 }
 
-function AcceleratedStartupRuntimeProbe() {
+function AcceleratedStartupRuntimeProbe({ board = false }: { board?: boolean }) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "oll-accelerated-startup-runtime-test",
@@ -1172,9 +1172,12 @@ function AcceleratedStartupRuntimeProbe() {
       "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
   });
   return (
-    <span data-testid="accelerated-startup-speech">
-      {runtime?.activeSpeech ?? ""}
-    </span>
+    <>
+      <span data-testid="accelerated-startup-speech">
+        {runtime?.activeSpeech ?? ""}
+      </span>
+      {board && runtime ? <OllLessonBoard runtime={runtime} /> : null}
+    </>
   );
 }
 
@@ -3407,6 +3410,20 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByTestId("accelerated-startup-speech").textContent).toContain(
       "先只看题目",
     );
+  });
+
+  it("gives the board the session's speed, the fast start's and then 1 (OLL #129: a card's demonstration step)", async () => {
+    vi.useFakeTimers();
+    const boardSpeed = vi.spyOn(InfiniteBoardView.prototype, "setPlaybackSpeed");
+    await renderLearning(<AcceleratedStartupRuntimeProbe board />);
+
+    expect(screen.getByTestId("accelerated-startup-speech").textContent).toBe("");
+    expect(boardSpeed).toHaveBeenLastCalledWith(6);
+    act(() => vi.advanceTimersByTime(1_500));
+    expect(screen.getByTestId("accelerated-startup-speech").textContent).toContain(
+      "先只看题目",
+    );
+    expect(boardSpeed).toHaveBeenLastCalledWith(1);
   });
 });
 
