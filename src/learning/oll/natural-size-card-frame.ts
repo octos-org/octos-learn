@@ -1,11 +1,33 @@
 import type { WhiteboardRect } from "../whiteboard-placement";
 
 /**
- * Cards the learner works at no less than their natural size on desktop. The place-value trade card (OLL 0026)
- * draws its disks at 34, 28 or 24 px by column count and is laid out for a window of 1024 px and up; framed with
- * the whole course it shrank to about 16 px. There is no mobile layout for it (owner, 2026-11-26).
+ * Cards the learner works at no less than their natural size on desktop. Each is laid out for a window of 1024 px
+ * and up, with no mobile layout (owner, 2026-11-26), and framed with the whole course its pieces shrank well below
+ * the size it draws them at:
+ * - the place-value trade card (OLL 0026): disks of 34, 28 or 24 px by column count, about 16 px with the course;
+ * - the make-ten card (OLL 0027): counters of 50 px, 24 px with the course at 1024 × 768;
+ * - the place-value times-ten card (OLL 0028): disks of 30 px, 11.5 to 14.3 px with the course at 1024 × 768.
  */
-export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_value_trade"]);
+export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_value_trade", "make_ten", "place_value_times_ten"]);
+
+/**
+ * What the learner reads the answer off, on a natural-size card, by kind. Once the typed answer under the card
+ * opens, the camera frames from the top of these down to the answer's entry, so what is read and what is typed are
+ * in view together, as far as the window allows at natural size:
+ * - the trade card: its answer row of disks;
+ * - the make-ten card: the count above each frame (10 and what is left), with the frames under them.
+ * The times-ten card has none: its answer is read off the whole chart, so the camera frames the card and the answers
+ * under it, bottom-aligned.
+ */
+const CARD_ANSWER_READING: Readonly<Record<string, string>> = {
+  place_value_trade: ".place-value-trade-cell-answer",
+  make_ten: ".make-ten-caption",
+};
+
+/** The selector for what a card's answer is read off, or undefined to frame the card and its answers. */
+export function cardAnswerRowSelector(kind: string | undefined): string | undefined {
+  return kind && Object.hasOwn(CARD_ANSWER_READING, kind) ? CARD_ANSWER_READING[kind] : undefined;
+}
 
 /** The camera floor while such a card is framed: one unit a pixel. */
 export const NATURAL_SIZE_CAMERA_FLOOR = 1;

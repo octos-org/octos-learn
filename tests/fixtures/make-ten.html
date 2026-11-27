@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8"><title>Make-ten card in the lesson board</title>
+<style>html,body {margin:0;} #root {width:100vw;height:100vh;}</style>
+<div id="root"></div>
+<script>
+// The make-ten card serves US K-12 lessons: English unless the test asks otherwise. A classic script runs
+// before the module below imports the app, which reads the language once when it loads.
+try{localStorage.setItem('octos-locale',new URLSearchParams(location.search).get('lang')??'en-US');}catch{}
+</script>
+<script type="module">
+// The make-ten card (OLL decision 0027) in Learn's real lesson board, filling the window (desktop only), with the
+// lesson already played: the practice pair on the card, its task beside it with no "done", and the row of four
+// blanks under the card. The lessons are OLL's own test fixtures at the pinned commit
+// (packages/plugin-math/test/make-ten-fixtures.ts, makeTenLesson), compiled with normalizeAuthoringLesson.
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
+import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
+// ?lesson=en (default): 8 + 6 shown, practice 7 + 5, then its row of four blanks.
+import en from './make-ten-en.canonical.jsonl?raw';
+// ?lesson=zh: 4 + 9 shown, practice 3 + 8 (Chinese).
+import zh from './make-ten-zh.canonical.jsonl?raw';
+import '/src/index.css';
+import '/src/learning/learning-workspace.css';
+import 'octos-lesson-language/web-runtime/styles.css';
+const chosen=new URLSearchParams(location.search).get('lesson');
+const source=chosen==='zh'?zh:en;
+const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
+const key=new URLSearchParams(location.search).get('key')??'make-ten';
+function App(){
+ const runtime=useOllLessonRuntime({source,storageKey:key,startAtEnd:true,autoPlay:false,topics});
+ window.makeTenRuntime=runtime;
+ if(!runtime?.board)return null;
+ return React.createElement(OllLessonBoard,{runtime,inkSessionId:key,portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
+}
+createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>

@@ -69,7 +69,7 @@ import {
 import { answerWaitsOnCardTask, lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 import { cardTaskHowTo } from "./card-task-how-to";
 import { cardTaskHintFromStart } from "./card-task-hint";
-import { NATURAL_SIZE_CAMERA_FLOOR, NATURAL_SIZE_CARD_KINDS, naturalSizeCardFrame } from "./natural-size-card-frame";
+import { NATURAL_SIZE_CAMERA_FLOOR, NATURAL_SIZE_CARD_KINDS, cardAnswerRowSelector, naturalSizeCardFrame } from "./natural-size-card-frame";
 import { visibleReflections } from "./visible-reflections";
 import { compositionTargetsRendered, planHostTeachingFocus } from "./host-camera-policy";
 import {
@@ -3401,11 +3401,12 @@ export function LearningWhiteboard({
     runtimeRegionIdForTopic,
   ]);
 
-  // A card the learner works at natural size (the place-value trade card, OLL 0026). When its task opens, the
-  // camera brings the card up at one unit a pixel or more, its top under the top chrome, after the course frame
-  // (which still records the course's footprint). When the typed answer under it opens, the camera moves down to
-  // the card's answer row and the answer box, at the same size. Once per task, and again if the chrome changes
-  // before the learner moves the board.
+  // A card the learner works at natural size (the place-value trade card, OLL 0026; make-ten, 0027; times-ten,
+  // 0028). When its task opens, the camera brings the card up at one unit a pixel or more, its top under the top
+  // chrome, after the course frame (which still records the course's footprint). When the typed answer under it
+  // opens, the camera moves down to what the answer is read off (the trade card's answer row, make-ten's counts;
+  // times-ten's whole card, bottom-aligned) and the answer box, at the same size. Once per task, and again if the
+  // chrome changes before the learner moves the board.
   const naturalSizeTask = activeStudentTask
     ? studentTaskDefinitions?.find((definition) => definition.as === activeStudentTask.task_id)
     : undefined;
@@ -3419,6 +3420,8 @@ export function LearningWhiteboard({
     ? naturalSizeNodeId
     : undefined;
   const naturalSizeTaskId = naturalSizeCardId ? naturalSizeTask?.as : undefined;
+  // What the answer is read off on the card (the trade card's answer row, make-ten's counts); none for times-ten.
+  const naturalSizeAnswerRow = naturalSizeCardId ? cardAnswerRowSelector(runtime?.board?.nodes?.[naturalSizeCardId]?.kind) : undefined;
   const naturalSizeAlign = naturalSizeTask?.completion.kind === "card_fact" ? "top" as const : "bottom" as const;
   const naturalSizeCourseId = activeStudentTaskTopic
     ? activeStudentTaskTopic.questionId ?? activeStudentTaskTopic.id
@@ -3459,8 +3462,9 @@ export function LearningWhiteboard({
         const box = outer.getBoundingClientRect();
         return outerWorld.y + (edge - box.top) * (outer.offsetHeight / Math.max(1, box.height));
       };
-      const answerRow = [...element!.querySelectorAll(".place-value-trade-cell-answer")]
-        .map((cell) => cell.getBoundingClientRect().top);
+      const answerRow = naturalSizeAnswerRow
+        ? [...element!.querySelectorAll(naturalSizeAnswerRow)].map((cell) => cell.getBoundingClientRect().top)
+        : [];
       const openAnswer = shown.at(-1);
       const openBox = openAnswer ? enhancementLayer.querySelector<HTMLElement>(`[data-reflection-attachment-id="${CSS.escape(openAnswer.attachmentId)}"]`) : null;
       // A row of blanks: all of its entry (a word under each box, the boxes may wrap, Submit), not its first box.
@@ -3481,7 +3485,7 @@ export function LearningWhiteboard({
       if (accepted) naturalSizeFramedRef.current.add(task);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [answerCards, enhancementLayer, naturalSizeAlign, naturalSizeCardId, naturalSizeChrome, naturalSizeCourseId, naturalSizeTaskId, runtimeAttachmentBounds]);
+  }, [answerCards, enhancementLayer, naturalSizeAlign, naturalSizeAnswerRow, naturalSizeCardId, naturalSizeChrome, naturalSizeCourseId, naturalSizeTaskId, runtimeAttachmentBounds]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
