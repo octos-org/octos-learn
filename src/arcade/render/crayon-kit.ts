@@ -30,6 +30,7 @@ export const CRAYON = {
   purple: new THREE.Color("#8d5cc4"),
   pink: new THREE.Color("#f283ad"),
   brown: new THREE.Color("#7a5232"),
+  wood: new THREE.Color("#d39a5c"),
 };
 
 /** A crayon line: reveal it from its start with `uProgress` (0–1). */
@@ -353,7 +354,7 @@ export class CrayonKit implements StyleKit {
 }
 
 /** A seeded random stream, so each texture is scribbled the same way every time. */
-function scribbler(seed: number): () => number {
+export function scribbler(seed: number): () => number {
   let state = (seed * 16807 + 11) % 2147483647 || 1;
   return () => {
     state = (state * 16807) % 2147483647;
@@ -362,7 +363,7 @@ function scribbler(seed: number): () => number {
 }
 
 /** Rubs wax texture into what is drawn so far: tiny gaps where the crayon skipped. */
-function skip(context: CanvasRenderingContext2D, width: number, height: number, random: () => number, amount: number): void {
+export function skip(context: CanvasRenderingContext2D, width: number, height: number, random: () => number, amount: number): void {
   context.save();
   context.globalCompositeOperation = "destination-out";
   for (let i = 0; i < amount; i++) {
@@ -373,7 +374,7 @@ function skip(context: CanvasRenderingContext2D, width: number, height: number, 
 }
 
 /** Back-and-forth crayon scribbles filling an ellipse. */
-function scribbleEllipse(context: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string, random: () => number): void {
+export function scribbleEllipse(context: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string, random: () => number): void {
   context.save();
   context.beginPath();
   context.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
