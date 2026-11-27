@@ -15,13 +15,14 @@ export const NATURAL_SIZE_CARD_KINDS: ReadonlySet<string> = new Set(["place_valu
  * opens, the camera frames from the top of these down to the answer's entry, so what is read and what is typed are
  * in view together, as far as the window allows at natural size:
  * - the trade card: its answer row of disks;
- * - the make-ten card: the count above each frame (10 and what is left), with the frames under them.
- * The times-ten card has none: its answer is read off the whole chart, so the camera frames the card and the answers
- * under it, bottom-aligned.
+ * - the make-ten card: the count above each frame (10 and what is left), with the frames under them;
+ * - the times-ten card: its own answer element (OLL #126), a count's target column or a times pair's column of copy
+ *   numbers (1 to 10).
  */
 const CARD_ANSWER_READING: Readonly<Record<string, string>> = {
   place_value_trade: ".place-value-trade-cell-answer",
   make_ten: ".make-ten-caption",
+  place_value_times_ten: ".place-value-times-ten-answer",
 };
 
 /** The selector for what a card's answer is read off, or undefined to frame the card and its answers. */

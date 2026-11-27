@@ -106,7 +106,9 @@ for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900
       await click(page, counter(1, 1, 2));
       await expect(caption(page, 0)).toHaveText('8');
       await expect(caption(page, 1)).toHaveText('4');
-      await expect(page.locator('.make-ten-howto')).toHaveText('Keep tapping blue counters until the frame is full.');
+      // Once a counter has crossed, the card's own line says it goes back when tapped (OLL #125): Learn shows no fixed
+      // how-to beside the task to say so.
+      await expect(page.locator('.make-ten-howto')).toHaveText('Keep tapping blue counters until the frame is full. A counter that crossed goes back when tapped.');
       await click(page, `.make-ten-counter[data-piece="${blue}"]`);
       await expect(caption(page, 0)).toHaveText('7');
       // Three blue counters fill the frame; the third click makes the ten and ends the task, with no "done".

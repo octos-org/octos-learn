@@ -3404,8 +3404,8 @@ export function LearningWhiteboard({
   // A card the learner works at natural size (the place-value trade card, OLL 0026; make-ten, 0027; times-ten,
   // 0028). When its task opens, the camera brings the card up at one unit a pixel or more, its top under the top
   // chrome, after the course frame (which still records the course's footprint). When the typed answer under it
-  // opens, the camera moves down to what the answer is read off (the trade card's answer row, make-ten's counts;
-  // times-ten's whole card, bottom-aligned) and the answer box, at the same size. Once per task, and again if the
+  // opens, the camera moves down to what the answer is read off (the trade card's answer row, make-ten's counts,
+  // times-ten's answer element) and the answer box, at the same size. Once per task, and again if the
   // chrome changes before the learner moves the board.
   const naturalSizeTask = activeStudentTask
     ? studentTaskDefinitions?.find((definition) => definition.as === activeStudentTask.task_id)
@@ -3420,7 +3420,7 @@ export function LearningWhiteboard({
     ? naturalSizeNodeId
     : undefined;
   const naturalSizeTaskId = naturalSizeCardId ? naturalSizeTask?.as : undefined;
-  // What the answer is read off on the card (the trade card's answer row, make-ten's counts); none for times-ten.
+  // What the answer is read off on the card (the trade card's answer row, make-ten's counts, times-ten's answer).
   const naturalSizeAnswerRow = naturalSizeCardId ? cardAnswerRowSelector(runtime?.board?.nodes?.[naturalSizeCardId]?.kind) : undefined;
   const naturalSizeAlign = naturalSizeTask?.completion.kind === "card_fact" ? "top" as const : "bottom" as const;
   const naturalSizeCourseId = activeStudentTaskTopic

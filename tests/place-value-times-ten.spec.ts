@@ -78,7 +78,24 @@ async function expectOpened(page: Page, blanks: number) {
   return row;
 }
 
-/** The task ended by the completing tap; the row open, in view with its Submit. */
+/**
+ * The card's answer element (OLL #126: a count's target column, a times pair's copy numbers 1 to 10), which the camera
+ * frames down from to the row once the row opens: drawn once, and in view down to its bottom edge (a times pair's
+ * 10). Not always all of it: at natural size, from its top to the row's Submit is about 640 px on 5 ones = ?
+ * hundredths and 940 px on 4,000 is ? times 400. The first fits the band between the chrome at 1440 × 900 only; the
+ * second fits neither window, and the frame keeps the row in view, so a times pair's first copies are above it.
+ */
+async function expectAnswerInView(page: Page) {
+  const answer = page.locator('svg.place-value-times-ten .place-value-times-ten-answer');
+  await expect(answer).toHaveCount(1);
+  await expect(answer).toBeInViewport();
+  await expect.poll(() => answer.evaluate((element) => {
+    const { bottom, height } = element.getBoundingClientRect();
+    return height > 0 && bottom > 0 && bottom <= window.innerHeight;
+  })).toBe(true);
+}
+
+/** The task ended by the completing tap; the row open, in view with its Submit, and the card's answer element. */
 async function expectRowOpen(page: Page, row: ReturnType<Page['getByTestId']>) {
   await expect(page.getByTestId('oll-student-tasks').locator('.learning-student-task.is-succeeded')).toHaveCount(1);
   await expect(page.locator('svg.place-value-times-ten.place-value-times-ten-live')).toHaveCount(0);
@@ -89,6 +106,7 @@ async function expectRowOpen(page: Page, row: ReturnType<Page['getByTestId']>) {
   }
   await expect(row.locator('button[type="submit"]')).toBeInViewport();
   await atNaturalSize(page);
+  await expectAnswerInView(page);
 }
 
 for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900 }]) {
@@ -125,6 +143,8 @@ for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900
       await move(page, 4);
       await expect(things(page, -2, 'square')).toHaveCount(5);
       await expectRowOpen(page, row);
+      // The whole target column fits with the row at 1440 × 900 (not at 1024 × 768; see expectAnswerInView).
+      if (viewport.width >= 1440) await expect(page.locator('.place-value-times-ten-answer')).toBeInViewport({ ratio: 1 });
       await shot(page, `times-ten-count-row-open-${size}`);
       // Once the camera has settled: the row and the hundredths it counts are in view.
       await expect(row.locator('input')).toBeInViewport();
