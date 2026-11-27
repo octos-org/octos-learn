@@ -152,3 +152,80 @@ describe("WhiteboardCameraController", () => {
     expect(probe.apply).toHaveBeenCalledTimes(1);
   });
 });
+
+// A card the learner works at natural size (the place-value trade card, OLL 0026).
+describe("WhiteboardCameraController: a card framed at natural size", () => {
+  const applied = (probe: ReturnType<typeof controllerProbe>) =>
+    probe.apply.mock.calls.map(([applied]) => (applied as WhiteboardCameraRequest).key);
+
+  it("frames the card after the course frame that ends the lesson, asked for in either order", () => {
+    for (const order of [["end", "card"], ["card", "end"]]) {
+      const probe = controllerProbe();
+      for (const which of order) {
+        probe.controller.request(which === "end" ? request("course-end", "end-2") : request("card-task", "card-2"));
+      }
+      probe.flush();
+      expect(applied(probe)).toEqual(["end-2"]);
+      probe.flush();
+      expect(applied(probe)).toEqual(["end-2", "card-2"]);
+    }
+  });
+
+  it("is not turned away by a settled course, unlike the task panel's framing", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("course-restore", "restore-2"));
+    probe.flush();
+    expect(probe.controller.request(request("student-task", "task-2"))).toBe(false);
+    expect(probe.controller.request(request("card-task", "card-2"))).toBe(true);
+    probe.flush();
+    expect(applied(probe)).toEqual(["restore-2", "card-2"]);
+  });
+
+  it("wins over the task panel's framing of the same opening", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("card-task", "card-2"));
+    expect(probe.controller.request(request("student-task", "task-2"))).toBe(false);
+    probe.flush();
+    expect(applied(probe)).toEqual(["card-2"]);
+  });
+
+  it("holds the card while it is worked: the course overview waits until the host releases it", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("card-task", "card-2"));
+    probe.flush();
+    expect(probe.controller.holdsCardFrame("course-2")).toBe(true);
+    expect(probe.controller.request(request("course-end", "end-2b"))).toBe(false);
+    expect(probe.decisions).toContainEqual(expect.objectContaining({ action: "ignored", reason: "card-held" }));
+    // The next frame of the same card (its answer opening) still applies.
+    expect(probe.controller.request(request("card-task", "card-2-answer"))).toBe(true);
+    probe.flush();
+    probe.controller.releaseCardFrame();
+    expect(probe.controller.holdsCardFrame("course-2")).toBe(false);
+    expect(probe.controller.request(request("course-end", "end-2c"))).toBe(true);
+    probe.flush();
+    expect(applied(probe)).toEqual(["card-2", "card-2-answer", "end-2c"]);
+  });
+
+  it("drops a card frame still waiting when the host releases the card", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("card-task", "card-2"));
+    probe.flush();
+    probe.controller.request(request("card-task", "card-2-chrome"));
+    probe.controller.releaseCardFrame();
+    probe.flush();
+    expect(applied(probe)).toEqual(["card-2"]);
+    expect(probe.controller.holdsCardFrame("course-2")).toBe(false);
+  });
+
+  it("drops a waiting card frame and the hold when a new question loads", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("card-task", "card-2"));
+    probe.flush();
+    probe.controller.request(request("course-end", "end-3", "course-3"));
+    probe.controller.request(request("question-loading", "loading-3", "course-3"));
+    expect(probe.controller.holdsCardFrame("course-2")).toBe(false);
+    probe.flush();
+    probe.flush();
+    expect(applied(probe)).toEqual(["card-2", "loading-3"]);
+  });
+});
