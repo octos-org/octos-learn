@@ -156,7 +156,7 @@ export function createOutlineMaterial(uniforms: NotebookUniforms, thickness: num
 
 const smoothCache = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
 /** Hard-edged shapes need shared normals, or the hull splits at corners. */
-function smoothedForOutline(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+export function smoothedForOutline(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
   const cached = smoothCache.get(geometry);
   if (cached) return cached;
   const copy = new THREE.BufferGeometry();
