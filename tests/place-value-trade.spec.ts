@@ -194,14 +194,27 @@ test('a row of blanks and two typed answers on the card: all wait, then open one
   await expect(row.locator('input')).toHaveCount(4);
   for (const answer of [row, total, hundreds]) await expectWaiting(answer);
   await atNaturalSize(page);
-  // The card task's hint, before any tap: offered, opened, and the chart is still worked at natural size. The task
-  // panel sits under the card, below the fold at natural size (as in #254); a pointer click here would first scroll
-  // the board's own element to it, which a learner panning the board does not, so the click is dispatched.
-  await tasks.getByRole('button', { name: 'Give me a hint' }).dispatchEvent('click');
+  // The card task's hint, before any tap. The task panel sits under the card, below the fold at natural size (as
+  // in #254). The learner moves the board with the wheel (it zooms out about the pointer) until the hint is in the
+  // window, opens it with the pointer, and wheels back the same way. The card is still live.
+  const hint = tasks.getByRole('button', { name: 'Give me a hint' });
+  await page.mouse.move(800, 400);
+  let steps = 0;
+  for (; steps < 20 && (await hint.boundingBox())!.y + 40 > 768; steps += 1) {
+    await page.mouse.wheel(0, 150);
+    await page.waitForTimeout(150);
+  }
+  const box = (await hint.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(tasks.locator('.learning-student-task-hint')).toHaveText('Start with any column.');
   await expect(tasks.getByRole('button', { name: /hint/ })).toHaveCount(0);
+  await page.mouse.move(800, 400);
+  for (; steps > 0; steps -= 1) {
+    await page.mouse.wheel(0, -150);
+    await page.waitForTimeout(150);
+  }
+  await expect(page.locator('.place-value-trade-given')).toBeInViewport();
   await expect(page.locator('.place-value-trade-live').first()).toBeVisible();
-  await atNaturalSize(page);
   await shot(page, 'place-value-trade-rows-open');
   for (const place of [0, 1, 2]) {
     await down(page, place);
@@ -210,8 +223,8 @@ test('a row of blanks and two typed answers on the card: all wait, then open one
   }
   await down(page, 3);
   await expect(tasks.locator('.learning-student-task.is-succeeded')).toHaveCount(1);
-  // The completing tap opens the row, the first after the card, and the camera moves to it at natural size; the
-  // two answers stay greyed until their turn.
+  // The completing tap opens the row, the first after the card, and the camera moves to it at natural size (the
+  // board was panned by hand, and this is a new frame); the two answers stay greyed until their turn.
   await expectOpen(row);
   for (const place of [3, 2, 1, 0]) await expect(disks(page, place, 'answer').first()).toBeInViewport();
   await atNaturalSize(page);
