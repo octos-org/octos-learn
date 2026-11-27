@@ -69,6 +69,11 @@ Owner, 2026-11-26, on review round 2:
     - Records, sync, achievements, the star map ring and the server support check move to a later milestone (M5, §10). Nothing is cut (decision 15 stands); only the order changes.
     - The round 2 findings about sync and server records (§17, round 2 #1, #3, #8) are kept with that milestone.
 
+Owner, 2026-11-26, after playtest 1:
+
+19. **Each game has its own art medium** (the owner leaned this way; the split below was agreed). *Shared* by every game: Nib, and everything the child answers with (fact strip, number pad or two choices, ink drops, streak, results), so switching games never means relearning how to answer. *Per game*: the art supply the world is drawn with, and Nib is drawn in that medium too (§5.5, §6).
+20. **Games before the TV.** The TV is not ready yet, so games B–D (M7) are built next in the browser, one at a time, starting with Paper Glider. Then the body controls (M2) are built with the Mac's own camera; only the TV checks (camera through the WebView, WebGL2, load) wait for the TV.
+
 Standing decisions that apply:
 - Target market is US K–12 (2026-10-30): COPPA/FERPA-aware design; Chromebooks and iPads matter.
 - Main devices are desktop browsers and large touch-screen TVs (2026-10-24). The TV runs the Android app, a WebView shell.
@@ -294,18 +299,18 @@ Phones are not a target device in version 1; a phone held upright gets a "turn y
 
 ### 5.5 The games
 
-All games share one notebook world and the same answer-driven rule. Each game has two presentations:
+All games share the same answer-driven rule, Nib and the screen pieces; each is drawn in its own art medium (decision 19). Each game has two presentations:
 - **Answer mode** (handwriting or number pad): the answer comes from the sticky note.
 - **Choice mode** (TV): the two choices are part of the scene.
 
 Names were chosen 2026-11-25 (decision 6); the build order is A, B, C, D.
 
-| | Game | zh (*proposed*) | Correct answer does | In choice mode | Streak does |
-| --- | --- | --- | --- | --- | --- |
-| **A (v1)** | **Margin Run** | 页边快跑 | Nib runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | The path forks around an obstacle; each fork carries a number; Nib takes the fork the child moves toward | Speed lines, a longer leap, then a glide |
-| B | **Paper Glider** | 纸飞机 | Nib rides a folded-paper glider through the next drawn hoop | Two hoops, left and right | Loops and a contrail |
-| C | **Star Sketch** | 星星连线 | Draws one line of a constellation; finishing one brings its doodle creature to life | Two candidate stars to connect | Lines glow and sparkle |
-| D | **Up the Page** | 一页登顶 | Adds a block to a tower climbing the page | Two blocks swinging left and right; the chosen one drops | Bigger blocks and a sway-proof glow |
+| | Game | zh (*proposed*) | Medium (decision 19) | Correct answer does | In choice mode | Streak does |
+| --- | --- | --- | --- | --- | --- | --- |
+| **A (v1)** | **Margin Run** | 页边快跑 | Ballpoint pen and coloured pencil on lined notebook paper | Nib runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | The path forks around an obstacle; each fork carries a number; Nib takes the fork the child moves toward | Speed lines, a longer leap, then a glide |
+| B | **Paper Glider** | 纸飞机 | Watercolor washes on cold-press paper, over a faint pencil sketch | Nib rides a folded-paper glider through the next drawn hoop | Two hoops, left and right | Loops and a contrail |
+| C | **Star Sketch** | 星星连线 | White gel pen and chalk on black paper | Draws one line of a constellation; finishing one brings its doodle creature to life | Two candidate stars to connect | Lines glow and sparkle |
+| D | **Up the Page** | 一页登顶 | Wax crayon on brown craft paper | Adds a block to a tower climbing the page | Two blocks swinging left and right; the chosen one drops | Bigger blocks and a sway-proof glow |
 
 **Naming checks (2026-11-25):** web searches found no existing game with these names.
 - "Paper Plane" was replaced by "Paper Glider" because it is too generic.
@@ -336,7 +341,11 @@ Each game is a separate lazy-loaded module and a separate PR.
 
 ## 6. Art direction: the notebook look
 
-**Look:**
+**One medium per game** (decision 19). Everything below describes Margin Run's ballpoint-and-pencil notebook, which is also the look of the menus and the screen pieces. The other games swap the medium and keep Nib and the screen pieces:
+- **Paper Glider, watercolor:** objects are rendered in flat washes, then a full-screen pass paints them: wobbly edges, colour bleeding, pigment pooling at the edges, granulation from the paper grain and blotchy wash density, over a faint pencil sketch line. Its cost on the TV is measured once the TV is ready (§7.10).
+- **Star Sketch, gel pen and chalk on black paper**, and **Up the Page, wax crayon on craft paper**: designed when each is built.
+
+**Margin Run's look:**
 - cream lined paper with blue rules and a margin line;
 - ballpoint-blue ink outlines with a slight wobble;
 - colored-pencil fills with diagonal hatching for shade;
@@ -578,7 +587,7 @@ A pure TypeScript state machine with an injectable clock and seeded RNG:
 ```ts
 interface ArcadeGame {
   id: string;
-  mount(host: HTMLElement, ctx: { kit: NotebookKit; quality: QualityTier; reducedMotion: boolean; audio: ArcadeAudio; mode: "answer" | "choice" }): Promise<void>;
+  mount(host: HTMLElement, ctx: { quality: QualityTier; reducedMotion: boolean; audio: ArcadeAudio; mode: "answer" | "choice" }): Promise<void>; // each game brings its own style kit (decision 19)
   onEvent(event: RoundEvent): void;   // never returns a decision
   setQuality(tier: QualityTier): void;
   resize(width: number, height: number): void;
@@ -752,7 +761,7 @@ All strings go through `tr()`, with Chinese and English messages, and `pnpm chec
 
 ## 10. Milestones
 
-Sizes are relative (S/M/L), not dates. **Order follows decision 18: make it playable and prove it works, then add the rest.** The style board (M0) runs alongside M1–M3; its approval gates production art in M4.
+Sizes are relative (S/M/L), not dates. **Order follows decision 18: make it playable and prove it works, then add the rest.** **Order of work (decision 20):** M1, then M7 (games B–D in the browser, Paper Glider first), then M2 with the Mac's camera (the TV checks when the TV is ready), then M3 onward. The style board (M0) runs alongside M1–M3; its approval gates production art in M4.
 
 | | Milestone | Size | Contents | Exit criteria |
 | --- | --- | --- | --- | --- |
@@ -923,7 +932,9 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] PRD requirements OL-075 onward added; owner switches the flag on by default.
 
 **M7: more games**
-- [ ] Paper Glider. [ ] Star Sketch. [ ] Up the Page.
+- [ ] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, contrail, loops, both modes; owner playtest.
+- [ ] Star Sketch (gel pen and chalk on black paper).
+- [ ] Up the Page (wax crayon on craft paper).
 
 ## 17. Review findings and outcomes
 
