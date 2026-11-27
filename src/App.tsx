@@ -32,6 +32,8 @@ const GestureLabPage = lazy(() => import("./learning/gesture/gesture-lab-page"))
 const IllustratedAvatarPage = lazy(() => import("./learning/avatar/illustrated-avatar-page"));
 const LearnerPackageViewer = lazy(() => import("./learning/teach/learner-package-viewer"));
 const HandwritingLabPage = lazy(() => import("./learning/handwriting/handwriting-lab-page").then(module => ({ default: module.HandwritingLabPage })));
+// Standalone Arcade (docs/ARCADE_PLAN.md decision 18): no account or server needed.
+const ArcadeApp = lazy(() => import("./arcade/arcade-app"));
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -80,6 +82,7 @@ export function AppRoutes() {
       <Route path="/" element={<ProductRoot />} />
       <Route path="/course/:packId" element={<CourseRoute />} />
       <Route path="/learn" element={<LegacyLearningRedirect />} />
+      <Route path="/arcade/*" element={<Suspense fallback={null}><ArcadeApp /></Suspense>} />
       <Route element={<AuthGuard />}>
         <Route path="/gesture-lab" element={<Suspense fallback={null}><GestureLabPage /></Suspense>} />
         <Route path="/handwriting-lab" element={<Suspense fallback={null}><HandwritingLabPage /></Suspense>} />

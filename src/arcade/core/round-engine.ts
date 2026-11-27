@@ -124,7 +124,10 @@ export class RoundEngine {
   private pausedInItem = 0;
   private inputSeen = false;
 
-  constructor(private readonly options: RoundOptions) {
+  private readonly options: RoundOptions;
+
+  constructor(options: RoundOptions) {
+    this.options = options;
     this.clock = options.clock ?? systemClock;
     this.plan = [...options.plan];
     this.sides = correctSides(this.plan.length, options.rng);
