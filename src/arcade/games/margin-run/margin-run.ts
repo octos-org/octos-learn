@@ -127,6 +127,11 @@ export class MarginRun implements ArcadeGame {
         this.streak = 0;
         this.shown(event.index);
         break;
+      case "answer_corrected":
+        // The child fixed it: a small cheer, and Nib hurries on.
+        this.squashPulse = 0.6;
+        this.burst(this.nibRoot.position.clone().add(new THREE.Vector3(0, 1.8, -0.5)), 14);
+        break;
       case "round_end":
         this.cheer();
         break;

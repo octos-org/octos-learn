@@ -264,11 +264,16 @@ function Round({ skill, game, input, onAgain }: RoundProps) {
 
       {(phase === "asking" || phase === "feedback") && mode === "choice" && snapshot?.choices && (
         <section className="arcade-choices" aria-label={tr("二选一")}>
-          {(["left", "right"] as const).map((side, i) => (
-            <button key={side} type="button" className={`arcade-sticky arcade-choice arcade-choice-${side}`} onClick={() => engineRef.current?.choose(side)}>
-              {snapshot.choices![i]}
-            </button>
-          ))}
+          {(["left", "right"] as const).map((side, i) => {
+            const value = snapshot.choices![i];
+            // After a miss the wrong pick is crossed out and the right one invites a tap.
+            const state = outcome ? (value === outcome.expected ? " is-right" : outcome.result === "wrong" && value === outcome.given ? " is-wrong" : "") : "";
+            return (
+              <button key={side} type="button" className={`arcade-sticky arcade-choice arcade-choice-${side}${state}`} aria-disabled={state === " is-wrong"} onClick={() => engineRef.current?.choose(side)}>
+                {value}
+              </button>
+            );
+          })}
           <button type="button" className={`arcade-show-me${snapshot.hint ? " is-offered" : ""}`} onClick={() => engineRef.current?.showMe()}>{tr("告诉我")}</button>
         </section>
       )}

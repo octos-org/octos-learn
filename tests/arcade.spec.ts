@@ -70,10 +70,19 @@ test.describe("Arcade", () => {
       expect(texts).toHaveLength(2);
       expect(texts.map(Number)).toContain(value);
       const right = texts.findIndex(text => Number(text) === value);
-      // Miss the first item once, on purpose.
-      const pick = !missed ? 1 - right : right;
-      missed = true;
-      await choices.nth(pick).click();
+      if (!missed) {
+        // Miss the first item on purpose, then fix it: the right pick moves on at once.
+        missed = true;
+        await choices.nth(1 - right).click();
+        await expect(choices.nth(1 - right)).toHaveClass(/is-wrong/);
+        await expect(choices.nth(right)).toHaveClass(/is-right/);
+        const started = Date.now();
+        await choices.nth(right).click();
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-index", "1");
+        expect(Date.now() - started).toBeLessThan(1000);
+        return;
+      }
+      await choices.nth(right).click();
     });
     const results = page.getByRole("region", { name: "本局结果" });
     await expect(results).toContainText("答对 19 / 20 题");

@@ -34,6 +34,8 @@ export type RoundEvent =
   | { type: "answer_correct"; index: number; given: number; streak: number; gained: number; inkDrops: number; totalMs: number; quick: boolean; side?: Side }
   | { type: "answer_wrong"; index: number; given: number; expected: number; side?: Side }
   | { type: "answer_shown"; index: number; expected: number }
+  /** After a miss or Show me, the child gave the correct answer: move on at once. Not a new attempt. */
+  | { type: "answer_corrected"; index: number; given: number; side?: Side }
   | { type: "show_me_hint"; index: number }
   | { type: "streak_milestone"; streak: number; bonus: number }
   | { type: "paused" }
@@ -155,8 +157,14 @@ export class RoundEngine {
 
   /** Number pad: the value typed so far. A correct value is accepted at once (decision 9). */
   type(value: string): void {
-    if (!this.canAnswer() || this.options.mode !== "answer") return;
+    if (this.options.mode !== "answer") return;
     const typed = value.replace(/\D/g, "").slice(0, 3);
+    if (this.canCorrect()) {
+      this.update({ typed });
+      if (typed && Number(typed) === this.state.outcome!.expected) this.corrected(Number(typed));
+      return;
+    }
+    if (!this.canAnswer()) return;
     this.noteInput();
     this.update({ typed });
     this.cancel("idle");
@@ -171,6 +179,10 @@ export class RoundEngine {
 
   /** Number pad ✓ or Enter. */
   confirm(): void {
+    if (this.canCorrect()) {
+      this.type(this.state.typed);
+      return;
+    }
     if (!this.canAnswer() || this.options.mode !== "answer" || !this.state.typed) return;
     const given = Number(this.state.typed);
     this.judge(given === expectedAnswer(this.state.item!) ? "correct" : "wrong", given);
@@ -178,7 +190,13 @@ export class RoundEngine {
 
   /** Choice mode: a tap or (from M2) a confirmed body movement. */
   choose(side: Side): void {
-    if (!this.canAnswer() || this.options.mode !== "choice" || !this.state.choices) return;
+    if (this.options.mode !== "choice" || !this.state.choices) return;
+    if (this.canCorrect()) {
+      const given = this.state.choices[side === "left" ? 0 : 1];
+      if (given === this.state.outcome!.expected) this.corrected(given, side);
+      return;
+    }
+    if (!this.canAnswer()) return;
     this.noteInput();
     const given = this.state.choices[side === "left" ? 0 : 1];
     this.judge(given === expectedAnswer(this.state.item!) ? "correct" : "wrong", given, side);
@@ -223,6 +241,18 @@ export class RoundEngine {
     this.timers.clear();
     this.paused.clear();
     this.listeners.clear();
+  }
+
+  /** During the feedback after a miss or Show me, the correct answer moves on at once. */
+  private canCorrect(): boolean {
+    return this.state.phase === "feedback" && !this.state.paused && this.state.outcome !== null && this.state.outcome.result !== "correct";
+  }
+
+  private corrected(given: number, side?: Side): void {
+    const index = this.state.index;
+    this.cancel("phase");
+    this.emit({ type: "answer_corrected", index, given, ...(side ? { side } : {}) });
+    this.show(index + 1);
   }
 
   private canAnswer(): boolean {
@@ -302,7 +332,7 @@ export class RoundEngine {
 
     // Wrong or shown: the streak resets, ink drops stay, the fact comes back.
     this.plan = [...this.plan.slice(0, index + 1), ...requeue(this.plan.slice(index + 1), item.fact, this.options.rng)];
-    this.update({ phase: "feedback", streak: 0, answered, outcome: { result, expected, ...(given !== undefined && result === "wrong" ? { given } : {}) }, hint: false });
+    this.update({ phase: "feedback", streak: 0, answered, typed: "", outcome: { result, expected, ...(given !== undefined && result === "wrong" ? { given } : {}) }, hint: false });
     if (result === "wrong") this.emit({ type: "answer_wrong", index, given: given!, expected, ...(side ? { side } : {}) });
     else this.emit({ type: "answer_shown", index, expected });
     this.arm("phase", result === "wrong" ? ROUND_TIMING.wrongMs : ROUND_TIMING.shownMs, () => this.show(index + 1));

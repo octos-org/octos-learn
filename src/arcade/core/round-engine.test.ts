@@ -132,6 +132,39 @@ describe("round engine", () => {
     expect(answers[1].result).toBe("wrong");
   });
 
+  it("moves on at once when the child picks the right answer after a miss, without a new attempt", () => {
+    const { engine, clock, answers, events } = setup("choice");
+    const [left] = engine.snapshot().choices!;
+    const wrongSide = left === 7 ? "right" : "left";
+    const rightSide = wrongSide === "left" ? "right" : "left";
+    engine.choose(wrongSide);
+    expect(engine.snapshot().phase).toBe("feedback");
+    clock.advance(300);
+    engine.choose(wrongSide);
+    expect(engine.snapshot()).toMatchObject({ phase: "feedback", index: 0 });
+    engine.choose(rightSide);
+    expect(events.at(-2)).toMatchObject({ type: "answer_corrected", index: 0, given: 7, side: rightSide });
+    expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1, streak: 0 });
+    expect(answers).toHaveLength(1);
+    expect(answers[0].result).toBe("wrong");
+    // The cancelled feedback timer must not skip the next item.
+    clock.advance(ROUND_TIMING.wrongMs);
+    expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1 });
+  });
+
+  it("lets the number pad fix a miss or a Show me by typing the answer", () => {
+    const { engine, clock, answers } = setup();
+    engine.type("9");
+    clock.advance(ROUND_TIMING.keypadIdleMs);
+    expect(engine.snapshot()).toMatchObject({ phase: "feedback", typed: "" });
+    engine.type("7");
+    expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1 });
+    engine.showMe();
+    engine.type("7");
+    expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 2 });
+    expect(answers.map(answer => answer.result)).toEqual(["wrong", "shown"]);
+  });
+
   it("adds streak bonuses and ends with a summary; leaving early keeps answers", () => {
     expect([1, 2, 3, 4, 5, 10, 15].map(streakBonus)).toEqual([0, 0, 5, 0, 10, 15, 15]);
     const full = setup();
