@@ -146,6 +146,31 @@ test.describe("Arcade", () => {
     expect(errors).toEqual([]);
   });
 
+  test("plays a full Up the Page round in crayon, where a miss left unfixed still moves on", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.route(serverPath, route => route.abort());
+    await page.goto("/arcade/skills/add-sub-10/games");
+    await page.locator(".arcade-game-card").filter({ hasText: "一页登顶" }).click();
+    await expect(page.locator("canvas.arcade-game-canvas")).toBeVisible();
+    let missed = false;
+    await playRound(page, async value => {
+      if (!missed) {
+        // A wrong number and no fix: the block goes in as a cardboard box and the round goes on.
+        missed = true;
+        await page.keyboard.type(String((Number(String(value)[0]) + 1) % 10));
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-phase", "feedback");
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-index", "1");
+        return;
+      }
+      await page.keyboard.type(String(value));
+    });
+    await expect(page.getByRole("region", { name: "本局结果" })).toContainText("答对 19 / 20 题");
+    await page.getByRole("link", { name: "换个游戏" }).click();
+    await expect(page.locator("canvas.arcade-game-canvas")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test("Show me reveals the answer and leaving early ends the round", async ({ page }) => {
     await page.route(serverPath, route => route.abort());
     await page.goto("/arcade/play/add-sub-5/margin-run?input=keypad");
