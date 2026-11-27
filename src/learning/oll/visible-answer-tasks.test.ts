@@ -130,12 +130,73 @@ describe("answerWaitsOnCardTask (OLL decision 0026)", () => {
     expect(answerWaitsOnCardTask("answer-1", [withDone, snapshot(total)], definitionsInOrder)).toBe(false);
   });
 
-  it("only for the typed answer right after the card task, anchored to that card", () => {
+  it("only for answers after the card task, anchored to that card, with nothing else between", () => {
     const elsewhere = { ...total, anchor: "trade-add:node:other" };
     expect(answerWaitsOnCardTask("answer-1", open(), [practice, elsewhere])).toBe(false);
-    const between = { ...total, as: "between" };
+    // An answer on another card between them: this one waits on that answer's card, not on this one.
+    const between = { ...total, as: "between", anchor: "trade-add:node:other" };
     expect(answerWaitsOnCardTask("answer-1", [...open(), snapshot(between)], [practice, between, total])).toBe(false);
+    // A task of another kind between them (a slider task).
+    const slider = {
+      as: "slider", prompt: "Move a.", availability: { kind: "after_lesson" },
+      allowed_operations: [{ kind: "variable_change", variable: "a", controls: ["slider"] }],
+      completion: { kind: "expression_target", expression: "a", value: 1, tolerance: 0 }, hints: [],
+    } as unknown as AuthoringStudentTask;
+    expect(answerWaitsOnCardTask("answer-1", [...open(), snapshot(slider)], [practice, slider, total])).toBe(false);
+    // A card task on another card before them.
+    const otherCard = { ...practice, completion: { ...(practice.completion as object), node: "trade-add:node:other" } } as AuthoringStudentTask;
+    expect(answerWaitsOnCardTask("answer-1", open(), [otherCard, total])).toBe(false);
     expect(answerWaitsOnCardTask("practice-1", open(), definitionsInOrder)).toBe(false);
     expect(answerWaitsOnCardTask("missing", open(), definitionsInOrder)).toBe(false);
+  });
+
+  describe("a row of blanks and several answers on the same card", () => {
+    const digits: AuthoringRowStudentTask = {
+      as: "row-1", anchor: node, prompt: "Read the answer row.", availability: { kind: "after_lesson" },
+      allowed_operations: [{ kind: "row_entry" }],
+      completion: { kind: "numeric_row", parts: [{ blank: { as: "thousands", answer: "6" } }, { text: "thousands" }] },
+      hints: [],
+    };
+    const again: AuthoringAnswerStudentTask = { ...total, as: "answer-2", prompt: "What is the total, again?" };
+    const order: AuthoringStudentTask[] = [practice, digits, total, again];
+    const snapshots = (cardPatch: Partial<StudentTaskSnapshot>, patches: Record<string, Partial<StudentTaskSnapshot>> = {}) => [
+      snapshot(practice, { available: true, auto_submit: true, ...cardPatch }),
+      ...[digits, total, again].map((task) => snapshot(task, patches[task.as])),
+    ];
+
+    it("all wait from the start while the card task is open", () => {
+      for (const id of ["row-1", "answer-1", "answer-2"]) {
+        expect(answerWaitsOnCardTask(id, snapshots({}), order)).toBe(true);
+        expect(answerWaitsOnCardTask(id, snapshots({ status: "in_progress" }), order)).toBe(true);
+      }
+    });
+
+    it("the first opens on the completing tap; the next stay greyed where they go until their turn", () => {
+      const tapped = snapshots({ status: "succeeded", available: true }, { "row-1": { available: true } });
+      expect(answerWaitsOnCardTask("row-1", tapped, order)).toBe(false);
+      expect(answerWaitsOnCardTask("answer-1", tapped, order)).toBe(true);
+      expect(answerWaitsOnCardTask("answer-2", tapped, order)).toBe(true);
+      const rowDone = snapshots({ status: "succeeded", available: true }, {
+        "row-1": { available: true, status: "succeeded" }, "answer-1": { available: true },
+      });
+      expect(answerWaitsOnCardTask("answer-1", rowDone, order)).toBe(false);
+      expect(answerWaitsOnCardTask("answer-2", rowDone, order)).toBe(true);
+    });
+
+    it("none waits before the card task opens or on a card task with a done", () => {
+      for (const id of ["row-1", "answer-1", "answer-2"]) {
+        expect(answerWaitsOnCardTask(id, snapshots({ available: false }), order)).toBe(false);
+        expect(answerWaitsOnCardTask(id, snapshots({ auto_submit: undefined }), order)).toBe(false);
+      }
+    });
+
+    it("an answer on another card breaks the chain for the ones after it", () => {
+      const other = { ...total, as: "other", anchor: "trade-add:node:other" };
+      const withOther = [practice, digits, other, again];
+      const tasks = [snapshot(practice, { available: true, auto_submit: true }), snapshot(digits), snapshot(other), snapshot(again)];
+      expect(answerWaitsOnCardTask("row-1", tasks, withOther)).toBe(true);
+      expect(answerWaitsOnCardTask("other", tasks, withOther)).toBe(false);
+      expect(answerWaitsOnCardTask("answer-2", tasks, withOther)).toBe(false);
+    });
   });
 });
