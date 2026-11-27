@@ -61,21 +61,25 @@ describe("round engine", () => {
     expect(engine.snapshot().index).toBe(1);
   });
 
-  it("waits for more digits, then judges a wrong number after idle or ✓", () => {
+  it("judges a wrong number the moment no further digit could make it right", () => {
     const plan: Item[] = [{ fact: makeFact("add", 6, 6), form: "result" }, ...PLAN];
     const { engine, clock, answers } = setup("answer", plan);
+    // "1" could still become 12: wait for the next digit, however long it takes.
     engine.type("1");
     clock.advance(5000);
     expect(answers).toHaveLength(0);
     engine.type("13");
-    clock.advance(ROUND_TIMING.keypadIdleMs - 1);
-    expect(answers).toHaveLength(0);
-    clock.advance(1);
     expect(answers[0]).toMatchObject({ result: "wrong", given: 13 });
+    expect(engine.snapshot()).toMatchObject({ phase: "feedback", typed: "" });
     clock.advance(ROUND_TIMING.wrongMs);
+    // A single wrong digit that no second digit could fix is judged at once too.
     engine.type("8");
-    engine.confirm();
     expect(answers[1]).toMatchObject({ result: "wrong", given: 8 });
+    clock.advance(ROUND_TIMING.wrongMs);
+    // ✓ judges whatever has been typed.
+    engine.type("1");
+    engine.confirm();
+    expect(answers[2]).toMatchObject({ result: "wrong", given: 1 });
   });
 
   it("brings a missed fact back 2–4 items later and resets only the streak", () => {
@@ -83,7 +87,6 @@ describe("round engine", () => {
     engine.type(String(current(engine)));
     clock.advance(ROUND_TIMING.correctMs);
     engine.type("9");
-    clock.advance(ROUND_TIMING.keypadIdleMs);
     expect(engine.snapshot()).toMatchObject({ streak: 0, inkDrops: 5 });
     expect(events.at(-1)).toMatchObject({ type: "answer_wrong", expected: 7, given: 9 });
     const seen: string[] = [];
@@ -152,17 +155,32 @@ describe("round engine", () => {
     expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1 });
   });
 
-  it("lets the number pad fix a miss or a Show me by typing the answer", () => {
-    const { engine, clock, answers } = setup();
+  it("lets the number pad fix a miss or a Show me by typing the answer, at once", () => {
+    const { engine, answers, events } = setup();
     engine.type("9");
-    clock.advance(ROUND_TIMING.keypadIdleMs);
     expect(engine.snapshot()).toMatchObject({ phase: "feedback", typed: "" });
     engine.type("7");
+    expect(events.at(-2)).toMatchObject({ type: "answer_corrected", index: 0, given: 7 });
     expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1 });
     engine.showMe();
     engine.type("7");
     expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 2 });
     expect(answers.map(answer => answer.result)).toEqual(["wrong", "shown"]);
+  });
+
+  it("fixes a miss even when another slip comes first: only the newest digits count", () => {
+    const plan: Item[] = [{ fact: makeFact("add", 6, 6), form: "result" }, ...PLAN];
+    const { engine, answers } = setup("answer", plan);
+    // The page sends the whole typed value, so "9" then "4" then "1", "2" arrive as growing strings.
+    engine.type("9");
+    expect(answers[0]).toMatchObject({ result: "wrong", given: 9 });
+    engine.type("4");
+    expect(engine.snapshot()).toMatchObject({ phase: "feedback", typed: "" });
+    engine.type("1");
+    expect(engine.snapshot()).toMatchObject({ phase: "feedback", typed: "1" });
+    engine.type("12");
+    expect(engine.snapshot()).toMatchObject({ phase: "asking", index: 1 });
+    expect(answers).toHaveLength(1);
   });
 
   it("adds streak bonuses and ends with a summary; leaving early keeps answers", () => {

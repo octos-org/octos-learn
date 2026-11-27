@@ -80,8 +80,6 @@ export const ROUND_TIMING = {
   correctMs: 750,
   wrongMs: 1500,
   shownMs: 2200,
-  /** Number pad: a wrong answer is judged after this idle time (plan §7.5). */
-  keypadIdleMs: 1500,
   /** "Show me" is offered after this long without input (plan §4.5). */
   hintMs: 8000,
 };
@@ -110,7 +108,7 @@ export interface RoundOptions {
 }
 
 type Listener = (event: RoundEvent, snapshot: RoundSnapshot) => void;
-type Timer = "phase" | "idle" | "hint";
+type Timer = "phase" | "hint";
 
 export class RoundEngine {
   private readonly clock: Clock;
@@ -155,26 +153,29 @@ export class RoundEngine {
     this.countdown(3);
   }
 
-  /** Number pad: the value typed so far. A correct value is accepted at once (decision 9). */
+  /**
+   * Number pad: the value typed so far. Every answer gets a response at once
+   * (owner, 2026-11-26): a correct value is accepted at once (decision 9), and
+   * a wrong one is judged as soon as no further digit could make it right.
+   */
   type(value: string): void {
     if (this.options.mode !== "answer") return;
-    const typed = value.replace(/\D/g, "").slice(0, 3);
+    let typed = value.replace(/\D/g, "").slice(0, 3);
     if (this.canCorrect()) {
+      // Fixing a miss: only the newest digits count, so a slip just before never blocks the fix.
+      const expected = this.state.outcome!.expected;
+      while (typed && Number(typed) !== expected && !String(expected).startsWith(typed)) typed = typed.slice(1);
       this.update({ typed });
-      if (typed && Number(typed) === this.state.outcome!.expected) this.corrected(Number(typed));
+      if (typed && Number(typed) === expected) this.corrected(expected);
       return;
     }
     if (!this.canAnswer()) return;
     this.noteInput();
     this.update({ typed });
-    this.cancel("idle");
     if (!typed) return;
     const expected = expectedAnswer(this.state.item!);
-    if (Number(typed) === expected) {
-      this.judge("correct", expected);
-      return;
-    }
-    if (typed.length >= String(expected).length) this.arm("idle", ROUND_TIMING.keypadIdleMs, () => this.judge("wrong", Number(typed)));
+    if (Number(typed) === expected) this.judge("correct", expected);
+    else if (!String(expected).startsWith(typed)) this.judge("wrong", Number(typed));
   }
 
   /** Number pad ✓ or Enter. */
@@ -305,7 +306,6 @@ export class RoundEngine {
     const expected = expectedAnswer(item);
     const at = this.clock.now();
     const totalMs = Math.max(0, at - this.shownAt - this.pausedInItem);
-    this.cancel("idle");
     this.cancel("hint");
 
     const record: AnswerRecord = {

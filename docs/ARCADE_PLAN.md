@@ -218,7 +218,7 @@ On a **wrong** answer:
 - the streak resets, but ink drops already earned stay;
 - the game plays a gentle stumble, with no damage or lives;
 - the fact comes back 2–4 items later;
-- **the child can fix it** (owner playtest 1, 2026-11-26): during that moment the wrong pick is crossed out and the correct choice glows. Picking or typing the correct answer moves on at once. It is not a new attempt, so the miss still counts. Without a fix, the round moves on by itself as before. The same holds after "Show me".
+- **the child can fix it** (owner playtest 1, 2026-11-26): during that moment the wrong pick is crossed out and the correct choice glows. Picking or typing the correct answer moves on at once (on the number pad, straight after the wrong digit, §7.5). It is not a new attempt, so the miss still counts. Without a fix, the round moves on by itself as before. The same holds after "Show me".
 
 **Show me:** a "Show me" button is always on the answer area, and it is offered gently after about 8 s without input. It reveals the answer and counts as wrong, but without the stumble. The child then sees the fact once more.
 
@@ -495,7 +495,8 @@ A pure TypeScript state machine with an injectable clock and seeded RNG:
 **Number pad:**
 - large on-screen digit keys with backspace; physical keyboard digits work too;
 - correct is accepted immediately when the typed value equals the expected answer (decision 9);
-- otherwise the answer is judged on ✓ (or Enter), or after 1.5 s idle once at least as many digits have been typed as the expected answer has.
+- **every answer gets a response at once** (owner, 2026-11-26: a wrong number left the game waiting, and the right number typed straight after did not help): a wrong value is judged the moment no further digit could make it right ("13" or "2" when the answer is 12); a value that could still become right ("1") waits for the next digit, with no time limit; ✓ (or Enter) judges whatever has been typed. There is no idle wait. A slip of the finger therefore counts as a miss;
+- while a miss is on screen, only the newest digits count towards the fix, so the right answer typed straight after a slip moves on at once.
 
 ### 7.6 Body input on the TV (decision 12)
 
@@ -885,11 +886,12 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [x] Device progress store (`octos-arcade` IndexedDB) and "Clear Arcade progress".
 - [x] Scheduler with targets, reviews, new facts and random fill; invariant tests.
 - [x] Round engine with seeded RNG, injectable clock, pause and "Show me"; headless event-log tests.
-- [x] Number pad (immediate correct; ✓/Enter or idle for wrong) and tap choices with distractors.
+- [x] Number pad (immediate correct; wrong judged as soon as it cannot become right, or on ✓/Enter) and tap choices with distractors.
 - [x] Margin Run first playable: three.js scene, paper and ink look, both modes, reacting only to `RoundEvent`s; `dispose` releases GPU resources. Nib is a stand-in built from simple shapes until M4.
 - [x] `/arcade` home, skill picker, game picker and results; routes outside `AuthGuard`; zh/en strings.
 - [x] Playwright: full rounds via number pad and tap choices, with the server down (`tests/arcade.spec.ts`).
 - [x] **Owner playtest 1** (web, 2026-11-26): "overall, it's already fantastic". One issue, fixed: after a wrong pick the game ignored the correct pick until it moved on by itself (§4.5, "the child can fix it").
+- [x] **Owner note, 2026-11-26** (Paper Glider, and Margin Run too): on the number pad a wrong answer still left the game waiting, and the right answer typed straight after did not help (it was added to the wrong digit and the idle wait started again). Fixed in the round engine: wrong numbers are judged the moment they cannot become right, and a fix counts only the newest digits (§7.5). Both games, both input modes, respond at once to every answer.
 - [ ] Not yet in M1, planned later: the "Learn how" link (§4.7, needs the whiteboard and sign-in, so M5), the phone "turn your device" note and the settings section (M4).
 
 **M2: TV body input**

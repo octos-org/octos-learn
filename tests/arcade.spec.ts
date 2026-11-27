@@ -95,8 +95,23 @@ test.describe("Arcade", () => {
     await page.goto("/arcade/skills/add-sub-20/games");
     await page.locator(".arcade-game-card").filter({ hasText: "纸飞机" }).click();
     await expect(page.locator("canvas.arcade-game-canvas")).toBeVisible();
-    await playRound(page, async value => { await page.keyboard.type(String(value)); });
-    await expect(page.getByRole("region", { name: "本局结果" })).toContainText("答对 20 / 20 题");
+    let missed = false;
+    await playRound(page, async value => {
+      if (!missed) {
+        // A wrong digit, then the right number straight after: both get a response at once.
+        missed = true;
+        const wrong = String((Number(String(value)[0]) + 1) % 10);
+        const started = Date.now();
+        await page.keyboard.type(wrong);
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-phase", "feedback");
+        await page.keyboard.type(String(value));
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-index", "1");
+        expect(Date.now() - started).toBeLessThan(1000);
+        return;
+      }
+      await page.keyboard.type(String(value));
+    });
+    await expect(page.getByRole("region", { name: "本局结果" })).toContainText("答对 19 / 20 题");
     await page.getByRole("link", { name: "换个游戏" }).click();
     await expect(page.locator("canvas.arcade-game-canvas")).toHaveCount(0);
     expect(errors).toEqual([]);

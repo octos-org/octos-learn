@@ -37,7 +37,7 @@ const CRUISE = 16;
 const ACCEL = 22;
 const BRAKE = 10;
 /** Seconds to reach full acceleration from a hover, so take-offs never jolt. */
-const LAUNCH = 0.35;
+const LAUNCH = 0.2;
 const SAMPLE = 0.2;
 const LOOP_RADIUS = 1.4;
 const FILM = 0.78;
