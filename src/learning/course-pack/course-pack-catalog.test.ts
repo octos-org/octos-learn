@@ -70,7 +70,8 @@ describe("CoursePack public catalog", () => {
     expect(supportsCoursePackPlayer("0.17.0")).toBe(true);
     expect(supportsCoursePackPlayer("0.18.0")).toBe(true);
     expect(supportsCoursePackPlayer("0.19.0")).toBe(true);
-    expect(supportsCoursePackPlayer("0.20.0")).toBe(false);
+    expect(supportsCoursePackPlayer("0.20.0")).toBe(true);
+    expect(supportsCoursePackPlayer("0.21.0")).toBe(false);
   });
 
   it("rejects URL injection and duplicate versions", () => {

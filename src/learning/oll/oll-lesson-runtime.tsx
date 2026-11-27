@@ -2497,6 +2497,8 @@ export function LearningWhiteboard({
       }
       originalFocusRects?.(targetIds, resolvedRects, board);
     };
+    // A board mounted again keeps the session's speed (see the effect below).
+    mounted.view.setPlaybackSpeed(runtimeRef.current?.playbackSpeed ?? 1);
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
       if (!import.meta.env.DEV || import.meta.env.MODE === "test") return;
@@ -2795,6 +2797,13 @@ export function LearningWhiteboard({
       if (destruction) void destruction.catch(() => undefined);
     };
   }, [flushBoardVariableUpdates, inkSessionId, handwritingInputRef]);
+
+  // The board animates a tap card's demonstration step as long as the session gives it (OLL #129: 2,000 ms of motion
+  // and 600 ms held, both divided by the speed), so it takes the session's speed too, the fast start's included.
+  const playbackSpeed = runtime?.playbackSpeed ?? 1;
+  useLayoutEffect(() => {
+    mountedRef.current?.view.setPlaybackSpeed(playbackSpeed);
+  }, [playbackSpeed]);
 
   useEffect(() => {
     const mounted = mountedRef.current;
