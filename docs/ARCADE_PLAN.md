@@ -933,6 +933,7 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 
 **M7: more games**
 - [x] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, wingtip trails, roll at 5 and loop at 10, both modes; Playwright round (`src/arcade/games/paper-glider/`, `src/arcade/render/watercolor-kit.ts`).
+- [x] Paper Glider flight feel (owner, 2026-11-26: "lacks changes in perspective, so it doesn't really feel like flying"): the hoops weave, climb and dive along a fixed course; the glider swoops between them on curves, banking and pitching; a chase camera swings round behind it, lags on fast swoops, tilts the horizon with the bank (capped at about 17° for big screens), widens with speed and looks up during a loop; while waiting the glider rides the air in a slow weave; clouds drift on the wind and brush-stroke wind streaks rush past. Reduced motion turns off the tilt, the widening, the weave, the wind and the streaks.
 - [ ] Paper Glider owner playtest; its frame rate on the TV once the TV is ready (the painting pass is a full-screen effect).
 - [ ] Star Sketch (gel pen and chalk on black paper).
 - [ ] Up the Page (wax crayon on craft paper).

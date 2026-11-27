@@ -13,9 +13,20 @@ import { inkMesh, stickyNoteTexture, tierPixelRatio, type QualityTier } from "..
 import { WATERCOLOR, WatercolorKit, WatercolorPass } from "../../render/watercolor-kit";
 import type { ArcadeGame, GameContext } from "../types";
 
-const SPACING = 20;
-const WAIT_GAP = 7;
-const PASS_GAP = 5;
+const SPACING = 26;
+const WAIT_GAP = 8;
+const PASS_GAP = 6;
+const WIND = 4;
+const STREAKS = 22;
+const UP = new THREE.Vector3(0, 1, 0);
+const FORWARD = new THREE.Vector3(0, 0, -1);
+
+/** Where gate `index` hangs: the course weaves, climbs and dives (deterministic). */
+export function gateCentre(index: number): THREE.Vector3 {
+  const x = Math.sin(index * 1.27 + 0.4) * 4.6 + Math.sin(index * 0.53) * 1.8;
+  const y = Math.sin(index * 0.83 + 1.1) * 3.4;
+  return new THREE.Vector3(x, y, -(index + 1) * SPACING);
+}
 const LANE = 3.3;
 const AHEAD = 3;
 const HOOP_COLORS = [WATERCOLOR.coral, WATERCOLOR.mint, WATERCOLOR.lilac, WATERCOLOR.yellow, WATERCOLOR.blue];
@@ -32,9 +43,23 @@ interface Move {
   trick?: Trick;
   /** Dip below the line, for a miss. */
   dip?: number;
+  /** Arrive slowing down (into a hover) rather than at speed. */
+  settle?: boolean;
   onDone?: () => void;
   from?: THREE.Vector3;
+  startTangent?: THREE.Vector3;
   elapsed?: number;
+}
+
+/** A cubic Hermite curve: leaves along `m0`, arrives along `m1`, so the glider swoops instead of sliding. */
+function hermite(p0: THREE.Vector3, m0: THREE.Vector3, p1: THREE.Vector3, m1: THREE.Vector3, s: number, out: THREE.Vector3): THREE.Vector3 {
+  const s2 = s * s;
+  const s3 = s2 * s;
+  return out.set(0, 0, 0)
+    .addScaledVector(p0, 2 * s3 - 3 * s2 + 1)
+    .addScaledVector(m0, s3 - 2 * s2 + s)
+    .addScaledVector(p1, -2 * s3 + 3 * s2)
+    .addScaledVector(m1, s3 - s2);
 }
 
 interface Hoop {
@@ -48,18 +73,19 @@ interface Hoop {
 interface Gate {
   index: number;
   z: number;
+  centre: THREE.Vector3;
   hoops: Hoop[];
 }
 
 interface Drop { position: THREE.Vector3; velocity: THREE.Vector3; life: number; color: THREE.Color; size: number }
-interface Drift { group: THREE.Group; span: number }
+interface Drift { group: THREE.Group; span: number; wind: boolean }
 
 export class PaperGlider implements ArcadeGame {
   readonly id = "paper-glider";
   private renderer: THREE.WebGLRenderer | null = null;
   private pass: WatercolorPass | null = null;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(52, 16 / 9, 0.1, 400);
+  private readonly camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 400);
   private readonly kit = new WatercolorKit();
   private context: GameContext = { quality: "medium", reducedMotion: false, mode: "answer" };
   private readonly rider = new THREE.Group();
@@ -78,6 +104,18 @@ export class PaperGlider implements ArcadeGame {
   private pose: NibPose = restPose();
   private readonly target: NibPose = restPose();
   private readonly last = new THREE.Vector3();
+  private readonly velocity = new THREE.Vector3();
+  private readonly hoverAnchor = new THREE.Vector3();
+  private readonly lookTarget = new THREE.Vector3(0, 0, -10);
+  private readonly streaks: THREE.Mesh[] = [];
+  private streakMaterial!: THREE.MeshBasicMaterial;
+  private hoverSince = 0;
+  private heading = 0;
+  private headingRate = 0;
+  private speed = 0;
+  private cameraRoll = 0;
+  private fov = 55;
+  private loopBase: number | null = null;
   private bank = 0;
   private pitch = 0;
   private roll = 0;
@@ -105,7 +143,7 @@ export class PaperGlider implements ArcadeGame {
     this.buildWorld();
     const rect = host.getBoundingClientRect();
     this.resize(rect.width || window.innerWidth, rect.height || window.innerHeight);
-    this.placeCamera(1);
+    this.placeCamera(1, true);
     this.running = true;
     this.lastFrame = performance.now();
     this.frame = requestAnimationFrame(this.loop);
@@ -140,7 +178,7 @@ export class PaperGlider implements ArcadeGame {
       case "round_end":
         this.cheering = true;
         this.target.lookBack = 1;
-        this.queue({ to: this.queueEnd().clone().add(new THREE.Vector3(0, 0, -8)), duration: 1.6, trick: this.context.reducedMotion ? "none" : "loop" });
+        this.queue({ to: this.queueEnd().clone().add(new THREE.Vector3(0, 0, -10)), duration: 1.7, trick: this.context.reducedMotion ? "none" : "loop", settle: true });
         this.splash(this.rider.position.clone().add(new THREE.Vector3(0, 1, -2)), WATERCOLOR.yellow, 70);
         break;
       case "paused":
@@ -267,8 +305,26 @@ export class PaperGlider implements ArcadeGame {
     this.trail.frustumCulled = false;
     this.scene.add(this.trail);
 
+    // Wind: thin pale brush strokes rushing past, stronger with speed.
+    const stroke = kit.own(new THREE.BoxGeometry(0.035, 0.035, 2.2));
+    this.streakMaterial = kit.own(new THREE.MeshBasicMaterial({ color: new THREE.Color("#a9c3e2"), transparent: true, opacity: 0, depthWrite: false }));
+    for (let i = 0; i < STREAKS; i++) {
+      const line = new THREE.Mesh(stroke, this.streakMaterial);
+      this.placeStreak(line, -Math.random() * 34);
+      this.scene.add(line);
+      this.streaks.push(line);
+    }
+
     for (let i = 0; i < 26; i++) this.addCloud(i);
     for (let i = 0; i < 14; i++) this.addHill(i);
+    this.hoverAnchor.set(0, 0, 0);
+  }
+
+  private placeStreak(line: THREE.Mesh, ahead: number): void {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 2.2 + Math.random() * 5;
+    const base = this.rider.position;
+    line.position.set(base.x + Math.cos(angle) * radius, base.y + Math.sin(angle) * radius * 0.7, base.z + ahead);
   }
 
   private addCloud(i: number): void {
@@ -283,11 +339,14 @@ export class PaperGlider implements ArcadeGame {
       group.add(puff);
     }
     const side = i % 2 === 0 ? -1 : 1;
-    const high = i % 5 === 0;
-    group.position.set(side * (6 + Math.random() * 16), high ? 6 + Math.random() * 5 : -4 - Math.random() * 6, 12 - i * 9);
+    const band = i % 4;
+    // Near clouds pass close by the glider (but never across the hoops); far ones fill the sky.
+    const x = band === 0 ? side * (6.5 + Math.random() * 3) : side * (8 + Math.random() * 18);
+    const y = band === 1 ? 6 + Math.random() * 6 : band === 2 ? -5 - Math.random() * 6 : -3 + Math.random() * 7;
+    group.position.set(x, y, 12 - i * 9);
     group.scale.setScalar(0.8 + Math.random() * 0.9);
     this.scene.add(group);
-    this.drifts.push({ group, span: 26 * 9 });
+    this.drifts.push({ group, span: 26 * 9, wind: true });
   }
 
   private addHill(i: number): void {
@@ -299,27 +358,27 @@ export class PaperGlider implements ArcadeGame {
     hill.scale.set(14 + Math.random() * 10, 6 + Math.random() * 5, 12 + Math.random() * 8);
     hill.position.set(side * (10 + Math.random() * 30), -20, 20 - i * 22);
     this.scene.add(hill);
-    this.drifts.push({ group: hill, span: 14 * 22 });
+    this.drifts.push({ group: hill, span: 14 * 22, wind: false });
   }
 
   private gateAt(index: number): Gate {
     const known = this.gates.get(index);
     if (known) return known;
-    const z = -(index + 1) * SPACING;
-    const gate: Gate = { index, z, hoops: [] };
-    if (this.context.mode !== "choice") gate.hoops.push(this.makeHoop(index, 0, z, null));
+    const centre = gateCentre(index);
+    const gate: Gate = { index, z: centre.z, centre, hoops: [] };
+    if (this.context.mode !== "choice") gate.hoops.push(this.makeHoop(index, centre.clone(), null));
     this.gates.set(index, gate);
     return gate;
   }
 
-  private makeHoop(index: number, x: number, z: number, side: Side | null): Hoop {
+  private makeHoop(index: number, at: THREE.Vector3, side: Side | null): Hoop {
     const kit = this.kit;
     const torus = kit.own(new THREE.TorusGeometry(1.75, 0.17, 10, 44));
     const color = HOOP_COLORS[(index * 2 + (side === "right" ? 1 : 0)) % HOOP_COLORS.length];
     const ring = inkMesh(kit, torus, color, 0.02);
     const group = new THREE.Group();
     group.add(ring);
-    group.position.set(x, 0, z);
+    group.position.copy(at);
     group.scale.setScalar(0.01);
     this.scene.add(group);
     return { group, ring, side, passed: null, fading: null };
@@ -330,7 +389,7 @@ export class PaperGlider implements ArcadeGame {
     const kit = this.kit;
     const tagGeometry = kit.own(new THREE.PlaneGeometry(1.8, 1.8));
     (["left", "right"] as const).forEach((side, i) => {
-      const hoop = this.makeHoop(gate.index, side === "left" ? -LANE : LANE, gate.z, side);
+      const hoop = this.makeHoop(gate.index, gate.centre.clone().add(new THREE.Vector3(side === "left" ? -LANE : LANE, 0, 0)), side);
       // A paper tag hanging under the hoop, with the number.
       const tag = new THREE.Mesh(tagGeometry, kit.own(new THREE.MeshBasicMaterial({ map: stickyNoteTexture(kit, String(choices[i]), "#fffaf0"), transparent: true })));
       tag.position.set(0, -2.85, 0.05);
@@ -344,66 +403,66 @@ export class PaperGlider implements ArcadeGame {
 
   // ---------- events ----------
 
+  private hoopFor(gate: Gate, side?: Side): Hoop | undefined {
+    return gate.hoops.find(entry => entry.side === (side ?? null)) ?? gate.hoops[0];
+  }
+
   private showItem(index: number, choices: [number, number] | null): void {
     for (let k = index; k <= index + AHEAD; k++) this.gateAt(k);
     const gate = this.gateAt(index);
     if (choices && this.context.mode === "choice") this.addChoices(gate, choices);
     this.target.lookBack = 0;
-    const hover = new THREE.Vector3(0, 0, gate.z + WAIT_GAP);
-    const distance = Math.abs(this.queueEnd().z - hover.z);
-    this.queue({ to: hover, duration: Math.min(1.3, Math.max(0.45, distance / 16)), onDone: () => { this.target.lookBack = 0.3; } });
+    // Swoop to a hover in line with the next gate: climbing, diving and banking on the way.
+    const hover = gate.centre.clone().add(new THREE.Vector3(0, 0, WAIT_GAP));
+    const distance = this.queueEnd().distanceTo(hover);
+    this.queue({ to: hover, duration: Math.min(1.8, Math.max(0.9, distance / 10)), settle: true, onDone: () => { this.target.lookBack = 0.3; } });
   }
 
   private through(index: number, streak: number, side?: Side): void {
     const gate = this.gateAt(index);
-    const x = side ? (side === "left" ? -LANE : LANE) : 0;
-    const hoop = gate.hoops.find(entry => entry.side === (side ?? null)) ?? gate.hoops[0];
+    const hoop = this.hoopFor(gate, side);
+    const centre = hoop ? hoop.group.position.clone() : gate.centre.clone();
     const trick: Trick = this.context.reducedMotion ? "none" : streak >= 10 ? "loop" : streak >= 5 ? "roll" : "none";
     this.target.lookBack = 0;
-    this.queue({
-      to: new THREE.Vector3(x, 0, gate.z - PASS_GAP),
-      duration: trick === "loop" ? 1.25 : trick === "roll" ? 0.85 : 0.7,
-      trick,
-      onDone: undefined,
-    });
+    this.queue({ to: centre.clone().add(new THREE.Vector3(0, 0, -PASS_GAP)), duration: trick === "loop" ? 1.3 : trick === "roll" ? 0.85 : 0.65, trick });
     if (hoop) {
       hoop.passed = 0;
-      this.splash(new THREE.Vector3(x, 0, gate.z), WATERCOLOR.yellow, 18 + Math.min(streak, 10) * 3, hoop);
+      this.splash(centre, WATERCOLOR.yellow, 18 + Math.min(streak, 10) * 3, hoop);
     }
     for (const other of gate.hoops) if (other !== hoop) other.fading = 0;
   }
 
   private miss(index: number, side?: Side): void {
     const gate = this.gateAt(index);
-    const x = side ? (side === "left" ? -LANE : LANE) : 0;
+    const chosen = this.hoopFor(gate, side);
+    const centre = chosen ? chosen.group.position.clone() : gate.centre.clone();
     this.target.lookBack = 0;
-    const chosen = gate.hoops.find(entry => entry.side === (side ?? null)) ?? gate.hoops[0];
     // Bump the rim softly, drop under the hoop, and glide on.
     this.queue({
-      to: new THREE.Vector3(x * 0.9, -0.4, gate.z + 1.6),
+      to: centre.clone().add(new THREE.Vector3(0, -1.2, 1.6)),
       duration: 0.45,
       onDone: () => {
         this.wobble = 1;
         if (chosen) {
           chosen.fading = 0;
-          this.splash(chosen.group.position.clone(), WATERCOLOR.blue, 16, chosen);
+          this.splash(centre, WATERCOLOR.blue, 16, chosen);
         }
       },
     });
-    this.queue({ to: new THREE.Vector3(0, 0, gate.z - PASS_GAP), duration: 0.9, dip: 1.4 });
+    this.queue({ to: gate.centre.clone().add(new THREE.Vector3(0, 0, -PASS_GAP)), duration: 0.9, dip: 1.2 });
   }
 
   private reveal(index: number): void {
     const gate = this.gateAt(index);
     for (const hoop of gate.hoops) hoop.fading = 0;
     this.target.lookBack = 0;
-    this.queue({ to: new THREE.Vector3(0, 0, gate.z - PASS_GAP), duration: 1.2 });
+    this.queue({ to: gate.centre.clone().add(new THREE.Vector3(0, 0, -PASS_GAP)), duration: 1.2 });
   }
 
   // ---------- motion ----------
 
   private queueEnd(): THREE.Vector3 {
-    return this.moves.length ? this.moves[this.moves.length - 1].to : this.rider.position;
+    return this.moves.length ? this.moves[this.moves.length - 1].to : this.hoverAnchor;
   }
 
   private queue(move: Move): void {
@@ -414,63 +473,123 @@ export class PaperGlider implements ArcadeGame {
     const move = this.moves[0];
     const reduced = this.context.reducedMotion;
     if (!move) {
-      // Hover: a gentle bob and drift.
-      this.rider.position.y += (Math.sin(this.time * 1.6) * 0.18 - this.rider.position.y) * Math.min(1, delta * 2);
-      this.roll += (0 - this.roll) * Math.min(1, delta * 4);
-      this.target.air = 0.35;
+      // Riding the air while the child thinks: a slow weave around the hover point.
+      const ramp = reduced ? 0 : Math.min(1, (this.time - this.hoverSince) / 1.6);
+      const t = this.time;
+      this.rider.position.set(
+        this.hoverAnchor.x + Math.sin(t * 0.7) * 1.3 * ramp,
+        this.hoverAnchor.y + Math.sin(t * 1.1 + 0.6) * 0.5 * ramp,
+        this.hoverAnchor.z + Math.sin(t * 0.55) * 0.5 * ramp,
+      );
+      this.target.air = 0.4;
       this.target.spread = this.cheering ? 1 : 0;
       return;
     }
     if (reduced) {
       this.rider.position.copy(move.to);
       this.moves.shift();
-      move.onDone?.();
+      this.arrive(move);
       return;
     }
-    move.from ??= this.rider.position.clone();
+    if (!move.from) {
+      move.from = this.rider.position.clone();
+      // Leave along the current flight direction, so turns are curves.
+      const length = Math.max(4, move.from.distanceTo(move.to));
+      const heading = this.velocity.lengthSq() > 1 ? this.velocity.clone().normalize() : FORWARD.clone();
+      if (heading.z > -0.2) heading.copy(FORWARD);
+      move.startTangent = heading.multiplyScalar(length);
+    }
     move.elapsed = (move.elapsed ?? 0) + delta * (this.moves.length > 1 ? 1.6 : 1);
     const s = Math.min(1, move.elapsed / move.duration);
-    const eased = s * s * (3 - 2 * s);
-    this.rider.position.lerpVectors(move.from, move.to, eased);
+    const eased = move.settle ? 1 - (1 - s) * (1 - s) : s;
+    const length = Math.max(4, move.from.distanceTo(move.to));
+    hermite(move.from, move.startTangent!, move.to, FORWARD.clone().multiplyScalar(length), eased, this.rider.position);
     if (move.dip) this.rider.position.y -= Math.sin(Math.PI * s) * move.dip;
     this.target.air = 1;
     this.target.spread = move.trick === "loop" ? 1 : 0;
-    if (move.trick === "roll") this.roll = Math.PI * 2 * eased;
+    if (move.trick === "roll") this.roll = Math.PI * 2 * s;
     else if (move.trick === "loop") {
-      const angle = Math.PI * 2 * eased;
-      const radius = 2.6;
+      const angle = Math.PI * 2 * s;
+      const radius = 2.8;
+      this.loopBase ??= move.from.y;
       this.rider.position.y += radius * (1 - Math.cos(angle));
       this.rider.position.z += radius * Math.sin(angle) * 0.9;
     }
     if (s >= 1) {
       this.moves.shift();
       this.roll = 0;
-      move.onDone?.();
+      this.loopBase = null;
+      this.arrive(move);
     }
   }
 
+  private arrive(move: Move): void {
+    this.hoverAnchor.copy(move.to);
+    this.hoverSince = this.time;
+    move.onDone?.();
+  }
+
   private orient(delta: number): void {
-    const velocity = this.rider.position.clone().sub(this.last).divideScalar(Math.max(delta, 1e-3));
+    this.velocity.copy(this.rider.position).sub(this.last).divideScalar(Math.max(delta, 1e-3));
     this.last.copy(this.rider.position);
+    this.speed += (this.velocity.length() - this.speed) * Math.min(1, delta * 6);
     const looping = this.moves[0]?.trick === "loop";
-    const bankTarget = THREE.MathUtils.clamp(-velocity.x * 0.09, -0.7, 0.7);
-    const forward = Math.max(2, -velocity.z);
-    const pitchTarget = looping ? Math.atan2(velocity.y, -velocity.z) : THREE.MathUtils.clamp(Math.atan2(velocity.y, forward), -0.6, 0.6);
+    const horizontal = Math.hypot(this.velocity.x, this.velocity.z);
+
+    // Heading follows the flight direction (not during a loop, where it flips).
+    if (!looping && horizontal > 2.5) {
+      const target = THREE.MathUtils.clamp(Math.atan2(-this.velocity.x, -this.velocity.z), -0.75, 0.75);
+      const previous = this.heading;
+      this.heading += (target - this.heading) * (1 - Math.exp(-delta * 4));
+      this.headingRate += ((this.heading - previous) / Math.max(delta, 1e-3) - this.headingRate) * Math.min(1, delta * 8);
+    } else {
+      this.headingRate += (0 - this.headingRate) * Math.min(1, delta * 4);
+    }
+
+    // Bank into turns and sideways drift; pitch with the climb or dive.
+    const right = new THREE.Vector3(Math.cos(this.heading), 0, -Math.sin(this.heading));
+    const lateral = this.velocity.dot(right);
+    const bankTarget = THREE.MathUtils.clamp(-lateral * 0.14 + this.headingRate * 1.1, -1.0, 1.0);
+    const forwardSpeed = Math.max(2, -this.velocity.z * Math.cos(this.heading) - this.velocity.x * Math.sin(this.heading));
+    const pitchTarget = looping
+      ? Math.atan2(this.velocity.y, -this.velocity.z)
+      : THREE.MathUtils.clamp(Math.atan2(this.velocity.y, forwardSpeed), -0.7, 0.7);
     const k = 1 - Math.exp(-delta * (looping ? 30 : 6));
     this.bank += (bankTarget - this.bank) * k;
     this.pitch = looping ? pitchTarget : this.pitch + (pitchTarget - this.pitch) * k;
     const sway = Math.sin(this.time * 9) * 0.2 * this.wobble;
-    this.craft.rotation.set(this.pitch, 0, this.bank + this.roll + sway, "YXZ");
+    this.craft.rotation.set(this.pitch, this.heading, this.bank + this.roll + sway, "YXZ");
   }
 
-  private placeCamera(delta: number): void {
+  /** A chase camera: swings round behind the glider, lags on fast swoops, tilts with the bank and widens with speed. */
+  private placeCamera(delta: number, snap = false): void {
+    const reduced = this.context.reducedMotion;
     const p = this.rider.position;
     const choice = this.context.mode === "choice";
-    const desired = new THREE.Vector3(p.x * 0.45, p.y * 0.65 + (choice ? 2.2 : 1.7), p.z + (choice ? 9 : 7));
-    const look = new THREE.Vector3(p.x * 0.25, p.y * 0.55 - 0.1, p.z - 10);
-    const k = 1 - Math.exp(-delta * 4.5);
+    const offset = new THREE.Vector3(0, choice ? 2.3 : 1.8, choice ? 9 : 7.2).applyAxisAngle(UP, this.heading);
+    const desired = p.clone().add(offset);
+    if (this.loopBase !== null) desired.y = this.loopBase + offset.y;
+    const k = snap ? 1 : 1 - Math.exp(-delta * 2.6);
     this.camera.position.lerp(desired, k);
-    this.camera.lookAt(look);
+
+    // Look ahead along the heading; during a loop, look up at the glider.
+    const ahead = new THREE.Vector3(0, 0, -10).applyAxisAngle(UP, this.heading);
+    // Into a dive the view tips down; into a climb it tips up.
+    const look = this.loopBase !== null ? p.clone() : p.clone().add(ahead).setY(p.y * 0.85 + this.velocity.y * 0.3);
+    this.lookTarget.lerp(look, snap ? 1 : 1 - Math.exp(-delta * 5));
+    this.camera.lookAt(this.lookTarget);
+
+    // The horizon tilts with the bank, capped (about 17°) so big screens stay comfortable.
+    const rollTarget = reduced ? 0 : THREE.MathUtils.clamp(this.bank * 0.8, -0.3, 0.3) + Math.sin(this.time * 0.6) * 0.03;
+    this.cameraRoll += (rollTarget - this.cameraRoll) * (snap ? 1 : 1 - Math.exp(-delta * 4));
+    this.camera.rotateZ(this.cameraRoll);
+
+    const fovTarget = reduced ? 55 : 55 + THREE.MathUtils.clamp((this.speed - 5) / 22, 0, 1) * 13;
+    this.fov += (fovTarget - this.fov) * (snap ? 1 : 1 - Math.exp(-delta * 3));
+    if (Math.abs(this.camera.fov - this.fov) > 0.01) {
+      this.camera.fov = this.fov;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   // ---------- effects ----------
@@ -594,7 +713,17 @@ export class PaperGlider implements ArcadeGame {
     this.sun.lookAt(this.camera.position);
 
     for (const drift of this.drifts) {
+      if (drift.wind && !reduced) drift.group.position.z += WIND * delta;
       if (drift.group.position.z > z + 25) drift.group.position.z -= drift.span;
+    }
+
+    // Wind streaks rush past: always a little, more at speed.
+    const rush = reduced ? 0 : WIND * 2.5 + this.speed * 1.6;
+    this.streakMaterial.opacity += ((reduced ? 0 : 0.18 + Math.min(0.55, this.speed / 40)) - this.streakMaterial.opacity) * Math.min(1, delta * 3);
+    for (const line of this.streaks) {
+      line.position.z += rush * delta;
+      line.rotation.y = this.heading;
+      if (line.position.z > z + 6) this.placeStreak(line, -26 - Math.random() * 10);
     }
 
     for (const gate of this.gates.values()) {
