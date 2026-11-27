@@ -117,6 +117,35 @@ test.describe("Arcade", () => {
     expect(errors).toEqual([]);
   });
 
+  test("plays a full two-choice Star Sketch round in chalk, fixing a miss at once, and releases the canvas", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.route(serverPath, route => route.abort());
+    await page.goto("/arcade/play/add-sub-10/star-sketch?input=tap");
+    await expect(page.locator("canvas.arcade-game-canvas")).toBeVisible();
+    let missed = false;
+    await playRound(page, async value => {
+      const choices = page.locator(".arcade-choice");
+      const texts = await choices.allInnerTexts();
+      const right = texts.findIndex(text => Number(text) === value);
+      if (!missed) {
+        missed = true;
+        await choices.nth(1 - right).click();
+        await expect(choices.nth(1 - right)).toHaveClass(/is-wrong/);
+        const started = Date.now();
+        await choices.nth(right).click();
+        await expect(page.locator("main.arcade-round")).toHaveAttribute("data-index", "1");
+        expect(Date.now() - started).toBeLessThan(1000);
+        return;
+      }
+      await choices.nth(right).click();
+    });
+    await expect(page.getByRole("region", { name: "本局结果" })).toContainText("答对 19 / 20 题");
+    await page.getByRole("link", { name: "换个游戏" }).click();
+    await expect(page.locator("canvas.arcade-game-canvas")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test("Show me reveals the answer and leaving early ends the round", async ({ page }) => {
     await page.route(serverPath, route => route.abort());
     await page.goto("/arcade/play/add-sub-5/margin-run?input=keypad");
