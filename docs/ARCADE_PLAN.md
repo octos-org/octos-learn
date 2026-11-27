@@ -212,7 +212,8 @@ On a **wrong** answer:
 - the card shows the correct fact for about 1.5 s; with handwriting, it also says what was read ("I read 17");
 - the streak resets, but ink drops already earned stay;
 - the game plays a gentle stumble, with no damage or lives;
-- the fact comes back 2–4 items later.
+- the fact comes back 2–4 items later;
+- **the child can fix it** (owner playtest 1, 2026-11-26): during that moment the wrong pick is crossed out and the correct choice glows. Picking or typing the correct answer moves on at once. It is not a new attempt, so the miss still counts. Without a fix, the round moves on by itself as before. The same holds after "Show me".
 
 **Show me:** a "Show me" button is always on the answer area, and it is offered gently after about 8 s without input. It reveals the answer and counts as wrong, but without the stumble. The child then sees the fact once more.
 
@@ -344,6 +345,8 @@ Each game is a separate lazy-loaded module and a separate PR.
 - a small, consistent palette (blue ink, warm yellow, coral, mint, lilac; *proposed*).
 
 **Approach:** the charm comes from one rendering treatment over very simple geometry, not from detailed models.
+
+**Owner, playtest 1 (2026-11-26):** the owner likes the rough, hand-drawn doodle look of the M1 stand-ins, including Nib built from simple shapes. M4 builds on that look rather than replacing it, and may explore **crayon** or **watercolor** variants of the same treatment.
 
 **Rendering kit** (three.js r183, already a dependency):
 - **Paper:** a screen-space background shader with procedural rules, plus a grain texture.
@@ -704,7 +707,7 @@ All strings go through `tr()`, with Chinese and English messages, and `pnpm chec
 - **What it keeps:** each answer in the shape of the future `arcade_answer` event (§7.9: fact, form, input, result, given, time), each round's summary, and the ink-drop total. No ink, images or landmarks.
 - **Fact states** are derived from these answers with the same pure derivation (§4.4), using the device's local day, which also settles round 2 #2 for this phase.
 - **Reset:** the Arcade settings have "Clear Arcade progress on this device".
-- **No network:** the standalone Arcade makes no request at all, so it works with the server down.
+- **No network:** the Arcade's own code makes no request, so it works with the server down. The app shell's sign-in status check (`/api/auth/status`) still runs on every page and fails quietly; the end-to-end test blocks every server path and checks that nothing else is called.
 - **Later:** M5 uploads these answers to the account (§7.9) and switches the scheduler to the server's progress.
 
 ## 8. Privacy and safety (US K–12)
@@ -868,15 +871,16 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] Style board artifact (paper, ink, hatching, palette, Nib's sheet beside the Octos avatar, Margin Run in both modes, the screen pieces); owner approval.
 
 **M1: playable core (web, standalone)**
-- [ ] Skill catalog, fact generators, forms and ids; incremental fact derivation with the local day; exhaustive tests.
-- [ ] Device progress store (`octos-arcade` IndexedDB) and "Clear Arcade progress".
-- [ ] Scheduler with targets, reviews, new facts and random fill; invariant tests.
-- [ ] Round engine with seeded RNG, injectable clock, pause and "Show me"; headless event-log tests.
-- [ ] Number pad (immediate correct; ✓/Enter or idle for wrong) and tap choices with distractors.
-- [ ] Margin Run first playable: three.js scene, paper and ink look, both modes, reacting only to `RoundEvent`s; `dispose` releases GPU resources.
-- [ ] `/arcade` hall, skill picker and results; routes outside `AuthGuard`; zh/en strings.
-- [ ] Playwright: full rounds via number pad and tap choices, with the server down.
-- [ ] **Owner playtest 1** (web).
+- [x] Skill catalog, fact generators, forms and ids; incremental fact derivation with the local day; exhaustive tests (`src/arcade/core/`).
+- [x] Device progress store (`octos-arcade` IndexedDB) and "Clear Arcade progress".
+- [x] Scheduler with targets, reviews, new facts and random fill; invariant tests.
+- [x] Round engine with seeded RNG, injectable clock, pause and "Show me"; headless event-log tests.
+- [x] Number pad (immediate correct; ✓/Enter or idle for wrong) and tap choices with distractors.
+- [x] Margin Run first playable: three.js scene, paper and ink look, both modes, reacting only to `RoundEvent`s; `dispose` releases GPU resources. Nib is a stand-in built from simple shapes until M4.
+- [x] `/arcade` home, skill picker, game picker and results; routes outside `AuthGuard`; zh/en strings.
+- [x] Playwright: full rounds via number pad and tap choices, with the server down (`tests/arcade.spec.ts`).
+- [x] **Owner playtest 1** (web, 2026-11-26): "overall, it's already fantastic". One issue, fixed: after a wrong pick the game ignored the correct pick until it moved on by itself (§4.5, "the child can fix it").
+- [ ] Not yet in M1, planned later: the "Learn how" link (§4.7, needs the whiteboard and sign-in, so M5), the phone "turn your device" note and the settings section (M4).
 
 **M2: TV body input**
 - [ ] Isolated TV check page: camera listed and opened, fps and resolution, `dumpsys media.camera`; WebGL2.
