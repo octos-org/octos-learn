@@ -340,6 +340,47 @@ Each game is a separate lazy-loaded module and a separate PR.
 - The fact is announced through an `aria-live` region, and results are readable text.
 - TV text: the fact strip is at least 6% of the screen height.
 
+### 5.8 Rewards and penalties (proposed 2026-11-27; owner to decide)
+
+Owner, 2026-11-27: "I think we should consider adding reward and penalty effects to all these games. The penalties don't need to be too harsh, but there should be some."
+
+**Today:**
+- **Rewards:** +5 ink drops per right answer, plus streak bonuses at 3, 5 and 10 (§5.4), a banner, and the ink splash growing. Each game also escalates its own visuals at 3, 5 and 10.
+- **Penalties:** a miss earns nothing and resets the streak and its bonus. The game shows a soft stumble or wobble, and a miss the child does not fix still moves the game on (a dotted line, a hoop that drops away, a cardboard box).
+- **The gap:** nothing the child can *see* is lost, so a miss feels free.
+
+**Rules every penalty follows:**
+1. **Small and visible:** the child can point at what the miss cost.
+2. **Never stops play:** it never ends the round and never delays the next item (the immediate-response rule, §7.5). No lives, no game over, no failure sound (§4.8).
+3. **Recoverable:** right answers win it back, mostly through a streak of 3.
+4. **Never touches banked ink drops:** the device total only ever grows.
+5. **Even across games:** every game costs about the same, so none is "the harsh one". Body mode (TV) works the same as the other inputs.
+6. **Calm with reduced motion:** the result shows as a still change, with no shaking.
+
+**The proposal:** every game gets a **round goal** that right answers move towards and misses do not. That goal is the penalty: a miss costs progress the child can see in the world, never points. Today's soft reactions stay; each game adds one lasting setback and one thing worth collecting.
+
+| Game | Round goal (shown on the results card) | What to collect (reward) | What a miss costs (penalty) | How it is won back |
+| --- | --- | --- | --- | --- |
+| **Margin Run** | Stay ahead of the eraser: "Left the eraser N pages behind" | A gold paper clip sits on each obstacle; a right answer grabs it with a splash. At 10 in a row Nib rides a golden quill for a glide. | A doodle **eraser** chases behind Nib and creeps one step closer with each miss, rubbing out the page behind. A clip not won is smudged out. | Each streak of 3 pushes the eraser back. It never catches Nib; at its closest it only nibbles the margin. |
+| **Paper Glider** | Hoops flown through: "Flew through 17 hoops, 3 golden" | Every fifth hoop is **golden**: a burst of paint, and the wake turns gold for a while. | A **rain cloud** drifts over the glider: the colours run, the glider drips and flies a little lower. A second miss in a row makes the cloud bigger. The hoop's paint is lost. | A right answer shrinks the cloud; a streak of 3 blows it away and the sun comes out. |
+| **Star Sketch** | Golden constellations: "2 of 3 constellations in gold" | A constellation drawn with **no miss** comes alive in gold, with sparkles, and stays golden in the sky behind. | A chalk **smudge** drifts over that constellation. If the miss is not fixed, its creature wakes up grey and sleepy (it yawns), not golden, and stays that way in the final sky. | The next constellation starts fresh; a streak of 3 wipes the smudge away. |
+| **Up the Page** | Reach the top of the page: a crayon sun line at the height of **18 right answers**; "Tower 17 floors high, just below the sun" | Reaching the sun line: Nib plants the flag in the sun with a fanfare. Streak blocks (bigger at 5 and 10) climb faster. | A miss the child does not fix **adds no floor** (the block is lifted away, replacing today's cardboard box), so the tower ends lower. Each miss also adds lasting **wobble** on top of the height sway. | A streak of 3 settles the wobble (the glow). Bigger streak blocks make up height. |
+
+**Shared pieces (built once, used by every game):**
+- **Results line:** each game writes its own round-goal line on the results card. This also replaces "跑完啦！", which today shows for every game. The line is worked out from the round's records by a pure function per game (for example, Up the Page's height comes from the right answers), so games still never decide scoring (§5.3).
+- **Stamps:** the results card stamps 1 to 3 ink stamps in the game's medium: 3 for 18 or more right, 2 for 14 or more, 1 for finishing (thresholds proposed). The best stamp per skill and game is kept on the device and shown on the game card. The word avoids "stars" (§5.4).
+- **Seeing a streak break:** when a streak of 3 or more breaks, the ink splash drips and its colour drains away instead of silently resetting, and the game ends its streak effect with a visible puff. The round engine gains a `streak_lost` event for this.
+- **Quick flourish (optional):** an answer that counts as quick (§4.3) gets a small extra flourish in the game. There are no extra points and no visible timer (§4.8).
+
+**Option for the owner: a small ink spill.** Each miss would also spill 2 ink drops from *this round's* count, never below zero, shown as drops flying off the counter into a splat. This is a harder penalty, and it changes §4.8 ("no losing ink drops" would become "no losing banked ink drops"). Recommendation: **not at first.** Build the round goals, stamps and setbacks, then add the spill only if your playtest shows that misses still feel free.
+
+**Build order once agreed:**
+1. The shared pieces, each with unit tests: the `streak_lost` event, the results line, stamps and their device record.
+2. Up the Page first, since it is the freshest: the sun line, no floor for a miss, and lasting wobble.
+3. Then Margin Run (eraser and clips), Paper Glider (rain cloud and golden hoops) and Star Sketch (smudges and golden creatures), one commit each, each checked in both modes and with reduced motion.
+
+Every penalty keeps the existing browser checks: a wrong answer, then the right one straight after, must move on within 1 s.
+
 ## 6. Art direction: the notebook look
 
 **One medium per game** (decision 19). Everything below describes Margin Run's ballpoint-and-pencil notebook, which is also the look of the menus and the screen pieces. The other games swap the medium and keep Nib and the screen pieces:
@@ -870,6 +911,14 @@ Still open:
 5. **Children's handwriting and playtests** (decision 8, deferred): who recruits families and holds the consent forms, and whether training on their samples is allowed. Needed by M6.
 6. **Proposed defaults to confirm or change in the playtests:** the *T* values, round length, body-mode thresholds, whether body answers count toward "quick", and Arcade days counting toward day-based achievements.
 
+Asked 2026-11-27 (rewards and penalties, §5.8):
+
+7. **Penalty strength:** round goals and in-game setbacks only (recommended), or also the small ink spill (−2 per miss from the round's count)?
+8. **Up the Page:** should a miss the child does not fix add no floor, so the tower's height is the number of right answers and the sun line needs 18 of 20? The alternative keeps today's cardboard box.
+9. **Margin Run's eraser:** a fun chase, or too scary for the youngest children? The alternative is a puddle that slows Nib for a moment.
+10. **Stamps:** 3 for 18+ right, 2 for 14+, 1 for finishing?
+11. **Quick flourish:** yes or no?
+
 ## 15. Review rounds
 
 Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (2026-11-26) checked the changes: body input, the answer decision, sync safety, the device checks, and whether accepted round 1 fixes reached the text. Outcomes are in §17.
@@ -934,6 +983,14 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] Data inventory and privacy text (D04); deploy runbook (ordering, compression); Android app release and size check.
 - [ ] Children's playtests when decision 8 allows; tuning.
 - [ ] PRD requirements OL-075 onward added; owner switches the flag on by default.
+
+**Rewards and penalties (§5.8), after the owner decides**
+- [ ] Shared: `streak_lost` event, the streak splash draining, the per-game results line, stamps and their device record (unit-tested).
+- [ ] Up the Page: the sun line at 18, no floor for an unfixed miss, lasting wobble until a streak of 3.
+- [ ] Margin Run: the eraser chaser and gold paper clips.
+- [ ] Paper Glider: the rain cloud and golden hoops.
+- [ ] Star Sketch: smudges, and golden or sleepy creatures.
+- [ ] Optional: the ink spill (if question 7 says so) and the quick flourish (question 11).
 
 **M7: more games**
 - [x] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, wingtip trails, roll at 5 and loop at 10, both modes; Playwright round (`src/arcade/games/paper-glider/`, `src/arcade/render/watercolor-kit.ts`).
