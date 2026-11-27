@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8"><title>Place-value times-ten card in the lesson board</title>
+<style>html,body {margin:0;} #root {width:100vw;height:100vh;}</style>
+<div id="root"></div>
+<script>
+// The times-ten card serves US K-12 lessons: English unless the test asks otherwise. A classic script runs
+// before the module below imports the app, which reads the language once when it loads.
+try{localStorage.setItem('octos-locale',new URLSearchParams(location.search).get('lang')??'en-US');}catch{}
+</script>
+<script type="module">
+// The place-value times-ten card (OLL decision 0028) in Learn's real lesson board, filling the window (desktop
+// only), with the lesson already played: the practice problem on the card, its task beside it with no "done", and
+// the card's answer row under the card. The lessons are OLL's own test fixtures at the pinned commit
+// (packages/plugin-math/test/place-value-times-ten-fixtures.ts, timesTenLesson), compiled with
+// normalizeAuthoringLesson.
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
+import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
+// ?lesson=count (default): 0.3 = ? thousandths shown, practice 5 ones = ? hundredths; a row of one blank.
+import count from './place-value-times-ten-count.canonical.jsonl?raw';
+// ?lesson=times: 700 is ? times 70 shown, practice 4,000 is ? times 400; a row of two blanks.
+import times from './place-value-times-ten-times.canonical.jsonl?raw';
+// ?lesson=widest-count: practice 9 ones = ? hundredths, one of the largest cards.
+import widestCount from './place-value-times-ten-widest-count.canonical.jsonl?raw';
+// ?lesson=widest-times: practice 9,000,000 is ? times 900,000, one of the largest cards.
+import widestTimes from './place-value-times-ten-widest-times.canonical.jsonl?raw';
+import '/src/index.css';
+import '/src/learning/learning-workspace.css';
+import 'octos-lesson-language/web-runtime/styles.css';
+const chosen=new URLSearchParams(location.search).get('lesson');
+const source={times,'widest-count':widestCount,'widest-times':widestTimes}[chosen]??count;
+const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
+const key=new URLSearchParams(location.search).get('key')??'place-value-times-ten';
+function App(){
+ const runtime=useOllLessonRuntime({source,storageKey:key,startAtEnd:true,autoPlay:false,topics});
+ window.timesTenRuntime=runtime;
+ if(!runtime?.board)return null;
+ return React.createElement(OllLessonBoard,{runtime,inkSessionId:key,portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
+}
+createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
