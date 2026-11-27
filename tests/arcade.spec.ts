@@ -88,6 +88,20 @@ test.describe("Arcade", () => {
     await expect(results).toContainText("答对 19 / 20 题");
   });
 
+  test("plays a full Paper Glider round in watercolor and releases the canvas on leaving", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.route(serverPath, route => route.abort());
+    await page.goto("/arcade/skills/add-sub-20/games");
+    await page.locator(".arcade-game-card").filter({ hasText: "纸飞机" }).click();
+    await expect(page.locator("canvas.arcade-game-canvas")).toBeVisible();
+    await playRound(page, async value => { await page.keyboard.type(String(value)); });
+    await expect(page.getByRole("region", { name: "本局结果" })).toContainText("答对 20 / 20 题");
+    await page.getByRole("link", { name: "换个游戏" }).click();
+    await expect(page.locator("canvas.arcade-game-canvas")).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test("Show me reveals the answer and leaving early ends the round", async ({ page }) => {
     await page.route(serverPath, route => route.abort());
     await page.goto("/arcade/play/add-sub-5/margin-run?input=keypad");

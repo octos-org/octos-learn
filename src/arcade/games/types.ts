@@ -35,7 +35,7 @@ export interface GameInfo {
 
 export const GAMES: readonly GameInfo[] = [
   { id: "margin-run", name: "页边快跑", blurb: "答对一题，小墨就跳过一个障碍。", playable: true, load: () => import("./margin-run/margin-run").then(module => new module.MarginRun()) },
-  { id: "paper-glider", name: "纸飞机", blurb: "坐着纸飞机穿过画出来的圆环。", playable: false },
+  { id: "paper-glider", name: "纸飞机", blurb: "坐着纸飞机穿过画出来的圆环。", playable: true, load: () => import("./paper-glider/paper-glider").then(module => new module.PaperGlider()) },
   { id: "star-sketch", name: "星星连线", blurb: "一题连一笔，连出会动的星座。", playable: false },
   { id: "up-the-page", name: "一页登顶", blurb: "一题加一块，把塔搭到页顶。", playable: false },
 ];

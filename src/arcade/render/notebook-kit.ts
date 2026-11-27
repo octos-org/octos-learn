@@ -169,26 +169,43 @@ function smoothedForOutline(geometry: THREE.BufferGeometry): THREE.BufferGeometr
   return merged;
 }
 
-/** A pencil-filled mesh with an ink outline, as one group. */
-export function inkMesh(kit: NotebookKit, geometry: THREE.BufferGeometry, color: THREE.Color, outline = 0.045): THREE.Group {
+/**
+ * What a game's art medium provides (decision 19): a surface material per
+ * colour, an outline (or none), and disposal. Nib and shared props are built
+ * against this, so they can be drawn in any medium.
+ */
+export interface StyleKit {
+  surface(color: THREE.Color, fill?: number): THREE.Material;
+  /** `null` when the medium has no outlines. */
+  outline(thickness: number): THREE.Material | null;
+  own<T extends { dispose(): void }>(resource: T): T;
+}
+
+/** A mesh in the kit's medium, with its outline when the medium has one, as one group. */
+export function inkMesh(kit: StyleKit, geometry: THREE.BufferGeometry, color: THREE.Color, outline = 0.045): THREE.Group {
   const group = new THREE.Group();
-  const body = new THREE.Mesh(geometry, kit.hatch(color));
+  const body = new THREE.Mesh(geometry, kit.surface(color));
   group.add(body);
-  if (outline > 0) {
-    const hull = new THREE.Mesh(smoothedForOutline(geometry), kit.outline(outline));
+  const outlineMaterial = outline > 0 ? kit.outline(outline) : null;
+  if (outlineMaterial) {
+    const hull = new THREE.Mesh(smoothedForOutline(geometry), outlineMaterial);
     hull.renderOrder = -1;
     group.add(hull);
   }
   return group;
 }
 
-/** Materials are cached by colour and thickness, so a scene makes few of them. */
-export class NotebookKit {
+/** Ballpoint and coloured pencil (Margin Run). Materials are cached by colour and thickness. */
+export class NotebookKit implements StyleKit {
   readonly uniforms = createNotebookUniforms();
   private readonly hatchCache = new Map<string, THREE.ShaderMaterial>();
   private readonly outlineCache = new Map<number, THREE.ShaderMaterial>();
   private readonly owned = new Set<{ dispose(): void }>();
   private boilClock = 0;
+
+  surface(color: THREE.Color, fill?: number): THREE.ShaderMaterial {
+    return this.hatch(color, fill);
+  }
 
   hatch(color: THREE.Color, fill?: number): THREE.ShaderMaterial {
     const key = `${color.getHexString()}:${fill ?? ""}`;
@@ -280,7 +297,7 @@ export function createPaperGround(kit: NotebookKit, width: number, length: numbe
 }
 
 /** A sticky note with a number, as a texture. */
-export function stickyNoteTexture(kit: NotebookKit, text: string, color = "#fde48a"): THREE.CanvasTexture {
+export function stickyNoteTexture(kit: Pick<StyleKit, "own">, text: string, color = "#fde48a"): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;

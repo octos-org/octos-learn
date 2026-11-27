@@ -932,7 +932,8 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] PRD requirements OL-075 onward added; owner switches the flag on by default.
 
 **M7: more games**
-- [ ] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, contrail, loops, both modes; owner playtest.
+- [x] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, wingtip trails, roll at 5 and loop at 10, both modes; Playwright round (`src/arcade/games/paper-glider/`, `src/arcade/render/watercolor-kit.ts`).
+- [ ] Paper Glider owner playtest; its frame rate on the TV once the TV is ready (the painting pass is a full-screen effect).
 - [ ] Star Sketch (gel pen and chalk on black paper).
 - [ ] Up the Page (wax crayon on craft paper).
 

@@ -3,7 +3,7 @@
 // yellow pencil with ink-blue lines, so it never reads as the Octos avatar.
 
 import * as THREE from "three";
-import { inkMesh, PALETTE, type NotebookKit } from "./notebook-kit";
+import { inkMesh, PALETTE, type StyleKit } from "./notebook-kit";
 
 export interface NibPose {
   /** Running blend, 0 (still) to 1 (full run). */
@@ -34,7 +34,7 @@ export class Nib {
   private readonly blink: THREE.Group[] = [];
   private nextBlink = 2;
 
-  constructor(kit: NotebookKit) {
+  constructor(kit: StyleKit) {
     const sphere = kit.own(new THREE.SphereGeometry(1, 18, 12));
     const yellow = PALETTE.yellow;
 
@@ -44,7 +44,7 @@ export class Nib {
     this.body.add(head);
 
     // An ink curl on top: the pen tip Nib is named after.
-    const curl = new THREE.Mesh(kit.own(new THREE.TorusGeometry(0.15, 0.045, 8, 20, Math.PI * 1.55)), kit.hatch(PALETTE.ink, 1));
+    const curl = new THREE.Mesh(kit.own(new THREE.TorusGeometry(0.15, 0.045, 8, 20, Math.PI * 1.55)), kit.surface(PALETTE.ink, 1));
     curl.position.set(0.02, 1.72, 0);
     curl.rotation.set(0, Math.PI / 2, 0.4);
     this.body.add(curl);
@@ -53,14 +53,14 @@ export class Nib {
       const eye = inkMesh(kit, sphere, PALETTE.white, 0.18);
       eye.scale.setScalar(0.17);
       eye.position.set(side * 0.22, 1.16, -0.5);
-      const pupil = new THREE.Mesh(sphere, kit.hatch(PALETTE.ink, 1));
+      const pupil = new THREE.Mesh(sphere, kit.surface(PALETTE.ink, 1));
       pupil.scale.setScalar(0.5);
       pupil.position.set(0, 0.05, -0.62);
       eye.add(pupil);
       this.blink.push(eye);
       this.body.add(eye);
 
-      const cheek = new THREE.Mesh(sphere, kit.hatch(PALETTE.coral, 0.9));
+      const cheek = new THREE.Mesh(sphere, kit.surface(PALETTE.coral, 0.9));
       cheek.scale.set(0.1, 0.06, 0.04);
       cheek.position.set(side * 0.4, 0.96, -0.47);
       this.body.add(cheek);
