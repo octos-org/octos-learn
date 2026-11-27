@@ -69,6 +69,11 @@ Owner, 2026-11-26, on review round 2:
     - Records, sync, achievements, the star map ring and the server support check move to a later milestone (M5, §10). Nothing is cut (decision 15 stands); only the order changes.
     - The round 2 findings about sync and server records (§17, round 2 #1, #3, #8) are kept with that milestone.
 
+Owner, 2026-11-26, after playtest 1:
+
+19. **Each game has its own art medium** (the owner leaned this way; the split below was agreed). *Shared* by every game: Nib, and everything the child answers with (fact strip, number pad or two choices, ink drops, streak, results), so switching games never means relearning how to answer. *Per game*: the art supply the world is drawn with, and Nib is drawn in that medium too (§5.5, §6).
+20. **Games before the TV.** The TV is not ready yet, so games B–D (M7) are built next in the browser, one at a time, starting with Paper Glider. Then the body controls (M2) are built with the Mac's own camera; only the TV checks (camera through the WebView, WebGL2, load) wait for the TV.
+
 Standing decisions that apply:
 - Target market is US K–12 (2026-10-30): COPPA/FERPA-aware design; Chromebooks and iPads matter.
 - Main devices are desktop browsers and large touch-screen TVs (2026-10-24). The TV runs the Android app, a WebView shell.
@@ -212,7 +217,8 @@ On a **wrong** answer:
 - the card shows the correct fact for about 1.5 s; with handwriting, it also says what was read ("I read 17");
 - the streak resets, but ink drops already earned stay;
 - the game plays a gentle stumble, with no damage or lives;
-- the fact comes back 2–4 items later.
+- the fact comes back 2–4 items later;
+- **the child can fix it** (owner playtest 1, 2026-11-26): during that moment the wrong pick is crossed out and the correct choice glows. Picking or typing the correct answer moves on at once (on the number pad, straight after the wrong digit, §7.5). It is not a new attempt, so the miss still counts. Without a fix, the round moves on by itself as before. The same holds after "Show me".
 
 **Show me:** a "Show me" button is always on the answer area, and it is offered gently after about 8 s without input. It reveals the answer and counts as wrong, but without the stumble. The child then sees the fact once more.
 
@@ -293,18 +299,18 @@ Phones are not a target device in version 1; a phone held upright gets a "turn y
 
 ### 5.5 The games
 
-All games share one notebook world and the same answer-driven rule. Each game has two presentations:
+All games share the same answer-driven rule, Nib and the screen pieces; each is drawn in its own art medium (decision 19). Each game has two presentations:
 - **Answer mode** (handwriting or number pad): the answer comes from the sticky note.
 - **Choice mode** (TV): the two choices are part of the scene.
 
 Names were chosen 2026-11-25 (decision 6); the build order is A, B, C, D.
 
-| | Game | zh (*proposed*) | Correct answer does | In choice mode | Streak does |
-| --- | --- | --- | --- | --- | --- |
-| **A (v1)** | **Margin Run** | 页边快跑 | Nib runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | The path forks around an obstacle; each fork carries a number; Nib takes the fork the child moves toward | Speed lines, a longer leap, then a glide |
-| B | **Paper Glider** | 纸飞机 | Nib rides a folded-paper glider through the next drawn hoop | Two hoops, left and right | Loops and a contrail |
-| C | **Star Sketch** | 星星连线 | Draws one line of a constellation; finishing one brings its doodle creature to life | Two candidate stars to connect | Lines glow and sparkle |
-| D | **Up the Page** | 一页登顶 | Adds a block to a tower climbing the page | Two blocks swinging left and right; the chosen one drops | Bigger blocks and a sway-proof glow |
+| | Game | zh (*proposed*) | Medium (decision 19) | Correct answer does | In choice mode | Streak does |
+| --- | --- | --- | --- | --- | --- | --- |
+| **A (v1)** | **Margin Run** | 页边快跑 | Ballpoint pen and coloured pencil on lined notebook paper | Nib runs along a notebook page whose doodles rise into a landscape; each answer is a leap over the next doodle obstacle | The path forks around an obstacle; each fork carries a number; Nib takes the fork the child moves toward | Speed lines, a longer leap, then a glide |
+| B | **Paper Glider** | 纸飞机 | Watercolor washes on cold-press paper, over a faint pencil sketch | Nib rides a folded-paper glider through the next drawn hoop | Two hoops, left and right | Loops and a contrail |
+| C | **Star Sketch** | 星星连线 | White gel pen and chalk on black paper | Draws one line of a constellation; finishing one brings its doodle creature to life | Two candidate stars to connect | Lines glow and sparkle |
+| D | **Up the Page** | 一页登顶 | Wax crayon on brown craft paper | Adds a block to a tower climbing the page | Two blocks swinging left and right; the chosen one drops | Bigger blocks and a sway-proof glow |
 
 **Naming checks (2026-11-25):** web searches found no existing game with these names.
 - "Paper Plane" was replaced by "Paper Glider" because it is too generic.
@@ -328,6 +334,7 @@ Each game is a separate lazy-loaded module and a separate PR.
 - The number pad is always available from a button on the sticky note, on every device, for children with motor difficulties.
 - In body mode, tapping a choice on the touch screen also works, for children who cannot step or lean.
 - With `prefers-reduced-motion`, or the in-app setting: no particles, camera shake or speed lines, and actions resolve as short cuts.
+- **Camera comfort, in every game** (owner playtest, 2026-11-26: a tilting, swinging chase camera made them dizzy): the horizon stays level, the field of view stays fixed, and the camera never lags and swings round behind its subject. The feeling of speed comes from the world moving past (clouds, wind, paint) and from the character, not from moving the view.
 - Sound and music each have a switch. Every reward is visual as well, so sound is never required.
 - Feedback uses shape and motion as well as colour.
 - The fact is announced through an `aria-live` region, and results are readable text.
@@ -335,7 +342,11 @@ Each game is a separate lazy-loaded module and a separate PR.
 
 ## 6. Art direction: the notebook look
 
-**Look:**
+**One medium per game** (decision 19). Everything below describes Margin Run's ballpoint-and-pencil notebook, which is also the look of the menus and the screen pieces. The other games swap the medium and keep Nib and the screen pieces:
+- **Paper Glider, watercolor:** objects are rendered in flat washes, then a full-screen pass paints them: wobbly edges, colour bleeding, pigment pooling at the edges, granulation from the paper grain and blotchy wash density, over a faint pencil sketch line. Its cost on the TV is measured once the TV is ready (§7.10).
+- **Star Sketch, gel pen and chalk on black paper**, and **Up the Page, wax crayon on craft paper**: designed when each is built.
+
+**Margin Run's look:**
 - cream lined paper with blue rules and a margin line;
 - ballpoint-blue ink outlines with a slight wobble;
 - colored-pencil fills with diagonal hatching for shade;
@@ -344,6 +355,8 @@ Each game is a separate lazy-loaded module and a separate PR.
 - a small, consistent palette (blue ink, warm yellow, coral, mint, lilac; *proposed*).
 
 **Approach:** the charm comes from one rendering treatment over very simple geometry, not from detailed models.
+
+**Owner, playtest 1 (2026-11-26):** the owner likes the rough, hand-drawn doodle look of the M1 stand-ins, including Nib built from simple shapes. M4 builds on that look rather than replacing it, and may explore **crayon** or **watercolor** variants of the same treatment.
 
 **Rendering kit** (three.js r183, already a dependency):
 - **Paper:** a screen-space background shader with procedural rules, plus a grain texture.
@@ -482,7 +495,8 @@ A pure TypeScript state machine with an injectable clock and seeded RNG:
 **Number pad:**
 - large on-screen digit keys with backspace; physical keyboard digits work too;
 - correct is accepted immediately when the typed value equals the expected answer (decision 9);
-- otherwise the answer is judged on ✓ (or Enter), or after 1.5 s idle once at least as many digits have been typed as the expected answer has.
+- **every answer gets a response at once** (owner, 2026-11-26: a wrong number left the game waiting, and the right number typed straight after did not help): a wrong value is judged the moment no further digit could make it right ("13" or "2" when the answer is 12); a value that could still become right ("1") waits for the next digit, with no time limit; ✓ (or Enter) judges whatever has been typed. There is no idle wait. A slip of the finger therefore counts as a miss;
+- while a miss is on screen, only the newest digits count towards the fix, so the right answer typed straight after a slip moves on at once.
 
 ### 7.6 Body input on the TV (decision 12)
 
@@ -575,7 +589,7 @@ A pure TypeScript state machine with an injectable clock and seeded RNG:
 ```ts
 interface ArcadeGame {
   id: string;
-  mount(host: HTMLElement, ctx: { kit: NotebookKit; quality: QualityTier; reducedMotion: boolean; audio: ArcadeAudio; mode: "answer" | "choice" }): Promise<void>;
+  mount(host: HTMLElement, ctx: { quality: QualityTier; reducedMotion: boolean; audio: ArcadeAudio; mode: "answer" | "choice" }): Promise<void>; // each game brings its own style kit (decision 19)
   onEvent(event: RoundEvent): void;   // never returns a decision
   setQuality(tier: QualityTier): void;
   resize(width: number, height: number): void;
@@ -704,7 +718,7 @@ All strings go through `tr()`, with Chinese and English messages, and `pnpm chec
 - **What it keeps:** each answer in the shape of the future `arcade_answer` event (§7.9: fact, form, input, result, given, time), each round's summary, and the ink-drop total. No ink, images or landmarks.
 - **Fact states** are derived from these answers with the same pure derivation (§4.4), using the device's local day, which also settles round 2 #2 for this phase.
 - **Reset:** the Arcade settings have "Clear Arcade progress on this device".
-- **No network:** the standalone Arcade makes no request at all, so it works with the server down.
+- **No network:** the Arcade's own code makes no request, so it works with the server down. The app shell's sign-in status check (`/api/auth/status`) still runs on every page and fails quietly; the end-to-end test blocks every server path and checks that nothing else is called.
 - **Later:** M5 uploads these answers to the account (§7.9) and switches the scheduler to the server's progress.
 
 ## 8. Privacy and safety (US K–12)
@@ -749,7 +763,7 @@ All strings go through `tr()`, with Chinese and English messages, and `pnpm chec
 
 ## 10. Milestones
 
-Sizes are relative (S/M/L), not dates. **Order follows decision 18: make it playable and prove it works, then add the rest.** The style board (M0) runs alongside M1–M3; its approval gates production art in M4.
+Sizes are relative (S/M/L), not dates. **Order follows decision 18: make it playable and prove it works, then add the rest.** **Order of work (decision 20):** M1, then M7 (games B–D in the browser, Paper Glider first), then M2 with the Mac's camera (the TV checks when the TV is ready), then M3 onward. The style board (M0) runs alongside M1–M3; its approval gates production art in M4.
 
 | | Milestone | Size | Contents | Exit criteria |
 | --- | --- | --- | --- | --- |
@@ -868,15 +882,17 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] Style board artifact (paper, ink, hatching, palette, Nib's sheet beside the Octos avatar, Margin Run in both modes, the screen pieces); owner approval.
 
 **M1: playable core (web, standalone)**
-- [ ] Skill catalog, fact generators, forms and ids; incremental fact derivation with the local day; exhaustive tests.
-- [ ] Device progress store (`octos-arcade` IndexedDB) and "Clear Arcade progress".
-- [ ] Scheduler with targets, reviews, new facts and random fill; invariant tests.
-- [ ] Round engine with seeded RNG, injectable clock, pause and "Show me"; headless event-log tests.
-- [ ] Number pad (immediate correct; ✓/Enter or idle for wrong) and tap choices with distractors.
-- [ ] Margin Run first playable: three.js scene, paper and ink look, both modes, reacting only to `RoundEvent`s; `dispose` releases GPU resources.
-- [ ] `/arcade` hall, skill picker and results; routes outside `AuthGuard`; zh/en strings.
-- [ ] Playwright: full rounds via number pad and tap choices, with the server down.
-- [ ] **Owner playtest 1** (web).
+- [x] Skill catalog, fact generators, forms and ids; incremental fact derivation with the local day; exhaustive tests (`src/arcade/core/`).
+- [x] Device progress store (`octos-arcade` IndexedDB) and "Clear Arcade progress".
+- [x] Scheduler with targets, reviews, new facts and random fill; invariant tests.
+- [x] Round engine with seeded RNG, injectable clock, pause and "Show me"; headless event-log tests.
+- [x] Number pad (immediate correct; wrong judged as soon as it cannot become right, or on ✓/Enter) and tap choices with distractors.
+- [x] Margin Run first playable: three.js scene, paper and ink look, both modes, reacting only to `RoundEvent`s; `dispose` releases GPU resources. Nib is a stand-in built from simple shapes until M4.
+- [x] `/arcade` home, skill picker, game picker and results; routes outside `AuthGuard`; zh/en strings.
+- [x] Playwright: full rounds via number pad and tap choices, with the server down (`tests/arcade.spec.ts`).
+- [x] **Owner playtest 1** (web, 2026-11-26): "overall, it's already fantastic". One issue, fixed: after a wrong pick the game ignored the correct pick until it moved on by itself (§4.5, "the child can fix it").
+- [x] **Owner note, 2026-11-26** (Paper Glider, and Margin Run too): on the number pad a wrong answer still left the game waiting, and the right answer typed straight after did not help (it was added to the wrong digit and the idle wait started again). Fixed in the round engine: wrong numbers are judged the moment they cannot become right, and a fix counts only the newest digits (§7.5). Both games, both input modes, respond at once to every answer.
+- [ ] Not yet in M1, planned later: the "Learn how" link (§4.7, needs the whiteboard and sign-in, so M5), the phone "turn your device" note and the settings section (M4).
 
 **M2: TV body input**
 - [ ] Isolated TV check page: camera listed and opened, fps and resolution, `dumpsys media.camera`; WebGL2.
@@ -919,7 +935,12 @@ Two rounds, the cap. Round 1 (2026-11-25) reviewed the first draft; round 2 (202
 - [ ] PRD requirements OL-075 onward added; owner switches the flag on by default.
 
 **M7: more games**
-- [ ] Paper Glider. [ ] Star Sketch. [ ] Up the Page.
+- [x] Paper Glider (watercolor): watercolor kit (wash material, pencil sketch line, painting pass), Nib in watercolor, glider, hoops, wingtip trails, roll at 5 and loop at 10, both modes; Playwright round (`src/arcade/games/paper-glider/`, `src/arcade/render/watercolor-kit.ts`).
+- [x] Paper Glider flight feel, round 1 (owner, 2026-11-26: "lacks changes in perspective, so it doesn't really feel like flying"): a weaving course, swoops with bank and pitch, and a chase camera that lagged, tilted the horizon and widened with speed. Replaced by round 2.
+- [x] Paper Glider flight feel, round 2 (owner, 2026-11-26: the camera made them "a little dizzy"; flying through the hoops should feel immersive, and the camera seemed to pass over each hoop rather than through its centre): the glider flies one smooth flight line through the hoop centres, and the camera rides that same line 6 units behind it, so the camera goes through the exact middle of every hoop, square on; the glider rides 1.2 below the line so the opening stays clear. The horizon stays level and the view never zooms (§5.7 camera comfort). Speed: a soft take-off, cruising at up to 16, and an even glide in to the next hover point; a quick answer carries straight on without stopping. Through a hoop: paint flung from the rim streams past the camera, a wash of the hoop's colour brushes the edges of the view, and the wind gusts. A miss closes the hoop with a paint film; fixing it pops the film and the glider flies through after all; otherwise the hoop drops away and the glider glides past. Unit tests for the line and the speed (`paper-glider.test.ts`).
+- [ ] Paper Glider owner playtest; its frame rate on the TV once the TV is ready (the painting pass is a full-screen effect).
+- [ ] Star Sketch (gel pen and chalk on black paper).
+- [ ] Up the Page (wax crayon on craft paper).
 
 ## 17. Review findings and outcomes
 
